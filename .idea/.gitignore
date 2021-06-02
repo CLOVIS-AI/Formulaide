@@ -13,6 +13,8 @@
 /gradle.xml
 /misc.xml
 /modules.xml
+/artifacts/
+/jarRepositories.xml
 
 # Generated automatically by IDEA
 /vcs.xml
