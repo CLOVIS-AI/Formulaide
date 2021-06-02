@@ -1,7 +1,6 @@
 plugins {
 	kotlin("jvm")
 	kotlin("plugin.serialization")
-	id("application")
 }
 
 dependencies {
@@ -9,10 +8,5 @@ dependencies {
 	testImplementation(kotlin("test"))
 	testImplementation(kotlin("test-junit"))
 
-	implementation(project(":api"))
-	implementation(project(":database"))
-}
-
-application {
-	mainClass.set("formulaide.server.MainKt")
+	api(project(":api"))
 }
