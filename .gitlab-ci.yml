@@ -6,6 +6,8 @@ stages:
 
 variables:
   JDK_IMAGE: "openjdk:11"
+  JS_CHROME_IMAGE: "$CI_REGISTRY_IMAGE/js-chrome:$CI_PIPELINE_IID"
+  JS_CHROME_IMAGE_LATEST: "$CI_REGISTRY_IMAGE/js-chrome:latest"
 
 # *** Phantom Jobs *** #
 
@@ -17,11 +19,53 @@ variables:
       - .gradle/wrapper
       - .gradle/caches
 
+.docker-build:
+  image: docker:19.03
+  services:
+    - docker:dind
+  stage: docker
+  before_script:
+    - echo -n $CI_JOB_TOKEN | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
+  tags:
+    - docker
+
+.docker-latest:
+  extends: .docker-build
+  variables:
+    GIT_STRATEGY: none
+  stage: deploy
+
 # *** Docker *** #
+
+docker-js-chrome:
+  extends: .docker-build
+  stage: docker
+  script:
+    - docker pull $JS_CHROME_IMAGE_LATEST || true
+    - >
+      docker build
+      --pull
+      --cache-from $JS_CHROME_IMAGE
+      --tag $JS_CHROME_IMAGE
+      -f $CI_PROJECT_DIR/client/build.dockerfile
+      .
+    - docker push $JS_CHROME_IMAGE
 
 # *** Build *** #
 
 # *** Test *** #
+
+client-js-test:
+  image: $JS_CHROME_IMAGE
+  stage: test
+  extends: [ .gradle ]
+  before_script:
+    - *prepare_gradle
+  script:
+    - "./gradlew :client:jsBrowserTest"
+  artifacts:
+    reports:
+      junit: client/build/test-results/test/**/TEST-*.xml
 
 database-test:
   image: $JDK_IMAGE
@@ -50,3 +94,12 @@ server-test:
   coverage: '/^Coverage:\s(\d+\.\d+%)/'
 
 # *** Deploy *** #
+
+docker-js-chrome-latest:
+  extends: .docker-latest
+  script:
+    - docker pull $JS_CHROME_IMAGE
+    - docker tag $JS_CHROME_IMAGE $JS_CHROME_IMAGE_LATEST
+    - docker push $JS_CHROME_IMAGE_LATEST
+  only:
+    - master
