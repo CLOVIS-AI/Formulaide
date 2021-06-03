@@ -9,10 +9,31 @@ variables:
 
 # *** Phantom Jobs *** #
 
+.gradle:
+  before_script: &prepare_gradle
+    - export GRADLE_USER_HOME=$(pwd)/.gradle
+  cache:
+    paths:
+      - .gradle/wrapper
+      - .gradle/caches
+
 # *** Docker *** #
 
 # *** Build *** #
 
 # *** Test *** #
+
+server-test:
+  image: $JDK_IMAGE
+  stage: test
+  extends: [ .gradle ]
+  before_script:
+    - *prepare_gradle
+  script:
+    - "./gradlew :server:test :server:printCoverage"
+  artifacts:
+    reports:
+      junit: server/build/test-results/test/**/TEST-*.xml
+  coverage: '/^Coverage:\s(\d+\.\d+%)/'
 
 # *** Deploy *** #
