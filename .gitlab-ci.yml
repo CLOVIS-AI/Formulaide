@@ -68,6 +68,19 @@ client-js-test:
     reports:
       junit: client/build/test-results/test/**/TEST-*.xml
 
+ui-test:
+  image: $JS_CHROME_IMAGE
+  stage: test
+  extends: [ .gradle ]
+  needs: [ docker-js-chrome ]
+  before_script:
+    - *prepare_gradle
+  script:
+    - "./gradlew :ui:test"
+  artifacts:
+    reports:
+      junit: ui/build/test-results-/test/**/TEST-*.xml
+
 database-test:
   image: $JDK_IMAGE
   stage: test
