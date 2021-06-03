@@ -1,8 +1,9 @@
 plugins {
 	// Declare Kotlin plugins for subprojects, without applying them
-	kotlin("multiplatform") version Version.kotlin apply false
-	kotlin("jvm") version Version.kotlin apply false
-	kotlin("plugin.serialization") version Version.kotlin apply false
+	kotlin("multiplatform") version Version.kotlinVersion apply false
+	kotlin("jvm") version Version.kotlinVersion apply false
+	kotlin("js") version Version.kotlinVersion apply false
+	kotlin("plugin.serialization") version Version.kotlinVersion apply false
 }
 
 group = "fr.ville-arcachon"
