@@ -7,7 +7,6 @@ repositories {
 }
 
 kotlin {
-	jvm()
 	js {
 		browser()
 	}
