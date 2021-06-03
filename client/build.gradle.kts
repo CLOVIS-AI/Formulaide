@@ -8,7 +8,13 @@ repositories {
 
 kotlin {
 	js {
-		browser()
+		browser {
+			testTask {
+				useKarma {
+					useChromiumHeadless()
+				}
+			}
+		}
 	}
 
 	@kotlin.Suppress("UNUSED_VARIABLE")
