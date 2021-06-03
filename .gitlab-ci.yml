@@ -23,6 +23,19 @@ variables:
 
 # *** Test *** #
 
+database-test:
+  image: $JDK_IMAGE
+  stage: test
+  extends: [ .gradle ]
+  before_script:
+    - *prepare_gradle
+  script:
+    - "./gradlew :database:test :database:printCoverage"
+  artifacts:
+    reports:
+      junit: database/build/test-results/test/**/TEST-*.xml
+  coverage: '/^Coverage:\s(\d+\.\d+%)/'
+
 server-test:
   image: $JDK_IMAGE
   stage: test
