@@ -1,0 +1,18 @@
+stages:
+  - docker  # Docker images necessary for the next stages
+  - build   # Binary generation
+  - test    # Tests, documentation
+  - deploy  # Final container generation
+
+variables:
+  JDK_IMAGE: "openjdk:11"
+
+# *** Phantom Jobs *** #
+
+# *** Docker *** #
+
+# *** Build *** #
+
+# *** Test *** #
+
+# *** Deploy *** #
