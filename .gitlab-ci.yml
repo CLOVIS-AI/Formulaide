@@ -181,11 +181,13 @@ server-bin-docker-latest:
 pages:
   image: alpine:latest
   stage: deploy
-  dependencies: [ dokka ]
-  needs: [ dokka ]
+  dependencies: [ dokka, server-bin ]
+  needs: [ dokka, server-bin ]
   script:
     - mkdir -p public
     - mv build/dokka/htmlMultiModule/ public/documentation
+    - mv server/build/distributions/server*.tar public/bin/server.tar
+    - mv server/build/distributions/server*.zip public/bin/server.zip
   artifacts:
     paths:
       - public
