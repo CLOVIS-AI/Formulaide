@@ -4,6 +4,8 @@ plugins {
 	kotlin("jvm") version Version.kotlinVersion apply false
 	kotlin("js") version Version.kotlinVersion apply false
 	kotlin("plugin.serialization") version Version.kotlinVersion apply false
+
+	id("org.jetbrains.dokka") version Version.dokka
 }
 
 group = "fr.ville-arcachon"

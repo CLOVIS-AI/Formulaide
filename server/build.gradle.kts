@@ -3,6 +3,8 @@ plugins {
 	kotlin("plugin.serialization")
 	id("application")
 
+	id("org.jetbrains.dokka")
+
 	id("jacoco")
 	id("de.jansauer.printcoverage").version(Version.printCoverage)
 }

@@ -1,5 +1,7 @@
 plugins {
 	kotlin("js")
+
+	id("org.jetbrains.dokka")
 }
 
 kotlin {
