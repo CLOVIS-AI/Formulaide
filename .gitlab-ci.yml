@@ -66,7 +66,7 @@ client-js-test:
     - "./gradlew :client:jsBrowserTest"
   artifacts:
     reports:
-      junit: client/build/test-results/test/**/TEST-*.xml
+      junit: client/build/test-results/jsBrowserTest/**/TEST-*.xml
 
 ui-test:
   image: $JS_CHROME_IMAGE
@@ -76,10 +76,10 @@ ui-test:
   before_script:
     - *prepare_gradle
   script:
-    - "./gradlew :ui:test"
+    - "./gradlew :ui:browserTest"
   artifacts:
     reports:
-      junit: ui/build/test-results-/test/**/TEST-*.xml
+      junit: ui/build/test-results/browserTest/**/TEST-*.xml
 
 database-test:
   image: $JDK_IMAGE
