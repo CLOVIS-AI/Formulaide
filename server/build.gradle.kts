@@ -26,6 +26,10 @@ application {
 	mainClass.set("formulaide.server.MainKt")
 }
 
+jacoco {
+	this.toolVersion = Version.jacoco
+}
+
 tasks.jacocoTestReport {
 	dependsOn(tasks.test)
 
