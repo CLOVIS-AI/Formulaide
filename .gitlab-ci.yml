@@ -53,6 +53,20 @@ docker-js-chrome:
 
 # *** Build *** #
 
+dokka:
+  image: $JDK_IMAGE
+  stage: build
+  extends: [ .gradle ]
+  needs: []
+  before_script:
+    - *prepare_gradle
+  script:
+    # ui:assemble is needed because of https://github.com/Kotlin/dokka/issues/1455
+    - "./gradlew ui:assemble dokkaHtmlMultiModule"
+  artifacts:
+    paths:
+      - build/dokka/htmlMultiModule/
+
 # *** Test *** #
 
 client-js-test:
@@ -118,4 +132,18 @@ docker-js-chrome-latest:
     - docker tag $JS_CHROME_IMAGE $JS_CHROME_IMAGE_LATEST
     - docker push $JS_CHROME_IMAGE_LATEST
   only:
-    - master
+    - main
+
+pages:
+  image: alpine:latest
+  stage: deploy
+  dependencies: [ dokka ]
+  needs: [ dokka ]
+  script:
+    - mkdir -p public
+    - mv build/dokka/htmlMultiModule/ public/documentation
+  artifacts:
+    paths:
+      - public
+  only:
+    - main
