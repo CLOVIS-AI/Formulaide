@@ -48,7 +48,7 @@ docker-js-chrome:
     - >
       docker build
       --pull
-      --cache-from $JS_CHROME_IMAGE
+      --cache-from $JS_CHROME_IMAGE_LATEST
       --tag $JS_CHROME_IMAGE
       -f $CI_PROJECT_DIR/client/build.dockerfile
       .
