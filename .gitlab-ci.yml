@@ -1,13 +1,16 @@
 stages:
-  - docker  # Docker images necessary for the next stages
-  - build   # Binary generation
-  - test    # Tests, documentation
-  - deploy  # Final container generation
+  - docker      # Docker images necessary for the next stages
+  - build       # Binary generation
+  - docker-bin  # Docker images that contain binaries
+  - test        # Tests, documentation
+  - deploy      # Final container generation
 
 variables:
   JDK_IMAGE: "openjdk:11"
   JS_CHROME_IMAGE: "$CI_REGISTRY_IMAGE/js-chrome:$CI_PIPELINE_IID"
   JS_CHROME_IMAGE_LATEST: "$CI_REGISTRY_IMAGE/js-chrome:latest"
+  SERVER_BIN_IMAGE: "$CI_REGISTRY_IMAGE/server:$CI_PIPELINE_IID"
+  SERVER_BIN_IMAGE_LATEST: "$CI_REGISTRY_IMAGE/server:latest"
 
 # *** Phantom Jobs *** #
 
@@ -66,6 +69,38 @@ dokka:
   artifacts:
     paths:
       - build/dokka/htmlMultiModule/
+
+server-bin:
+  image: $JDK_IMAGE
+  extends: [ .gradle ]
+  stage: build
+  needs: []
+  before_script:
+    - *prepare_gradle
+  script:
+    - "./gradlew server:assembleDist"
+  artifacts:
+    paths:
+      - server/build/distributions
+
+# *** Docker Binaries *** #
+
+server-bin-docker:
+  extends: [ .docker-build ]
+  stage: docker-bin
+  dependencies: [ server-bin ]
+  needs: [ server-bin ]
+  script:
+    - docker pull $SERVER_BIN_IMAGE_LATEST || true
+    - cd server
+    - >
+      docker build
+      --pull
+      --cache-from $SERVER_BIN_IMAGE_LATEST
+      --tag $SERVER_BIN_IMAGE
+      -f $CI_PROJECT_DIR/server/Dockerfile
+      .
+    - docker push $SERVER_BIN_IMAGE
 
 # *** Test *** #
 
@@ -131,6 +166,15 @@ docker-js-chrome-latest:
     - docker pull $JS_CHROME_IMAGE
     - docker tag $JS_CHROME_IMAGE $JS_CHROME_IMAGE_LATEST
     - docker push $JS_CHROME_IMAGE_LATEST
+  only:
+    - main
+
+server-bin-docker-latest:
+  extends: .docker-latest
+  script:
+    - docker pull $SERVER_BIN_IMAGE
+    - docker tag $SERVER_BIN_IMAGE $SERVER_BIN_IMAGE_LATEST
+    - docker push $SERVER_BIN_IMAGE_LATEST
   only:
     - main
 
