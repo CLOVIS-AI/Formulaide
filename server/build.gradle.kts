@@ -2,6 +2,9 @@ plugins {
 	kotlin("jvm")
 	kotlin("plugin.serialization")
 	id("application")
+
+	id("jacoco")
+	id("de.jansauer.printcoverage").version(Version.printCoverage)
 }
 
 dependencies {
@@ -15,4 +18,14 @@ dependencies {
 
 application {
 	mainClass.set("formulaide.server.MainKt")
+}
+
+tasks.jacocoTestReport {
+	dependsOn(tasks.test)
+
+	reports {
+		xml.isEnabled = true
+		csv.isEnabled = false
+		html.isEnabled = true
+	}
 }

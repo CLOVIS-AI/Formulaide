@@ -7,9 +7,14 @@ repositories {
 }
 
 kotlin {
-	jvm()
 	js {
-		browser()
+		browser {
+			testTask {
+				useKarma {
+					useChromiumHeadless()
+				}
+			}
+		}
 	}
 
 	@kotlin.Suppress("UNUSED_VARIABLE")
@@ -26,6 +31,12 @@ kotlin {
 			dependencies {
 				implementation(kotlin("test-common"))
 				implementation(kotlin("test-annotations-common"))
+			}
+		}
+
+		val jsTest by getting {
+			dependencies {
+				implementation(kotlin("test-js"))
 			}
 		}
 	}
