@@ -16,10 +16,18 @@ dependencies {
 
 	implementation(project(":api"))
 	implementation(project(":database"))
+
+	implementation(ktorServer("core"))
+	implementation(ktorServer("netty"))
+	implementation(logback("classic"))
 }
 
 application {
 	mainClass.set("formulaide.server.MainKt")
+}
+
+jacoco {
+	this.toolVersion = Version.jacoco
 }
 
 tasks.jacocoTestReport {
