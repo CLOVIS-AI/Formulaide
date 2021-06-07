@@ -24,6 +24,8 @@ dependencies {
 	implementation(ktor("auth"))
 	implementation(ktor("auth-jwt"))
 	implementation(bcrypt())
+
+	implementation(arrow("core"))
 }
 
 application {

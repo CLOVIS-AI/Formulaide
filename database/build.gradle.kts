@@ -14,6 +14,8 @@ dependencies {
 	testImplementation(kotlin("test-junit"))
 
 	api(project(":api"))
+
+	api(arrow("core"))
 }
 
 tasks.jacocoTestReport {
