@@ -184,7 +184,7 @@ pages:
   dependencies: [ dokka, server-bin ]
   needs: [ dokka, server-bin ]
   script:
-    - mkdir -p public
+    - mkdir -p public/documentation public/bin
     - mv build/dokka/htmlMultiModule/ public/documentation
     - mv server/build/distributions/server*.tar public/bin/server.tar
     - mv server/build/distributions/server*.zip public/bin/server.zip
