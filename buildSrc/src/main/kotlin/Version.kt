@@ -1,5 +1,6 @@
 @file:Suppress("MemberVisibilityCanBePrivate")
 
+import Version.bcrypt
 import Version.ktor
 import Version.logback
 
@@ -18,6 +19,7 @@ object Version {
 
 	const val ktor = "1.6.0"
 	const val logback = "1.2.3"
+	const val bcrypt = "0.9.0"
 }
 
 fun kotlinxSerialization(name: String) =
@@ -26,11 +28,15 @@ fun kotlinxSerialization(name: String) =
 fun kotlinWrapper(name: String, version: String) =
 	"org.jetbrains.kotlin-wrappers:kotlin-$name:$version"
 
-fun ktorServer(name: String) =
-	"io.ktor:ktor-server-$name:$ktor"
+fun ktor(name: String) =
+	"io.ktor:ktor-$name:$ktor"
 
-fun ktorClient(name: String) =
-	"io.ktor:ktor-client-$name:$ktor"
+fun ktorServer(name: String) = ktor("server-$name")
+
+fun ktorClient(name: String) = ktor("client-$name")
 
 fun logback(name: String) =
 	"ch.qos.logback:logback-$name:$logback"
+
+fun bcrypt() =
+	"at.favre.lib:bcrypt:$bcrypt"

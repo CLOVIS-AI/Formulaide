@@ -20,6 +20,10 @@ dependencies {
 	implementation(ktorServer("core"))
 	implementation(ktorServer("netty"))
 	implementation(logback("classic"))
+
+	implementation(ktor("auth"))
+	implementation(ktor("auth-jwt"))
+	implementation(bcrypt())
 }
 
 application {
