@@ -1,5 +1,6 @@
 package formulaide.db
 
+import formulaide.db.document.DbService
 import formulaide.db.document.DbUser
 import org.litote.kmongo.coroutine.coroutine
 import org.litote.kmongo.reactivestreams.KMongo
@@ -20,5 +21,6 @@ class Database(
 	private val database = client.getDatabase(databaseName)
 
 	internal val users = database.getCollection<DbUser>("users")
+	internal val services = database.getCollection<DbService>("services")
 
 }

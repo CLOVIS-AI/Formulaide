@@ -1,13 +1,13 @@
 package formulaide.db
 
-import arrow.core.Either.Right
 import formulaide.db.document.DbUser
+import formulaide.db.document.createUser
+import formulaide.db.document.findUser
 import kotlinx.coroutines.runBlocking
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 
 class UsersTest {
 
@@ -15,12 +15,10 @@ class UsersTest {
 	fun createUser() = runBlocking {
 		val db = testDatabase()
 
-		val expected = DbUser("123456", "random@gmail.fr", "123456789", "My Other Name")
+		val expected = DbUser("123456", "random@gmail.fr", "123456789", "My Other Name", db.testService().id)
 
 		val actual = db.createUser(expected)
-
-		assertTrue(actual is Right<DbUser>, "Found $actual")
-		assertEquals(expected, actual.value)
+		assertEquals(expected, actual)
 	}
 
 	@Test
@@ -29,16 +27,13 @@ class UsersTest {
 
 		val email = "random+${Random.nextInt()}@email.fr"
 
-		val user = DbUser("…", email, "…", "Some Other Name")
-		val insert = db.createUser(user)
-		assertTrue(insert is Right, "Found $insert")
+		val user = DbUser("…", email, "…", "Some Other Name", db.testService().id)
+		db.createUser(user)
 
 		val found = db.findUser(email)
-		assertTrue(found is Right, "Found $found")
 
-		val foundUser = found.value
-		assertNotNull(foundUser)
-		assertEquals(email, foundUser.email)
+		assertNotNull(found)
+		assertEquals(email, found.email)
 	}
 
 }
