@@ -5,7 +5,6 @@ import io.ktor.application.*
 import io.ktor.response.*
 import io.ktor.routing.*
 
-val message get() = "Hello World!"
 lateinit var database: Database
 
 fun main(args: Array<String>) {
