@@ -4,6 +4,7 @@ import at.favre.lib.crypto.bcrypt.BCrypt
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces.DecodedJWT
+import com.auth0.jwt.interfaces.Payload
 import formulaide.api.users.NewUser
 import formulaide.api.users.PasswordLogin
 import formulaide.db.Database
@@ -11,6 +12,7 @@ import formulaide.db.document.DbUser
 import formulaide.db.document.DbUserId
 import formulaide.db.document.createUser
 import formulaide.db.document.findUser
+import io.ktor.auth.*
 import org.slf4j.LoggerFactory
 import java.util.*
 
@@ -21,7 +23,10 @@ class Auth(private val database: Database) {
 
 	private val secretKey = "some secret key here" //TODO
 	private val algorithm = Algorithm.HMAC256(secretKey)
-	private val verifier = JWT.require(algorithm).build()
+	internal val verifier = JWT
+		.require(algorithm)
+		.withIssuer("formulaide")
+		.build()
 
 	/**
 	 * Creates a new account.
@@ -68,7 +73,7 @@ class Auth(private val database: Database) {
 	 */
 	fun checkToken(
 		token: String
-	): DbUserId? {
+	): AuthPrincipal? {
 		val accessToken: DecodedJWT
 		try {
 			accessToken = verifier.verify(JWT.decode(token))
@@ -77,16 +82,33 @@ class Auth(private val database: Database) {
 			return null
 		}
 
-		val userId: String? = accessToken.getClaim("userId").asString()
+		return checkTokenJWT(accessToken)
+	}
+
+	/**
+	 * Checks the validity of a given [payload].
+	 * @throws IllegalStateException if the token doesn't have the correct fields
+	 */
+	fun checkTokenJWT(
+		payload: Payload
+	): AuthPrincipal {
+		val userId: String? = payload.getClaim("userId").asString()
 		checkNotNull(userId) { "Le token ne contient pas de 'userId'" }
 
-		return userId
+		return AuthPrincipal(payload, userId)
 	}
 
 	private fun signAccessToken(email: String): String = JWT.create()
 		.withIssuer("formulaide")
 		.withClaim("userId", email)
 		.sign(algorithm)
+
+	/**
+	 * The [Principal] that represents that a user has the right to access the employee-only section of Formulaide.
+	 * @property payload The JWT token that proves the legality of the access
+	 * @property userId The ID of the user accessing the data
+	 */
+	data class AuthPrincipal(val payload: Payload, val userId: DbUserId) : Principal
 
 	companion object {
 		private val logger = LoggerFactory.getLogger(Auth::class.java)
@@ -103,5 +125,7 @@ class Auth(private val database: Database) {
 					hash.toCharArray()
 				).verified
 		}
+
+		const val Employee = "jwt-auth"
 	}
 }
