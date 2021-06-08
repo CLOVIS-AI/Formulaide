@@ -38,6 +38,13 @@ variables:
     GIT_STRATEGY: none
   stage: deploy
 
+.with-database:
+  services:
+    - mongo:latest
+  variables:
+    MONGO_INITDB_ROOT_USERNAME: "root"
+    MONGO_INITDB_ROOT_PASSWORD: "development-password"
+
 # *** Docker *** #
 
 docker-js-chrome:
@@ -133,7 +140,7 @@ ui-test:
 database-test:
   image: $JDK_IMAGE
   stage: test
-  extends: [ .gradle ]
+  extends: [ .gradle, .with-database ]
   needs: []
   before_script:
     - *prepare_gradle
@@ -147,7 +154,7 @@ database-test:
 server-test:
   image: $JDK_IMAGE
   stage: test
-  extends: [ .gradle ]
+  extends: [ .gradle, .with-database ]
   needs: []
   before_script:
     - *prepare_gradle
