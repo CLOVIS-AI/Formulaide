@@ -1,22 +1,14 @@
 package formulaide.server
 
-import arrow.core.Either
-import arrow.core.Either.Left
-import arrow.core.Either.Right
-import arrow.core.computations.either
-import arrow.core.flatMap
-import arrow.core.left
-import arrow.core.right
 import at.favre.lib.crypto.bcrypt.BCrypt
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import formulaide.api.users.NewUser
 import formulaide.api.users.PasswordLogin
 import formulaide.db.Database
-import formulaide.db.createUser
 import formulaide.db.document.DbUser
-import formulaide.db.findUser
-import formulaide.server.DatabaseFailure.Companion.asServerFailure
+import formulaide.db.document.createUser
+import formulaide.db.document.findUser
 import java.util.*
 
 /**
@@ -30,79 +22,60 @@ class Auth(private val database: Database) {
 
 	/**
 	 * Creates a new account.
-	 * @return A pair of a JWT token and the created user, or [Left] is something went wrong.
+	 * @return A pair of a JWT token and the created user.
 	 */
-	suspend fun newAccount(newUser: NewUser): Either<Failure, Pair<String, DbUser>> = either {
+	suspend fun newAccount(newUser: NewUser): Pair<String, DbUser> {
 		val hashedPassword = BCrypt.withDefaults()
 			.hash(10, newUser.password.toByteArray(Charsets.UTF_8))
 
 		val id = UUID.randomUUID().toString()
-		val emailUser = database.findUser(newUser.user.email).asServerFailure().bind()
 
-		check(
-			emailUser == null,
-			ifFalse = UnknownFailure("Un utilisateur avec l'adresse '${emailUser!!.email}' existe déjà")
-		).bind()
+		val createdUser = database.createUser(
+			DbUser(
+				id,
+				newUser.user.email,
+				hashedPassword.toString(),
+				newUser.user.fullName
+			)
+		)
 
-		val createdUser = database.createUser(DbUser(id, newUser.user.email, hashedPassword.toString(), newUser.user.fullName))
-			.asServerFailure().bind()
-
-		signAccessToken(id) to createdUser
+		return signAccessToken(id) to createdUser
 	}
 
 	/**
 	 * Checks the validity of a connection based on a hashed password.
-	 * @return A valid token if the password was valid, a [Failure] otherwise.
+	 * @return A valid token if the password was valid.
 	 */
-	suspend fun login(login: PasswordLogin): Either<Failure, String> {
-		return either {
-			val user = database.findUser(login.email)
-				.asServerFailure()
-				.collapseNullable(left = UnknownFailure("Aucun utilisateur n'a été trouvé avec cette adresse mail"))
-				.bind()
+	suspend fun login(login: PasswordLogin): String {
+		val user = database.findUser(login.email)
+		checkNotNull(user) { "Aucun utilisateur n'a été trouvé avec cette adresse mail" }
 
-			BCrypt.verifyer()
-				.verify(
-					login.password.toByteArray(Charsets.UTF_8),
-					user.hashedPassword.toByteArray(Charsets.UTF_8)
-				).verified
-				.rightIfTrue(ifFalse = InvalidToken).bind()
+		val tokenIsVerified = BCrypt.verifyer()
+			.verify(
+				login.password.toByteArray(Charsets.UTF_8),
+				user.hashedPassword.toByteArray(Charsets.UTF_8)
+			).verified
+		check(tokenIsVerified) { "Le token est invalide" }
 
-			signAccessToken(user.email).right().bind()
-		}
+		return signAccessToken(user.email)
 	}
 
 	/**
 	 * Checks the validity of a given [token].
 	 */
-	suspend fun checkToken(
+	fun checkToken(
 		token: String
-	): Either<Failure, String> = either {
-		val accessToken = Either.catch { verifier.verify(JWT.decode(token)) }
-			.mapLeft { InvalidToken }.bind()
+	): String {
+		val accessToken = verifier.verify(JWT.decode(token))
 
 		val userId: String? = accessToken.getClaim("userId").asString()
+		checkNotNull(userId) { "Le token ne contient pas de 'userId'" }
 
-		Either.fromNullable(userId)
-			.mapLeft { InvalidToken }
-			.bind()
+		return userId
 	}
 
 	private fun signAccessToken(email: String): String = JWT.create()
 		.withIssuer("formulaide")
 		.withClaim("userId", email)
 		.sign(algorithm)
-
-	private fun <T> Boolean.rightIfTrue(ifFalse: T) =
-		if (this) Right(true)
-		else Left(ifFalse)
-
-	private fun <L, R : Any> Either<L, R?>.collapseNullable(left: L): Either<L, R> =
-		flatMap {
-			it?.right() ?: left.left()
-		}
-
-	private fun <L> check(condition: Boolean, ifFalse: L) =
-		if (condition) Right(Unit)
-		else Left(ifFalse)
 }

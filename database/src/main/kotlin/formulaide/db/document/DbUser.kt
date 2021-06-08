@@ -23,7 +23,7 @@ data class DbUser(
 /**
  * Converts a database [DbUser] to a [User].
  */
-fun DbUser.toApi() = User(email, fullName)
+fun DbUser.toApi() = User(email, fullName, service)
 
 /**
  * Finds a user in the database, by searching for an exact match with its [email].
@@ -35,7 +35,8 @@ suspend fun Database.findUser(email: String): DbUser? =
  * Creates a [user], and returns it.
  */
 suspend fun Database.createUser(user: DbUser): DbUser {
-	checkNotNull(findService(user.service))
+	checkNotNull(findService(user.service)) { "Le service ${user.service} n'existe pas" }
+	check(findUser(user.email) == null) { "Un utilisateur avec cette adresse mail existe déjà" }
 
 	users.insertOne(user)
 
