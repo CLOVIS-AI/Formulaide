@@ -16,7 +16,8 @@ data class DbUser(
 	val email: String,
 	val hashedPassword: String,
 	val fullName: String,
-	val service: DbServiceId
+	val service: DbServiceId,
+	val isAdministrator: Boolean
 )
 
 /**

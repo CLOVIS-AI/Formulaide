@@ -15,7 +15,7 @@ class UsersTest {
 	fun createUser() = runBlocking {
 		val db = testDatabase()
 
-		val expected = DbUser("123456", "random@gmail.fr", "123456789", "My Other Name", db.testService().id)
+		val expected = DbUser("123456", "random@gmail.fr", "123456789", "My Other Name", db.testService().id, false)
 
 		val actual = db.createUser(expected)
 		assertEquals(expected, actual)
@@ -27,7 +27,7 @@ class UsersTest {
 
 		val email = "random+${Random.nextInt()}@email.fr"
 
-		val user = DbUser("…", email, "…", "Some Other Name", db.testService().id)
+		val user = DbUser("…", email, "…", "Some Other Name", db.testService().id, false)
 		db.createUser(user)
 
 		val found = db.findUser(email)
