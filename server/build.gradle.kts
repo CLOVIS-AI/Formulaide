@@ -27,6 +27,9 @@ dependencies {
 	implementation(bcrypt())
 
 	implementation(arrow("core"))
+
+	implementation(kotlinxCoroutines("core"))
+	testImplementation(kotlinxCoroutines("test"))
 }
 
 application {

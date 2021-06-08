@@ -11,6 +11,7 @@ object Version {
 	const val dokka = "1.4.32"
 
 	const val serialization = "1.2.1"
+	const val coroutines = "1.5.0"
 
 	const val jacoco = "0.8.7"
 	const val printCoverage = "2.0.0"
@@ -27,6 +28,9 @@ object Version {
 
 fun kotlinxSerialization(name: String) =
 	"org.jetbrains.kotlinx:kotlinx-serialization-$name:${Version.serialization}"
+
+fun kotlinxCoroutines(name: String) =
+	"org.jetbrains.kotlinx:kotlinx-coroutines-$name:${Version.coroutines}"
 
 fun kotlinWrapper(name: String, version: String) =
 	"org.jetbrains.kotlin-wrappers:kotlin-$name:$version"
