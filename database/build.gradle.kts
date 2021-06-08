@@ -27,3 +27,7 @@ tasks.jacocoTestReport {
 		html.isEnabled = true
 	}
 }
+
+jacoco {
+	toolVersion = Version.jacoco
+}
