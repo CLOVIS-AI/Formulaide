@@ -24,3 +24,12 @@ data class PasswordLogin(
 	val password: String,
 	val email: String
 )
+
+/**
+ * Server response for valid tokens.
+ * @see PasswordLogin
+ */
+@Serializable
+data class TokenResponse(
+	val token: String,
+)
