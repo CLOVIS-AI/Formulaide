@@ -23,7 +23,7 @@ data class DbUser(
 /**
  * Converts a database [DbUser] to a [User].
  */
-fun DbUser.toApi() = User(email, fullName, service)
+fun DbUser.toApi() = User(email, fullName, service, isAdministrator)
 
 /**
  * Finds a user in the database, by searching for an exact match with its [email].

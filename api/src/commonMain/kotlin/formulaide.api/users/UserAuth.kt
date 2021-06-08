@@ -10,9 +10,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class NewUser(
 	val password: String,
-	val user: User,
-	val administrator: Boolean,
-	val service: ServiceId,
+	val user: User
 )
 
 /**

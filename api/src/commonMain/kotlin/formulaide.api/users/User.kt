@@ -13,4 +13,5 @@ data class User(
 	val email: String,
 	val fullName: String,
 	val service: ServiceId,
+	val administrator: Boolean,
 )
