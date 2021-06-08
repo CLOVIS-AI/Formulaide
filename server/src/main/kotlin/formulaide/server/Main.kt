@@ -15,14 +15,13 @@ lateinit var database: Database
 fun main(args: Array<String>) {
 	println("The server is starting…")
 
-	println("Connecting to the database…")
-	database = Database("localhost", 27017, "formulaide", "root", "development-password")
-
 	println("Starting Ktor…")
 	io.ktor.server.netty.EngineMain.main(args)
 }
 
 fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = false) {
+	println("Connecting to the database…")
+	database = Database("localhost", 27017, "formulaide", "root", "development-password")
 	val auth = Auth(database)
 
 	install(ContentNegotiation) {
