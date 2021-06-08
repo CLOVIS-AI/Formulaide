@@ -12,7 +12,7 @@ fun main(args: Array<String>) {
 	println("The server is starting…")
 
 	println("Connecting to the database…")
-	database = Database("localhost", 27017, "formulaide", "root", "development-password") //TODO: inject params
+	database = Database("localhost", 27017, "formulaide", "root", "development-password")
 
 	println("Starting Ktor…")
 	io.ktor.server.netty.EngineMain.main(args)
