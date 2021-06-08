@@ -44,6 +44,11 @@ variables:
   variables:
     MONGO_INITDB_ROOT_USERNAME: "root"
     MONGO_INITDB_ROOT_PASSWORD: "development-password"
+    formulaide_host: "mongo"
+    formulaide_port: 27017
+    formulaide_database: "formulaide"
+    formulaide_username: "root"
+    formulaide_password: "development-password"
 
 # *** Docker *** #
 
