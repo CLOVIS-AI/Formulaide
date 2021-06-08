@@ -11,5 +11,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class User(
 	val email: String,
-	val fullName: String
+	val fullName: String,
+	val service: ServiceId,
 )
