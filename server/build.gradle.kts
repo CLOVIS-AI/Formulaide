@@ -19,6 +19,7 @@ dependencies {
 
 	implementation(ktorServer("core"))
 	implementation(ktorServer("netty"))
+	implementation(ktor("serialization"))
 	testImplementation(ktorServer("tests"))
 	implementation(logback("classic"))
 

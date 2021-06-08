@@ -6,7 +6,9 @@ import formulaide.server.routes.userRoutes
 import io.ktor.application.*
 import io.ktor.auth.*
 import io.ktor.auth.jwt.*
+import io.ktor.features.*
 import io.ktor.routing.*
+import io.ktor.serialization.*
 
 lateinit var database: Database
 
@@ -21,6 +23,10 @@ fun main(args: Array<String>) {
 }
 
 fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = false) {
+
+	install(ContentNegotiation) {
+		json()
+	}
 
 	install(Authentication) {
 		jwt(Employee) {
