@@ -23,6 +23,7 @@ fun main(args: Array<String>) {
 }
 
 fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = false) {
+	val auth = Auth(database)
 
 	install(ContentNegotiation) {
 		json()
@@ -30,7 +31,6 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 
 	install(Authentication) {
 		jwt(Employee) {
-			val auth = Auth(database)
 			realm = "formulaide-employee-auth"
 
 			verifier(auth.verifier)
@@ -39,6 +39,6 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 	}
 
 	routing {
-		userRoutes()
+		userRoutes(auth)
 	}
 }
