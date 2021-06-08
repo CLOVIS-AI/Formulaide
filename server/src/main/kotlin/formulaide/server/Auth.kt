@@ -3,12 +3,15 @@ package formulaide.server
 import at.favre.lib.crypto.bcrypt.BCrypt
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import com.auth0.jwt.interfaces.DecodedJWT
 import formulaide.api.users.NewUser
 import formulaide.api.users.PasswordLogin
 import formulaide.db.Database
 import formulaide.db.document.DbUser
+import formulaide.db.document.DbUserId
 import formulaide.db.document.createUser
 import formulaide.db.document.findUser
+import org.slf4j.LoggerFactory
 import java.util.*
 
 /**
@@ -25,8 +28,7 @@ class Auth(private val database: Database) {
 	 * @return A pair of a JWT token and the created user.
 	 */
 	suspend fun newAccount(newUser: NewUser): Pair<String, DbUser> {
-		val hashedPassword = BCrypt.withDefaults()
-			.hash(10, newUser.password.toByteArray(Charsets.UTF_8))
+		val hashedPassword = hash(newUser.password)
 
 		val id = UUID.randomUUID().toString()
 
@@ -34,7 +36,7 @@ class Auth(private val database: Database) {
 			DbUser(
 				id,
 				newUser.user.email,
-				hashedPassword.toString(),
+				hashedPassword,
 				newUser.user.fullName,
 				newUser.user.service,
 				newUser.user.administrator
@@ -48,18 +50,17 @@ class Auth(private val database: Database) {
 	 * Checks the validity of a connection based on a hashed password.
 	 * @return A valid token if the password was valid.
 	 */
-	suspend fun login(login: PasswordLogin): String {
+	suspend fun login(login: PasswordLogin): Pair<String, DbUser> {
 		val user = database.findUser(login.email)
 		checkNotNull(user) { "Aucun utilisateur n'a été trouvé avec cette adresse mail" }
 
-		val tokenIsVerified = BCrypt.verifyer()
-			.verify(
-				login.password.toByteArray(Charsets.UTF_8),
-				user.hashedPassword.toByteArray(Charsets.UTF_8)
-			).verified
-		check(tokenIsVerified) { "Le token est invalide" }
+		val passwordIsVerified = checkHash(
+			login.password,
+			user.hashedPassword
+		)
+		check(passwordIsVerified) { "Le mot de passe donné ne correspond pas à celui stocké" }
 
-		return signAccessToken(user.email)
+		return signAccessToken(user.email) to user
 	}
 
 	/**
@@ -67,8 +68,14 @@ class Auth(private val database: Database) {
 	 */
 	fun checkToken(
 		token: String
-	): String {
-		val accessToken = verifier.verify(JWT.decode(token))
+	): DbUserId? {
+		val accessToken: DecodedJWT
+		try {
+			accessToken = verifier.verify(JWT.decode(token))
+		} catch (e: Exception) {
+			logger.warn("Token is invalid: $e")
+			return null
+		}
 
 		val userId: String? = accessToken.getClaim("userId").asString()
 		checkNotNull(userId) { "Le token ne contient pas de 'userId'" }
@@ -80,4 +87,21 @@ class Auth(private val database: Database) {
 		.withIssuer("formulaide")
 		.withClaim("userId", email)
 		.sign(algorithm)
+
+	companion object {
+		private val logger = LoggerFactory.getLogger(Auth::class.java)
+
+		internal fun hash(clearText: String): String {
+			return BCrypt.withDefaults()
+				.hashToString(12, clearText.toCharArray())
+		}
+
+		internal fun checkHash(clearText: String, hash: String): Boolean {
+			return BCrypt.verifyer()
+				.verify(
+					clearText.toCharArray(),
+					hash.toCharArray()
+				).verified
+		}
+	}
 }
