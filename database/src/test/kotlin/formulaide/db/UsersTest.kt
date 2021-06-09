@@ -14,7 +14,7 @@ class UsersTest {
 		val db = testDatabase()
 
 		val expected = DbUser(
-			"123456",
+			Random.nextInt().toString(),
 			"random${Random.nextInt()}@gmail.fr",
 			"123456789",
 			"My Other Name",
@@ -31,7 +31,7 @@ class UsersTest {
 		val db = testDatabase()
 
 		val user = DbUser(
-			"123456",
+			Random.nextInt().toString(),
 			"r${Random.nextInt()}@gmail.fr",
 			"123456789",
 			"Name",
@@ -52,7 +52,7 @@ class UsersTest {
 
 		val email = "random+${Random.nextInt()}@email.fr"
 
-		val user = DbUser("…", email, "…", "Some Other Name", db.testService().id, false)
+		val user = DbUser(Random.nextInt().toString(), email, "…", "Some Other Name", db.testService().id, false)
 		db.createUser(user)
 
 		val found = db.findUser(email)

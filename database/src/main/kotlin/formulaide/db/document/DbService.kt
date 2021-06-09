@@ -1,5 +1,6 @@
 package formulaide.db.document
 
+import formulaide.api.users.Service
 import formulaide.db.Database
 import kotlinx.serialization.Serializable
 import org.litote.kmongo.eq
@@ -28,3 +29,8 @@ suspend fun Database.createService(name: String): DbService {
 
 	return insert
 }
+
+suspend fun Database.allServices(): List<DbService> =
+	services.find("{}").toList()
+
+fun DbService.toApi() = Service(id, name)
