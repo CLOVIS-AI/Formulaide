@@ -26,6 +26,14 @@ kotlin {
 				implementation(kotlin("stdlib-common"))
 
 				api(project(":api"))
+
+				implementation(ktorClient("core"))
+				implementation(ktorClient("serialization"))
+				implementation(ktorClient("json"))
+				implementation(ktorClient("logging"))
+				implementation(ktorClient("auth"))
+
+				implementation(kotlinxSerialization("core"))
 			}
 		}
 

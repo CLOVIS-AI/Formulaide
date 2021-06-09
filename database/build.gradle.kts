@@ -14,6 +14,12 @@ dependencies {
 	testImplementation(kotlin("test-junit"))
 
 	api(project(":api"))
+
+	api(arrow("core"))
+
+	api(kotlinxCoroutines("core"))
+	testImplementation(kotlinxCoroutines("test"))
+	implementation(kmongo("kmongo-coroutine-serialization"))
 }
 
 tasks.jacocoTestReport {
@@ -24,4 +30,8 @@ tasks.jacocoTestReport {
 		csv.isEnabled = false
 		html.isEnabled = true
 	}
+}
+
+jacoco {
+	toolVersion = Version.jacoco
 }

@@ -38,6 +38,18 @@ variables:
     GIT_STRATEGY: none
   stage: deploy
 
+.with-database:
+  services:
+    - mongo:latest
+  variables:
+    MONGO_INITDB_ROOT_USERNAME: "root"
+    MONGO_INITDB_ROOT_PASSWORD: "development-password"
+    formulaide_host: "mongo"
+    formulaide_port: 27017
+    formulaide_database: "formulaide"
+    formulaide_username: "root"
+    formulaide_password: "development-password"
+
 # *** Docker *** #
 
 docker-js-chrome:
@@ -107,11 +119,16 @@ server-bin-docker:
 client-js-test:
   image: $JS_CHROME_IMAGE
   stage: test
-  extends: [ .gradle ]
-  needs: [ docker-js-chrome ]
+  extends: [ .gradle, .with-database ]
+  needs: [ docker-js-chrome, server-bin ]
+  dependencies: [ server-bin ]
   before_script:
     - *prepare_gradle
+    - mv server/build/distributions/server*.tar server.tar
+    - tar -xf server.tar
   script:
+    - "formulaide_allow_init=true ./server-*/bin/server --init &"
+    - sleep 5
     - "./gradlew :client:jsBrowserTest"
   artifacts:
     reports:
@@ -133,7 +150,7 @@ ui-test:
 database-test:
   image: $JDK_IMAGE
   stage: test
-  extends: [ .gradle ]
+  extends: [ .gradle, .with-database ]
   needs: []
   before_script:
     - *prepare_gradle
@@ -147,7 +164,7 @@ database-test:
 server-test:
   image: $JDK_IMAGE
   stage: test
-  extends: [ .gradle ]
+  extends: [ .gradle, .with-database ]
   needs: []
   before_script:
     - *prepare_gradle

@@ -19,7 +19,18 @@ dependencies {
 
 	implementation(ktorServer("core"))
 	implementation(ktorServer("netty"))
+	implementation(ktor("serialization"))
+	testImplementation(ktorServer("tests"))
 	implementation(logback("classic"))
+
+	implementation(ktor("auth"))
+	implementation(ktor("auth-jwt"))
+	implementation(bcrypt())
+
+	implementation(arrow("core"))
+
+	implementation(kotlinxCoroutines("core"))
+	testImplementation(kotlinxCoroutines("test"))
 }
 
 application {
@@ -27,7 +38,7 @@ application {
 }
 
 jacoco {
-	this.toolVersion = Version.jacoco
+	toolVersion = Version.jacoco
 }
 
 tasks.jacocoTestReport {
