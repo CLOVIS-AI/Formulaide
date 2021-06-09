@@ -28,6 +28,13 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 		json()
 	}
 
+	install(CORS) { //TODO: audit
+		anyHost()
+		allowCredentials = true
+		header("Accept")
+		header("Content-Type")
+	}
+
 	install(Authentication) {
 		jwt(Employee) {
 			realm = "formulaide-employee-auth"
