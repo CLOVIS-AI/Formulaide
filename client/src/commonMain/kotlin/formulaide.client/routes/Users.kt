@@ -4,7 +4,6 @@ import formulaide.api.users.NewUser
 import formulaide.api.users.PasswordLogin
 import formulaide.api.users.TokenResponse
 import formulaide.api.users.User
-import formulaide.client.AuthenticatedClient
 import formulaide.client.Client
 
 /**
@@ -25,7 +24,7 @@ suspend fun Client.login(passwordLogin: PasswordLogin) =
  * - Body: [NewUser]
  * - Response: [TokenResponse]
  */
-suspend fun AuthenticatedClient.createUser(newUser: NewUser) =
+suspend fun Client.Authenticated.createUser(newUser: NewUser) =
 	post<TokenResponse>("/users/create", body = newUser)
 
 /**
@@ -35,5 +34,5 @@ suspend fun AuthenticatedClient.createUser(newUser: NewUser) =
  * - Requires authentication
  * - Response: [User]
  */
-suspend fun AuthenticatedClient.getMe() =
+suspend fun Client.Authenticated.getMe() =
 	get<User>("/users/me")

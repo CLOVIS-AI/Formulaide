@@ -1,19 +1,24 @@
 package formulaide.client
 
+import formulaide.client.Client.Anonymous
+import formulaide.client.Client.Authenticated
 import io.ktor.client.*
+import io.ktor.client.features.auth.*
+import io.ktor.client.features.auth.providers.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.json.serializer.*
 import io.ktor.client.features.logging.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 
 /**
- * Common behavior between [AnonymousClient] and [AnonymousClient].
+ * Common behavior between [Anonymous] and [Authenticated].
  */
-sealed class Client(internal val hostUrl: String) {
-
-	internal abstract val client: HttpClient
-	internal open val config: HttpRequestBuilder.() -> Unit = {}
+sealed class Client(
+	internal val hostUrl: String,
+	internal val client: HttpClient
+) {
 
 	/**
 	 * Makes an HTTP request to the server.
@@ -26,7 +31,6 @@ sealed class Client(internal val hostUrl: String) {
 	): Out {
 		return client.request(hostUrl + url) {
 			this.method = method
-			config()
 
 			if (body != null) {
 				contentType(ContentType.Application.Json)
@@ -49,32 +53,42 @@ sealed class Client(internal val hostUrl: String) {
 		block: HttpRequestBuilder.() -> Unit = {}
 	) = request<Out>(HttpMethod.Get, url, body, block)
 
-}
+	companion object {
 
-/**
- * A client without credentials.
- */
-class AnonymousClient(hostUrl: String) : Client(hostUrl) {
+		private fun createClient(token: String? = null) = HttpClient {
+			install(JsonFeature) {
+				serializer = KotlinxSerializer()
+			}
 
-	override val client = HttpClient {
-		install(JsonFeature) {
-			serializer = KotlinxSerializer()
+			install(Logging)
+
+			if (token != null)
+				install(Auth) {
+					bearer { //TODO: audit
+						loadTokens {
+							BearerTokens(accessToken = token, refreshToken = token)
+						}
+
+						refreshTokens { response: HttpResponse ->
+							BearerTokens(accessToken = token, refreshToken = token)
+						}
+					}
+				}
 		}
 
-		install(Logging)
 	}
 
-}
+	class Anonymous private constructor(client: HttpClient, hostUrl: String) : Client(hostUrl, client) {
+		companion object {
+			fun connect(hostUrl: String) = Anonymous(createClient(), hostUrl)
+		}
 
-/**
- * A client connected by a [token].
- * To get a token, use [formulaide.client.routes.login].
- */
-class AuthenticatedClient(private val _client: Client, private val token: String) : Client(_client.hostUrl) {
+		fun authenticate(token: String) = Authenticated.connect(hostUrl, token)
+	}
 
-	override val client: HttpClient
-		get() = _client.client
-
-	//TODO: authenticate
-
+	class Authenticated private constructor(client: HttpClient, hostUrl: String) : Client(hostUrl, client) {
+		companion object {
+			fun connect(hostUrl: String, token: String) = Authenticated(createClient(token), hostUrl)
+		}
+	}
 }
