@@ -12,6 +12,7 @@ import formulaide.db.document.DbUser
 import formulaide.db.document.DbUserId
 import formulaide.db.document.createUser
 import formulaide.db.document.findUser
+import io.ktor.application.*
 import io.ktor.auth.*
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -127,5 +128,17 @@ class Auth(private val database: Database) {
 		}
 
 		const val Employee = "jwt-auth"
+
+		suspend fun ApplicationCall.requireEmployee(database: Database): DbUser {
+			val principal = authentication.principal ?: error("Authentification manquante")
+			require(principal is AuthPrincipal) { "Authentification invalide" }
+			return database.findUser(principal.userId) ?: error("Aucun utilisateur ne correspond à ce token")
+		}
+
+		suspend fun ApplicationCall.requireAdmin(database: Database): DbUser {
+			val employee = requireEmployee(database)
+			require(employee.isAdministrator) { "L'utilisateur n'a pas les droits d'administration" }
+			return employee
+		}
 	}
 }
