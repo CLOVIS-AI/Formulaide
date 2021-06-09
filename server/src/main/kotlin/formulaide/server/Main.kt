@@ -48,6 +48,7 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 		allowCredentials = true
 		header("Accept")
 		header("Content-Type")
+		header("Authorization")
 	}
 
 	install(Authentication) {
