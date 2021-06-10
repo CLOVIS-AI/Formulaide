@@ -14,4 +14,5 @@ typealias ServiceId = Int
 data class Service(
 	val id: ServiceId,
 	val name: String,
+	val open: Boolean,
 )

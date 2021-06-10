@@ -65,4 +65,4 @@ suspend fun Database.allServices(): List<DbService> =
 suspend fun Database.allServicesIgnoreOpen(): List<DbService> =
 	services.find().toList()
 
-fun DbService.toApi() = Service(id, name)
+fun DbService.toApi() = Service(id, name, open)
