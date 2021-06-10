@@ -32,7 +32,7 @@ data class Form(
 	val id: FormId,
 	val public: Boolean,
 	val fields: List<FormField>,
-	val actions: List<Unit>, //TODO in #16
+	val actions: List<Action>,
 )
 
 /**
