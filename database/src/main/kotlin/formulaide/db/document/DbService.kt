@@ -45,8 +45,8 @@ suspend fun Database.createService(name: String): DbService {
  *
  * @param open When `true`, opens the service, when `false`, closes the service.
  */
-suspend fun Database.manageService(service: DbService, open: Boolean) {
-	services.updateOne(DbService::id eq service.id, setValue(DbService::open, open))
+suspend fun Database.manageService(service: DbServiceId, open: Boolean) {
+	services.updateOne(DbService::id eq service, setValue(DbService::open, open))
 }
 
 /**

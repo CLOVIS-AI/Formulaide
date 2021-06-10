@@ -1,5 +1,6 @@
 package formulaide.server.routes
 
+import formulaide.api.users.ServiceModification
 import formulaide.db.document.*
 import formulaide.server.Auth.Companion.Employee
 import formulaide.server.Auth.Companion.requireAdmin
@@ -40,6 +41,18 @@ fun Routing.serviceRoutes() {
 				val created = database.createService(service)
 
 				call.respond(created)
+			}
+
+			post("/close") {
+				call.requireAdmin(database)
+
+				val service = call.receive<ServiceModification>()
+				database.manageService(service.id, service.open)
+
+				call.respond(
+					database.findService(service.id)
+						?: error("Le service est introuvable alors qu'il a déjà été modifié, c'est impossible")
+				)
 			}
 		}
 

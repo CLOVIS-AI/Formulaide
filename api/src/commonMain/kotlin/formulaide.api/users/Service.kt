@@ -16,3 +16,12 @@ data class Service(
 	val name: String,
 	val open: Boolean,
 )
+
+/**
+ * Request to edit a service.
+ */
+@Serializable
+data class ServiceModification(
+	val id: ServiceId,
+	val open: Boolean,
+)

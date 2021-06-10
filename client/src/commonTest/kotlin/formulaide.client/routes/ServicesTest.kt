@@ -5,6 +5,7 @@ import formulaide.client.testAdministrator
 import formulaide.client.testEmployee
 import kotlin.test.Test
 import kotlin.test.assertFails
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class ServicesTest {
@@ -43,6 +44,20 @@ class ServicesTest {
 
 		val service = client.createService("Un super service qui peut être créé")
 
+		assertTrue(service.open)
+	}
+
+	@Test
+	fun close() = runTest {
+		val client = testAdministrator()
+
+		var service = client.createService("Un service inutile")
+		assertTrue(service.open)
+
+		service = client.closeService(service)
+		assertFalse(service.open)
+
+		service = client.reopenService(service)
 		assertTrue(service.open)
 	}
 

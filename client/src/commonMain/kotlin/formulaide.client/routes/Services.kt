@@ -1,6 +1,7 @@
 package formulaide.client.routes
 
 import formulaide.api.users.Service
+import formulaide.api.users.ServiceModification
 import formulaide.client.Client
 
 /**
@@ -32,3 +33,25 @@ suspend fun Client.Authenticated.listAllServices() =
  */
 suspend fun Client.Authenticated.createService(name: String) =
 	post<Service>("/services/create", body = name)
+
+/**
+ * Closes a [service].
+ *
+ * - POST /services/close
+ * - Requires 'administrator' authentication
+ * - Body: [ServiceModification]
+ * - Response: [Service]
+ */
+suspend fun Client.Authenticated.closeService(service: Service) =
+	post<Service>("/services/close", body = ServiceModification(service.id, false))
+
+/**
+ * Opens a [service].
+ *
+ * - POST /services/close
+ * - Requires 'administrator' authentication
+ * - Body: [ServiceModification]
+ * - Response: [Service]
+ */
+suspend fun Client.Authenticated.reopenService(service: Service) =
+	post<Service>("/services/close", body = ServiceModification(service.id, true))
