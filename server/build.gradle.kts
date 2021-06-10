@@ -38,7 +38,7 @@ application {
 }
 
 jacoco {
-	toolVersion = Version.jacoco
+	toolVersion = Version.jacocoVersion
 }
 
 tasks.jacocoTestReport {

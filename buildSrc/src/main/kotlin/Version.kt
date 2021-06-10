@@ -14,7 +14,7 @@ object Version {
 	const val serialization = "1.2.1"
 	const val coroutines = "1.5.0"
 
-	const val jacoco = "0.8.7"
+	const val jacocoVersion = "0.8.7"
 	const val printCoverage = "2.0.0"
 
 	const val react = "17.0.2"
