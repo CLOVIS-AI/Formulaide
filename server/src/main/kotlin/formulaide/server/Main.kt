@@ -5,6 +5,7 @@ import formulaide.api.users.User
 import formulaide.db.Database
 import formulaide.db.document.createService
 import formulaide.server.Auth.Companion.Employee
+import formulaide.server.routes.dataRoutes
 import formulaide.server.routes.serviceRoutes
 import formulaide.server.routes.userRoutes
 import io.ktor.application.*
@@ -63,5 +64,6 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 	routing {
 		userRoutes(auth)
 		serviceRoutes()
+		dataRoutes()
 	}
 }
