@@ -1,5 +1,6 @@
 package formulaide.db
 
+import formulaide.api.data.CompoundData
 import formulaide.db.document.DbService
 import formulaide.db.document.DbUser
 import org.litote.kmongo.coroutine.coroutine
@@ -31,6 +32,7 @@ class Database(
 
 	internal val users = database.getCollection<DbUser>("users")
 	internal val services = database.getCollection<DbService>("services")
+	internal val data = database.getCollection<CompoundData>("data")
 
 	private fun getParam(environmentVariable: String, defaultValue: String?): String =
 		System.getenv(environmentVariable)
