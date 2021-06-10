@@ -14,4 +14,14 @@ typealias ServiceId = Int
 data class Service(
 	val id: ServiceId,
 	val name: String,
+	val open: Boolean,
+)
+
+/**
+ * Request to edit a service.
+ */
+@Serializable
+data class ServiceModification(
+	val id: ServiceId,
+	val open: Boolean,
 )
