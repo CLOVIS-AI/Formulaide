@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 /**
  * Id of [CompoundData].
  */
-typealias CompoundDataId = Int
+typealias CompoundDataId = String
 
 /**
  * A data type built from the composition of other data types (record type, product type).
@@ -33,6 +33,7 @@ typealias CompoundDataFieldId = Int
  * A datatype that takes part in a [CompoundData].
  *
  * @property id The ID of this field, guaranteed unique for a specific [CompoundData] (not globally unique).
+ * When creating a new data (see [NewCompoundData]), you are free to choose any ID value.
  * @property name The display name of this field
  * @property type The type of this field. Can be any valid type (including a union, or itself).
  */
@@ -45,3 +46,25 @@ data class CompoundDataField(
 	val name: String,
 	val type: Data,
 ) : DataList, OrderedListElement
+
+//region Modifications
+
+/**
+ * When creating a new compound data, [fields][CompoundDataField] are allowed to
+ * use the special ID [SPECIAL_TOKEN_RECURSION] to refer to their own parent.
+ * The server will replace those by the real ID of the data, once it is computed.
+ */
+@Serializable
+data class NewCompoundData(
+	val name: String,
+	val fields: List<CompoundDataField>,
+)
+
+/**
+ * Special ID that can be used for fields in data to refer to their parent data even before it was created (therefore doesn't have an ID yet).
+ * See [NewCompoundData].
+ */
+// The semicolon is not allowed in normal IDs
+const val SPECIAL_TOKEN_RECURSION: CompoundDataId = "special:myself"
+
+//endregion

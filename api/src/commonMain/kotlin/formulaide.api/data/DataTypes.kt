@@ -1,5 +1,7 @@
 package formulaide.api.data
 
+import formulaide.api.data.Data.Companion.compound
+import formulaide.api.data.Data.Companion.simple
 import formulaide.api.data.DataId.*
 import kotlinx.serialization.Serializable
 
@@ -77,6 +79,8 @@ enum class DataId {
  *
  * See [DataId] for an explanation of the different groups of types.
  *
+ * To easily respect the attribute constraints, use the factory methods [simple], [compound] and [union].
+ *
  * @property type The ID of the type represented by this class.
  * @property compoundId The ID of the compound type being represented,
  * only used when [type] is [COMPOUND] (`type == COMPOUND <=> compoundId != null`).
@@ -89,7 +93,34 @@ data class Data(
 	val type: DataId,
 	val compoundId: CompoundDataId? = null,
 	val union: List<UnionDataField>? = null,
-)
+) {
+	companion object {
+		/**
+		 * Factory method to reference a simple data.
+		 * @see Data
+		 * @see DataId
+		 */
+		fun simple(id: DataId) = Data(id)
+
+		/**
+		 * Factory method to reference a [compound data][CompoundData].
+		 * @see CompoundData
+		 * @see Data
+		 * @see DataId
+		 * @see COMPOUND
+		 */
+		fun compound(id: CompoundDataId) = Data(COMPOUND, compoundId = id)
+
+		/**
+		 * Factory method to reference a [union data][UnionDataField].
+		 * @see UnionDataField
+		 * @see Data
+		 * @see DataId
+		 * @see UNION
+		 */
+		fun union(ids: List<UnionDataField>) = Data(UNION, union = ids)
+	}
+}
 
 /**
  * Objects that can be given multiple times.
