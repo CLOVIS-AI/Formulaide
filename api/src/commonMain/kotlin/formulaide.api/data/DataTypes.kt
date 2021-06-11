@@ -2,6 +2,7 @@ package formulaide.api.data
 
 import formulaide.api.data.Data.*
 import formulaide.api.data.Data.Simple.SimpleDataId
+import formulaide.api.types.Arity
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -12,7 +13,7 @@ import kotlinx.serialization.Serializable
  * - Simple types ([SimpleDataId.TEXT], [SimpleDataId.INTEGER]…), represented by [Simple]
  * - Compound types (created by the administrator, and stored for analysis and processing), represented by [Compound]
  * - Union types (that appear inside compound types or inside forms), represented by [Union]
- * - List types (that appear inside compound types or inside forms), implicit (see [DataList])
+ * - List types (that appear inside compound types or inside forms), implicit (see [Arity])
  *
  * When serialized, an additional field `type` is added, that corresponds to one of the three first categories.
  */
@@ -123,56 +124,6 @@ sealed class Data {
 			BOOLEAN,
 
 		}
-	}
-}
-
-/**
- * Objects that can be given multiple times.
- *
- * This signifies that some data has some arity:
- * - `0..0` means the data cannot be given,
- * - `1..1` means the data is mandatory,
- * - `0..1` means the data is optional (the user can decide whether they want to give it or not),
- * - `1..5` means a list of minimum 1 element and maximum 5 elements,
- *
- * Any two positive integers can be given.
- */
-interface DataList {
-
-	/**
-	 * The minimal arity of the data (inclusive).
-	 *
-	 * Cannot be smaller than 0. Cannot be strictly greater than [maxArity].
-	 * @see arity
-	 * @see DataList
-	 */
-	val minArity: Int
-
-	/**
-	 * The maximal arity of the data (inclusive).
-	 *
-	 * Cannot be strictly smaller than [minArity].
-	 * @see arity
-	 * @see DataList
-	 */
-	val maxArity: Int
-
-	/**
-	 * The arity of this data point.
-	 *
-	 * Invariant: `0 <= minArity <= maxArity`
-	 *
-	 * @see DataList
-	 */
-	val arity get() = minArity..maxArity
-
-	/**
-	 * Internal function to check the validity of a [DataList].
-	 * Should be called by the constructor of each implementation.
-	 */
-	fun checkArityValidity() {
-		require(0 <= minArity) { "L'arité minimale d'une donnée doit être 0, trouvé : $minArity" }
-		require(minArity <= maxArity) { "L'arité maximale d'une donnée doit être supérieure ou égale à l'arité minimale : min=$minArity, max=$maxArity" }
 	}
 }
 

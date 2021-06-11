@@ -1,6 +1,7 @@
 package formulaide.api.data
 
 import formulaide.api.data.OrderedListElement.Companion.checkOrderValidity
+import formulaide.api.types.Arity
 import kotlinx.serialization.Serializable
 
 /**
@@ -49,14 +50,12 @@ typealias CompoundDataFieldId = Int
 @Serializable
 data class CompoundDataField(
 	override val order: Int,
-	override val minArity: Int,
-	override val maxArity: Int,
+	val arity: Arity,
 	val id: CompoundDataFieldId,
 	val name: String,
 	val type: Data,
-) : DataList, OrderedListElement {
+) : OrderedListElement {
 	init {
-		checkArityValidity()
 		require(name.isNotBlank()) { "Le nom d'un champ ne peut pas être vide : '$name'" }
 	}
 

@@ -47,8 +47,6 @@ private suspend fun NewCompoundData.checkValidity(data: CoroutineCollection<Comp
 		} else if (type is Data.Union) {
 			requireNotNull(type.elements) { "Si la donnée d'un champ est de type UNION, il doit contenir 'union'" }
 		}
-
-		require(field.minArity <= field.maxArity) { "L'arité minimale doit être inférieure ou égale à l'arité supérieure (test échoué : ${field.minArity <= field.maxArity})" }
 	}
 
 	val ids = fields.map { it.id }
