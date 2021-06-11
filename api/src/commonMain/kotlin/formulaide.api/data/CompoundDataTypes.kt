@@ -16,7 +16,7 @@ typealias CompoundDataId = String
  * @property name The display name of this data type.
  * @property fields The different types that are part of this compound.
  * The list cannot be empty.
- * @see Data.compoundId
+ * @see Data.Compound
  */
 @Serializable
 data class CompoundData(
@@ -64,8 +64,8 @@ data class CompoundDataField(
 	 * Internal function to check the validity of this object.
 	 */
 	internal fun checkValidity(allowRecursion: Boolean) {
-		if (!allowRecursion)
-			require(type.compoundId != SPECIAL_TOKEN_RECURSION)
+		if (!allowRecursion && type is Data.Compound)
+			require(type.id != SPECIAL_TOKEN_RECURSION) { "Un champ de donnée ne peut pas contenir SPECIAL_TOKEN_RECURSION, sauf s'il fait partie de NewCompoundData (mais ce n'est pas le cas ici)" }
 	}
 }
 

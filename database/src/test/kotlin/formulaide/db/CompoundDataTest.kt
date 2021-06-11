@@ -2,7 +2,7 @@ package formulaide.db
 
 import formulaide.api.data.CompoundDataField
 import formulaide.api.data.Data
-import formulaide.api.data.DataId
+import formulaide.api.data.Data.Simple.SimpleDataId.TEXT
 import formulaide.api.data.NewCompoundData
 import formulaide.db.document.createData
 import formulaide.db.document.listData
@@ -33,7 +33,7 @@ class CompoundDataTest {
 				minArity = 1,
 				maxArity = 1,
 				name = "Test",
-				type = Data.simple(DataId.TEXT)
+				type = Data.simple(TEXT)
 			)
 		)))
 
@@ -45,7 +45,7 @@ class CompoundDataTest {
 			assertEquals(1, minArity)
 			assertEquals(1, maxArity)
 			assertEquals("Test", this.name)
-			assertEquals(Data.simple(DataId.TEXT), type)
+			assertEquals(Data.simple(TEXT), type)
 		}
 	}
 
@@ -62,7 +62,7 @@ class CompoundDataTest {
 				minArity = 1,
 				maxArity = 1,
 				name = "Nom complet",
-				type = Data.simple(DataId.TEXT)
+				type = Data.simple(TEXT)
 			),
 			CompoundDataField(
 				id = 2,
@@ -82,7 +82,7 @@ class CompoundDataTest {
 			minArity = 1,
 			maxArity = 1,
 			name = "Nom complet",
-			type = Data.simple(DataId.TEXT)
+			type = Data.simple(TEXT)
 		)
 
 		val family = CompoundDataField(

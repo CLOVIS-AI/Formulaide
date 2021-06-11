@@ -29,7 +29,8 @@ suspend fun Database.createData(compound: NewCompoundData): CompoundData {
 }
 
 private fun CompoundDataField.cleanUpRecursionToken(compound: CompoundData): CompoundDataField {
-	return if (type.type == DataId.COMPOUND && type.compoundId == SPECIAL_TOKEN_RECURSION)
+	val type = type // to enable smart-cast
+	return if (type is Data.Compound && type.id == SPECIAL_TOKEN_RECURSION)
 		copy(type = Data.compound(compound))
 	else this
 }
@@ -38,12 +39,13 @@ private suspend fun NewCompoundData.checkValidity(data: CoroutineCollection<Comp
 	require(fields.isNotEmpty()) { "Il est interdit de créer une donnée vide" }
 
 	for (field in fields) {
-		if (field.type.type == DataId.COMPOUND) {
-			requireNotNull(field.type.compoundId) { "Si la donnée d'un champ est de type COMPOUND, il doit contenir 'compoundId'" }
-			if (field.type.compoundId != SPECIAL_TOKEN_RECURSION)
-				requireNotNull(data.findOne(CompoundData::id eq field.type.compoundId)) { "L'ID ${field.type.compoundId} ne correspond à aucune donnée existante" }
-		} else if (field.type.type == DataId.UNION) {
-			requireNotNull(field.type.union) { "Si la donnée d'un champ est de type UNION, il doit contenir 'union'" }
+		val type = field.type
+		if (type is Data.Compound) {
+			requireNotNull(type.id) { "Si la donnée d'un champ est de type COMPOUND, il doit contenir 'compoundId'" }
+			if (type.id != SPECIAL_TOKEN_RECURSION)
+				requireNotNull(data.findOne(CompoundData::id eq type.id)) { "L'ID ${type.id} ne correspond à aucune donnée existante" }
+		} else if (type is Data.Union) {
+			requireNotNull(type.elements) { "Si la donnée d'un champ est de type UNION, il doit contenir 'union'" }
 		}
 
 		require(field.minArity <= field.maxArity) { "L'arité minimale doit être inférieure ou égale à l'arité supérieure (test échoué : ${field.minArity <= field.maxArity})" }

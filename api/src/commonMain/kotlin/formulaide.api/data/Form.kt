@@ -64,7 +64,7 @@ sealed interface AbstractFormField {
  *
  * @property id The ID of this field in a specific [Form]. The ID is not globally unique.
  * @property type The type of this field.
- * @property components The different components of this field, if it is a [DataId.COMPOUND] type.
+ * @property components The different components of this field, if it is a [Data.Compound] type.
  * `null` in any other case (`type == COMPOUND <=> components != null`).
  * @property name The display name of this field.
  * When the type is a compound, this property should be used instead of [CompoundData.name].
@@ -84,7 +84,7 @@ data class FormField(
 		checkArityValidity()
 		require(name.isNotBlank()) { "Le nom d'un champ d'un formulaire ne doit être vide." }
 
-		if (type.type == DataId.COMPOUND && maxArity != 0) {
+		if (type is Data.Compound && maxArity != 0) {
 			requireNotNull(components) { "Si ce champ représente une donnée composée, et n'est pas interdit (arité maximale de 0), alors il doit déclarer des sous-champs (components)" }
 		}
 	}
@@ -117,13 +117,13 @@ data class FormFieldComponent internal constructor(
 	 */
 	constructor(minArity: Int, maxArity: Int, compound: CompoundDataField, components: List<FormFieldComponent>) : this(minArity, maxArity, compound.id, components) {
 		if (maxArity == 0)
-			require(compound.type.type == DataId.COMPOUND) { "Un champ de formulaire non-interdit qui référence des sous-champs doit être de type ${DataId.COMPOUND}" }
+			require(compound.type is Data.Compound) { "Un champ de formulaire non-interdit qui référence des sous-champs doit être de type ${Data.Compound}" }
 	}
 
 	/**
-	 * Create a [FormFieldComponent] that corresponds to a [simple data][DataId] or a [union data][DataId.UNION].
+	 * Create a [FormFieldComponent] that corresponds to a [simple data][Data.Simple] or a [union data][Data.Union].
 	 */
 	constructor(minArity: Int, maxArity: Int, compound: CompoundDataField) : this(minArity, maxArity, compound.id, null) {
-		require(compound.type.type != DataId.COMPOUND) { "Un champ de formulaire qui ne référence pas de sous-champs ne doit être de type ${DataId.COMPOUND}" }
+		require(compound.type is Data.Compound) { "Un champ de formulaire qui ne référence pas de sous-champs ne doit être de type ${Data.Compound}" }
 	}
 }

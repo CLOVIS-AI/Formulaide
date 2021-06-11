@@ -2,7 +2,8 @@ package formulaide.client.routes
 
 import formulaide.api.data.CompoundDataField
 import formulaide.api.data.Data
-import formulaide.api.data.DataId
+import formulaide.api.data.Data.Simple.SimpleDataId.INTEGER
+import formulaide.api.data.Data.Simple.SimpleDataId.TEXT
 import formulaide.api.data.NewCompoundData
 import formulaide.client.runTest
 import formulaide.client.testAdministrator
@@ -31,7 +32,7 @@ class DataTest {
 					minArity = 1,
 					maxArity = 1,
 					name = "Nom de famille",
-					type = Data.simple(DataId.TEXT)
+					type = Data.simple(TEXT)
 				),
 				CompoundDataField(
 					order = 2,
@@ -39,7 +40,7 @@ class DataTest {
 					minArity = 1,
 					maxArity = 1,
 					name = "Prénom",
-					type = Data.simple(DataId.TEXT)
+					type = Data.simple(TEXT)
 				),
 				CompoundDataField(
 					order = 3,
@@ -47,7 +48,7 @@ class DataTest {
 					minArity = 0,
 					maxArity = 1,
 					name = "Numéro de téléphone",
-					type = Data.simple(DataId.INTEGER)
+					type = Data.simple(INTEGER)
 				),
 				CompoundDataField(
 					order = 4,
