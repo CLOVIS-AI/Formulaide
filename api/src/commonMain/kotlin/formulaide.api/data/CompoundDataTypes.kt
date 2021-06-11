@@ -93,6 +93,8 @@ data class NewCompoundData(
 /**
  * Special ID that can be used for fields in data to refer to their parent data even before it was created (therefore doesn't have an ID yet).
  * See [NewCompoundData].
+ *
+ * To create a Data instance with this value, see [Data.recursiveCompound].
  */
 // The semicolon is not allowed in normal IDs
 const val SPECIAL_TOKEN_RECURSION: CompoundDataId = "special:myself"

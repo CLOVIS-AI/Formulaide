@@ -1,6 +1,9 @@
 package formulaide.client.routes
 
-import formulaide.api.data.*
+import formulaide.api.data.CompoundDataField
+import formulaide.api.data.Data
+import formulaide.api.data.DataId
+import formulaide.api.data.NewCompoundData
 import formulaide.client.runTest
 import formulaide.client.testAdministrator
 import formulaide.client.testEmployee
@@ -52,7 +55,7 @@ class DataTest {
 					minArity = 0,
 					maxArity = 30,
 					name = "Enfants à charge",
-					type = Data.compound(SPECIAL_TOKEN_RECURSION)
+					type = Data.recursiveCompound()
 				)
 			)
 		))

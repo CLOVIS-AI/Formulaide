@@ -1,6 +1,9 @@
 package formulaide.db
 
-import formulaide.api.data.*
+import formulaide.api.data.CompoundDataField
+import formulaide.api.data.Data
+import formulaide.api.data.DataId
+import formulaide.api.data.NewCompoundData
 import formulaide.db.document.createData
 import formulaide.db.document.listData
 import kotlinx.coroutines.runBlocking
@@ -30,7 +33,7 @@ class CompoundDataTest {
 				minArity = 1,
 				maxArity = 1,
 				name = "Test",
-				type = Data(DataId.TEXT)
+				type = Data.simple(DataId.TEXT)
 			)
 		)))
 
@@ -59,7 +62,7 @@ class CompoundDataTest {
 				minArity = 1,
 				maxArity = 1,
 				name = "Nom complet",
-				type = Data(DataId.TEXT)
+				type = Data.simple(DataId.TEXT)
 			),
 			CompoundDataField(
 				id = 2,
@@ -67,12 +70,11 @@ class CompoundDataTest {
 				minArity = 1,
 				maxArity = 1,
 				name = "Famille",
-				type = Data.compound(SPECIAL_TOKEN_RECURSION)
+				type = Data.recursiveCompound()
 			)
 		)))
 
 		assertEquals(name, data.name)
-		val id = data.id
 
 		val fullName = CompoundDataField(
 			id = 1,
@@ -80,7 +82,7 @@ class CompoundDataTest {
 			minArity = 1,
 			maxArity = 1,
 			name = "Nom complet",
-			type = Data(DataId.TEXT)
+			type = Data.simple(DataId.TEXT)
 		)
 
 		val family = CompoundDataField(
@@ -89,7 +91,7 @@ class CompoundDataTest {
 			minArity = 1,
 			maxArity = 1,
 			name = "Famille",
-			type = Data.compound(id)
+			type = Data.compound(data)
 		)
 
 		assertEquals(fullName, data.fields.find { it.id == fullName.id })

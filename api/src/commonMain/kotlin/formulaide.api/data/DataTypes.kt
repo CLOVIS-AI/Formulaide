@@ -89,7 +89,7 @@ enum class DataId {
  * The list can never be empty (either `null` or a non-empty list).
  */
 @Serializable
-data class Data(
+data class Data internal constructor(
 	val type: DataId,
 	val compoundId: CompoundDataId? = null,
 	val union: List<UnionDataField>? = null,
@@ -126,7 +126,14 @@ data class Data(
 		 * @see DataId
 		 * @see COMPOUND
 		 */
-		fun compound(id: CompoundDataId) = Data(COMPOUND, compoundId = id)
+		fun compound(compound: CompoundData) = Data(COMPOUND, compoundId = compound.id)
+
+		/**
+		 * Factory method to reference a recursive [compound data][CompoundData].
+		 * @see compound
+		 * @see SPECIAL_TOKEN_RECURSION
+		 */
+		fun recursiveCompound() = Data(COMPOUND, compoundId = SPECIAL_TOKEN_RECURSION)
 
 		/**
 		 * Factory method to reference a [union data][UnionDataField].

@@ -19,7 +19,7 @@ suspend fun Database.createData(compound: NewCompoundData): CompoundData {
 	data.insertOne(created)
 
 	// 2. Remove the recursive token
-	val recursiveFields = compound.fields.map { it.cleanUpRecursionToken(id) }
+	val recursiveFields = compound.fields.map { it.cleanUpRecursionToken(created) }
 
 	// 3. Add the fields
 	val valid = CompoundData(compound.name, id = id, recursiveFields)
@@ -28,9 +28,9 @@ suspend fun Database.createData(compound: NewCompoundData): CompoundData {
 	return valid
 }
 
-private fun CompoundDataField.cleanUpRecursionToken(parentId: String): CompoundDataField {
+private fun CompoundDataField.cleanUpRecursionToken(compound: CompoundData): CompoundDataField {
 	return if (type.type == DataId.COMPOUND && type.compoundId == SPECIAL_TOKEN_RECURSION)
-		copy(type = Data.compound(parentId))
+		copy(type = Data.compound(compound))
 	else this
 }
 
