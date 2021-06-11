@@ -1,5 +1,6 @@
 package formulaide.api.data
 
+import formulaide.api.data.OrderedListElement.Companion.checkOrderValidity
 import kotlinx.serialization.Serializable
 
 /**
@@ -22,7 +23,15 @@ data class CompoundData(
 	val name: String,
 	val id: CompoundDataId,
 	val fields: List<CompoundDataField>,
-)
+) {
+	init {
+		require(name.isNotBlank()) { "Le nom d'une donnée ne peut pas être vide : '$name'" }
+		fields.checkOrderValidity()
+
+		val ids = fields.distinctBy { it.checkValidity(allowRecursion = false); it.id }
+		require(ids == fields) { "L'identité d'un champ ne doit pas apparaitre plusieurs fois dans une même donnée" }
+	}
+}
 
 /**
  * Id of [CompoundDataField].
@@ -45,7 +54,20 @@ data class CompoundDataField(
 	val id: CompoundDataFieldId,
 	val name: String,
 	val type: Data,
-) : DataList, OrderedListElement
+) : DataList, OrderedListElement {
+	init {
+		checkArityValidity()
+		require(name.isNotBlank()) { "Le nom d'un champ ne peut pas être vide : '$name'" }
+	}
+
+	/**
+	 * Internal function to check the validity of this object.
+	 */
+	internal fun checkValidity(allowRecursion: Boolean) {
+		if (!allowRecursion)
+			require(type.compoundId != SPECIAL_TOKEN_RECURSION)
+	}
+}
 
 //region Modifications
 
@@ -58,7 +80,15 @@ data class CompoundDataField(
 data class NewCompoundData(
 	val name: String,
 	val fields: List<CompoundDataField>,
-)
+) {
+	init {
+		require(name.isNotBlank()) { "Le nom d'une donnée ne peut pas être vide : '$name'" }
+		fields.checkOrderValidity()
+
+		val ids = fields.distinctBy { it.checkValidity(allowRecursion = true); it.id }
+		require(ids == fields) { "L'identité d'un champ ne doit pas apparaitre plusieurs fois dans une même donnée" }
+	}
+}
 
 /**
  * Special ID that can be used for fields in data to refer to their parent data even before it was created (therefore doesn't have an ID yet).
