@@ -1,5 +1,6 @@
 package formulaide.api.data
 
+import formulaide.api.data.OrderedListElement.Companion.checkOrderValidity
 import formulaide.api.users.TokenResponse
 import kotlinx.serialization.Serializable
 
@@ -33,7 +34,12 @@ data class Form(
 	val public: Boolean,
 	val fields: List<FormField>,
 	val actions: List<Action>,
-)
+) {
+	init {
+		fields.checkOrderValidity()
+		require(name.isNotBlank()) { "Le nom d'un formulaire ne peut pas être vide : '$name'" }
+	}
+}
 
 /**
  * ID of [AbstractFormField].
@@ -73,7 +79,16 @@ data class FormField(
 	override val order: Int,
 	val name: String,
 	val type: Data,
-) : DataList, AbstractFormField, OrderedListElement
+) : DataList, AbstractFormField, OrderedListElement {
+	init {
+		checkArityValidity()
+		require(name.isNotBlank()) { "Le nom d'un champ d'un formulaire ne doit être vide." }
+
+		if (type.type == DataId.COMPOUND && maxArity != 0) {
+			requireNotNull(components) { "Si ce champ représente une donnée composée, et n'est pas interdit (arité maximale de 0), alors il doit déclarer des sous-champs (components)" }
+		}
+	}
+}
 
 /**
  * A non-top-level field in a [Form].
@@ -87,9 +102,28 @@ data class FormField(
  * @property id The ID of this field in a specific [FormField]. The ID is not globally unique.
  */
 @Serializable
-data class FormFieldComponent(
+data class FormFieldComponent internal constructor(
 	override val minArity: Int,
 	override val maxArity: Int,
 	override val id: CompoundDataFieldId,
 	override val components: List<FormFieldComponent>? = null,
-) : DataList, AbstractFormField
+) : DataList, AbstractFormField {
+	init {
+		checkArityValidity()
+	}
+
+	/**
+	 * Create a [FormFieldComponent] that corresponds to a [CompoundData].
+	 */
+	constructor(minArity: Int, maxArity: Int, compound: CompoundDataField, components: List<FormFieldComponent>) : this(minArity, maxArity, compound.id, components) {
+		if (maxArity == 0)
+			require(compound.type.type == DataId.COMPOUND) { "Un champ de formulaire non-interdit qui référence des sous-champs doit être de type ${DataId.COMPOUND}" }
+	}
+
+	/**
+	 * Create a [FormFieldComponent] that corresponds to a [simple data][DataId] or a [union data][DataId.UNION].
+	 */
+	constructor(minArity: Int, maxArity: Int, compound: CompoundDataField) : this(minArity, maxArity, compound.id, null) {
+		require(compound.type.type != DataId.COMPOUND) { "Un champ de formulaire qui ne référence pas de sous-champs ne doit être de type ${DataId.COMPOUND}" }
+	}
+}
