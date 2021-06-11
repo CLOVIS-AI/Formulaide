@@ -25,32 +25,32 @@ class DataTest {
 				CompoundDataField(
 					order = 1,
 					id = 1,
-					minArity = 1u,
-					maxArity = 1u,
+					minArity = 1,
+					maxArity = 1,
 					name = "Nom de famille",
 					type = Data.simple(DataId.TEXT)
 				),
 				CompoundDataField(
 					order = 2,
 					id = 2,
-					minArity = 1u,
-					maxArity = 1u,
+					minArity = 1,
+					maxArity = 1,
 					name = "Prénom",
 					type = Data.simple(DataId.TEXT)
 				),
 				CompoundDataField(
 					order = 3,
 					id = 3,
-					minArity = 0u,
-					maxArity = 1u,
+					minArity = 0,
+					maxArity = 1,
 					name = "Numéro de téléphone",
 					type = Data.simple(DataId.INTEGER)
 				),
 				CompoundDataField(
 					order = 4,
 					id = 4,
-					minArity = 0u,
-					maxArity = 30u,
+					minArity = 0,
+					maxArity = 30,
 					name = "Enfants à charge",
 					type = Data.compound(SPECIAL_TOKEN_RECURSION)
 				)

@@ -40,8 +40,8 @@ typealias CompoundDataFieldId = Int
 @Serializable
 data class CompoundDataField(
 	override val order: Int,
-	override val minArity: UInt,
-	override val maxArity: UInt,
+	override val minArity: Int,
+	override val maxArity: Int,
 	val id: CompoundDataFieldId,
 	val name: String,
 	val type: Data,

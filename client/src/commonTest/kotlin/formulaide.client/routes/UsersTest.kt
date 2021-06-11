@@ -1,5 +1,6 @@
 package formulaide.client.routes
 
+import formulaide.api.types.Email
 import formulaide.api.users.NewUser
 import formulaide.api.users.PasswordLogin
 import formulaide.api.users.User
@@ -36,7 +37,8 @@ class UsersTest {
 	fun createUser() = runTest {
 		val client = testAdministrator()
 
-		val response = client.createUser(NewUser("mon mot de passe", User("mon email ${Random.nextInt()}", "Mon Identité", client.listServices()[0].id, false)))
+		val email = Email("mon email ${Random.nextInt()} @zut")
+		val response = client.createUser(NewUser("mon mot de passe", User(email, "Mon Identité", client.listServices()[0].id, false)))
 
 		println(response)
 		assertTrue(true) // on failure, exceptions are thrown previously
@@ -50,7 +52,7 @@ class UsersTest {
 			client.createUser(
 				NewUser(
 					"mon mot de passe",
-					User("mon email ${Random.nextInt()}", "Mon Identité", client.listServices()[0].id, false)
+					User(Email("mon email ${Random.nextInt()}"), "Mon Identité", client.listServices()[0].id, false)
 				)
 			)
 		}
@@ -63,7 +65,7 @@ class UsersTest {
 		val user = client.getMe()
 
 		assertFalse(user.administrator)
-		assertEquals("employee@formulaide", user.email)
+		assertEquals("employee@formulaide", user.email.email)
 		assertEquals("Employé", user.fullName)
 	}
 
@@ -74,7 +76,7 @@ class UsersTest {
 		val user = client.getMe()
 
 		assertTrue(user.administrator)
-		assertEquals("admin@formulaide", user.email)
+		assertEquals("admin@formulaide", user.email.email)
 		assertEquals("Administrateur", user.fullName)
 	}
 

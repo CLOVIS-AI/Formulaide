@@ -94,6 +94,23 @@ data class Data(
 	val compoundId: CompoundDataId? = null,
 	val union: List<UnionDataField>? = null,
 ) {
+	init {
+		when (type) {
+			COMPOUND -> {
+				require(compoundId != null) { "Pour une donnée de type ${COMPOUND}, compoundId ne peut pas être null" }
+				require(union == null) { "Pour une donnée de type ${COMPOUND}, union doit être null" }
+			}
+			UNION -> {
+				require(union != null) { "Pour une donnée de type ${UNION}, union ne peut pas être null" }
+				require(compoundId == null) { "Pour une donnée de type ${UNION}, compoundId doit être null" }
+			}
+			else -> {
+				require(compoundId == null) { "Pour une donnée de type $type, compoundId doit être null" }
+				require(union == null) { "Pour une donnée de type $type, union doit être null" }
+			}
+		}
+	}
+
 	companion object {
 		/**
 		 * Factory method to reference a simple data.
@@ -142,7 +159,7 @@ interface DataList {
 	 * @see arity
 	 * @see DataList
 	 */
-	val minArity: UInt
+	val minArity: Int
 
 	/**
 	 * The maximal arity of the data (inclusive).
@@ -151,7 +168,7 @@ interface DataList {
 	 * @see arity
 	 * @see DataList
 	 */
-	val maxArity: UInt
+	val maxArity: Int
 
 	/**
 	 * The arity of this data point.
@@ -161,6 +178,15 @@ interface DataList {
 	 * @see DataList
 	 */
 	val arity get() = minArity..maxArity
+
+	/**
+	 * Internal function to check the validity of a [DataList].
+	 * Should be called by the constructor of each implementation.
+	 */
+	fun checkArityValidity() {
+		require(0 <= minArity) { "L'arité minimale d'une donnée doit être 0, trouvé : $minArity" }
+		require(minArity <= maxArity) { "L'arité maximale d'une donnée doit être supérieure ou égale à l'arité minimale : min=$minArity, max=$maxArity" }
+	}
 }
 
 /**
@@ -181,4 +207,14 @@ interface OrderedListElement {
 	 */
 	val order: Int
 
+	companion object {
+		/**
+		 * Internal function to check the validity of a list of [OrderedListElement].
+		 * Should be called by the constructor of each implementation.
+		 */
+		fun List<OrderedListElement>.checkOrderValidity() {
+			val cleaned = distinct()
+			require(cleaned == this) { "Tous les éléments devraient avoir un ordre différent" }
+		}
+	}
 }

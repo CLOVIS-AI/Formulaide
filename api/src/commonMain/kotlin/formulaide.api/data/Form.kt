@@ -68,8 +68,8 @@ sealed interface AbstractFormField {
 data class FormField(
 	override val id: FormFieldId,
 	override val components: List<FormFieldComponent>? = null,
-	override val minArity: UInt,
-	override val maxArity: UInt,
+	override val minArity: Int,
+	override val maxArity: Int,
 	override val order: Int,
 	val name: String,
 	val type: Data,
@@ -88,8 +88,8 @@ data class FormField(
  */
 @Serializable
 data class FormFieldComponent(
-	override val minArity: UInt,
-	override val maxArity: UInt,
+	override val minArity: Int,
+	override val maxArity: Int,
 	override val id: CompoundDataFieldId,
 	override val components: List<FormFieldComponent>? = null,
 ) : DataList, AbstractFormField

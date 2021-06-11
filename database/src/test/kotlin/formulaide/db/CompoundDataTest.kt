@@ -27,8 +27,8 @@ class CompoundDataTest {
 			CompoundDataField(
 				id = 1,
 				order = 1,
-				minArity = 1u,
-				maxArity = 1u,
+				minArity = 1,
+				maxArity = 1,
 				name = "Test",
 				type = Data(DataId.TEXT)
 			)
@@ -39,8 +39,8 @@ class CompoundDataTest {
 		data.fields[0].run {
 			assertEquals(1, id)
 			assertEquals(1, order)
-			assertEquals(1u, minArity)
-			assertEquals(1u, maxArity)
+			assertEquals(1, minArity)
+			assertEquals(1, maxArity)
 			assertEquals("Test", this.name)
 			assertEquals(Data.simple(DataId.TEXT), type)
 		}
@@ -56,16 +56,16 @@ class CompoundDataTest {
 			CompoundDataField(
 				id = 1,
 				order = 1,
-				minArity = 1u,
-				maxArity = 1u,
+				minArity = 1,
+				maxArity = 1,
 				name = "Nom complet",
 				type = Data(DataId.TEXT)
 			),
 			CompoundDataField(
 				id = 2,
 				order = 2,
-				minArity = 1u,
-				maxArity = 1u,
+				minArity = 1,
+				maxArity = 1,
 				name = "Famille",
 				type = Data.compound(SPECIAL_TOKEN_RECURSION)
 			)
@@ -77,8 +77,8 @@ class CompoundDataTest {
 		val fullName = CompoundDataField(
 			id = 1,
 			order = 1,
-			minArity = 1u,
-			maxArity = 1u,
+			minArity = 1,
+			maxArity = 1,
 			name = "Nom complet",
 			type = Data(DataId.TEXT)
 		)
@@ -86,8 +86,8 @@ class CompoundDataTest {
 		val family = CompoundDataField(
 			id = 2,
 			order = 2,
-			minArity = 1u,
-			maxArity = 1u,
+			minArity = 1,
+			maxArity = 1,
 			name = "Famille",
 			type = Data.compound(id)
 		)
