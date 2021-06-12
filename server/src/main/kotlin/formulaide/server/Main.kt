@@ -16,6 +16,7 @@ import io.ktor.features.*
 import io.ktor.routing.*
 import io.ktor.serialization.*
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
 
 val database = Database("localhost", 27017, "formulaide", "root", "development-password")
 
@@ -42,7 +43,9 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 	val auth = Auth(database)
 
 	install(ContentNegotiation) {
-		json()
+		json(Json(DefaultJson) {
+			useArrayPolymorphism = false
+		})
 	}
 
 	install(CORS) { //TODO: audit
