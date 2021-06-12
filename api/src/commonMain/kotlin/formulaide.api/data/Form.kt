@@ -32,6 +32,7 @@ typealias FormId = Int
 data class Form(
 	val name: String,
 	val id: FormId,
+	val open: Boolean,
 	val public: Boolean,
 	val fields: List<FormField>,
 	val actions: List<Action>,
