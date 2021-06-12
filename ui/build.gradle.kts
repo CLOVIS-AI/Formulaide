@@ -8,9 +8,7 @@ kotlin {
 	js {
 		browser {
 			testTask {
-				useKarma {
-					useChromiumHeadless()
-				}
+				useMocha()
 			}
 		}
 		binaries.executable()

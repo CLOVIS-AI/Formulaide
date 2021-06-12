@@ -1,5 +1,3 @@
-import java.time.Duration
-
 plugins {
 	kotlin("multiplatform")
 
@@ -14,10 +12,7 @@ kotlin {
 	js {
 		browser {
 			testTask {
-				useKarma {
-					useChromiumHeadless()
-					timeout.set(Duration.ofMinutes(1))
-				}
+				useMocha()
 			}
 		}
 	}
