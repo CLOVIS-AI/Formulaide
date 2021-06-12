@@ -9,6 +9,9 @@ import org.litote.kmongo.id.IdGenerator
 suspend fun Database.listData() =
 	data.find().toList()
 
+suspend fun Database.findData(id: CompoundDataId) =
+	data.findOne(CompoundData::id eq id)
+
 suspend fun Database.createData(compound: NewCompoundData): CompoundData {
 	compound.checkValidity(data)
 
