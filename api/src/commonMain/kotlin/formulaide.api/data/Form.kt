@@ -64,7 +64,7 @@ sealed interface AbstractFormField {
  * A top-level field in a [Form].
  *
  * @property id The ID of this field in a specific [Form]. The ID is not globally unique.
- * @property type The type of this field.
+ * @property data The type of this field.
  * @property components The different components of this field, if it is a [Data.Compound] type.
  * `null` in any other case (`type == COMPOUND <=> components != null`).
  * @property name The display name of this field.
@@ -78,12 +78,12 @@ data class FormField(
 	override val order: Int,
 	val arity: Arity,
 	val name: String,
-	val type: Data,
+	val data: Data,
 ) : AbstractFormField, OrderedListElement {
 	init {
 		require(name.isNotBlank()) { "Le nom d'un champ d'un formulaire ne doit être vide." }
 
-		if (type is Data.Compound && arity != Arity.forbidden()) {
+		if (data is Data.Compound && arity != Arity.forbidden()) {
 			requireNotNull(components) { "Si ce champ représente une donnée composée, et n'est pas interdit (arité maximale de 0), alors il doit déclarer des sous-champs (components)" }
 		}
 	}
