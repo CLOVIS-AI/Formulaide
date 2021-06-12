@@ -25,7 +25,7 @@ class DataTest {
 	fun create() = runTest {
 		val user = testAdministrator()
 
-		user.createData(NewCompoundData(
+		val newData = NewCompoundData(
 			name = "Identité",
 			fields = listOf(
 				CompoundDataField(
@@ -33,31 +33,32 @@ class DataTest {
 					id = 1,
 					arity = Arity.mandatory(),
 					name = "Nom de famille",
-					type = Data.simple(TEXT)
+					data = Data.simple(TEXT)
 				),
 				CompoundDataField(
 					order = 2,
 					id = 2,
 					arity = Arity.mandatory(),
 					name = "Prénom",
-					type = Data.simple(TEXT)
+					data = Data.simple(TEXT)
 				),
 				CompoundDataField(
 					order = 3,
 					id = 3,
 					arity = Arity.optional(),
 					name = "Numéro de téléphone",
-					type = Data.simple(INTEGER)
+					data = Data.simple(INTEGER)
 				),
 				CompoundDataField(
 					order = 4,
 					id = 4,
 					arity = (0..30).asArity(),
 					name = "Enfants à charge",
-					type = Data.recursiveCompound()
+					data = Data.recursiveCompound()
 				)
 			)
-		))
+		)
+		user.createData(newData)
 	}
 
 }

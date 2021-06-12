@@ -33,7 +33,7 @@ class CompoundDataTest {
 				order = 1,
 				arity = Arity.mandatory(),
 				name = "Test",
-				type = Data.simple(TEXT)
+				data = Data.simple(TEXT)
 			)
 		)))
 
@@ -45,7 +45,7 @@ class CompoundDataTest {
 			assertEquals(1, arity.min)
 			assertEquals(1, arity.max)
 			assertEquals("Test", this.name)
-			assertEquals(Data.simple(TEXT), type)
+			assertEquals(Data.simple(TEXT), this.data)
 		}
 	}
 
@@ -61,14 +61,14 @@ class CompoundDataTest {
 				order = 1,
 				arity = Arity.mandatory(),
 				name = "Nom complet",
-				type = Data.simple(TEXT)
+				data = Data.simple(TEXT)
 			),
 			CompoundDataField(
 				id = 2,
 				order = 2,
 				arity = Arity.mandatory(),
 				name = "Famille",
-				type = Data.recursiveCompound()
+				data = Data.recursiveCompound()
 			)
 		)))
 
@@ -79,7 +79,7 @@ class CompoundDataTest {
 			order = 1,
 			arity = Arity.mandatory(),
 			name = "Nom complet",
-			type = Data.simple(TEXT)
+			data = Data.simple(TEXT)
 		)
 
 		val family = CompoundDataField(
@@ -87,7 +87,7 @@ class CompoundDataTest {
 			order = 2,
 			arity = Arity.mandatory(),
 			name = "Famille",
-			type = Data.compound(data)
+			data = Data.compound(data)
 		)
 
 		assertEquals(fullName, data.fields.find { it.id == fullName.id })

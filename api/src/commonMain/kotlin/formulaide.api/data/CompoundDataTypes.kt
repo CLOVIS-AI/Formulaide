@@ -12,7 +12,7 @@ typealias CompoundDataId = String
 /**
  * A data type built from the composition of other data types (record type, product type).
  *
- * Through [CompoundDataField.type], a compound data can include unions, other compound datas, or even be recursive.
+ * Through [CompoundDataField.data], a compound data can include unions, other compound datas, or even be recursive.
  *
  * @property name The display name of this data type.
  * @property fields The different types that are part of this compound.
@@ -45,7 +45,7 @@ typealias CompoundDataFieldId = Int
  * @property id The ID of this field, guaranteed unique for a specific [CompoundData] (not globally unique).
  * When creating a new data (see [NewCompoundData]), you are free to choose any ID value.
  * @property name The display name of this field
- * @property type The type of this field. Can be any valid type (including a union, or itself).
+ * @property data The type of this field. Can be any valid type (including a union, or itself).
  */
 @Serializable
 data class CompoundDataField(
@@ -53,7 +53,7 @@ data class CompoundDataField(
 	val arity: Arity,
 	val id: CompoundDataFieldId,
 	val name: String,
-	val type: Data,
+	val data: Data,
 ) : OrderedListElement {
 	init {
 		require(name.isNotBlank()) { "Le nom d'un champ ne peut pas être vide : '$name'" }
@@ -63,8 +63,8 @@ data class CompoundDataField(
 	 * Internal function to check the validity of this object.
 	 */
 	internal fun checkValidity(allowRecursion: Boolean) {
-		if (!allowRecursion && type is Data.Compound)
-			require(type.id != SPECIAL_TOKEN_RECURSION) { "Un champ de donnée ne peut pas contenir SPECIAL_TOKEN_RECURSION, sauf s'il fait partie de NewCompoundData (mais ce n'est pas le cas ici)" }
+		if (!allowRecursion && data is Data.Compound)
+			require(data.id != SPECIAL_TOKEN_RECURSION) { "Un champ de donnée ne peut pas contenir SPECIAL_TOKEN_RECURSION, sauf s'il fait partie de NewCompoundData (mais ce n'est pas le cas ici)" }
 	}
 }
 

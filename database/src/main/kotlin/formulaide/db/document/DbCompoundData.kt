@@ -29,9 +29,9 @@ suspend fun Database.createData(compound: NewCompoundData): CompoundData {
 }
 
 private fun CompoundDataField.cleanUpRecursionToken(compound: CompoundData): CompoundDataField {
-	val type = type // to enable smart-cast
+	val type = data // to enable smart-cast
 	return if (type is Data.Compound && type.id == SPECIAL_TOKEN_RECURSION)
-		copy(type = Data.compound(compound))
+		copy(data = Data.compound(compound))
 	else this
 }
 
@@ -39,7 +39,7 @@ private suspend fun NewCompoundData.checkValidity(data: CoroutineCollection<Comp
 	require(fields.isNotEmpty()) { "Il est interdit de créer une donnée vide" }
 
 	for (field in fields) {
-		val type = field.type
+		val type = field.data
 		if (type is Data.Compound) {
 			requireNotNull(type.id) { "Si la donnée d'un champ est de type COMPOUND, il doit contenir 'compoundId'" }
 			if (type.id != SPECIAL_TOKEN_RECURSION)

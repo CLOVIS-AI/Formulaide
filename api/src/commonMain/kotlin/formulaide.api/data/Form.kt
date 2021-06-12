@@ -112,13 +112,13 @@ data class FormFieldComponent internal constructor(
 	 */
 	constructor(arity: Arity, compound: CompoundDataField, components: List<FormFieldComponent>) : this(arity, compound.id, components) {
 		if (arity == Arity.forbidden())
-			require(compound.type is Data.Compound) { "Un champ de formulaire non-interdit qui référence des sous-champs doit être de type ${Data.Compound}" }
+			require(compound.data is Data.Compound) { "Un champ de formulaire non-interdit qui référence des sous-champs doit être de type ${Data.Compound}" }
 	}
 
 	/**
 	 * Create a [FormFieldComponent] that corresponds to a [simple data][Data.Simple] or a [union data][Data.Union].
 	 */
 	constructor(arity: Arity, compound: CompoundDataField) : this(arity, compound.id, null) {
-		require(compound.type is Data.Compound) { "Un champ de formulaire qui ne référence pas de sous-champs ne doit être de type ${Data.Compound}" }
+		require(compound.data is Data.Compound) { "Un champ de formulaire qui ne référence pas de sous-champs ne doit être de type ${Data.Compound}" }
 	}
 }
