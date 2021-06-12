@@ -59,7 +59,9 @@ sealed class Client(
 				serializer = KotlinxSerializer()
 			}
 
-			install(Logging)
+			install(Logging) {
+				level = LogLevel.ALL
+			}
 
 			if (token != null)
 				install(Auth) {
