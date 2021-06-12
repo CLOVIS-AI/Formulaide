@@ -1,3 +1,5 @@
+import java.time.Duration
+
 plugins {
 	kotlin("multiplatform")
 
@@ -14,6 +16,7 @@ kotlin {
 			testTask {
 				useKarma {
 					useChromiumHeadless()
+					timeout.set(Duration.ofMinutes(1))
 				}
 			}
 		}
