@@ -1,5 +1,7 @@
 package formulaide.api.data
 
+import formulaide.api.data.OrderedListElement.Companion.checkOrderValidity
+import formulaide.api.types.Arity
 import formulaide.api.users.TokenResponse
 import kotlinx.serialization.Serializable
 
@@ -33,7 +35,12 @@ data class Form(
 	val public: Boolean,
 	val fields: List<FormField>,
 	val actions: List<Action>,
-)
+) {
+	init {
+		fields.checkOrderValidity()
+		require(name.isNotBlank()) { "Le nom d'un formulaire ne peut pas être vide : '$name'" }
+	}
+}
 
 /**
  * ID of [AbstractFormField].
@@ -58,7 +65,7 @@ sealed interface AbstractFormField {
  *
  * @property id The ID of this field in a specific [Form]. The ID is not globally unique.
  * @property type The type of this field.
- * @property components The different components of this field, if it is a [DataId.COMPOUND] type.
+ * @property components The different components of this field, if it is a [Data.Compound] type.
  * `null` in any other case (`type == COMPOUND <=> components != null`).
  * @property name The display name of this field.
  * When the type is a compound, this property should be used instead of [CompoundData.name].
@@ -68,12 +75,19 @@ sealed interface AbstractFormField {
 data class FormField(
 	override val id: FormFieldId,
 	override val components: List<FormFieldComponent>? = null,
-	override val minArity: UInt,
-	override val maxArity: UInt,
 	override val order: Int,
+	val arity: Arity,
 	val name: String,
 	val type: Data,
-) : DataList, AbstractFormField, OrderedListElement
+) : AbstractFormField, OrderedListElement {
+	init {
+		require(name.isNotBlank()) { "Le nom d'un champ d'un formulaire ne doit être vide." }
+
+		if (type is Data.Compound && arity != Arity.forbidden()) {
+			requireNotNull(components) { "Si ce champ représente une donnée composée, et n'est pas interdit (arité maximale de 0), alors il doit déclarer des sous-champs (components)" }
+		}
+	}
+}
 
 /**
  * A non-top-level field in a [Form].
@@ -87,9 +101,24 @@ data class FormField(
  * @property id The ID of this field in a specific [FormField]. The ID is not globally unique.
  */
 @Serializable
-data class FormFieldComponent(
-	override val minArity: UInt,
-	override val maxArity: UInt,
+data class FormFieldComponent internal constructor(
+	val arity: Arity,
 	override val id: CompoundDataFieldId,
 	override val components: List<FormFieldComponent>? = null,
-) : DataList, AbstractFormField
+) : AbstractFormField {
+
+	/**
+	 * Create a [FormFieldComponent] that corresponds to a [CompoundData].
+	 */
+	constructor(arity: Arity, compound: CompoundDataField, components: List<FormFieldComponent>) : this(arity, compound.id, components) {
+		if (arity == Arity.forbidden())
+			require(compound.data is Data.Compound) { "Un champ de formulaire non-interdit qui référence des sous-champs doit être de type ${Data.Compound}" }
+	}
+
+	/**
+	 * Create a [FormFieldComponent] that corresponds to a [simple data][Data.Simple] or a [union data][Data.Union].
+	 */
+	constructor(arity: Arity, compound: CompoundDataField) : this(arity, compound.id, null) {
+		require(compound.data is Data.Compound) { "Un champ de formulaire qui ne référence pas de sous-champs ne doit être de type ${Data.Compound}" }
+	}
+}

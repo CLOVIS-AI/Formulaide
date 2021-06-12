@@ -1,5 +1,6 @@
 package formulaide.db.document
 
+import formulaide.api.types.Email
 import formulaide.api.users.User
 import formulaide.db.Database
 import kotlinx.serialization.Serializable
@@ -23,7 +24,8 @@ data class DbUser(
 /**
  * Converts a database [DbUser] to a [User].
  */
-fun DbUser.toApi() = User(email, fullName, service, isAdministrator)
+fun DbUser.toApi() = User(
+	Email(email), fullName, service, isAdministrator)
 
 /**
  * Finds a user in the database, by searching for an exact match with its [email].

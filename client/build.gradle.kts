@@ -12,9 +12,7 @@ kotlin {
 	js {
 		browser {
 			testTask {
-				useKarma {
-					useChromiumHeadless()
-				}
+				useMocha()
 			}
 		}
 	}
@@ -33,7 +31,7 @@ kotlin {
 				implementation(ktorClient("logging"))
 				implementation(ktorClient("auth"))
 
-				implementation(kotlinxSerialization("core"))
+				implementation(kotlinxSerialization("json"))
 			}
 		}
 

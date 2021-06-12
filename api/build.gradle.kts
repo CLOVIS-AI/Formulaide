@@ -17,7 +17,7 @@ kotlin {
 			dependencies {
 				implementation(kotlin("stdlib-common"))
 
-				api(kotlinxSerialization("core"))
+				api(kotlinxSerialization("json"))
 			}
 		}
 

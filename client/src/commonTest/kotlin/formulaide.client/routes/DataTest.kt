@@ -1,6 +1,12 @@
 package formulaide.client.routes
 
-import formulaide.api.data.*
+import formulaide.api.data.CompoundDataField
+import formulaide.api.data.Data
+import formulaide.api.data.Data.Simple.SimpleDataId.INTEGER
+import formulaide.api.data.Data.Simple.SimpleDataId.TEXT
+import formulaide.api.data.NewCompoundData
+import formulaide.api.types.Arity
+import formulaide.api.types.Arity.Companion.asArity
 import formulaide.client.runTest
 import formulaide.client.testAdministrator
 import formulaide.client.testEmployee
@@ -19,43 +25,40 @@ class DataTest {
 	fun create() = runTest {
 		val user = testAdministrator()
 
-		user.createData(NewCompoundData(
+		val newData = NewCompoundData(
 			name = "Identité",
 			fields = listOf(
 				CompoundDataField(
 					order = 1,
 					id = 1,
-					minArity = 1u,
-					maxArity = 1u,
+					arity = Arity.mandatory(),
 					name = "Nom de famille",
-					type = Data.simple(DataId.TEXT)
+					data = Data.simple(TEXT)
 				),
 				CompoundDataField(
 					order = 2,
 					id = 2,
-					minArity = 1u,
-					maxArity = 1u,
+					arity = Arity.mandatory(),
 					name = "Prénom",
-					type = Data.simple(DataId.TEXT)
+					data = Data.simple(TEXT)
 				),
 				CompoundDataField(
 					order = 3,
 					id = 3,
-					minArity = 0u,
-					maxArity = 1u,
+					arity = Arity.optional(),
 					name = "Numéro de téléphone",
-					type = Data.simple(DataId.INTEGER)
+					data = Data.simple(INTEGER)
 				),
 				CompoundDataField(
 					order = 4,
 					id = 4,
-					minArity = 0u,
-					maxArity = 30u,
+					arity = (0..30).asArity(),
 					name = "Enfants à charge",
-					type = Data.compound(SPECIAL_TOKEN_RECURSION)
+					data = Data.recursiveCompound()
 				)
 			)
-		))
+		)
+		user.createData(newData)
 	}
 
 }

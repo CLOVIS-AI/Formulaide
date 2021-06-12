@@ -1,5 +1,6 @@
 package formulaide.api.users
 
+import formulaide.api.types.Email
 import kotlinx.serialization.Serializable
 
 /**
@@ -10,7 +11,7 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class User(
-	val email: String,
+	val email: Email,
 	val fullName: String,
 	val service: ServiceId,
 	val administrator: Boolean,

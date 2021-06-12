@@ -9,7 +9,6 @@ import io.ktor.client.features.json.*
 import io.ktor.client.features.json.serializer.*
 import io.ktor.client.features.logging.*
 import io.ktor.client.request.*
-import io.ktor.client.statement.*
 import io.ktor.http.*
 
 /**
@@ -60,7 +59,9 @@ sealed class Client(
 				serializer = KotlinxSerializer()
 			}
 
-			install(Logging)
+			install(Logging) {
+				level = LogLevel.ALL
+			}
 
 			if (token != null)
 				install(Auth) {
@@ -69,7 +70,7 @@ sealed class Client(
 							BearerTokens(accessToken = token, refreshToken = token)
 						}
 
-						refreshTokens { response: HttpResponse ->
+						refreshTokens {
 							BearerTokens(accessToken = token, refreshToken = token)
 						}
 					}

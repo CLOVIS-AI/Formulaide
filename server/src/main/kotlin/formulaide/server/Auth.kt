@@ -41,7 +41,7 @@ class Auth(private val database: Database) {
 		val createdUser = database.createUser(
 			DbUser(
 				id,
-				newUser.user.email,
+				newUser.user.email.email,
 				hashedPassword,
 				newUser.user.fullName,
 				newUser.user.service,

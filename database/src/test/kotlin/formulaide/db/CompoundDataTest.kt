@@ -1,6 +1,10 @@
 package formulaide.db
 
-import formulaide.api.data.*
+import formulaide.api.data.CompoundDataField
+import formulaide.api.data.Data
+import formulaide.api.data.Data.Simple.SimpleDataId.TEXT
+import formulaide.api.data.NewCompoundData
+import formulaide.api.types.Arity
 import formulaide.db.document.createData
 import formulaide.db.document.listData
 import kotlinx.coroutines.runBlocking
@@ -27,10 +31,9 @@ class CompoundDataTest {
 			CompoundDataField(
 				id = 1,
 				order = 1,
-				minArity = 1u,
-				maxArity = 1u,
+				arity = Arity.mandatory(),
 				name = "Test",
-				type = Data(DataId.TEXT)
+				data = Data.simple(TEXT)
 			)
 		)))
 
@@ -39,10 +42,10 @@ class CompoundDataTest {
 		data.fields[0].run {
 			assertEquals(1, id)
 			assertEquals(1, order)
-			assertEquals(1u, minArity)
-			assertEquals(1u, maxArity)
+			assertEquals(1, arity.min)
+			assertEquals(1, arity.max)
 			assertEquals("Test", this.name)
-			assertEquals(Data.simple(DataId.TEXT), type)
+			assertEquals(Data.simple(TEXT), this.data)
 		}
 	}
 
@@ -56,40 +59,35 @@ class CompoundDataTest {
 			CompoundDataField(
 				id = 1,
 				order = 1,
-				minArity = 1u,
-				maxArity = 1u,
+				arity = Arity.mandatory(),
 				name = "Nom complet",
-				type = Data(DataId.TEXT)
+				data = Data.simple(TEXT)
 			),
 			CompoundDataField(
 				id = 2,
 				order = 2,
-				minArity = 1u,
-				maxArity = 1u,
+				arity = Arity.mandatory(),
 				name = "Famille",
-				type = Data.compound(SPECIAL_TOKEN_RECURSION)
+				data = Data.recursiveCompound()
 			)
 		)))
 
 		assertEquals(name, data.name)
-		val id = data.id
 
 		val fullName = CompoundDataField(
 			id = 1,
 			order = 1,
-			minArity = 1u,
-			maxArity = 1u,
+			arity = Arity.mandatory(),
 			name = "Nom complet",
-			type = Data(DataId.TEXT)
+			data = Data.simple(TEXT)
 		)
 
 		val family = CompoundDataField(
 			id = 2,
 			order = 2,
-			minArity = 1u,
-			maxArity = 1u,
+			arity = Arity.mandatory(),
 			name = "Famille",
-			type = Data.compound(id)
+			data = Data.compound(data)
 		)
 
 		assertEquals(fullName, data.fields.find { it.id == fullName.id })
