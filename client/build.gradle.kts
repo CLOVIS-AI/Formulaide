@@ -36,7 +36,7 @@ kotlin {
 				implementation(ktorClient("logging"))
 				implementation(ktorClient("auth"))
 
-				implementation(kotlinxSerialization("core"))
+				implementation(kotlinxSerialization("json"))
 			}
 		}
 
