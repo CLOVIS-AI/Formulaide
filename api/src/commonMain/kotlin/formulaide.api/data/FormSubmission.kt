@@ -1,5 +1,8 @@
 package formulaide.api.data
 
+import formulaide.api.data.Data.Simple.SimpleDataId.MESSAGE
+import formulaide.api.data.FormSubmission.Answer.Companion.asAnswer
+import formulaide.api.types.Arity
 import kotlinx.serialization.Serializable
 
 /**
@@ -92,5 +95,172 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class FormSubmission(
 	val form: FormId,
-	val data: Map<String, String?>,
-)
+	val data: Map<String, String>,
+) {
+
+	//region Check validity
+
+	fun checkValidity(form: Form, compounds: List<CompoundData>) {
+		require(this.form == form.id) { "L'identifiant du formulaire donné à checkValidity est différent de celui correspondant à cette saisie" }
+
+		val topLevelAnswer = data
+			.mapKeys { (key, _) ->
+				key.split(":")
+			}
+			.toList()
+			.asAnswer()
+
+		checkTopLevelFieldsValidity(form.fields, topLevelAnswer, compounds)
+	}
+
+	private fun checkTopLevelFieldsValidity(
+		fields: List<FormField>,
+		topLevelAnswer: Answer,
+		compounds: List<CompoundData>
+	) {
+		for (field in fields) {
+			checkField(topLevelAnswer, field, null, field, compounds)
+		}
+	}
+
+	private fun checkDeepFieldsValidity(
+		fields: List<FormFieldComponent>,
+		topLevelAnswer: Answer,
+		compound: CompoundData,
+		compounds: List<CompoundData>,
+	) {
+		for (compoundField in compound.fields) {
+			// Finding the FormField that corresponds to this CompoundDataField
+			val formField = fields.find { it.id == compoundField.id }
+			requireNotNull(formField) { "La donnée '${compound.name}' ('${compound.id}') a un champ ${compoundField.id}, mais le formulaire donné n'a pas de champ équivalent : ${fields.map { it.id }}" }
+
+			checkField(topLevelAnswer, formField, compoundField, null, compounds)
+		}
+	}
+
+	private fun checkField(
+		topLevelAnswer: Answer,
+		formField: AbstractFormField,
+		compoundField: CompoundDataField? = null,
+		topLevelFormField: FormField? = null,
+		compounds: List<CompoundData>
+	) {
+		require((compoundField == null) xor (topLevelFormField == null)) { "Une seule des données entre 'compoundField' ($compoundField) et 'topLevelFormField' ($topLevelFormField) devraient être donnée" }
+		val expectedData = compoundField?.data ?: topLevelFormField?.data!!
+
+		// Checking field.id
+		val answerOrNull = topLevelAnswer.components[formField.id.toString()]
+
+		// Checking field.arity
+		val answers = checkFieldArity(answerOrNull, formField)
+
+		// Checking field.data for each answer
+		for (answer in answers) {
+			@Suppress("UNUSED_VARIABLE")
+			val e = when (expectedData) {
+				is Data.Simple -> checkSimple(expectedData, answer, formField)
+				is Data.Union -> checkUnion(expectedData, answer, formField, compounds)
+				is Data.Compound -> checkCompound(
+					expectedData,
+					answer,
+					formField,
+					compounds
+				)
+			}
+		}
+	}
+
+	private fun checkCompound(
+		expectedType: Data.Compound,
+		answer: Answer,
+		field: AbstractFormField,
+		compounds: List<CompoundData>
+	) {
+		val matchingCompound = compounds.find { it.id == expectedType.id }
+		requireNotNull(matchingCompound) { "${fieldErrorMessage(field)} est de type COMPOUND et fait référence à '${expectedType.id}', mais la fonction de vérification n'y a pas accès (connues : ${compounds.map { it.id }})" }
+
+		checkDeepFieldsValidity(field.components!!, answer, matchingCompound, compounds)
+	}
+
+	private fun fieldErrorMessage(field: AbstractFormField) =
+		if (field is FormField) "Le champ '${field.id}' (nommé '${field.name}')"
+		else "Le champ '${field.id}'"
+
+	/**
+	 * Checks that an [answer] corresponds to the [arity][Arity] of a given [AbstractFormField].
+	 */
+	private fun checkFieldArity(
+		answer: Answer?,
+		field: AbstractFormField,
+	): List<Answer> {
+		val answers = when {
+			answer == null -> emptyList()
+			field.arity.max > 1 -> answer.components.map { (_, value) -> value }
+			else -> listOf(answer)
+		}
+		require(answers.size in field.arity.range) { "${fieldErrorMessage(field)} a une arité de ${field.arity}, mais ${answers.size} valeurs ont été données : $answer" }
+		return answers
+	}
+
+	private fun checkUnion(
+		expected: Data.Union,
+		answer: Answer,
+		field: AbstractFormField,
+		compounds: List<CompoundData>
+	) {
+		require(answer.components.size == 1) { "${fieldErrorMessage(field)} est une union, elle ne peut avoir qu'une seule valeur ; trouvé les clefs ${answer.components.map { it.key }}" }
+		val (unionAnswerId, unionAnswer) = answer.components.entries.first()
+
+		val match = expected.elements.find { it.id.toString() == unionAnswerId }
+		requireNotNull(match) { "${fieldErrorMessage(field)} est une union qui autorise les éléments ${expected.elements.map { it.id }}, dont la réponse donnée ne fait pas partie : ${answer.value}" }
+
+		@Suppress("UNUSED_VARIABLE") // The variable is there to force the 'when' to be exhaustive
+		val e = when (val expectedType = match.type) {
+			is Data.Compound -> checkCompound(expectedType, unionAnswer, field, compounds)
+			is Data.Union -> checkUnion(expectedType, unionAnswer, field, compounds)
+			is Data.Simple -> checkSimple(expectedType, unionAnswer, field)
+		}
+	}
+
+	private fun checkSimple(
+		expected: Data.Simple,
+		answer: Answer,
+		field: AbstractFormField,
+	) {
+		val validated = expected.id.validate(answer.value)
+		requireNotNull(validated) { "${fieldErrorMessage(field)} est de type ${expected.id}, mais la valeur donnée ne correspond pas : '${answer.value}'" }
+
+		require(answer.components.isEmpty()) { "${fieldErrorMessage(field)} est de type SIMPLE, il ne peut pas avoir des sous-réponses ; trouvé ${answer.components}" }
+	}
+
+	private data class Answer(val value: String?, val components: Map<String, Answer>) {
+
+		companion object {
+			fun List<Pair<List<String>, String>>.asAnswer(): Answer {
+
+				val elements = this
+					.sortedBy { (ids, _) -> ids.size }
+					.groupBy { (ids, _) -> ids.getOrNull(0) }
+
+				val headList = elements[null] ?: listOf(emptyList<String>() to null)
+				require(headList.size == 1) { "Il ne peut pas y avoir plusieurs entrées avec le même identifiant : ${headList.map { it.first }}" }
+				val head = headList[0].second
+
+				return elements
+					.filterKeys { it != null }
+					.mapKeys { (ids, _) -> ids!! }
+					.mapValues { (_, values) ->
+						values.map { (ids, value) ->
+							ids.subList(1, ids.size) to value
+						}.asAnswer()
+					}
+					.toList()
+					.fold(Answer(head, emptyMap())) { acc, (id, value) ->
+						Answer(acc.value, acc.components + mapOf(id to value))
+					}
+			}
+		}
+	}
+
+	//endregion
+}
