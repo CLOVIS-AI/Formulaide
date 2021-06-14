@@ -90,7 +90,9 @@ sealed class Data {
 			 *
 			 * @see MESSAGE
 			 */
-			TEXT,
+			TEXT {
+				override fun validate(value: String?) = value?.ifBlank { null }
+			},
 
 			/**
 			 * An unmodifiable text field.
@@ -102,27 +104,43 @@ sealed class Data {
 			 *
 			 * @see TEXT
 			 */
-			MESSAGE,
+			MESSAGE {
+				override fun validate(value: String?) = value
+			},
 
 			/**
 			 * The user should input an integer.
 			 *
 			 * The type corresponds to Kotlin's [Long] (a 64-bit signed integer).
 			 */
-			INTEGER,
+			INTEGER {
+				override fun validate(value: String?) = value?.toLongOrNull()
+			},
 
 			/**
 			 * The user should input a decimal number.
 			 *
 			 * The type corresponds to Kotlin's [Double] (a 64-bit double precision floating point number).
 			 */
-			DECIMAL,
+			DECIMAL {
+				override fun validate(value: String?) = value?.toDoubleOrNull()
+			},
 
 			/**
 			 * A simple checkbox.
 			 */
-			BOOLEAN,
+			BOOLEAN {
+				override fun validate(value: String?) = value?.toBooleanStrictOrNull()
+			},
 
+			;
+
+			/**
+			 * Validates that a given [value] corresponds to this [simple type][SimpleDataId].
+			 *
+			 * Each implementation narrows the return type.
+			 */
+			abstract fun validate(value: String?): Any?
 		}
 	}
 }
