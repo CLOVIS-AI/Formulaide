@@ -1,7 +1,10 @@
 package formulaide.api.data
 
+import formulaide.api.types.Email
+import formulaide.api.users.Service
 import formulaide.api.users.ServiceId
 import formulaide.api.users.User
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -12,36 +15,35 @@ typealias ActionId = Int
 /**
  * An action is a step taken to validate a [form submission][FormSubmission].
  * Only employees have access to actions (see [Form.actions]).
- *
- * @property type The type of this action. It decides what is stored in [data].
- * @property data The data that relates to this action, in JSON format.
- * See [type] and [ActionType] for information on what is stored.
  */
 @Serializable
-data class Action(
-	val id: ActionId,
-	val type: ActionType,
-	val data: String,
-	override val order: Int,
-) : OrderedListElement
+sealed class Action : OrderedListElement {
 
-/**
- * The type of action.
- * See each element for details.
- */
-@Serializable
-enum class ActionType{
-	/**
-	 * A service should take a look at this form.
-	 *
-	 * - [Action.data] is a [ServiceId].
-	 */
-	SERVICE_REVIEW,
+	abstract val id: ActionId
 
 	/**
-	 * A specific employee should take a look at this form.
-	 *
-	 * - [Action.data] is a [User.email].
+	 * An employee of a specified [service] must check that the submission is valid.
 	 */
-	EMPLOYEE_REVIEW,
+	@Serializable
+	@SerialName("SERVICE_REVIEW")
+	data class ServiceReview(
+		override val id: ActionId,
+		override val order: Int,
+		val service: ServiceId,
+	) : Action() {
+		constructor(id: ActionId, order: Int, service: Service) : this(id, order, service.id)
+	}
+
+	/**
+	 * A specific [employee][employee] must check that the submission is valid.
+	 */
+	@Serializable
+	@SerialName("EMPLOYEE_REVIEW")
+	data class EmployeeReview(
+		override val id: ActionId,
+		override val order: Int,
+		val employee: Email,
+	) : Action() {
+		constructor(id: ActionId, order: Int, employee: User) : this(id, order, employee.email)
+	}
 }
