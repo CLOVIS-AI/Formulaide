@@ -15,21 +15,20 @@ import kotlinx.serialization.Serializable
  * - A key, that identifies which field is being submitted,
  * - A value, which is the user's response.
  *
- * The value is the JSON data corresponding to the field's [type][DataId].
- * A value can be `null` when:
- * - The field is optional ([DataList.maxArity] is 0)
- * - The field doesn't require filling (for example, [DataId.MESSAGE])
- *
- * When a [DataId.UNION] is used, the value should be the [AbstractFormField.id] of the selected element.
+ * The value is the JSON data corresponding to the field's [type][Data].
+ * If the field is optional (see [Arity]) or doesn't require an answer (eg. [MESSAGE]), do not add the value if none is required (`null` will *not* be accepted).
  *
  * The key is formed by grouping different IDs, separated by the character 'colon' (`:`).
  * The key is built using the following steps (the order is important):
  * - Starting at the top-level of the form, the first ID is the top-level's field ID ([FormField.id])
- * - If the field has a [maximum arity][DataList.maxArity] greater than 1, an arbitrary integer
+ * - If the field has a [maximum arity][Arity.max] greater than 1, an arbitrary integer
  * (of your choice) is used to represent the index of the element
  * (repeat until the maximum arity is 1).
- * - If the field is a [compound type][DataId.COMPOUND], [FormFieldComponent.id] is added
+ * - If the field is a [compound type][Data.Compound], [FormFieldComponent.id] is added
  * (repeat from the previous step as long as necessary).
+ *
+ * [Unions][Data.Union] are treated as compound objects that only have one field, whose ID is the ID of the element of the enum that was selected.
+ * The value corresponds to the value of the selected union element.
  *
  * ### Example
  *
@@ -59,7 +58,7 @@ import kotlinx.serialization.Serializable
  *       - Last name (id: 2, mandatory, TEXT)
  *       - First name (id: 3, mandatory, TEXT)
  *       - Phone number (id: 4, mandatory, NUMBER)
- *       - Family (id: 8, list, COMPOUND Identity)
+ *       - Family (id: 5, list, COMPOUND Identity)
  *         - Last name (id: 2, mandatory, TEXT)
  *         - First name (id: 3, mandatory, TEXT)
  *         - Phone number (id: 4, optional, NUMBER)
@@ -77,14 +76,11 @@ import kotlinx.serialization.Serializable
  *     "7:2": "My Last Name"
  *     "7:3": "My First Name"
  *     "7:4": "+33 1 23 45 67 89"
- *     "7:8:0:2": "My Brother's Last Name"
- *     "7:8:0:3": "My Brother's First Name"
- *     "7:8:0:4": null
- *     "7:8:1:2": "My Sister's Last Name"
- *     "7:8:1:3": "My Sister's First Name"
- *     "7:8:1:4": null
- *     "9": "10"
- *     "12": null
+ *     "7:5:0:2": "My Brother's Last Name"
+ *     "7:5:0:3": "My Brother's First Name"
+ *     "7:5:1:2": "My Sister's Last Name"
+ *     "7:5:1:3": "My Sister's First Name"
+ *     "9:10": "Whatever can fit here, because the type is MESSAGE"
  * ```
  * Here, the user has a brother and sister, provided their own phone number but not their sibling's,
  * wants to live by the sea, and doesn't have any comments.
