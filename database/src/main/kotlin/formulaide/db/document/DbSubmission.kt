@@ -31,3 +31,5 @@ suspend fun Database.saveSubmission(submission: FormSubmission): DbSubmission {
 
 suspend fun Database.findSubmission(form: FormId): List<DbSubmission> =
 	submissions.find(DbSubmission::form eq form).toList()
+
+fun DbSubmission.toApi() = FormSubmission(form, data)

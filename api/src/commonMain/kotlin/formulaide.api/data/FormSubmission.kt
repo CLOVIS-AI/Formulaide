@@ -95,7 +95,7 @@ import kotlinx.serialization.Serializable
  * See [FormSubmission] for the format description.
  */
 @Serializable
-data class FormSubmission internal constructor(
+data class FormSubmission(
 	val form: FormId,
 	val data: Map<String, String>,
 ) {
