@@ -1,7 +1,10 @@
 package formulaide.client.routes
 
-import formulaide.api.data.*
+import formulaide.api.data.Action
+import formulaide.api.data.Data
 import formulaide.api.data.Data.Simple.SimpleDataId.TEXT
+import formulaide.api.data.Form
+import formulaide.api.data.FormField
 import formulaide.api.types.Arity
 import formulaide.client.runTest
 import formulaide.client.testAdministrator
@@ -39,17 +42,15 @@ class FormsTest {
 				)
 			),
 			actions = listOf(
-				Action(
+				Action.ServiceReview(
 					id = 1,
 					order = 1,
-					type = ActionType.SERVICE_REVIEW,
-					data = me.service.toString()
+					service = me.service
 				),
-				Action(
+				Action.EmployeeReview(
 					id = 2,
 					order = 2,
-					type = ActionType.EMPLOYEE_REVIEW,
-					data = me.toString()
+					employee = me
 				)
 			)
 		)

@@ -1,7 +1,10 @@
 package formulaide.db
 
-import formulaide.api.data.*
+import formulaide.api.data.Action
+import formulaide.api.data.Data
 import formulaide.api.data.Data.Simple.SimpleDataId.TEXT
+import formulaide.api.data.Form
+import formulaide.api.data.FormField
 import formulaide.api.types.Arity
 import formulaide.db.document.createForm
 import formulaide.db.document.listForms
@@ -38,11 +41,10 @@ class FormsTest {
 				)
 			),
 			actions = listOf(
-				Action(
+				Action.ServiceReview(
 					id = 1,
-					type = ActionType.SERVICE_REVIEW,
-					data = "",
-					order = 1
+					order = 1,
+					service = 1,
 				)
 			)
 		))

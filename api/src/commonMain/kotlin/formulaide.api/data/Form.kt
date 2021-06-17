@@ -59,6 +59,7 @@ typealias FormFieldId = Int
 sealed interface AbstractFormField {
 	val components: List<FormFieldComponent>?
 	val id: Int
+	val arity: Arity
 }
 
 /**
@@ -77,7 +78,7 @@ data class FormField(
 	override val id: FormFieldId,
 	override val components: List<FormFieldComponent>? = null,
 	override val order: Int,
-	val arity: Arity,
+	override val arity: Arity,
 	val name: String,
 	val data: Data,
 ) : AbstractFormField, OrderedListElement {
@@ -103,7 +104,7 @@ data class FormField(
  */
 @Serializable
 data class FormFieldComponent internal constructor(
-	val arity: Arity,
+	override val arity: Arity,
 	override val id: CompoundDataFieldId,
 	override val components: List<FormFieldComponent>? = null,
 ) : AbstractFormField {
@@ -111,15 +112,15 @@ data class FormFieldComponent internal constructor(
 	/**
 	 * Create a [FormFieldComponent] that corresponds to a [CompoundData].
 	 */
-	constructor(arity: Arity, compound: CompoundDataField, components: List<FormFieldComponent>) : this(arity, compound.id, components) {
+	constructor(arity: Arity, compoundField: CompoundDataField, components: List<FormFieldComponent>) : this(arity, compoundField.id, components) {
 		if (arity == Arity.forbidden())
-			require(compound.data is Data.Compound) { "Un champ de formulaire non-interdit qui référence des sous-champs doit être de type ${Data.Compound}" }
+			require(compoundField.data is Data.Compound) { "Un champ de formulaire non-interdit qui référence des sous-champs doit être de type ${Data.Compound}" }
 	}
 
 	/**
 	 * Create a [FormFieldComponent] that corresponds to a [simple data][Data.Simple] or a [union data][Data.Union].
 	 */
-	constructor(arity: Arity, compound: CompoundDataField) : this(arity, compound.id, null) {
-		require(compound.data is Data.Compound) { "Un champ de formulaire qui ne référence pas de sous-champs ne doit être de type ${Data.Compound}" }
+	constructor(arity: Arity, compoundField: CompoundDataField) : this(arity, compoundField.id, null) {
+		require(compoundField.data !is Data.Compound) { "Un champ de formulaire qui ne référence pas de sous-champs ne doit être de type ${Data.Compound} ; pour le champ $compoundField" }
 	}
 }

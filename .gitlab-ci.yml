@@ -148,6 +148,32 @@ ui-test:
     reports:
       junit: ui/build/test-results/browserTest/**/TEST-*.xml
 
+api-js-test:
+  image: $JS_CHROME_IMAGE
+  stage: test
+  extends: [ .gradle ]
+  needs: [ docker-js-chrome ]
+  before_script:
+    - *prepare_gradle
+  script:
+    - "./gradlew :api:jsBrowserTest"
+  artifacts:
+    reports:
+      junit: api/build/test-results/browserTest/**/TEST-*.xml
+
+api-jvm-test:
+  image: $JDK_IMAGE
+  stage: test
+  extends: [ .gradle ]
+  needs: []
+  before_script:
+    - *prepare_gradle
+  script:
+    - "./gradlew :api:jvmTest"
+  artifacts:
+    reports:
+      junit: api/build/test-results/test/**/TEST-*.xml
+
 database-test:
   image: $JDK_IMAGE
   stage: test
