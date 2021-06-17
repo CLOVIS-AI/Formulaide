@@ -1,6 +1,8 @@
 package formulaire.api.data
 
 import formulaide.api.data.*
+import formulaide.api.data.Data.Simple.SimpleDataId.TEXT
+import formulaide.api.data.FormSubmission.Companion.createSubmission
 import formulaide.api.types.Arity
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -13,7 +15,7 @@ class FormSubmissionTest {
 		order = 1,
 		arity = Arity.mandatory(),
 		name = "Nom de famille",
-		data = Data.simple(Data.Simple.SimpleDataId.TEXT)
+		data = Data.simple(TEXT)
 	)
 
 	private val firstName = CompoundDataField(
@@ -21,7 +23,7 @@ class FormSubmissionTest {
 		order = 2,
 		arity = Arity.mandatory(),
 		name = "Prénom",
-		data = Data.simple(Data.Simple.SimpleDataId.TEXT)
+		data = Data.simple(TEXT)
 	)
 
 	private val phoneNumber = CompoundDataField(
@@ -29,7 +31,7 @@ class FormSubmissionTest {
 		order = 3,
 		arity = Arity.optional(),
 		name = "Numéro de téléphone",
-		data = Data.simple(Data.Simple.SimpleDataId.TEXT)
+		data = Data.simple(TEXT)
 	)
 
 	private val family = CompoundDataField(
@@ -150,7 +152,7 @@ class FormSubmissionTest {
 				"7:5:0:3" to "Le Prénom de mon frère",
 				"7:5:1:2" to "Le Nom de Famille de ma sœur",
 				"7:5:1:3" to "Le Prénom de ma sœur",
-				"7:5:1:3" to "+33 2 34 56 78 91",
+				"7:5:1:4" to "+33 2 34 56 78 91",
 				"9:10" to "",
 			)
 		)
@@ -166,7 +168,7 @@ class FormSubmissionTest {
 				"7:5:0:3" to "Le Prénom de mon frère",
 				"7:5:1:2" to "Le Nom de Famille de ma sœur",
 				"7:5:1:3" to "Le Prénom de ma sœur",
-				"7:5:1:3" to "+33 2 34 56 78 91",
+				"7:5:1:4" to "+33 2 34 56 78 91",
 				"12" to "Mes notes",
 				"9:11" to "",
 			)
@@ -191,13 +193,19 @@ class FormSubmissionTest {
 
 	@Test
 	fun flatAnswer() {
-		val answer = FormSubmission.MutableAnswer("Root").apply {
-			components += "1" to FormSubmission.MutableAnswer("First").apply {
-				components += "0" to FormSubmission.MutableAnswer("Second")
-			}
-			components += "2" to FormSubmission.MutableAnswer(null).apply {
-				components += "3" to FormSubmission.MutableAnswer("Third")
-				components += "4" to FormSubmission.MutableAnswer("Fourth")
+		val compounds = listOf(identity)
+
+		val answer = FormSubmission.MutableAnswer("Root", compounds = compounds).apply {
+			components += "1" to FormSubmission.MutableAnswer("First", compounds = compounds)
+				.apply {
+					components += "0" to FormSubmission.MutableAnswer(
+						"Second",
+						compounds = compounds
+					)
+				}
+			components += "2" to FormSubmission.MutableAnswer(null, compounds = compounds).apply {
+				components += "3" to FormSubmission.MutableAnswer("Third", compounds = compounds)
+				components += "4" to FormSubmission.MutableAnswer("Fourth", compounds = compounds)
 			}
 		}
 
@@ -211,4 +219,114 @@ class FormSubmissionTest {
 		assertEquals(expected, answer.flatten())
 	}
 
+	@Test
+	fun submitDsl() {
+		val lastNameField = FormFieldComponent(
+			arity = Arity.mandatory(),
+			lastName
+		)
+		val firstNameField = FormFieldComponent(
+			arity = Arity.mandatory(),
+			firstName
+		)
+		val phoneNumberField = FormFieldComponent(
+			arity = Arity.mandatory(),
+			phoneNumber
+		)
+		val phoneNumberRecursionField = FormFieldComponent(
+			arity = Arity.optional(),
+			phoneNumber
+		)
+		val familyRecursionField = FormFieldComponent(
+			arity = Arity.forbidden(),
+			family,
+			components = listOf()
+		)
+		val identityRecursionField = FormFieldComponent(
+			arity = Arity(0, 10),
+			family,
+			components = listOf(
+				lastNameField,
+				firstNameField,
+				phoneNumberRecursionField,
+				familyRecursionField
+			)
+		)
+		val identityField = FormField(
+			id = 7,
+			order = 1,
+			name = "Demandeur",
+			arity = Arity.mandatory(),
+			data = Data.compound(identity),
+			components = listOf(
+				lastNameField,
+				firstNameField,
+				phoneNumberField,
+				identityRecursionField
+			)
+		)
+		val form = Form(
+			name = "Foo",
+			id = 6,
+			open = true,
+			public = true,
+			fields = listOf(
+				identityField
+			),
+			actions = emptyList()
+		)
+
+		val submission = form.createSubmission(listOf(identity)) {
+			compound(identityField) {
+				text(firstNameField, "Mon prénom")
+				text(lastNameField, "Mon nom de famille")
+				text(phoneNumberField, "+33 1 23 45 67 89")
+				compound(identityRecursionField) {
+					item(50) {
+						text(lastNameField, "Le nom de famille de mon frère")
+						text(firstNameField, "Le prénom de mon frère")
+						text(phoneNumberRecursionField, "Le numéro de téléphone de mon frère")
+					}
+					item(100) {
+						text(lastNameField, "Le nom de famille de ma sœur")
+						text(firstNameField, "Le prénom de ma sœur")
+					}
+				}
+			}
+		}
+		val expected = FormSubmission(
+			form = form.id,
+			data = mapOf(
+				"7:2" to "Mon nom de famille",
+				"7:3" to "Mon prénom",
+				"7:4" to "+33 1 23 45 67 89",
+				"7:5:50:2" to "Le nom de famille de mon frère",
+				"7:5:50:3" to "Le prénom de mon frère",
+				"7:5:50:4" to "Le numéro de téléphone de mon frère",
+				"7:5:100:2" to "Le nom de famille de ma sœur",
+				"7:5:100:3" to "Le prénom de ma sœur",
+			)
+		)
+		assertEquals(expected, submission)
+
+		assertFails {
+			form.createSubmission(listOf(identity)) {
+				// The top-level 'identity' field is missing
+				text(firstNameField, "Mon prénom")
+				text(lastNameField, "Mon nom de famille")
+				text(phoneNumberField, "+33 1 23 45 67 89")
+				compound(identityRecursionField) {
+					item(50) {
+						text(lastNameField, "Le nom de famille de mon frère")
+						text(firstNameField, "Le prénom de mon frère")
+						text(phoneNumberRecursionField, "Le numéro de téléphone de mon frère")
+					}
+					item(100) {
+						text(lastNameField, "Le nom de famille de ma sœur")
+						text(firstNameField, "Le prénom de ma sœur")
+					}
+				}
+			}
+		}
+	}
 }

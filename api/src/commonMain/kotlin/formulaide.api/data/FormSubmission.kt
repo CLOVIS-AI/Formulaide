@@ -1,7 +1,7 @@
 package formulaide.api.data
 
 import formulaide.api.data.Data.Simple.SimpleDataId.MESSAGE
-import formulaide.api.data.FormSubmission.Companion.submit
+import formulaide.api.data.FormSubmission.Companion.createSubmission
 import formulaide.api.data.FormSubmission.ReadOnlyAnswer.Companion.asAnswer
 import formulaide.api.types.Arity
 import kotlinx.serialization.Serializable
@@ -89,7 +89,7 @@ import kotlinx.serialization.Serializable
  * Here, the user has a brother and sister, provided their own phone number but not their sibling's,
  * wants to live by the sea, and doesn't have any comments.
  *
- * @constructor Internal constructor to build this object. Use the factory method [Form.submit].
+ * @constructor Internal constructor to build this object. Use the factory method [Form.createSubmission].
  * @property form The [Form] this submission corresponds to.
  * @property data A dictionary of the user's responses to the data requested by the [Form].
  * See [FormSubmission] for the format description.
@@ -104,6 +104,7 @@ data class FormSubmission internal constructor(
 
 	fun checkValidity(form: Form, compounds: List<CompoundData>) {
 		require(this.form == form.id) { "L'identifiant du formulaire donné à checkValidity est différent de celui correspondant à cette saisie" }
+		println("\nChecking validity of $this…")
 
 		val topLevelAnswer = data
 			.mapKeys { (key, _) ->
@@ -121,6 +122,7 @@ data class FormSubmission internal constructor(
 		compounds: List<CompoundData>
 	) {
 		for (field in fields) {
+			println("• Top-level field ${field.id}, ‘${field.name}’")
 			checkField(topLevelAnswer, field, null, field, compounds)
 		}
 	}
@@ -132,6 +134,8 @@ data class FormSubmission internal constructor(
 		compounds: List<CompoundData>,
 	) {
 		for (compoundField in compound.fields) {
+			println("• Field ${compoundField.id}, ’${compoundField.name}’")
+
 			// Finding the FormField that corresponds to this CompoundDataField
 			val formField = fields.find { it.id == compoundField.id }
 			requireNotNull(formField) { "La donnée '${compound.name}' ('${compound.id}') a un champ ${compoundField.id}, mais le formulaire donné n'a pas de champ équivalent : ${fields.map { it.id }}" }
@@ -152,6 +156,8 @@ data class FormSubmission internal constructor(
 
 		// Checking field.id
 		val answerOrNull = topLevelAnswer.components[formField.id.toString()]
+
+		println("· Expected data: $expectedData\n· Given: $answerOrNull")
 
 		// Checking field.arity
 		val answers = checkFieldArity(answerOrNull, formField)
@@ -290,12 +296,43 @@ data class FormSubmission internal constructor(
 	}
 
 	/**
-	 * Mutable implementation of [Answer], used as a DSL in [Form.submit].
+	 * Mutable implementation of [Answer], used as a DSL in [Form.createSubmission].
 	 */
-	data class MutableAnswer(
+	data class MutableAnswer internal constructor(
 		override val value: String?,
-		override val components: MutableMap<String, MutableAnswer> = HashMap()
+		override val components: MutableMap<String, MutableAnswer> = HashMap(),
+		val compounds: List<CompoundData>,
 	) : Answer() {
+
+		//region Data DSL
+
+		private fun simpleValue(field: AbstractFormField, value: String?) {
+			components += field.id.toString() to MutableAnswer(value, compounds = compounds)
+		}
+
+		fun text(field: AbstractFormField, value: String) = simpleValue(field, value)
+		fun message(field: AbstractFormField) = simpleValue(field, null)
+		fun integer(field: AbstractFormField, value: Long) = simpleValue(field, value.toString())
+		fun decimal(field: AbstractFormField, value: Double) = simpleValue(field, value.toString())
+		fun boolean(field: AbstractFormField, value: Boolean) = simpleValue(field, value.toString())
+
+		private fun abstractList(field: AbstractFormField, headValue: String?, block: MutableAnswer.() -> Unit) {
+			val list = MutableAnswer(headValue, compounds = compounds)
+			list.block()
+			components += field.id.toString() to list
+		}
+
+		fun item(id: Int, block: MutableAnswer.() -> Unit) {
+			val list = MutableAnswer(null, compounds = compounds)
+			list.block()
+			components += id.toString() to list
+		}
+
+		fun union(field: AbstractFormField, choice: UnionDataField, block: MutableAnswer.() -> Unit) = abstractList(field, choice.id.toString(), block)
+
+		fun compound(field: AbstractFormField, block: MutableAnswer.() -> Unit) = abstractList(field, null, block)
+
+		//endregion
 
 		private fun flattenIntermediary(): Map<out String?, String> {
 			val flatComponents = components
@@ -326,12 +363,12 @@ data class FormSubmission internal constructor(
 		/**
 		 * DSL builder to create a valid [FormSubmission].
 		 */
-		fun Form.submit(
+		fun Form.createSubmission(
 			compounds: List<CompoundData>,
 			block: MutableAnswer.() -> Unit
 		): FormSubmission {
 			val form = this
-			val answer = MutableAnswer(null, mutableMapOf())
+			val answer = MutableAnswer(null, mutableMapOf(), compounds)
 
 			answer.block()
 
