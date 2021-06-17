@@ -3,6 +3,7 @@ package formulaide.db
 import formulaide.api.data.CompoundData
 import formulaide.api.data.Form
 import formulaide.db.document.DbService
+import formulaide.db.document.DbSubmission
 import formulaide.db.document.DbUser
 import org.litote.kmongo.coroutine.coroutine
 import org.litote.kmongo.reactivestreams.KMongo
@@ -35,6 +36,7 @@ class Database(
 	internal val services = database.getCollection<DbService>("services")
 	internal val data = database.getCollection<CompoundData>("data")
 	internal val forms = database.getCollection<Form>("forms")
+	internal val submissions = database.getCollection<DbSubmission>("submissions")
 
 	private fun getParam(environmentVariable: String, defaultValue: String?): String =
 		System.getenv(environmentVariable)
