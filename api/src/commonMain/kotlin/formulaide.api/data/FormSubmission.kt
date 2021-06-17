@@ -1,7 +1,8 @@
 package formulaide.api.data
 
 import formulaide.api.data.Data.Simple.SimpleDataId.MESSAGE
-import formulaide.api.data.FormSubmission.Answer.Companion.asAnswer
+import formulaide.api.data.FormSubmission.Companion.submit
+import formulaide.api.data.FormSubmission.ReadOnlyAnswer.Companion.asAnswer
 import formulaide.api.types.Arity
 import kotlinx.serialization.Serializable
 
@@ -88,12 +89,13 @@ import kotlinx.serialization.Serializable
  * Here, the user has a brother and sister, provided their own phone number but not their sibling's,
  * wants to live by the sea, and doesn't have any comments.
  *
+ * @constructor Internal constructor to build this object. Use the factory method [Form.submit].
  * @property form The [Form] this submission corresponds to.
  * @property data A dictionary of the user's responses to the data requested by the [Form].
  * See [FormSubmission] for the format description.
  */
 @Serializable
-data class FormSubmission(
+data class FormSubmission internal constructor(
 	val form: FormId,
 	val data: Map<String, String>,
 ) {
@@ -115,7 +117,7 @@ data class FormSubmission(
 
 	private fun checkTopLevelFieldsValidity(
 		fields: List<FormField>,
-		topLevelAnswer: Answer,
+		topLevelAnswer: ReadOnlyAnswer,
 		compounds: List<CompoundData>
 	) {
 		for (field in fields) {
@@ -125,7 +127,7 @@ data class FormSubmission(
 
 	private fun checkDeepFieldsValidity(
 		fields: List<FormFieldComponent>,
-		topLevelAnswer: Answer,
+		topLevelAnswer: ReadOnlyAnswer,
 		compound: CompoundData,
 		compounds: List<CompoundData>,
 	) {
@@ -139,7 +141,7 @@ data class FormSubmission(
 	}
 
 	private fun checkField(
-		topLevelAnswer: Answer,
+		topLevelAnswer: ReadOnlyAnswer,
 		formField: AbstractFormField,
 		compoundField: CompoundDataField? = null,
 		topLevelFormField: FormField? = null,
@@ -172,7 +174,7 @@ data class FormSubmission(
 
 	private fun checkCompound(
 		expectedType: Data.Compound,
-		answer: Answer,
+		answer: ReadOnlyAnswer,
 		field: AbstractFormField,
 		compounds: List<CompoundData>
 	) {
@@ -190,9 +192,9 @@ data class FormSubmission(
 	 * Checks that an [answer] corresponds to the [arity][Arity] of a given [AbstractFormField].
 	 */
 	private fun checkFieldArity(
-		answer: Answer?,
+		answer: ReadOnlyAnswer?,
 		field: AbstractFormField,
-	): List<Answer> {
+	): List<ReadOnlyAnswer> {
 		val answers = when {
 			answer == null -> emptyList()
 			field.arity.max > 1 -> answer.components.map { (_, value) -> value }
@@ -204,7 +206,7 @@ data class FormSubmission(
 
 	private fun checkUnion(
 		expected: Data.Union,
-		answer: Answer,
+		answer: ReadOnlyAnswer,
 		field: AbstractFormField,
 		compounds: List<CompoundData>
 	) {
@@ -224,7 +226,7 @@ data class FormSubmission(
 
 	private fun checkSimple(
 		expected: Data.Simple,
-		answer: Answer,
+		answer: ReadOnlyAnswer,
 		field: AbstractFormField,
 	) {
 		val validated = expected.id.validate(answer.value)
@@ -233,10 +235,35 @@ data class FormSubmission(
 		require(answer.components.isEmpty()) { "${fieldErrorMessage(field)} est de type SIMPLE, il ne peut pas avoir des sous-réponses ; trouvé ${answer.components}" }
 	}
 
-	private data class Answer(val value: String?, val components: Map<String, Answer>) {
+	//endregion
+	//region Form answers
+
+	/**
+	 * Recursive tree that represents a [form submission][FormSubmission]'s contents.
+	 *
+	 * Each node has a [value] and multiple [sub-nodes][components].
+	 */
+	abstract class Answer {
+
+		/**
+		 * The value of the current node.
+		 */
+		internal abstract val value: String?
+
+		/**
+		 * The sub-nodes of this [Answer].
+		 * The key corresponds to the ID of that depth (see [FormSubmission]), the value corresponds to the answer of that depth.
+		 */
+		internal abstract val components: Map<String, Answer>
+	}
+
+	private data class ReadOnlyAnswer(
+		override val value: String?,
+		override val components: Map<String, ReadOnlyAnswer>
+	) : Answer() {
 
 		companion object {
-			fun List<Pair<List<String>, String>>.asAnswer(): Answer {
+			fun List<Pair<List<String>, String>>.asAnswer(): ReadOnlyAnswer {
 
 				val elements = this
 					.sortedBy { (ids, _) -> ids.size }
@@ -255,12 +282,66 @@ data class FormSubmission(
 						}.asAnswer()
 					}
 					.toList()
-					.fold(Answer(head, emptyMap())) { acc, (id, value) ->
-						Answer(acc.value, acc.components + mapOf(id to value))
+					.fold(ReadOnlyAnswer(head, emptyMap())) { acc, (id, value) ->
+						ReadOnlyAnswer(acc.value, acc.components + mapOf(id to value))
 					}
 			}
 		}
 	}
 
+	/**
+	 * Mutable implementation of [Answer], used as a DSL in [Form.submit].
+	 */
+	data class MutableAnswer(
+		override val value: String?,
+		override val components: MutableMap<String, MutableAnswer> = HashMap()
+	) : Answer() {
+
+		private fun flattenIntermediary(): Map<out String?, String> {
+			val flatComponents = components
+				.mapValues { (_, answer) -> answer.flattenIntermediary() }
+				.flatMap { (id, components) ->
+					components.map { (k, v) -> if (k != null) ("$id:$k") to v else id to v }
+				}
+				.toMap()
+
+			return if (value != null)
+				flatComponents + mapOf<String?, String>(null to value)
+			else
+				flatComponents
+		}
+
+		fun flatten(): Map<String, String> {
+			val flattened = flattenIntermediary()
+
+			@Suppress("UNCHECKED_CAST")
+			return flattened.filterKeys { it != null } as Map<String, String>
+		}
+	}
+
 	//endregion
+
+	companion object {
+
+		/**
+		 * DSL builder to create a valid [FormSubmission].
+		 */
+		fun Form.submit(
+			compounds: List<CompoundData>,
+			block: MutableAnswer.() -> Unit
+		): FormSubmission {
+			val form = this
+			val answer = MutableAnswer(null, mutableMapOf())
+
+			answer.block()
+
+			return FormSubmission(
+				form.id,
+				data = answer.flatten()
+			).apply {
+				checkValidity(form, compounds)
+			}
+		}
+
+	}
 }

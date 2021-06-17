@@ -3,6 +3,7 @@ package formulaire.api.data
 import formulaide.api.data.*
 import formulaide.api.types.Arity
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFails
 
 class FormSubmissionTest {
@@ -186,6 +187,28 @@ class FormSubmissionTest {
 		assertFails {
 			submission3.checkValidity(form, listOf(identity))
 		}
+	}
+
+	@Test
+	fun flatAnswer() {
+		val answer = FormSubmission.MutableAnswer("Root").apply {
+			components += "1" to FormSubmission.MutableAnswer("First").apply {
+				components += "0" to FormSubmission.MutableAnswer("Second")
+			}
+			components += "2" to FormSubmission.MutableAnswer(null).apply {
+				components += "3" to FormSubmission.MutableAnswer("Third")
+				components += "4" to FormSubmission.MutableAnswer("Fourth")
+			}
+		}
+
+		val expected = mapOf(
+			"1" to "First",
+			"1:0" to "Second",
+			"2:3" to "Third",
+			"2:4" to "Fourth"
+		)
+
+		assertEquals(expected, answer.flatten())
 	}
 
 }
