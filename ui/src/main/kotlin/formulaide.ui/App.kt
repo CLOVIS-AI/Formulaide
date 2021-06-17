@@ -1,18 +1,38 @@
 package formulaide.ui
 
+import formulaide.api.users.User
+import formulaide.client.Client
+import formulaide.ui.auth.login
 import formulaide.ui.utils.text
-import react.RBuilder
-import react.RComponent
+import kotlinx.coroutines.MainScope
 import react.RProps
-import react.RState
 import react.dom.h1
+import react.functionalComponent
+import react.useState
 
-class App : RComponent<RProps, RState>() {
+/**
+ * The main app screen.
+ */
+@JsExport
+val App = functionalComponent<RProps> {
+	val (client, setClient) = useState<Client>(Client.Anonymous.connect("http://localhost:8000")) //TODO: generify
+	val (user, setUser) = useState<User?>(null)
+	val (scope, _) = useState(MainScope())
 
-	override fun RBuilder.render() {
-		h1 {
-			text("Formulaide")
+	h1 {
+		when (user) {
+			null -> text("Formulaide • Accès anonyme")
+			else -> text("Formulaide • Bonjour ${user.fullName}")
 		}
+	}
+
+	login {
+		this.client = client
+		this.onLogin = { client, user ->
+			setClient(client)
+			setUser(user)
+		}
+		this.scope = scope
 	}
 
 }
