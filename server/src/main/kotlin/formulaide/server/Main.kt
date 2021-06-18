@@ -64,6 +64,8 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 	}
 
 	routing {
+		staticFrontendRoutes()
+
 		userRoutes(auth)
 		serviceRoutes()
 		dataRoutes()

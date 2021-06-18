@@ -1,4 +1,4 @@
-version: "3.8"
+version: "3.6"
 
 services:
   mongo:
@@ -8,7 +8,6 @@ services:
       - data:/data/db
     ports:
       - "27017:27017"
-    networks: [ mongodb_network ]
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongo 10.10.10.60:27017/test --quiet
       interval: 30s
@@ -24,7 +23,6 @@ services:
     ports:
       - "8081:8081"
     depends_on: [ mongo ]
-    networks: [ mongodb_network ]
     environment:
       ME_CONFIG_MONGODB_ADMINUSERNAME: "root"
       ME_CONFIG_MONGODB_ADMINPASSWORD: "development-password"
@@ -33,13 +31,17 @@ services:
     image: "registry.gitlab.com/arcachon-ville/formulaide/server:latest"
     restart: unless-stopped
     ports:
-      - "8001:8000"
+      - target: 8000
+        published: 8001
+        protocol: tcp
     depends_on: [ mongo ]
+    environment:
+      formulaide_host: "mongo"
+      formulaide_port: 27017
+      formulaide_database: "formulaide"
+      formulaide_username: "root"
+      formulaide_password: "development-password"
 
 volumes:
   data:
     name: data
-
-networks:
-  mongodb_network:
-    name: mongodb_network
