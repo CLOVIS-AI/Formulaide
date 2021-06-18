@@ -27,7 +27,6 @@ external interface LoginProps : RProps {
  * @see Client
  * @see login
  */
-@JsExport
 val Login = functionalComponent<LoginProps> { props ->
 	text("Bienvenue sur Formulaide, veuillez vous connecter pour accéder aux pages réservées aux employés.")
 

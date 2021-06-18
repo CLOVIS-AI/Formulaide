@@ -13,7 +13,6 @@ import react.useState
 /**
  * The main app screen.
  */
-@JsExport
 val App = functionalComponent<RProps> {
 	val (client, setClient) = useState<Client>(Client.Anonymous.connect("http://localhost:8000")) //TODO: generify
 	val (user, setUser) = useState<User?>(null)
