@@ -15,7 +15,7 @@ import io.ktor.http.*
  * Common behavior between [Anonymous] and [Authenticated].
  */
 sealed class Client(
-	internal val hostUrl: String,
+	val hostUrl: String,
 	internal val client: HttpClient
 ) {
 
