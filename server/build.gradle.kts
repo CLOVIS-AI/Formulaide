@@ -51,3 +51,14 @@ tasks.jacocoTestReport {
 		html.isEnabled = true
 	}
 }
+
+tasks.create<Copy>("copyFrontend") {
+	dependsOn(":ui:browserProductionWebpack")
+
+	from("${project(":ui").buildDir}/distributions")
+	into("${project.buildDir}/resources/main/front")
+}
+
+tasks.processResources {
+	dependsOn("copyFrontend")
+}
