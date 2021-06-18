@@ -38,6 +38,14 @@ sealed class Data {
 		fun compound(compound: CompoundData) = Compound(compound.id)
 
 		/**
+		 * Factory method to reference a [compound data][CompoundData].
+		 * @see Data
+		 * @see Compound
+		 * @see CompoundData
+		 */
+		fun compoundById(id: CompoundDataId) = Compound(id)
+
+		/**
 		 * Factory method to reference a recursive [compound data][CompoundData].
 		 * @see compound
 		 * @see SPECIAL_TOKEN_RECURSION
@@ -83,14 +91,14 @@ sealed class Data {
 	) : Data() {
 
 		@Serializable
-		enum class SimpleDataId {
+		enum class SimpleDataId(val displayName: String) {
 
 			/**
 			 * A simple text field.
 			 *
 			 * @see MESSAGE
 			 */
-			TEXT {
+			TEXT("Texte") {
 				override fun validate(value: String?) = value?.ifBlank { null }
 			},
 
@@ -104,7 +112,7 @@ sealed class Data {
 			 *
 			 * @see TEXT
 			 */
-			MESSAGE {
+			MESSAGE("Message") {
 				override fun validate(value: String?) = value
 			},
 
@@ -113,7 +121,7 @@ sealed class Data {
 			 *
 			 * The type corresponds to Kotlin's [Long] (a 64-bit signed integer).
 			 */
-			INTEGER {
+			INTEGER("Nombre entier") {
 				override fun validate(value: String?) = value?.toLongOrNull()
 			},
 
@@ -122,14 +130,14 @@ sealed class Data {
 			 *
 			 * The type corresponds to Kotlin's [Double] (a 64-bit double precision floating point number).
 			 */
-			DECIMAL {
+			DECIMAL("Nombre décimal") {
 				override fun validate(value: String?) = value?.toDoubleOrNull()
 			},
 
 			/**
 			 * A simple checkbox.
 			 */
-			BOOLEAN {
+			BOOLEAN("Bouton à cocher") {
 				override fun validate(value: String?) = value?.toBooleanStrictOrNull()
 			},
 
