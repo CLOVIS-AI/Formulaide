@@ -66,6 +66,7 @@ val Login = functionalComponent<LoginProps> { props ->
 
 			attrs {
 				id = "login-button"
+				value = "Se connecter"
 			}
 		}
 
