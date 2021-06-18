@@ -10,7 +10,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.html.InputType
 import kotlinx.html.id
-import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
 import react.*
@@ -32,8 +31,8 @@ external interface LoginProps : RProps {
 val Login = functionalComponent<LoginProps> { props ->
 	text("Bienvenue sur Formulaide, veuillez vous connecter pour accéder aux pages réservées aux employés.")
 
-	val (email, setEmail) = useState<String?>(null)
-	val (password, setPassword) = useState<String?>(null)
+	val email = useRef<HTMLInputElement>(null)
+	val password = useRef<HTMLInputElement>(null)
 
 	form {
 		label { text("Email") }
@@ -45,7 +44,7 @@ val Login = functionalComponent<LoginProps> { props ->
 				autoFocus = true
 				required = true
 				placeholder = "Votre adresse email"
-				onChangeFunction = { setEmail((it.target as HTMLInputElement).value) }
+				ref = email
 			}
 		}
 
@@ -58,7 +57,7 @@ val Login = functionalComponent<LoginProps> { props ->
 				id = "login-password"
 				placeholder = "Votre mot de passe"
 				required = true
-				onChangeFunction = { setPassword((it.target as HTMLInputElement).value) }
+				ref = password
 			}
 		}
 
@@ -77,8 +76,8 @@ val Login = functionalComponent<LoginProps> { props ->
 
 				props.scope.launch {
 					val credentials = PasswordLogin(
-						email = email ?: error("Email manquant"),
-						password = password ?: error("Mot de passe manquant")
+						email = email.current?.value ?: error("Email manquant"),
+						password = password.current?.value ?: error("Mot de passe manquant")
 					)
 
 					val token = props.client.login(credentials).token
