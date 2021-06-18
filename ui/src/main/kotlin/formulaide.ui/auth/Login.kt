@@ -6,12 +6,11 @@ import formulaide.client.Client
 import formulaide.client.routes.getMe
 import formulaide.client.routes.login
 import formulaide.ui.utils.text
-import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
-import kotlinx.html.js.onClickFunction
+import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
 import react.*
 import react.dom.*
@@ -35,7 +34,7 @@ val Login = functionalComponent<LoginProps> { props ->
 	val (email, setEmail) = useState<String?>(null)
 	val (password, setPassword) = useState<String?>(null)
 
-	div {
+	form {
 		label { text("Email") }
 		input(InputType.email, name = "email") {
 			key = "itemEmail"
@@ -60,29 +59,29 @@ val Login = functionalComponent<LoginProps> { props ->
 			}
 		}
 
-		br {  }
+		br {}
 		input(InputType.submit, name = "login") {
 			key = "itemLogin"
+		}
 
-			attrs {
-				onClickFunction = {
-					if (email != null && password != null) {
-						props.scope.launch {
-							val credentials = PasswordLogin(
-								email = email,
-								password = password
-							)
+		attrs {
+			onSubmitFunction = {
+				it.preventDefault()
 
-							val token = props.client.login(credentials).token
+				props.scope.launch {
+					val credentials = PasswordLogin(
+						email = email ?: error("Email manquant"),
+						password = password ?: error("Mot de passe manquant")
+					)
 
-							val newClient = Client.Authenticated.connect(
-								props.client.hostUrl,
-								token
-							)
+					val token = props.client.login(credentials).token
 
-							props.onLogin(newClient, newClient.getMe())
-						}
-					} else window.alert("Il manque des données") //TODO: better error handling
+					val newClient = Client.Authenticated.connect(
+						props.client.hostUrl,
+						token
+					)
+
+					props.onLogin(newClient, newClient.getMe())
 				}
 			}
 		}
