@@ -4,6 +4,7 @@ import formulaide.api.users.User
 import formulaide.client.Client
 import formulaide.ui.Role.Companion.role
 import formulaide.ui.auth.login
+import formulaide.ui.screens.createData
 import formulaide.ui.utils.text
 import kotlinx.coroutines.MainScope
 import kotlinx.html.js.onClickFunction
@@ -94,8 +95,11 @@ val App = functionalComponent<RProps> {
 				}
 			}
 		}
-		Screen.NEW_DATA -> {
-
+		Screen.NEW_DATA -> createData {
+			require(client is Client.Authenticated) { "Il n'est pas possible de créer une donnée sans être connecté (client est anonyme)" }
+			this.user = user ?: error("Il n'est pas possible de créer une donnée sans être connecté (pas d'utilisateur)")
+			this.scope = scope
+			this.client = client
 		}
 	}
 
