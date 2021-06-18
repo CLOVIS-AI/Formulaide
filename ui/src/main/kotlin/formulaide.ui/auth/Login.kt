@@ -9,6 +9,7 @@ import formulaide.ui.utils.text
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.html.InputType
+import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
@@ -40,6 +41,7 @@ val Login = functionalComponent<LoginProps> { props ->
 			key = "itemEmail"
 
 			attrs {
+				id = "login-email"
 				autoFocus = true
 				required = true
 				placeholder = "Votre adresse email"
@@ -53,6 +55,7 @@ val Login = functionalComponent<LoginProps> { props ->
 			key = "itemPassword"
 
 			attrs {
+				id = "login-password"
 				placeholder = "Votre mot de passe"
 				required = true
 				onChangeFunction = { setPassword((it.target as HTMLInputElement).value) }
@@ -62,6 +65,10 @@ val Login = functionalComponent<LoginProps> { props ->
 		br {}
 		input(InputType.submit, name = "login") {
 			key = "itemLogin"
+
+			attrs {
+				id = "login-button"
+			}
 		}
 
 		attrs {
