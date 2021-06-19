@@ -1,15 +1,18 @@
 package formulaide.ui.screens
 
-import formulaide.api.data.Action
-import formulaide.api.data.Form
-import formulaide.api.data.FormField
+import formulaide.api.data.*
+import formulaide.api.data.Data.Simple.SimpleDataId.TEXT
+import formulaide.api.types.Arity
 import formulaide.client.Client
 import formulaide.client.routes.createForm
+import formulaide.client.routes.listData
+import formulaide.ui.fields.editableField
 import formulaide.ui.utils.text
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.html.InputType
 import kotlinx.html.id
+import kotlinx.html.js.onClickFunction
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
 import react.*
@@ -21,6 +24,17 @@ external interface FormCreationProps : RProps {
 }
 
 val CreateForm = functionalComponent<FormCreationProps> { props ->
+	val (compoundData, setData) = useState<List<CompoundData>>(emptyList())
+
+	useEffect(listOf(props.client)) {
+		props.scope.launch {
+			val client = props.client
+			require(client is Client.Authenticated) { "Il faut être identifié pour pouvoir créer un formulaire" }
+
+			setData(client.listData())
+		}
+	}
+
 	form {
 		val formName = useRef<HTMLInputElement>()
 		label { text("Titre") }
@@ -46,6 +60,38 @@ val CreateForm = functionalComponent<FormCreationProps> { props ->
 		}
 
 		val (fields, setFields) = useState<List<FormField>>(emptyList())
+		fun replaceField(index: Int, value: FormField) =
+			setFields(fields.subList(0, index) + value + fields.subList(index + 1, fields.size))
+		for ((i, field) in fields.withIndex()) {
+			editableField {
+				this.name = field.name
+				this.order = field.order
+				this.arity = field.arity
+				this.data = field.data
+				this.compounds = compoundData
+				this.setArity = { replaceField(i, field.copy(arity = it)) }
+				this.setName = { replaceField(i, field.copy(name = it)) }
+				this.setDataType = { replaceField(i, field.copy(data = it)) }
+			}
+		}
+
+		br {}
+		input(InputType.button, name = "new-data-add-simple") {
+			attrs {
+				value = "Ajouter un champ"
+				onClickFunction = {
+					setFields(
+						fields + FormField(
+							order = fields.size,
+							arity = Arity.optional(),
+							id = fields.size,
+							name = "Nouveau champ",
+							data = Data.simple(TEXT)
+						)
+					)
+				}
+			}
+		}
 
 		val (actions, setActions) = useState<List<Action>>(emptyList())
 
