@@ -82,10 +82,22 @@ val CreateData = functionalComponent<CreateDataProps> { props ->
 					this.order = field.order
 					this.name = field.name
 					this.data = field.data
-					this.setName = { replaceField(i, field.copy(name = it)) }
-					this.setArity = { replaceField(i, field.copy(arity = it)) }
-					this.setDataType = { replaceField(i, field.copy(data = it)) }
 					this.compounds = existingData
+					this.recursive = false
+					this.allowModifications = true
+
+					this.set = { name, data, min, max, subFields ->
+						require(subFields == null) { "Une donnée ne peut pas avoir de sous-champs" }
+
+						replaceField(i, field.copy(
+							name = name ?: field.name,
+							data = data ?: field.data,
+							arity = Arity(
+								min ?: field.arity.min,
+								max ?: field.arity.max
+							)
+						))
+					}
 				}
 			}
 
@@ -127,7 +139,7 @@ val CreateData = functionalComponent<CreateDataProps> { props ->
 					props.scope.launch {
 						props.client.createData(data)
 
-						setCreationCounter(creationCounter+1) // Force re-query of the data list
+						setCreationCounter(creationCounter + 1) // Force re-query of the data list
 					}
 				}
 			}

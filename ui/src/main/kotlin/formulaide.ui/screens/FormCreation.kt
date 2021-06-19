@@ -54,7 +54,6 @@ val CreateForm = functionalComponent<FormCreationProps> { props ->
 		input(InputType.checkBox, name = "new-form-is-public") {
 			attrs {
 				id = "new-form-is-public"
-				required = true
 				ref = public
 			}
 		}
@@ -69,9 +68,18 @@ val CreateForm = functionalComponent<FormCreationProps> { props ->
 				this.arity = field.arity
 				this.data = field.data
 				this.compounds = compoundData
-				this.setArity = { replaceField(i, field.copy(arity = it)) }
-				this.setName = { replaceField(i, field.copy(name = it)) }
-				this.setDataType = { replaceField(i, field.copy(data = it)) }
+				this.set = {  name, data, min, max, subFields ->
+					val newName = name ?: field.name
+					val newData = data ?: field.data
+					val newMin = min ?: field.arity.min
+					val newMax = max ?: field.arity.max
+					val newFields = subFields ?: field.components
+
+					replaceField(i, field.copy(name = newName, data = newData, arity = Arity(newMin, newMax), components = newFields))
+				}
+
+				this.recursive = true
+				this.allowModifications = true
 			}
 		}
 
