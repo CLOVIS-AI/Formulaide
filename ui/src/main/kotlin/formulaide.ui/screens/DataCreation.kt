@@ -4,9 +4,11 @@ import formulaide.api.data.CompoundData
 import formulaide.api.data.CompoundDataField
 import formulaide.api.data.Data
 import formulaide.api.data.Data.Simple.SimpleDataId.TEXT
+import formulaide.api.data.NewCompoundData
 import formulaide.api.types.Arity
 import formulaide.api.users.User
 import formulaide.client.Client
+import formulaide.client.routes.createData
 import formulaide.client.routes.listData
 import formulaide.ui.fields.editableField
 import formulaide.ui.utils.text
@@ -117,8 +119,16 @@ val CreateData = functionalComponent<CreateDataProps> { props ->
 				onSubmitFunction = {
 					it.preventDefault()
 
-					println("Demande de création de donnée") //TODO: submit
-					setCreationCounter(creationCounter+1) // Force re-query of the data list
+					val data = NewCompoundData(
+						name = formName.current?.value ?: error("Cette donnée n'a pas de nom"),
+						fields = fields
+					)
+
+					props.scope.launch {
+						props.client.createData(data)
+
+						setCreationCounter(creationCounter+1) // Force re-query of the data list
+					}
 				}
 			}
 		}
