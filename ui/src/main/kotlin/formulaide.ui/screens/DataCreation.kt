@@ -85,6 +85,7 @@ val CreateData = functionalComponent<CreateDataProps> { props ->
 					this.compounds = existingData
 					this.recursive = false
 					this.allowModifications = true
+					this.allowCreationOfRecursiveData = true
 
 					this.set = { name, data, min, max, subFields ->
 						require(subFields == null) { "Une donnée ne peut pas avoir de sous-champs" }

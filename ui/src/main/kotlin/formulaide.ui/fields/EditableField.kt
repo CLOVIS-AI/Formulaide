@@ -29,6 +29,11 @@ external interface EditableFieldProps : RProps {
 	var allowModifications: Boolean
 
 	/**
+	 * When `true`, the user is allowed to create a field with ID [SPECIAL_TOKEN_RECURSION].
+	 */
+	var allowCreationOfRecursiveData: Boolean
+
+	/**
 	 * Allows to send requests for modifications to the parent Component.
 	 * In order of appearance:
 	 * - [String] is [name]
@@ -132,6 +137,19 @@ val EditableField: FunctionalComponent<EditableFieldProps> = functionalComponent
 									selected = true
 						}
 					}
+				if (props.allowCreationOfRecursiveData) {
+					option {
+						text("La donnée courante")
+						attrs {
+							value = SPECIAL_TOKEN_RECURSION
+
+							val selectedData = props.data
+							if (selectedData is Data.Compound)
+								if (selectedData.id == SPECIAL_TOKEN_RECURSION)
+									selected = true
+						}
+					}
+				}
 				for (simple in Data.Simple.SimpleDataId.values())
 					option {
 						text(simple.displayName)
@@ -165,6 +183,7 @@ val EditableField: FunctionalComponent<EditableFieldProps> = functionalComponent
 							_setSubFields(emptyList())
 						} else {
 							val compound = props.compounds.find { it.id == value }
+								?: CompoundData(props.name, SPECIAL_TOKEN_RECURSION, emptyList()).takeIf { props.allowCreationOfRecursiveData }
 								?: error("Aucune donnée n'a été trouvée avec l'identifiant '$value'")
 
 							props.set(
@@ -238,6 +257,7 @@ val EditableField: FunctionalComponent<EditableFieldProps> = functionalComponent
 
 						this.allowModifications = false
 						this.recursive = true
+						this.allowCreationOfRecursiveData = props.allowCreationOfRecursiveData
 					}
 				}
 			}

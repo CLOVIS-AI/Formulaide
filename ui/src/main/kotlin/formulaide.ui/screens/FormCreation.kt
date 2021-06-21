@@ -80,6 +80,7 @@ val CreateForm = functionalComponent<FormCreationProps> { props ->
 
 				this.recursive = true
 				this.allowModifications = true
+				this.allowCreationOfRecursiveData = false
 			}
 		}
 
