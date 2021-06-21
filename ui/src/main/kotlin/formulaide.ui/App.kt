@@ -6,6 +6,7 @@ import formulaide.ui.Role.Companion.role
 import formulaide.ui.auth.login
 import formulaide.ui.screens.createData
 import formulaide.ui.screens.formList
+import formulaide.ui.screens.createForm
 import formulaide.ui.utils.text
 import kotlinx.coroutines.MainScope
 import kotlinx.html.js.onClickFunction
@@ -37,8 +38,9 @@ enum class Role {
 
 enum class Screen(val displayName: String, val requiredRole: Role) {
 	HOME("Page d'accueil", Role.ANONYMOUS),
-	NEW_DATA("Créer une donnée", Role.ADMINISTRATOR),
 	FORM_LIST("Liste des formulaires", Role.ANONYMOUS),
+	NEW_DATA("Créer une donnée", Role.ADMINISTRATOR),
+	NEW_FORM("Créer un formulaire", Role.ADMINISTRATOR),
 }
 
 /**
@@ -106,6 +108,11 @@ val App = functionalComponent<RProps> {
 		Screen.FORM_LIST -> formList {
 			this.client = client
 			this.scope = scope
+		}
+		Screen.NEW_FORM -> createForm {
+			require(client is Client.Authenticated) { "Il n'est pas possible de créer un formulaire sans être connecté (client est anonyme)" }
+			this.scope = scope
+			this.client = client
 		}
 	}
 

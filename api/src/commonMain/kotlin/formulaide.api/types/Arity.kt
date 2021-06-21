@@ -36,6 +36,8 @@ data class Arity(
 	 */
 	val range get() = min..max
 
+	override fun toString() = "$min..$max"
+
 	companion object {
 
 		/**

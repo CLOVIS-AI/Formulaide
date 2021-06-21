@@ -86,7 +86,8 @@ data class FormField(
 		require(name.isNotBlank()) { "Le nom d'un champ d'un formulaire ne doit être vide." }
 
 		if (data is Data.Compound && arity != Arity.forbidden()) {
-			requireNotNull(components) { "Si ce champ représente une donnée composée, et n'est pas interdit (arité maximale de 0), alors il doit déclarer des sous-champs (components)" }
+			if (components == null)
+				throw IllegalArgumentException("Si ce champ représente une donnée composée, et n'est pas interdit (arité maximale de 0), alors il doit déclarer des sous-champs (components) ; trouvé une arité de $arity, et la donnée $data")
 		}
 	}
 }
