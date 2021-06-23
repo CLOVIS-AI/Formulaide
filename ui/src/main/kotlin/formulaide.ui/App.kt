@@ -8,11 +8,14 @@ import formulaide.client.routes.getMe
 import formulaide.client.routes.listAllForms
 import formulaide.client.routes.listData
 import formulaide.client.routes.listForms
+import kotlinx.browser.window
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import react.*
 
-val defaultClient = Client.Anonymous.connect("http://localhost:8000") //TODO: generify
+internal val defaultClient =
+	Client.Anonymous.connect(window.location.protocol + "//" + window.location.host)
+private val defaultClientTest = Client.Anonymous.connect("http://localhost:8000")
 
 /**
  * The main app screen.
@@ -48,7 +51,15 @@ val App = functionalComponent<RProps> {
 		scope.launch {
 			setForms(
 				if (client is Client.Authenticated) client.listAllForms()
-				else client.listForms()
+				else
+					try {
+						client.listForms()
+					} catch (e: Exception) {
+						console.warn("Couldn't access the list of forms, this client is probably dead. Switching to the test client.")
+						setClient(defaultClientTest)
+						setUser(null)
+						emptyList()
+					}
 			)
 		}
 	}
