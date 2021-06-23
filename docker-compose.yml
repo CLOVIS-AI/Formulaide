@@ -1,47 +1,33 @@
 version: "3.6"
 
+# Docker Compose configuration for Formulaide
+
+# Development environment:
+#
+# Start locally:
+#   docker-compose up -d
+
+# Production environment:
+#
+# Start locally:
+#   docker-compose up -f docker-compose.yml -f docker-compose.yml up -d
+# Deploy to a Docker Swarm:
+#   docker stack deploy -c docker-compose.yml -c docker-compose.prod.yml formulaide
+#
+# To create/administrate a Docker Swarm, see: https://docs.docker.com/engine/swarm/
+
 services:
   mongo:
     image: "mongo"
-    restart: unless-stopped
     volumes:
       - data:/data/db
     networks: [ database ]
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongo 10.10.10.60:27017/test --quiet
-      interval: 30s
-      timeout: 10s
-      retries: 3
     environment:
       MONGO_INITDB_ROOT_USERNAME: "root"
       MONGO_INITDB_ROOT_PASSWORD: "development-password"
-    deploy:
-      replicas: 1
-      update_config:
-        delay: 10s
-      restart_policy:
-        condition: on_failure
-
-  mongo-express:
-    image: "mongo-express"
-    restart: unless-stopped
-    ports:
-      - "8081:8081"
-    depends_on: [ mongo ]
-    networks: [ database ]
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: "root"
-      ME_CONFIG_MONGODB_ADMINPASSWORD: "development-password"
-    deploy:
-      replicas: 1
-      update_config:
-        delay: 10s
-      restart_policy:
-        condition: on_failure
 
   server:
     image: "registry.gitlab.com/arcachon-ville/formulaide/server:latest"
-    restart: unless-stopped
     ports:
       - target: 8000
         published: 8001
@@ -54,12 +40,6 @@ services:
       formulaide_database: "formulaide"
       formulaide_username: "root"
       formulaide_password: "development-password"
-    deploy:
-      replicas: 2
-      update_config:
-        delay: 10s
-      restart_policy:
-        condition: on_failure
 
 volumes:
   data:
