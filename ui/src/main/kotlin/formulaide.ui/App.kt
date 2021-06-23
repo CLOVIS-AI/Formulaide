@@ -69,7 +69,7 @@ val App = functionalComponent<RProps> {
 		attrs {
 			this.client = client
 			this.user = user
-			this.connect = setClient
+			this.connect = { setClient(it); setUser(null) }
 
 			this.scope = scope
 
