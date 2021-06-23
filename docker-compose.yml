@@ -15,6 +15,12 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: "root"
       MONGO_INITDB_ROOT_PASSWORD: "development-password"
+    deploy:
+      replicas: 1
+      update_config:
+        delay: 10s
+      restart_policy:
+        condition: on_failure
 
   mongo-express:
     image: "mongo-express"
@@ -26,6 +32,12 @@ services:
     environment:
       ME_CONFIG_MONGODB_ADMINUSERNAME: "root"
       ME_CONFIG_MONGODB_ADMINPASSWORD: "development-password"
+    deploy:
+      replicas: 1
+      update_config:
+        delay: 10s
+      restart_policy:
+        condition: on_failure
 
   server:
     image: "registry.gitlab.com/arcachon-ville/formulaide/server:latest"
@@ -42,6 +54,12 @@ services:
       formulaide_database: "formulaide"
       formulaide_username: "root"
       formulaide_password: "development-password"
+    deploy:
+      replicas: 2
+      update_config:
+        delay: 10s
+      restart_policy:
+        condition: on_failure
 
 volumes:
   data:
