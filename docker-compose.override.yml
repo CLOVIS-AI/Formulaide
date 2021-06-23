@@ -1,0 +1,20 @@
+version: "3.6"
+
+services:
+  mongo:
+    ports:
+      - "27017:27017"
+
+  mongo-express:
+    image: "mongo-express"
+    ports:
+      - "8081:8081"
+    depends_on: [ mongo ]
+    networks: [ database ]
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: "root"
+      ME_CONFIG_MONGODB_ADMINPASSWORD: "development-password"
+
+networks:
+  database:
+    name: database_dev

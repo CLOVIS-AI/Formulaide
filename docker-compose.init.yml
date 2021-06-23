@@ -1,0 +1,7 @@
+version: "3.6"
+
+services:
+  server:
+    command: "/home/server/bin/server --init"
+    environment:
+      formulaide_allow_init: "true"

@@ -1,40 +1,47 @@
 version: "3.6"
 
+# Docker Compose configuration for Formulaide
+
+# Development environment:
+#
+# Start locally:
+#   docker-compose up -d
+
+# Production environment:
+#
+# Start locally:
+#   docker-compose up -f docker-compose.yml -f docker-compose.yml up -d
+# Deploy to a Docker Swarm:
+#   docker stack deploy -c docker-compose.yml -c docker-compose.prod.yml formulaide
+#
+# To create/administrate a Docker Swarm, see: https://docs.docker.com/engine/swarm/
+
+# First initialization
+#
+# To create the administrator and employee accounts:
+# Locally with Docker Compose:
+#   add '-f docker-compose.init.yml' to the command shown previously
+# In a Swarm:
+#   add '-c docker-compose.init.yml' to the command shown previously
+
 services:
   mongo:
     image: "mongo"
-    restart: unless-stopped
     volumes:
       - data:/data/db
-    ports:
-      - "27017:27017"
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongo 10.10.10.60:27017/test --quiet
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    networks: [ database ]
     environment:
       MONGO_INITDB_ROOT_USERNAME: "root"
       MONGO_INITDB_ROOT_PASSWORD: "development-password"
 
-  mongo-express:
-    image: "mongo-express"
-    restart: unless-stopped
-    ports:
-      - "8081:8081"
-    depends_on: [ mongo ]
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: "root"
-      ME_CONFIG_MONGODB_ADMINPASSWORD: "development-password"
-
   server:
     image: "registry.gitlab.com/arcachon-ville/formulaide/server:latest"
-    restart: unless-stopped
     ports:
       - target: 8000
         published: 8001
         protocol: tcp
     depends_on: [ mongo ]
+    networks: [ database ]
     environment:
       formulaide_host: "mongo"
       formulaide_port: 27017
@@ -45,3 +52,6 @@ services:
 volumes:
   data:
     name: data
+
+networks:
+  database:
