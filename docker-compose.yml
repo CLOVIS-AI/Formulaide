@@ -16,6 +16,14 @@ version: "3.6"
 #
 # To create/administrate a Docker Swarm, see: https://docs.docker.com/engine/swarm/
 
+# First initialization
+#
+# To create the administrator and employee accounts:
+# Locally with Docker Compose:
+#   add '-f docker-compose.init.yml' to the command shown previously
+# In a Swarm:
+#   add '-c docker-compose.init.yml' to the command shown previously
+
 services:
   mongo:
     image: "mongo"
