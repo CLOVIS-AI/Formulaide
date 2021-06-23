@@ -5,9 +5,13 @@ import formulaide.client.Client.Anonymous
 import formulaide.client.Client.Authenticated
 import formulaide.client.routes.listAllForms
 import formulaide.client.routes.listForms
+import formulaide.ui.Screen
 import formulaide.ui.ScreenProps
 import formulaide.ui.utils.text
 import kotlinx.coroutines.launch
+import kotlinx.html.js.onClickFunction
+import react.dom.attrs
+import react.dom.button
 import react.dom.li
 import react.dom.ul
 import react.functionalComponent
@@ -37,6 +41,12 @@ val FormList = functionalComponent<ScreenProps> { props ->
 				text += " • Ce formulaire est interne"
 
 			li { text(text) }
+			button {
+				text("Saisir")
+				attrs {
+					onClickFunction = { props.navigateTo(Screen.SubmitForm(form)) }
+				}
+			}
 		}
 	}
 

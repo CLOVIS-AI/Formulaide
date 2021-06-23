@@ -26,6 +26,8 @@ abstract class Screen(
 	object NewData : Screen("Créer une donnée", Role.ADMINISTRATOR, CreateData)
 	object NewForm : Screen("Créer un formulaire", Role.ADMINISTRATOR, CreateForm)
 
+	class SubmitForm(form: Form) : Screen("Saisie", Role.ANONYMOUS, formulaide.ui.screens.SubmitForm(form))
+
 	companion object {
 		val regularScreens = sequenceOf(Home, ShowForms, NewData, NewForm)
 		fun availableScreens(user: User?) = regularScreens
