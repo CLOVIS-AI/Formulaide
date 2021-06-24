@@ -1,48 +1,34 @@
 package formulaide.ui.screens
 
-import formulaide.api.data.CompoundData
 import formulaide.api.data.CompoundDataField
 import formulaide.api.data.Data
 import formulaide.api.data.Data.Simple.SimpleDataId.TEXT
 import formulaide.api.data.NewCompoundData
 import formulaide.api.types.Arity
-import formulaide.api.users.User
 import formulaide.client.Client
 import formulaide.client.routes.createData
-import formulaide.client.routes.listData
+import formulaide.ui.ScreenProps
 import formulaide.ui.fields.editableField
 import formulaide.ui.utils.text
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
-import react.*
 import react.dom.*
+import react.functionalComponent
+import react.useRef
+import react.useState
 
-external interface CreateDataProps : RProps {
-	var user: User
-	var client: Client.Authenticated
-	var scope: CoroutineScope
-}
-
-val CreateData = functionalComponent<CreateDataProps> { props ->
-	val (existingData, setExistingData) = useState<List<CompoundData>>(emptyList())
-	val (creationCounter, setCreationCounter) = useState(0) // to be able to force a download of the list
-
-	useEffect(listOf(props.user, props.client, creationCounter)) {
-		props.scope.launch {
-			println("Listing the existing data…")
-			setExistingData(props.client.listData())
-		}
-	}
+val CreateData = functionalComponent<ScreenProps> { props ->
+	val client = props.client
+	require(client is Client.Authenticated)
 
 	div {
 		text("Données existantes :")
 		ul {
-			for (data in existingData) {
+			for (data in props.compounds) {
 				li {
 					text(data.name)
 				}
@@ -82,7 +68,7 @@ val CreateData = functionalComponent<CreateDataProps> { props ->
 					this.order = field.order
 					this.name = field.name
 					this.data = field.data
-					this.compounds = existingData
+					this.compounds = props.compounds
 					this.recursive = false
 					this.allowModifications = true
 					this.allowCreationOfRecursiveData = true
@@ -138,18 +124,11 @@ val CreateData = functionalComponent<CreateDataProps> { props ->
 					)
 
 					props.scope.launch {
-						props.client.createData(data)
-
-						setCreationCounter(creationCounter + 1) // Force re-query of the data list
+						client.createData(data)
+						props.refreshCompounds()
 					}
 				}
 			}
 		}
-	}
-}
-
-fun RBuilder.createData(handler: CreateDataProps.() -> Unit) = child(CreateData) {
-	attrs {
-		handler()
 	}
 }

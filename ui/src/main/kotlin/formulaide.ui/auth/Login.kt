@@ -1,23 +1,27 @@
 package formulaide.ui.auth
 
 import formulaide.api.users.PasswordLogin
-import formulaide.api.users.User
 import formulaide.client.Client
-import formulaide.client.routes.getMe
 import formulaide.client.routes.login
+import formulaide.ui.ScreenProps
+import formulaide.ui.defaultClient
 import formulaide.ui.utils.text
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.html.InputType
 import kotlinx.html.id
+import kotlinx.html.js.onClickFunction
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
-import react.*
+import react.RProps
+import react.child
 import react.dom.*
+import react.functionalComponent
+import react.useRef
 
 external interface LoginProps : RProps {
 	var client: Client
-	var onLogin: (Client, User) -> Unit
+	var onLogin: (Client) -> Unit
 	var scope: CoroutineScope
 }
 
@@ -87,15 +91,28 @@ val Login = functionalComponent<LoginProps> { props ->
 						token
 					)
 
-					props.onLogin(newClient, newClient.getMe())
+					props.onLogin(newClient)
 				}
 			}
 		}
 	}
 }
 
-fun RBuilder.login(handler: LoginProps.() -> Unit) = child(Login) {
-	attrs {
-		handler()
+val LoginAccess = functionalComponent<ScreenProps> { props ->
+	if (props.user == null) {
+		child(Login) {
+			attrs {
+				client = props.client
+				onLogin = props.connect
+				scope = props.scope
+			}
+		}
+	} else {
+		button {
+			text("Se déconnecter")
+			attrs {
+				onClickFunction = { props.connect(defaultClient) }
+			}
+		}
 	}
 }

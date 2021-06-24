@@ -1,16 +1,18 @@
 package formulaide.ui.screens
 
-import formulaide.api.data.*
+import formulaide.api.data.Action
+import formulaide.api.data.Data
 import formulaide.api.data.Data.Simple.SimpleDataId.TEXT
+import formulaide.api.data.Form
+import formulaide.api.data.FormField
 import formulaide.api.types.Arity
 import formulaide.api.users.Service
 import formulaide.client.Client
 import formulaide.client.routes.createForm
-import formulaide.client.routes.listData
 import formulaide.client.routes.listServices
+import formulaide.ui.ScreenProps
 import formulaide.ui.fields.editableField
 import formulaide.ui.utils.text
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.html.InputType
 import kotlinx.html.id
@@ -19,25 +21,15 @@ import kotlinx.html.js.onClickFunction
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
-import react.*
 import react.dom.*
+import react.functionalComponent
+import react.useEffect
+import react.useRef
+import react.useState
 
-external interface FormCreationProps : RProps {
-	var client: Client
-	var scope: CoroutineScope
-}
-
-val CreateForm = functionalComponent<FormCreationProps> { props ->
-	val (compoundData, setData) = useState<List<CompoundData>>(emptyList())
-
-	useEffect(listOf(props.client)) {
-		props.scope.launch {
-			val client = props.client
-			require(client is Client.Authenticated) { "Il faut être identifié pour pouvoir créer un formulaire" }
-
-			setData(client.listData())
-		}
-	}
+val CreateForm = functionalComponent<ScreenProps> { props ->
+	val client = props.client
+	require(client is Client.Authenticated)
 
 	form {
 		val formName = useRef<HTMLInputElement>()
@@ -71,7 +63,7 @@ val CreateForm = functionalComponent<FormCreationProps> { props ->
 				this.order = field.order
 				this.arity = field.arity
 				this.data = field.data
-				this.compounds = compoundData
+				this.compounds = props.compounds
 				this.set = { name, data, min, max, subFields ->
 					val newName = name ?: field.name
 					val newData = data ?: field.data
@@ -121,9 +113,6 @@ val CreateForm = functionalComponent<FormCreationProps> { props ->
 		val (services, setServices) = useState(emptyList<Service>())
 		useEffect(listOf(props.client)) {
 			props.scope.launch {
-				val client = props.client
-				require(client is Client.Authenticated) { "Impossible de récupérer la liste des services avec un client non connecté" }
-
 				setServices(client.listServices())
 			}
 		}
@@ -229,17 +218,9 @@ val CreateForm = functionalComponent<FormCreationProps> { props ->
 				)
 
 				props.scope.launch {
-					val client = props.client
-					require(client is Client.Authenticated) { "Seuls les administrateurs peuvent créer des formulaires" }
 					client.createForm(form)
 				}
 			}
 		}
-	}
-}
-
-fun RBuilder.createForm(handler: FormCreationProps.() -> Unit) = child(CreateForm) {
-	attrs {
-		handler()
 	}
 }
