@@ -20,6 +20,7 @@ sealed class DataField : Field {
 	 *
 	 * For more information, see [Field.Simple].
 	 */
+	@Serializable
 	@SerialName("DATA_SIMPLE")
 	data class Simple(
 		override val id: String,
@@ -33,6 +34,7 @@ sealed class DataField : Field {
 	 *
 	 * For more information, see [Field.Union].
 	 */
+	@Serializable
 	@SerialName("DATA_UNION")
 	data class Union(
 		override val id: String,
@@ -52,6 +54,7 @@ sealed class DataField : Field {
 	 *
 	 * @property ref The [Composite][CompositeData] this object represents.
 	 */
+	@Serializable
 	@SerialName("DATA_REFERENCE")
 	data class Composite(
 		override val id: String,

@@ -71,6 +71,7 @@ sealed interface FormField : Field {
 		 *
 		 * For more information, see [Field.Simple].
 		 */
+		@Serializable
 		@SerialName("FORM_SIMPLE_SHALLOW")
 		data class Simple(
 			override val id: String,
@@ -88,6 +89,7 @@ sealed interface FormField : Field {
 		 *
 		 * For more information, see [Field.Union].
 		 */
+		@Serializable
 		@SerialName("FORM_UNION_SHALLOW")
 		data class Union(
 			override val id: String,
@@ -106,6 +108,7 @@ sealed interface FormField : Field {
 		 *
 		 * All of its children must reference the corresponding data structure as well: see [Deep].
 		 */
+		@Serializable
 		@SerialName("FORM_COMPOSITE_SHALLOW")
 		data class Composite(
 			override val id: String,
@@ -168,6 +171,7 @@ sealed interface FormField : Field {
 		 *
 		 * For more information, see [Deep] and [Field.Simple].
 		 */
+		@Serializable
 		@SerialName("FORM_SIMPLE_DEEP")
 		data class Simple(
 			override val ref: Ref<DataField>,
@@ -191,6 +195,7 @@ sealed interface FormField : Field {
 		 *
 		 * For more information, see [Deep] and [Field.Union].
 		 */
+		@Serializable
 		@SerialName("FORM_UNION_DEEP")
 		data class Union(
 			override val ref: Ref<DataField>,
@@ -218,6 +223,7 @@ sealed interface FormField : Field {
 		 *
 		 * For more information, see [Deep], [ShallowComposite] and [DataField.Composite].
 		 */
+		@Serializable
 		@SerialName("FORM_COMPOSITE_DEEP")
 		data class Composite(
 			override val ref: Ref<DataField>,

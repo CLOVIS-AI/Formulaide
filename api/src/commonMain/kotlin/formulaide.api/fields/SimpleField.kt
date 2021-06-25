@@ -37,6 +37,7 @@ sealed class SimpleField {
 	 * The user should input some text.
 	 * @property maxLength The maximum number of characters allowed (`null` means 'no limit').
 	 */
+	@Serializable
 	@SerialName("TEXT")
 	data class Text(
 		override val arity: Arity,
@@ -65,6 +66,7 @@ sealed class SimpleField {
 	 * @property min The minimum value of that integer (`null` means 'no minimum').
 	 * @property max The maximum value of that integer (`null` means 'no maximum').
 	 */
+	@Serializable
 	@SerialName("INTEGER")
 	data class Integer(
 		override val arity: Arity,
@@ -95,7 +97,8 @@ sealed class SimpleField {
 	/**
 	 * The user should input a decimal number (Kotlin's [Double]).
 	 */
-	@SerialName("INTEGER")
+	@Serializable
+	@SerialName("DECIMAL")
 	data class Decimal(
 		override val arity: Arity,
 	) : SimpleField() {
@@ -109,7 +112,8 @@ sealed class SimpleField {
 	/**
 	 * The user should check a box.
 	 */
-	@SerialName("INTEGER")
+	@Serializable
+	@SerialName("BOOLEAN")
 	data class Boolean(
 		override val arity: Arity,
 	) : SimpleField() {
@@ -124,6 +128,7 @@ sealed class SimpleField {
 	 * A message should be displayed to the user, but they shouldn't have anything to fill in.
 	 * The [arity] is always [Arity.mandatory].
 	 */
+	@Serializable
 	@SerialName("MESSAGE")
 	object Message : SimpleField() {
 		override val arity get() = Arity.mandatory()
