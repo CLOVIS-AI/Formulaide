@@ -64,5 +64,10 @@ data class Arity(
 		 * Factory method to create an optional data.
 		 */
 		fun optional() = Arity(0, 1)
+
+		/**
+		 * Factory method to create a list of data.
+		 */
+		fun list(min: Int, max: Int) = Arity(min, max)
 	}
 }
