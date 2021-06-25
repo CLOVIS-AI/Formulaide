@@ -58,7 +58,7 @@ interface Field : Referencable, OrderedListElement {
 	/**
 	 * A field that allows the user to choose between multiple [options].
 	 */
-	interface Union<F: Field> : Field {
+	interface Union<out F: Field> : Field {
 
 		/**
 		 * The different options that this [Union] allows.

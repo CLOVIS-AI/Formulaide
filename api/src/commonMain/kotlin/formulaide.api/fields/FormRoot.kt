@@ -46,7 +46,7 @@ sealed interface FormField : Field {
 	/**
 	 * Marker interface for union fields that appear in forms.
 	 */
-	sealed interface Union<F : FormField> : FormField, Field.Union<F>
+	sealed interface Union<out F : FormField> : FormField, Field.Union<F>
 
 	/**
 	 * Marker interface to composite fields that appear in forms.
