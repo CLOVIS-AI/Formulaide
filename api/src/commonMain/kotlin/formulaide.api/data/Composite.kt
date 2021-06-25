@@ -19,14 +19,14 @@ import kotlinx.serialization.Serializable
 data class Composite(
 	override val id: String,
 	val name: ReferenceId,
-	val fields: List<DataField>,
+	val fields: Set<DataField>,
 ) : Referencable {
 	init {
 		require(name.isNotBlank()) { "Le nom d'une donnée ne peut pas être vide : '$name'" }
 		fields.checkOrderValidity()
 
 		val ids = fields.distinctBy { it.id }
-		require(ids == fields) { "L'identité d'un champ ne doit pas apparaitre plusieurs fois dans une même donnée" }
+		require(ids == fields.toList()) { "L'identité d'un champ ne doit pas apparaitre plusieurs fois dans une même donnée" }
 	}
 }
 

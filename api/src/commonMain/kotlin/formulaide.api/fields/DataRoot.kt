@@ -39,7 +39,7 @@ sealed class DataField : Field {
 		override val order: Int,
 		override val name: String,
 		override val arity: Arity,
-		override val options: List<DataField>,
+		override val options: Set<DataField>,
 	) : DataField(), Field.Union<DataField>
 
 	/**

@@ -33,8 +33,13 @@ data class Form(
 	val mainFields: FormRoot,
 	val actions: List<Action>,
 ) : Referencable {
+
 	init {
 		mainFields.fields.checkOrderValidity()
 		require(name.isNotBlank()) { "Le nom d'un formulaire ne peut pas être vide : '$name'" }
+	}
+
+	fun validate(composites: Set<Composite>) {
+		mainFields.validate(composites)
 	}
 }

@@ -23,9 +23,9 @@ interface OrderedListElement {
 		 * Internal function to check the validity of a list of [OrderedListElement].
 		 * Should be called by the constructor of each implementation.
 		 */
-		fun List<OrderedListElement>.checkOrderValidity() {
+		fun Iterable<OrderedListElement>.checkOrderValidity() {
 			val cleaned = distinct()
-			require(cleaned == this) { "Tous les éléments devraient avoir un ordre différent" }
+			require(cleaned == this.toList()) { "Tous les éléments devraient avoir un ordre différent : $cleaned vs $this" }
 		}
 	}
 }

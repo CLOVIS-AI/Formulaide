@@ -109,5 +109,7 @@ data class Ref<R : Referencable>(
 		 */
 		fun <R : Referencable> R.createRef() = Ref(this)
 
+		fun Iterable<Referencable>.ids() = map { it.id }
+
 	}
 }
