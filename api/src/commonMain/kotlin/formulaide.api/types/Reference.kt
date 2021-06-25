@@ -32,6 +32,14 @@ data class Ref<R : Referencable>(
 	val id: ReferenceId,
 ) {
 
+	/**
+	 * Creates a reference and loads it automatically.
+	 * @see createRef
+	 */
+	constructor(referenced: R) : this(referenced.id) {
+		obj = referenced
+	}
+
 	@Transient // We don't want the object to be serialized, just its ID
 	private var _obj: R? = null
 
@@ -95,6 +103,11 @@ data class Ref<R : Referencable>(
 			if (!loaded)
 				loadFrom(objs)
 		}
+
+		/**
+		 * Convenience method to get a reference on an object.
+		 */
+		fun <R : Referencable> R.createRef() = Ref(this)
 
 	}
 }
