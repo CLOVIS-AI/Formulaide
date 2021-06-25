@@ -1,38 +1,30 @@
 package formulaide.api.fields
 
 import formulaide.api.types.Arity
-import kotlinx.serialization.Serializable
-import kotlin.collections.List as KotlinList
 
-interface Field {
+interface Referencable {
 	val id: Int
+}
 
-	//region Behavior interfaces
+interface Field : Referencable {
+	val name: String
+	val arity: Arity
 
-	interface Named : Field {
-		val name: String
+	interface Simple : Field {
+		val simple: SimpleField
+
+		override val arity get() = simple.arity
 	}
 
-	interface List : Field {
-		val arity: Arity
+	interface Union<F: Field> : Field {
+		val options: List<F>
 	}
 
-	interface Container<F : Contained> : Field {
-		val fields: KotlinList<F>
-
-		@Serializable
-		data class TopLevel<F : Contained>(
-			override val id: Int,
-			override val fields: KotlinList<F>,
-		) : Container<F>
+	interface Container<F: Field> : Field {
+		val fields: List<F>
 	}
 
-	interface Contained : Field {
-		val order: Int
+	interface Reference<R : Referencable> : Field {
+		val ref: R
 	}
-
-	interface Union<F : Contained> : Field {
-		val options: KotlinList<F>
-	}
-
 }
