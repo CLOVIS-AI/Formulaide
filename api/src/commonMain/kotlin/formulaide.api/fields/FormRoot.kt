@@ -30,6 +30,7 @@ sealed class FormField : Field {
 	@SerialName("FORM_SIMPLE")
 	data class Simple(
 		override val id: String,
+		override val order: Int,
 		override val name: String,
 		override val simple: SimpleField,
 	) : FormField(), Field.Simple
@@ -42,6 +43,7 @@ sealed class FormField : Field {
 	@SerialName("FORM_UNION")
 	data class Union(
 		override val id: String,
+		override val order: Int,
 		override val name: String,
 		override val arity: Arity,
 		override val options: List<FormField>,
@@ -55,6 +57,7 @@ sealed class FormField : Field {
 	@SerialName("FORM_COMPOSITE")
 	data class Composite(
 		override val id: String,
+		override val order: Int,
 		override val name: String,
 		override val arity: Arity,
 		override val ref: Ref<DataRoot>,
@@ -87,6 +90,13 @@ sealed class DeepFormField : Field, Field.Reference<DataField> {
 	 * @see ref
 	 */
 	override val name get() = ref.obj.name // will throw if the reference is not loaded
+
+	/**
+	 * The order of the referenced [DataField].
+	 *
+	 * @see ref
+	 */
+	override val order get() = ref.obj.order // will throw if the reference is not loaded
 
 	/**
 	 * A field that represents a single data entry, matching a [DataField].

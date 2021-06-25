@@ -35,6 +35,13 @@ interface Field : Referencable {
 	val arity: Arity
 
 	/**
+	 * The order in which this field should appear inside its parent container.
+	 *
+	 * Because JSON lists are not ordered, this can be used to ensure the order was not lost.
+	 */
+	val order: Int
+
+	/**
 	 * A field that represents a single data entry.
 	 *
 	 * Simple fields:

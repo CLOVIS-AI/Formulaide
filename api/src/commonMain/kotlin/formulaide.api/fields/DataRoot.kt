@@ -36,6 +36,7 @@ sealed class DataField : Field {
 	@SerialName("DATA_SIMPLE")
 	data class Simple(
 		override val id: String,
+		override val order: Int,
 		override val name: String,
 		override val simple: SimpleField,
 	) : DataField(), Field.Simple
@@ -48,6 +49,7 @@ sealed class DataField : Field {
 	@SerialName("DATA_UNION")
 	data class Union(
 		override val id: String,
+		override val order: Int,
 		override val name: String,
 		override val arity: Arity,
 		override val options: List<DataField>,
@@ -66,6 +68,7 @@ sealed class DataField : Field {
 	@SerialName("DATA_REFERENCE")
 	data class Composite(
 		override val id: String,
+		override val order: Int,
 		override val name: String,
 		override val arity: Arity,
 		override val ref: Ref<DataRoot>,
