@@ -1,15 +1,10 @@
 package formulaide.api.data
 
-import formulaide.api.types.Arity
-import formulaide.api.types.OrderedListElement
+import formulaide.api.fields.FormField
 import formulaide.api.types.OrderedListElement.Companion.checkOrderValidity
+import formulaide.api.types.Referencable
 import formulaide.api.users.TokenResponse
 import kotlinx.serialization.Serializable
-
-/**
- * Id of [Form].
- */
-typealias FormId = Int
 
 /**
  * The declaration of a form.
@@ -31,98 +26,15 @@ typealias FormId = Int
  */
 @Serializable
 data class Form(
+	override val id: String,
 	val name: String,
-	val id: FormId,
 	val open: Boolean,
 	val public: Boolean,
 	val fields: List<FormField>,
 	val actions: List<Action>,
-) {
+) : Referencable {
 	init {
 		fields.checkOrderValidity()
 		require(name.isNotBlank()) { "Le nom d'un formulaire ne peut pas être vide : '$name'" }
-	}
-}
-
-/**
- * ID of [AbstractFormField].
- *
- * Is guaranteed unique only among children of the same object ([Form] for [FormField], [FormField] for [FormFieldComponent]).
- */
-typealias FormFieldId = Int
-
-/**
- * Abstraction over fields in a [Form].
- *
- * A distinction is made between [top-level fields][FormField] and [non-top-level fields][FormFieldComponent].
- * See their documentation for the rationale.
- */
-sealed interface AbstractFormField {
-	val components: List<FormFieldComponent>?
-	val id: Int
-	val arity: Arity
-}
-
-/**
- * A top-level field in a [Form].
- *
- * @property id The ID of this field in a specific [Form]. The ID is not globally unique.
- * @property data The type of this field.
- * @property components The different components of this field, if it is a [Data.Compound] type.
- * `null` in any other case (`type == COMPOUND <=> components != null`).
- * @property name The display name of this field.
- * When the type is a compound, this property should be used instead of [CompoundData.name].
- * This is because the same compound type can be used multiple times in a form.
- */
-@Serializable
-data class FormField(
-	override val id: FormFieldId,
-	override val components: List<FormFieldComponent>? = null,
-	override val order: Int,
-	override val arity: Arity,
-	val name: String,
-	val data: Data,
-) : AbstractFormField, OrderedListElement {
-	init {
-		require(name.isNotBlank()) { "Le nom d'un champ d'un formulaire ne doit être vide." }
-
-		if (data is Data.Compound && arity != Arity.forbidden()) {
-			if (components == null)
-				throw IllegalArgumentException("Si ce champ représente une donnée composée, et n'est pas interdit (arité maximale de 0), alors il doit déclarer des sous-champs (components) ; trouvé une arité de $arity, et la donnée $data")
-		}
-	}
-}
-
-/**
- * A non-top-level field in a [Form].
- *
- * Unlike [top-level][FormField] fields, a non-top-level field does not declare
- * a type or a name. This is because non-top-level fields are necessarily part of a [CompoundData],
- * which has both ([CompoundData.name], [CompoundData.id]). The [top-level][FormField] field
- * needs to be able to override the name because the same [CompoundData] can appear multiple times,
- * however no ambiguity exists for non-top-level fields.
- *
- * @property id The ID of this field in a specific [FormField]. The ID is not globally unique.
- */
-@Serializable
-data class FormFieldComponent internal constructor(
-	override val arity: Arity,
-	override val id: CompoundDataFieldId,
-	override val components: List<FormFieldComponent>? = null,
-) : AbstractFormField {
-
-	/**
-	 * Create a [FormFieldComponent] that corresponds to a [CompoundData].
-	 */
-	constructor(arity: Arity, compoundField: CompoundDataField, components: List<FormFieldComponent>) : this(arity, compoundField.id, components) {
-		if (arity == Arity.forbidden())
-			require(compoundField.data is Data.Compound) { "Un champ de formulaire non-interdit qui référence des sous-champs doit être de type ${Data.Compound}" }
-	}
-
-	/**
-	 * Create a [FormFieldComponent] that corresponds to a [simple data][Data.Simple] or a [union data][Data.Union].
-	 */
-	constructor(arity: Arity, compoundField: CompoundDataField) : this(arity, compoundField.id, null) {
-		require(compoundField.data !is Data.Compound) { "Un champ de formulaire qui ne référence pas de sous-champs ne doit être de type ${Data.Compound} ; pour le champ $compoundField" }
 	}
 }

@@ -8,13 +8,29 @@ import kotlinx.serialization.Serializable
 /**
  * The root of a form field tree, which represents the [fields][FormField] of a form.
  *
- * In a form, [FormField.Composite] references a [DataRoot] and is able to override some of its properties.
+ * In a form, [FormField.Composite] references a [formulaide.api.data.Composite] and is able to override some of its properties.
  * All of its children must then recursively reference a matching [DataField] (see [DeepFormField]).
  */
 @Serializable
 data class FormRoot(
 	val fields: List<FormField>,
-)
+) {
+
+	/**
+	 * Marker interface for simple fields that appear in forms.
+	 */
+	sealed interface SimpleFormField : Field.Simple
+
+	/**
+	 * Marker interface for union fields that appear in forms.
+	 */
+	sealed interface UnionFormField<F : Field> : Field.Union<F>
+
+	/**
+	 * Marker interface to composite fields that appear in forms.
+	 */
+	sealed interface CompositeFormField : Field.Container<DeepFormField>
+}
 
 /**
  * A field in a [form][FormRoot].
@@ -33,7 +49,7 @@ sealed class FormField : Field {
 		override val order: Int,
 		override val name: String,
 		override val simple: SimpleField,
-	) : FormField(), Field.Simple
+	) : FormField(), FormRoot.SimpleFormField
 
 	/**
 	 * A field that allows the user to choose between multiple [options].
@@ -47,10 +63,10 @@ sealed class FormField : Field {
 		override val name: String,
 		override val arity: Arity,
 		override val options: List<FormField>,
-	) : FormField(), Field.Union<FormField>
+	) : FormField(), FormRoot.UnionFormField<FormField>
 
 	/**
-	 * A field that corresponds to a [composite data structure][DataRoot].
+	 * A field that corresponds to a [composite data structure][formulaide.api.data.Composite].
 	 *
 	 * All of its children must reference the corresponding data structure as well: see [DeepFormField].
 	 */
@@ -60,13 +76,13 @@ sealed class FormField : Field {
 		override val order: Int,
 		override val name: String,
 		override val arity: Arity,
-		override val ref: Ref<DataRoot>,
+		override val ref: Ref<Composite>,
 		override val fields: List<DeepFormField>,
-	) : FormField(), Field.Reference<DataRoot>, Field.Container<DeepFormField>
+	) : FormField(), Field.Reference<Composite>, FormRoot.CompositeFormField
 }
 
 /**
- * A field in a [form][FormRoot], that matches a field in a [composite data structure][DataRoot].
+ * A field in a [form][FormRoot], that matches a field in a [composite data structure][formulaide.api.data.Composite].
  *
  * The [id] and [name] must match with the corresponding field, however the [arity] is allowed to be different (but shouldn't conflict).
  */
@@ -107,7 +123,7 @@ sealed class DeepFormField : Field, Field.Reference<DataField> {
 	data class Simple(
 		override val ref: Ref<DataField>,
 		override val simple: SimpleField,
-	) : DeepFormField(), Field.Simple
+	) : DeepFormField(), FormRoot.SimpleFormField
 
 	/**
 	 * A field that allows the user to choose between multiple [options].
@@ -119,7 +135,7 @@ sealed class DeepFormField : Field, Field.Reference<DataField> {
 		override val ref: Ref<DataField>,
 		override val arity: Arity,
 		override val options: List<DeepFormField>,
-	) : DeepFormField(), Field.Union<DeepFormField>
+	) : DeepFormField(), FormRoot.UnionFormField<DeepFormField>
 
 	/**
 	 * A field that corresponds to a [composite data structure][DataField.Composite].
@@ -131,5 +147,5 @@ sealed class DeepFormField : Field, Field.Reference<DataField> {
 		override val ref: Ref<DataField>,
 		override val arity: Arity,
 		override val fields: List<DeepFormField>,
-	) : DeepFormField(), Field.Container<DeepFormField>
+	) : DeepFormField(), FormRoot.CompositeFormField
 }
