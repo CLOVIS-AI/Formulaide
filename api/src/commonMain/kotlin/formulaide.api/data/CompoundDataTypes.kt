@@ -1,7 +1,8 @@
 package formulaide.api.data
 
-import formulaide.api.data.OrderedListElement.Companion.checkOrderValidity
 import formulaide.api.types.Arity
+import formulaide.api.types.OrderedListElement
+import formulaide.api.types.OrderedListElement.Companion.checkOrderValidity
 import kotlinx.serialization.Serializable
 
 /**

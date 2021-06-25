@@ -2,6 +2,7 @@ package formulaide.api.fields
 
 import formulaide.api.fields.Field.*
 import formulaide.api.types.Arity
+import formulaide.api.types.OrderedListElement
 import formulaide.api.types.Ref
 import formulaide.api.types.Referencable
 
@@ -22,7 +23,7 @@ import formulaide.api.types.Referencable
  * Depending on the root of the tree, two possible configurations exist:
  * see [DataRoot] and [FormRoot] for more information.
  */
-interface Field : Referencable {
+interface Field : Referencable, OrderedListElement {
 
 	/**
 	 * The name of this field (as displayed on screen to the user).
@@ -33,13 +34,6 @@ interface Field : Referencable {
 	 * The number of answers accepted by this field.
 	 */
 	val arity: Arity
-
-	/**
-	 * The order in which this field should appear inside its parent container.
-	 *
-	 * Because JSON lists are not ordered, this can be used to ensure the order was not lost.
-	 */
-	val order: Int
 
 	/**
 	 * A field that represents a single data entry.
