@@ -16,7 +16,22 @@ import kotlinx.serialization.Serializable
 sealed class SimpleField {
 	abstract val arity: Arity
 
+	/**
+	 * Checks that a [value] provided by the user is compatible with this type.
+	 */
 	abstract fun validate(value: String?)
+
+	/**
+	 * Checks that [newer] is compatible with the current [SimpleField].
+	 *
+	 * Use this to check that a [FormField] corresponds to the matching [DataField], for example.
+	 */
+	open fun validateCompatibility(newer: SimpleField) {
+		require(this::class == newer::class) { "Une donnée ne peut pas être compatible avec une donnée d'un autre type : la valeur d'origine est de type ${this::class.simpleName}, la nouvelle est de type ${newer::class.simpleName}" }
+
+		require(newer.arity.min >= arity.min) { "Une donnée ne peut qu'augmenter l'arité minimale : la valeur d'origine ($arity) autorise un espace moins large que la nouvelle valeur (${newer.arity})" }
+		require(newer.arity.max <= arity.max) { "Une donnée ne peut que diminuer l'arité maximale : la valeur d'origine ($arity) autorise un espace moins large que la nouvelle valeur (${newer.arity})" }
+	}
 
 	/**
 	 * The user should input some text.
@@ -27,12 +42,21 @@ sealed class SimpleField {
 		override val arity: Arity,
 		val maxLength: Int? = null,
 	) : SimpleField() {
+
+		val effectiveMaxLength get() = maxLength ?: Int.MAX_VALUE
+
 		override fun validate(value: String?) {
 			requireNotNull(value) { "Un champ de texte doit être rempli : trouvé '$value'" }
 			require(value.isNotBlank()) { "Un champ de texte ne peut pas être vide ou contenir uniquement des espaces : trouvé '$value'" }
 
-			if (maxLength != null)
-				require(value.length <= maxLength) { "La longueur maximale autorisée est de $maxLength caractères, mais ${value.length} ont été donnés" }
+			require(value.length <= effectiveMaxLength) { "La longueur maximale autorisée est de $maxLength caractères, mais ${value.length} ont été donnés" }
+		}
+
+		override fun validateCompatibility(newer: SimpleField) {
+			super.validateCompatibility(newer)
+			newer as Text
+
+			require(newer.effectiveMaxLength <= effectiveMaxLength) { "La longueur maximale ne peut être que diminuée : la valeur d'origine est $effectiveMaxLength, la nouvelle valeur est ${newer.effectiveMaxLength}" }
 		}
 	}
 
@@ -47,15 +71,24 @@ sealed class SimpleField {
 		val min: Long? = null,
 		val max: Long? = null,
 	) : SimpleField() {
+
+		val effectiveMin get() = min ?: Long.MIN_VALUE
+		val effectiveMax get() = max ?: Long.MAX_VALUE
+
 		override fun validate(value: String?) {
 			requireNotNull(value) { "Un entier ne peut pas être vide : trouvé $value" }
 			val intVal = requireNotNull(value.toLongOrNull()) { "Cette donnée n'est pas un entier : $value" }
 
-			if (min != null)
-				require(intVal >= min) { "La valeur minimale autorisée est $min, $intVal est trop petit" }
+			require(intVal >= effectiveMin) { "La valeur minimale autorisée est $min, $intVal est trop petit" }
+			require(intVal <= effectiveMax) { "La valeur maximale autorisée est $max, $intVal est trop grand" }
+		}
 
-			if (max != null)
-				require(intVal <= max) { "La valeur maximale autorisée est $max, $intVal est trop grand" }
+		override fun validateCompatibility(newer: SimpleField) {
+			super.validateCompatibility(newer)
+			newer as Integer
+
+			require(effectiveMin <= newer.effectiveMin) { "La valeur minimale ne peut pas être diminuée : la valeur d'origine est $effectiveMin, la nouvelle valeur est ${newer.effectiveMin}" }
+			require(effectiveMax >= newer.effectiveMax) { "La valeur maximale ne peut pas être augmentée : la valeur d'origine est $effectiveMax, la nouvelle valeur est ${newer.effectiveMax}" }
 		}
 	}
 
@@ -66,6 +99,7 @@ sealed class SimpleField {
 	data class Decimal(
 		override val arity: Arity,
 	) : SimpleField() {
+
 		override fun validate(value: String?) {
 			requireNotNull(value) { "Un réel ne peut pas être vide : trouvé $value" }
 			requireNotNull(value.toDoubleOrNull()) { "Cette donnée n'est pas un réel : $value" }
@@ -79,6 +113,7 @@ sealed class SimpleField {
 	data class Boolean(
 		override val arity: Arity,
 	) : SimpleField() {
+
 		override fun validate(value: String?) {
 			requireNotNull(value) { "Un booléen ne peut pas être vide : trouvé $value" }
 			requireNotNull(value.toBooleanStrictOrNull()) { "Cette donnée n'est pas un booléen : $value" }
