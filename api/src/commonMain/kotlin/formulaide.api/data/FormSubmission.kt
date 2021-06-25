@@ -1,15 +1,21 @@
 package formulaide.api.data
 
-import formulaide.api.data.Data.Simple.SimpleDataId.MESSAGE
 import formulaide.api.data.FormSubmission.Companion.createSubmission
 import formulaide.api.data.FormSubmission.ReadOnlyAnswer.Companion.asAnswer
+import formulaide.api.fields.*
+import formulaide.api.fields.SimpleField.Message
 import formulaide.api.types.Arity
+import formulaide.api.types.Ref
+import formulaide.api.types.Ref.Companion.createRef
 import kotlinx.serialization.Serializable
+
+@DslMarker
+annotation class FormSubmissionDsl
 
 /**
  * A submission of a [Form].
  *
- * Unlike [CompoundData], [UnionDataField] and [Form], this data point is not recursive,
+ * Unlike [Composite], and [Form], this data point is not recursive,
  * in order to make it easier to use. Instead, this is simply a [dictionary][Map]
  * of each value given by the user.
  *
@@ -19,8 +25,9 @@ import kotlinx.serialization.Serializable
  * - A key, that identifies which field is being submitted,
  * - A value, which is the user's response.
  *
- * The value is the JSON data corresponding to the field's [type][Data].
- * If the field is optional (see [Arity]) or doesn't require an answer (eg. [MESSAGE]), do not add the value if none is required (`null` will *not* be accepted).
+ * The value is a [String] corresponding to the field's [type][FormField].
+ * If the field is optional (see [Arity]) or doesn't require an answer (eg. [Message]),
+ * do not add the value if none is required (`null` will *not* be accepted).
  *
  * The key is formed by grouping different IDs, separated by the character 'colon' (`:`).
  * The key is built using the following steps (the order is important):
@@ -28,10 +35,11 @@ import kotlinx.serialization.Serializable
  * - If the field has a [maximum arity][Arity.max] greater than 1, an arbitrary integer
  * (of your choice) is used to represent the index of the element
  * (repeat until the maximum arity is 1).
- * - If the field is a [compound type][Data.Compound], [FormFieldComponent.id] is added
+ * - If the field is a [composite type][Composite], [Field.id] is added
  * (repeat from the previous step as long as necessary).
  *
- * [Unions][Data.Union] are treated as compound objects that only have one field, whose ID is the ID of the element of the enum that was selected.
+ * [Unions][Field.Union] are treated as compound objects that only have one field,
+ * whose ID is the ID of the element of the enum that was selected.
  * The value corresponds to the value of the selected union element.
  *
  * ### Example
@@ -42,7 +50,7 @@ import kotlinx.serialization.Serializable
  * and is provided in YAML-like format for readability (this format is **not** accepted by the API,
  * this is only an illustration of the key-value system).
  *
- * Example data (real data is modeled by [CompoundData]):
+ * Example data (real data is modeled by [Composite]):
  * ```yaml
  *   name: Identity
  *   id: 1
@@ -96,7 +104,7 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class FormSubmission(
-	val form: FormId,
+	val form: Ref<Form>,
 	val data: Map<String, String>,
 ) {
 
@@ -298,39 +306,41 @@ data class FormSubmission(
 	/**
 	 * Mutable implementation of [Answer], used as a DSL in [Form.createSubmission].
 	 */
+	@FormSubmissionDsl
 	data class MutableAnswer internal constructor(
 		override val value: String?,
 		override val components: MutableMap<String, MutableAnswer> = HashMap(),
-		val compounds: List<CompoundData>,
+		val composites: List<Composite>,
 	) : Answer() {
 
 		//region Data DSL
 
-		private fun simpleValue(field: AbstractFormField, value: String?) {
-			components += field.id.toString() to MutableAnswer(value, compounds = compounds)
+		private fun simpleValue(field: Field.Simple, value: String?) {
+			field.simple.validate(value)
+			components += field.id to MutableAnswer(value, composites = composites)
 		}
 
-		fun text(field: AbstractFormField, value: String) = simpleValue(field, value)
-		fun message(field: AbstractFormField) = simpleValue(field, null)
-		fun integer(field: AbstractFormField, value: Long) = simpleValue(field, value.toString())
-		fun decimal(field: AbstractFormField, value: Double) = simpleValue(field, value.toString())
-		fun boolean(field: AbstractFormField, value: Boolean) = simpleValue(field, value.toString())
+		fun text(field: FormRoot.SimpleFormField, value: String) = simpleValue(field, value)
+		fun message(field: FormRoot.SimpleFormField) = simpleValue(field, null)
+		fun integer(field: FormRoot.SimpleFormField, value: Long) = simpleValue(field, value.toString())
+		fun decimal(field: FormRoot.SimpleFormField, value: Double) = simpleValue(field, value.toString())
+		fun boolean(field: FormRoot.SimpleFormField, value: Boolean) = simpleValue(field, value.toString())
 
-		private fun abstractList(field: AbstractFormField, headValue: String?, block: MutableAnswer.() -> Unit) {
-			val list = MutableAnswer(headValue, compounds = compounds)
+		private fun abstractList(field: Field, headValue: String?, block: MutableAnswer.() -> Unit) {
+			val list = MutableAnswer(headValue, composites = composites)
 			list.block()
-			components += field.id.toString() to list
+			components += field.id to list
 		}
 
 		fun item(id: Int, block: MutableAnswer.() -> Unit) {
-			val list = MutableAnswer(null, compounds = compounds)
+			val list = MutableAnswer(null, composites = composites)
 			list.block()
 			components += id.toString() to list
 		}
 
-		fun union(field: AbstractFormField, choice: UnionDataField, block: MutableAnswer.() -> Unit) = abstractList(field, choice.id.toString(), block)
+		fun <F : Field> union(field: FormRoot.UnionFormField<F>, choice: F, block: MutableAnswer.() -> Unit) = abstractList(field, choice.id.toString(), block)
 
-		fun compound(field: AbstractFormField, block: MutableAnswer.() -> Unit) = abstractList(field, null, block)
+		fun compound(field: FormRoot.CompositeFormField, block: MutableAnswer.() -> Unit) = abstractList(field, null, block)
 
 		//endregion
 
@@ -348,7 +358,7 @@ data class FormSubmission(
 				flatComponents
 		}
 
-		fun flatten(): Map<String, String> {
+		internal fun flatten(): Map<String, String> {
 			val flattened = flattenIntermediary()
 
 			@Suppress("UNCHECKED_CAST")
@@ -364,19 +374,19 @@ data class FormSubmission(
 		 * DSL builder to create a valid [FormSubmission].
 		 */
 		fun Form.createSubmission(
-			compounds: List<CompoundData>,
+			composites: List<Composite>,
 			block: MutableAnswer.() -> Unit
 		): FormSubmission {
 			val form = this
-			val answer = MutableAnswer(null, mutableMapOf(), compounds)
+			val answer = MutableAnswer(null, mutableMapOf(), composites)
 
 			answer.block()
 
 			return FormSubmission(
-				form.id,
+				form.createRef(),
 				data = answer.flatten()
 			).apply {
-				checkValidity(form, compounds)
+				checkValidity(form, composites)
 			}
 		}
 
