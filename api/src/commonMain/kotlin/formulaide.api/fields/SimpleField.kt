@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
  * A field that represents some specific data.
  *
  * This class does not implement [Field], because it is meant to be wrapped inside a [Field] implementation:
- * see [DataField.Simple], [FormField.Simple] and [DeepFormField.Simple].
+ * see [DataField.Simple], [FormField.Shallow.Simple] and [FormField.Deep.Simple].
  * For this reason, this class doesn't have an [id][Field.id] nor a [name][Field.name].
  */
 @Serializable

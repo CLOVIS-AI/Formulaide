@@ -31,7 +31,7 @@ annotation class FormSubmissionDsl
  *
  * The key is formed by grouping different IDs, separated by the character 'colon' (`:`).
  * The key is built using the following steps (the order is important):
- * - Starting at the top-level of the form, the first ID is the top-level's field ID ([FormField.id])
+ * - Starting at the top-level of the form, the first ID is the top-level's field ID ([FormField.Shallow.id])
  * - If the field has a [maximum arity][Arity.max] greater than 1, an arbitrary integer
  * (of your choice) is used to represent the index of the element
  * (repeat until the maximum arity is 1).
@@ -315,18 +315,27 @@ data class FormSubmission(
 
 		//region Data DSL
 
-		private fun simpleValue(field: Field.Simple, value: String?) {
+		private fun simpleValue(field: FormField.Simple, value: String?) {
 			field.simple.validate(value)
 			components += field.id to MutableAnswer(value, composites = composites)
 		}
 
-		fun text(field: FormRoot.SimpleFormField, value: String) = simpleValue(field, value)
-		fun message(field: FormRoot.SimpleFormField) = simpleValue(field, null)
-		fun integer(field: FormRoot.SimpleFormField, value: Long) = simpleValue(field, value.toString())
-		fun decimal(field: FormRoot.SimpleFormField, value: Double) = simpleValue(field, value.toString())
-		fun boolean(field: FormRoot.SimpleFormField, value: Boolean) = simpleValue(field, value.toString())
+		fun text(field: FormField.Simple, value: String) = simpleValue(field, value)
+		fun message(field: FormField.Simple) = simpleValue(field, null)
+		fun integer(field: FormField.Simple, value: Long) =
+			simpleValue(field, value.toString())
 
-		private fun abstractList(field: Field, headValue: String?, block: MutableAnswer.() -> Unit) {
+		fun decimal(field: FormField.Simple, value: Double) =
+			simpleValue(field, value.toString())
+
+		fun boolean(field: FormField.Simple, value: Boolean) =
+			simpleValue(field, value.toString())
+
+		private fun abstractList(
+			field: Field,
+			headValue: String?,
+			block: MutableAnswer.() -> Unit
+		) {
 			val list = MutableAnswer(headValue, composites = composites)
 			list.block()
 			components += field.id to list
@@ -338,9 +347,14 @@ data class FormSubmission(
 			components += id.toString() to list
 		}
 
-		fun <F : Field> union(field: FormRoot.UnionFormField<F>, choice: F, block: MutableAnswer.() -> Unit) = abstractList(field, choice.id.toString(), block)
+		fun <F : Field> union(
+			field: FormField.Union<F>,
+			choice: F,
+			block: MutableAnswer.() -> Unit
+		) = abstractList(field, choice.id.toString(), block)
 
-		fun compound(field: FormRoot.CompositeFormField, block: MutableAnswer.() -> Unit) = abstractList(field, null, block)
+		fun compound(field: FormField.Composite, block: MutableAnswer.() -> Unit) =
+			abstractList(field, null, block)
 
 		//endregion
 

@@ -46,7 +46,7 @@ sealed class DataField : Field {
 	 * A field that represents another composite data structure.
 	 *
 	 * Composite data structures only [reference][ref] other composite data structures, and cannot
-	 * override their settings (unlike [forms][FormField.Composite]).
+	 * override their settings (unlike [forms][FormField.Shallow.Composite]).
 	 *
 	 * Because there is no recursion here, this class doesn't implement [Field.Container].
 	 *
