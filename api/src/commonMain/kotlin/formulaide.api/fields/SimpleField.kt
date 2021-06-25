@@ -1,6 +1,7 @@
 package formulaide.api.fields
 
 import formulaide.api.types.Arity
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -8,14 +9,14 @@ sealed class SimpleField {
 	abstract val name: String
 	abstract val arity: Arity
 
-	@Serializable
+	@SerialName("TEXT")
 	data class Text(
 		override val name: String,
 		override val arity: Arity,
 		val maxLength: Int? = null,
 	) : SimpleField()
 
-	@Serializable
+	@SerialName("INTEGER")
 	data class Integer(
 		override val name: String,
 		override val arity: Arity,
@@ -23,7 +24,7 @@ sealed class SimpleField {
 		val max: Int? = null,
 	) : SimpleField()
 
-	@Serializable
+	@SerialName("MESSAGE")
 	data class Message(
 		override val name: String,
 	) : SimpleField() {
