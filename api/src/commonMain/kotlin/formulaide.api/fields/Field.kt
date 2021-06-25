@@ -2,6 +2,7 @@ package formulaide.api.fields
 
 import formulaide.api.fields.Field.*
 import formulaide.api.types.Arity
+import formulaide.api.types.Ref
 import formulaide.api.types.Referencable
 
 /**
@@ -85,6 +86,6 @@ interface Field : Referencable {
 	 * See the different implementations for more information.
 	 */
 	interface Reference<R : Referencable> : Field {
-		val ref: R
+		val ref: Ref<R>
 	}
 }

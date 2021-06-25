@@ -2,6 +2,8 @@ package formulaide.api.fields
 
 import formulaide.api.fields.DataField.Composite
 import formulaide.api.types.Arity
+import formulaide.api.types.Ref
+import formulaide.api.types.Referencable
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -66,6 +68,6 @@ sealed class DataField : Field {
 		override val id: String,
 		override val name: String,
 		override val arity: Arity,
-		override val ref: DataRoot,
+		override val ref: Ref<DataRoot>,
 	) : DataField(), Field.Reference<DataRoot>
 }

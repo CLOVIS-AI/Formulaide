@@ -1,6 +1,7 @@
 package formulaide.api.fields
 
 import formulaide.api.types.Arity
+import formulaide.api.types.Ref
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -56,7 +57,7 @@ sealed class FormField : Field {
 		override val id: String,
 		override val name: String,
 		override val arity: Arity,
-		override val ref: DataRoot,
+		override val ref: Ref<DataRoot>,
 		override val fields: List<DeepFormField>,
 	) : FormField(), Field.Reference<DataRoot>, Field.Container<DeepFormField>
 }
@@ -73,7 +74,7 @@ sealed class DeepFormField : Field, Field.Reference<DataField> {
 	 * The [DataField] that models the data of this [DeepFormField].
 	 * @see DeepFormField
 	 */
-	abstract override val ref: DataField
+	abstract override val ref: Ref<DataField>
 
 	/**
 	 * The identifier of the referenced [DataField].
@@ -85,7 +86,7 @@ sealed class DeepFormField : Field, Field.Reference<DataField> {
 	 * The name of the referenced [DataField].
 	 * @see ref
 	 */
-	override val name get() = ref.name
+	override val name get() = ref.obj.name // will throw if the reference is not loaded
 
 	/**
 	 * A field that represents a single data entry, matching a [DataField].
@@ -94,7 +95,7 @@ sealed class DeepFormField : Field, Field.Reference<DataField> {
 	 */
 	@SerialName("FORM_SIMPLE_DEEP")
 	data class Simple(
-		override val ref: DataField.Simple,
+		override val ref: Ref<DataField>,
 		override val simple: SimpleField,
 	) : DeepFormField(), Field.Simple
 
@@ -105,7 +106,7 @@ sealed class DeepFormField : Field, Field.Reference<DataField> {
 	 */
 	@SerialName("FORM_UNION_DEEP")
 	data class Union(
-		override val ref: DataField.Union,
+		override val ref: Ref<DataField>,
 		override val arity: Arity,
 		override val options: List<DeepFormField>,
 	) : DeepFormField(), Field.Union<DeepFormField>
@@ -117,7 +118,7 @@ sealed class DeepFormField : Field, Field.Reference<DataField> {
 	 */
 	@SerialName("FORM_COMPOSITE_DEEP")
 	data class Composite(
-		override val ref: DataField.Composite,
+		override val ref: Ref<DataField>,
 		override val arity: Arity,
 		override val fields: List<DeepFormField>,
 	) : DeepFormField(), Field.Container<DeepFormField>
