@@ -3,25 +3,12 @@ package formulaide.api.fields
 import formulaide.api.fields.DataField.Composite
 import formulaide.api.types.Arity
 import formulaide.api.types.Ref
-import formulaide.api.types.Referencable
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import formulaide.api.data.Composite as CompositeData
 
 /**
- * The root of a data structure, which represents the fields ([DataField]) of a composite data structure.
- *
- * In a data structure, [DataField.Composite] are references to other composite data structure's root (or their own root, recursion is allowed).
- *
- * @property fields The different fields in this composite data structure.
- */
-@Serializable
-data class DataRoot(
-	override val id: String,
-	val fields: List<DataField>,
-) : Referencable
-
-/**
- * A field in a [composite data structure][DataRoot].
+ * A field in a [composite data structure][CompositeData].
  *
  * Data fields do not recurse on [Composite], instead they simply refer to another composite data structure (implicit recursion).
  */
@@ -63,7 +50,7 @@ sealed class DataField : Field {
 	 *
 	 * Because there is no recursion here, this class doesn't implement [Field.Container].
 	 *
-	 * @property ref The [DataRoot] this object represents.
+	 * @property ref The [Composite][CompositeData] this object represents.
 	 */
 	@SerialName("DATA_REFERENCE")
 	data class Composite(
@@ -71,6 +58,6 @@ sealed class DataField : Field {
 		override val order: Int,
 		override val name: String,
 		override val arity: Arity,
-		override val ref: Ref<DataRoot>,
-	) : DataField(), Field.Reference<DataRoot>
+		override val ref: Ref<CompositeData>,
+	) : DataField(), Field.Reference<CompositeData>
 }

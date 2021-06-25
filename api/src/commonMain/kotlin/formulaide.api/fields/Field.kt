@@ -21,7 +21,7 @@ import formulaide.api.types.Referencable
  *
  * Since composites and unions can be recursive, fields appear as trees.
  * Depending on the root of the tree, two possible configurations exist:
- * see [DataRoot] and [FormRoot] for more information.
+ * see [formulaide.api.data.Composite] and [FormRoot] for more information.
  */
 interface Field : Referencable, OrderedListElement {
 
