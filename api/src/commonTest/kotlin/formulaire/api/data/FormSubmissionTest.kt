@@ -1,57 +1,57 @@
 package formulaire.api.data
 
-import formulaide.api.data.*
-import formulaide.api.data.Data.Simple.SimpleDataId.TEXT
+import formulaide.api.data.Composite
+import formulaide.api.data.Form
+import formulaide.api.data.FormSubmission
 import formulaide.api.data.FormSubmission.Companion.createSubmission
+import formulaide.api.fields.DataField
+import formulaide.api.fields.FormField
+import formulaide.api.fields.FormRoot
+import formulaide.api.fields.SimpleField
+import formulaide.api.fields.SimpleField.Text
 import formulaide.api.types.Arity
+import formulaide.api.types.Ref.Companion.createRef
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
 
 class FormSubmissionTest {
 
-	private val lastName = CompoundDataField(
-		id = 2,
+	private val lastName = DataField.Simple(
+		id = "2",
 		order = 1,
-		arity = Arity.mandatory(),
 		name = "Nom de famille",
-		data = Data.simple(TEXT)
+		Text(Arity.mandatory())
 	)
 
-	private val firstName = CompoundDataField(
-		id = 3,
+	private val firstName = DataField.Simple(
+		id = "3",
 		order = 2,
-		arity = Arity.mandatory(),
 		name = "Prénom",
-		data = Data.simple(TEXT)
+		Text(Arity.mandatory())
 	)
 
-	private val phoneNumber = CompoundDataField(
-		id = 4,
+	private val phoneNumber = DataField.Simple(
+		id = "4",
 		order = 3,
-		arity = Arity.optional(),
 		name = "Numéro de téléphone",
-		data = Data.simple(TEXT)
+		Text(Arity.optional())
 	)
 
-	private val family = CompoundDataField(
-		id = 5,
+	private val family = DataField.Composite(
+		id = "5",
 		order = 4,
-		arity = Arity.optional(),
 		name = "Famille",
-		data = Data.compound(
-			CompoundData(
-				name = "Identité",
-				id = "some random ID",
-				fields = emptyList()
-			)
-		)
+		arity = Arity.list(0, 30),
+		Composite("Identité", "some random ID", emptySet()).createRef()
 	)
 
-	private val identity = CompoundData(
-		name = "Identité",
+	private val identity = Composite(
 		id = "some random ID",
-		fields = listOf(
+		name = "Identité",
+		setOf(
 			lastName,
 			firstName,
 			phoneNumber,
@@ -60,90 +60,78 @@ class FormSubmissionTest {
 	)
 
 	@Test
-	fun compound() {
+	fun composite() {
 		val form = Form(
 			name = "Foo",
-			id = 6,
+			id = "6",
 			open = true,
 			public = true,
-			fields = listOf(
-				FormField(
-					id = 7,
-					order = 1,
-					name = "Demandeur",
-					arity = Arity.mandatory(),
-					data = Data.compound(identity),
-					components = listOf(
-						FormFieldComponent(
-							arity = Arity.mandatory(),
-							lastName
-						),
-						FormFieldComponent(
-							arity = Arity.mandatory(),
-							firstName
-						),
-						FormFieldComponent(
-							arity = Arity.mandatory(),
-							phoneNumber
-						),
-						FormFieldComponent(
-							arity = Arity(0, 10),
-							family,
-							components = listOf(
-								FormFieldComponent(
-									arity = Arity.mandatory(),
-									lastName
-								),
-								FormFieldComponent(
-									arity = Arity.mandatory(),
-									firstName
-								),
-								FormFieldComponent(
-									arity = Arity.optional(),
-									phoneNumber
-								),
-								FormFieldComponent(
-									arity = Arity.forbidden(),
-									family,
-									components = listOf()
-								)
-							)
-						)
-					)
-				),
-				FormField(
-					id = 9,
-					order = 2,
-					name = "Endroit préféré",
-					arity = Arity.mandatory(),
-					data = Data.union(
-						listOf(
-							UnionDataField(
-								id = 10,
-								type = Data.simple(id = Data.Simple.SimpleDataId.MESSAGE),
-								name = "Proche de la mer",
+			mainFields = FormRoot(
+				setOf(
+					FormField.Shallow.Composite(
+						id = "7",
+						order = 1,
+						name = "Demandeur",
+						arity = Arity.mandatory(),
+						ref = identity.createRef(),
+						setOf(
+							FormField.Deep.Simple(
+								lastName,
+								Text(Arity.mandatory())
 							),
-							UnionDataField(
-								id = 11,
-								type = Data.simple(id = Data.Simple.SimpleDataId.MESSAGE),
-								name = "Proche de la mairie",
+							FormField.Deep.Simple(
+								firstName,
+								Text(Arity.mandatory())
+							),
+							FormField.Deep.Simple(
+								phoneNumber,
+								Text(Arity.mandatory())
+							),
+							FormField.Deep.Composite(
+								family,
+								arity = Arity.list(0, 10),
+								emptySet()
 							)
 						)
+					),
+					FormField.Shallow.Union(
+						id = "9",
+						order = 2,
+						name = "Endroit préféré",
+						arity = Arity.mandatory(),
+						setOf(
+							FormField.Shallow.Simple(
+								id = "10",
+								order = 1,
+								name = "Proche de la mer",
+								SimpleField.Message
+							),
+							FormField.Shallow.Simple(
+								id = "11",
+								order = 2,
+								name = "Proche de la mairie",
+								SimpleField.Message
+							)
+						)
+					),
+					FormField.Shallow.Simple(
+						id = "12",
+						order = 3,
+						name = "Notes",
+						Text(Arity.optional())
 					)
-				),
-				FormField(
-					id = 12,
-					order = 3,
-					name = "Notes",
-					arity = Arity.optional(),
-					data = Data.simple(Data.Simple.SimpleDataId.MESSAGE)
 				)
 			),
 			actions = emptyList()
 		)
 
+		println("Identity: " + Json.encodeToString(identity))
+		println("Form: " + Json.encodeToString(form))
+
+		form.validate(setOf(identity))
+
 		val submission1 = FormSubmission(
-			form.id,
+			form.createRef(),
 			mapOf(
 				"7:2" to "Mon Nom de Famille",
 				"7:3" to "Mon Prénom",
@@ -156,10 +144,10 @@ class FormSubmissionTest {
 				"9:10" to "",
 			)
 		)
-		submission1.checkValidity(form, listOf(identity))
+		submission1.checkValidity(form)
 
 		val submission2 = FormSubmission(
-			form.id,
+			form.createRef(),
 			mapOf(
 				"7:2" to "Mon Nom de Famille",
 				"7:3" to "Mon Prénom",
@@ -173,10 +161,10 @@ class FormSubmissionTest {
 				"9:11" to "",
 			)
 		)
-		submission2.checkValidity(form, listOf(identity))
+		submission2.checkValidity(form)
 
 		val submission3 = FormSubmission(
-			form.id,
+			form.createRef(),
 			mapOf(
 				"7:2" to "Mon Nom de Famille",
 				"7:3" to "Mon Prénom",
@@ -187,25 +175,22 @@ class FormSubmissionTest {
 			)
 		)
 		assertFails {
-			submission3.checkValidity(form, listOf(identity))
+			submission3.checkValidity(form)
 		}
 	}
 
 	@Test
 	fun flatAnswer() {
-		val compounds = listOf(identity)
-
-		val answer = FormSubmission.MutableAnswer("Root", compounds = compounds).apply {
-			components += "1" to FormSubmission.MutableAnswer("First", compounds = compounds)
+		val answer = FormSubmission.MutableAnswer("Root").apply {
+			components += "1" to FormSubmission.MutableAnswer("First")
 				.apply {
 					components += "0" to FormSubmission.MutableAnswer(
-						"Second",
-						compounds = compounds
+						"Second"
 					)
 				}
-			components += "2" to FormSubmission.MutableAnswer(null, compounds = compounds).apply {
-				components += "3" to FormSubmission.MutableAnswer("Third", compounds = compounds)
-				components += "4" to FormSubmission.MutableAnswer("Fourth", compounds = compounds)
+			components += "2" to FormSubmission.MutableAnswer(null).apply {
+				components += "3" to FormSubmission.MutableAnswer("Third")
+				components += "4" to FormSubmission.MutableAnswer("Fourth")
 			}
 		}
 
@@ -221,44 +206,44 @@ class FormSubmissionTest {
 
 	@Test
 	fun submitDsl() {
-		val lastNameField = FormFieldComponent(
-			arity = Arity.mandatory(),
-			lastName
+		val lastNameField = FormField.Deep.Simple(
+			lastName,
+			Text(Arity.mandatory())
 		)
-		val firstNameField = FormFieldComponent(
-			arity = Arity.mandatory(),
-			firstName
+		val firstNameField = FormField.Deep.Simple(
+			firstName,
+			Text(Arity.mandatory())
 		)
-		val phoneNumberField = FormFieldComponent(
-			arity = Arity.mandatory(),
-			phoneNumber
+		val phoneNumberField = FormField.Deep.Simple(
+			phoneNumber,
+			Text(Arity.mandatory())
 		)
-		val phoneNumberRecursionField = FormFieldComponent(
-			arity = Arity.optional(),
-			phoneNumber
+		val phoneNumberRecursionField = FormField.Deep.Simple(
+			phoneNumber,
+			Text(Arity.optional())
 		)
-		val familyRecursionField = FormFieldComponent(
+		val familyRecursionField2 = FormField.Deep.Composite(
+			family,
 			arity = Arity.forbidden(),
-			family,
-			components = listOf()
+			emptySet()
 		)
-		val identityRecursionField = FormFieldComponent(
-			arity = Arity(0, 10),
+		val identityRecursionField = FormField.Deep.Composite(
 			family,
-			components = listOf(
+			arity = Arity.list(0, 10),
+			setOf(
 				lastNameField,
 				firstNameField,
 				phoneNumberRecursionField,
-				familyRecursionField
+				familyRecursionField2,
 			)
 		)
-		val identityField = FormField(
-			id = 7,
+		val identityField = FormField.Shallow.Composite(
+			id = "7",
 			order = 1,
 			name = "Demandeur",
 			arity = Arity.mandatory(),
-			data = Data.compound(identity),
-			components = listOf(
+			identity.createRef(),
+			setOf(
 				lastNameField,
 				firstNameField,
 				phoneNumberField,
@@ -266,22 +251,25 @@ class FormSubmissionTest {
 			)
 		)
 		val form = Form(
+			id = "6",
 			name = "Foo",
-			id = 6,
 			open = true,
 			public = true,
-			fields = listOf(
-				identityField
+			mainFields = FormRoot(
+				setOf(
+					identityField
+				)
 			),
 			actions = emptyList()
 		)
+		form.validate(setOf(identity))
 
-		val submission = form.createSubmission(listOf(identity)) {
-			compound(identityField) {
+		val submission = form.createSubmission {
+			composite(identityField) {
 				text(firstNameField, "Mon prénom")
 				text(lastNameField, "Mon nom de famille")
 				text(phoneNumberField, "+33 1 23 45 67 89")
-				compound(identityRecursionField) {
+				composite(identityRecursionField) {
 					item(50) {
 						text(lastNameField, "Le nom de famille de mon frère")
 						text(firstNameField, "Le prénom de mon frère")
@@ -295,7 +283,7 @@ class FormSubmissionTest {
 			}
 		}
 		val expected = FormSubmission(
-			form = form.id,
+			form = form.createRef(),
 			data = mapOf(
 				"7:2" to "Mon nom de famille",
 				"7:3" to "Mon prénom",
@@ -310,12 +298,12 @@ class FormSubmissionTest {
 		assertEquals(expected, submission)
 
 		assertFails {
-			form.createSubmission(listOf(identity)) {
+			form.createSubmission {
 				// The top-level 'identity' field is missing
 				text(firstNameField, "Mon prénom")
 				text(lastNameField, "Mon nom de famille")
 				text(phoneNumberField, "+33 1 23 45 67 89")
-				compound(identityRecursionField) {
+				composite(identityRecursionField) {
 					item(50) {
 						text(lastNameField, "Le nom de famille de mon frère")
 						text(firstNameField, "Le prénom de mon frère")
