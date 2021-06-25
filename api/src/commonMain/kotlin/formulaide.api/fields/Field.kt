@@ -2,22 +2,7 @@ package formulaide.api.fields
 
 import formulaide.api.fields.Field.*
 import formulaide.api.types.Arity
-
-/**
- * Some data that can be referenced from somewhere else.
- * @see id
- */
-interface Referencable {
-
-	/**
-	 * A unique identifier for this object.
-	 *
-	 * The identifier only needs to be unique in the context of this object, not globally:
-	 * for example, an object that can only appear in a specific list only has to have a unique identifier
-	 * in that list.
-	 */
-	val id: String
-}
+import formulaide.api.types.Referencable
 
 /**
  * Some data that can be requested of a user.
