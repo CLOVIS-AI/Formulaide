@@ -4,6 +4,7 @@ import formulaide.api.data.Form
 import formulaide.api.fields.FormField.Shallow
 import formulaide.api.types.Arity
 import formulaide.api.types.Ref
+import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.types.Ref.Companion.ids
 import formulaide.api.types.Ref.Companion.loadIfNecessary
 import kotlinx.serialization.SerialName
@@ -20,7 +21,7 @@ import formulaide.api.fields.FormField.Shallow.Composite as ShallowComposite
  */
 @Serializable
 data class FormRoot(
-	val fields: List<Shallow>,
+	val fields: Set<Shallow>,
 ) {
 
 	/**
@@ -162,8 +163,8 @@ sealed interface FormField : Field {
 		open fun validate(fields: Set<DataField>, composites: Set<CompositeData>) {
 			ref.loadIfNecessary(fields)
 
-			require(arity.min >= ref.obj.arity.min) { "Un champ d'un formulaire ne peut pas accepter moins de réponses que le champ de la donnée correspondante ; la donnée accepte a une arité de ${ref.obj.arity} et le champ accepte une arité de $arity" }
-			require(arity.max <= ref.obj.arity.max) { "Un champ d'un formulaire ne peut pas accepter plus de réponses que le champ de la donnée correspondante ; la donnée accepte a une arité de ${ref.obj.arity} et le champ accepte une arité de $arity" }
+			require(arity.min >= ref.obj.arity.min) { "Un champ d'un formulaire ne peut pas accepter moins de réponses que le champ de la donnée correspondante ; la donnée (${ref.obj.id}, '${ref.obj.name}') accepte a une arité de ${ref.obj.arity} et le champ accepte une arité de $arity" }
+			require(arity.max <= ref.obj.arity.max) { "Un champ d'un formulaire ne peut pas accepter plus de réponses que le champ de la donnée correspondante ; la donnée (${ref.obj.id}, '${ref.obj.name}') accepte a une arité de ${ref.obj.arity} et le champ accepte une arité de $arity" }
 		}
 
 		/**
@@ -177,6 +178,8 @@ sealed interface FormField : Field {
 			override val ref: Ref<DataField>,
 			override val simple: SimpleField,
 		) : Deep(), FormField.Simple {
+
+			constructor(ref: DataField.Simple, simple: SimpleField) : this(ref.createRef(), simple)
 
 			override fun validate(
 				fields: Set<DataField>,
@@ -202,6 +205,8 @@ sealed interface FormField : Field {
 			override val arity: Arity,
 			override val options: Set<Deep>,
 		) : Deep(), FormField.Union<Deep> {
+
+			constructor(ref: DataField.Union, arity: Arity, options: Set<Deep>) : this(ref.createRef(), arity, options)
 
 			override fun validate(
 				fields: Set<DataField>,
@@ -230,6 +235,8 @@ sealed interface FormField : Field {
 			override val arity: Arity,
 			override val fields: Set<Deep>,
 		) : Deep(), FormComposite {
+
+			constructor(ref: DataField.Composite, arity: Arity, fields: Set<Deep>) : this(ref.createRef(), arity, fields)
 
 			override fun validate(
 				fields: Set<DataField>,

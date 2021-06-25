@@ -327,7 +327,7 @@ data class FormSubmission(
 			block: MutableAnswer.() -> Unit,
 		) = abstractList(field, choice.id, block)
 
-		fun compound(field: FormField.Composite, block: MutableAnswer.() -> Unit) =
+		fun composite(field: FormField.Composite, block: MutableAnswer.() -> Unit) =
 			abstractList(field, null, block)
 
 		//endregion
