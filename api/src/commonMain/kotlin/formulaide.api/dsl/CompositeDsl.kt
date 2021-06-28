@@ -8,21 +8,14 @@ import formulaide.api.types.Arity
 import formulaide.api.types.Ref
 import formulaide.api.types.Ref.Companion.createRef
 
-@ApiDsl
-class CompositeDsl<F: DataField>(
-	private var lastId: Int = 0,
-	internal val fields: MutableList<F> = ArrayList(5),
-) {
-
-	internal fun nextInfo(): Pair<String, Int> = lastId++
-		.let { it.toString() to it }
-}
+typealias CompositeDsl<F> = FieldDsl<F>
 
 /**
  * DSL builder to instantiate a [Composite].
  */
 fun composite(
 	name: String,
+	composites: List<Composite>,
 	fields: CompositeDsl<DataField>.() -> Unit
 ) : Composite {
 	val dsl = CompositeDsl<DataField>()
@@ -32,8 +25,14 @@ fun composite(
 		Ref.SPECIAL_TOKEN_NEW,
 		name,
 		dsl.fields
-	)
+	).also { it.validate(composites, allowRecursive = true) }
 }
+
+fun composite(
+	name: String,
+	vararg composites: Composite,
+	fields: CompositeDsl<DataField>.() -> Unit,
+) = composite(name, composites.asList(), fields)
 
 fun CompositeDsl<DataField>.simple(
 	name: String,

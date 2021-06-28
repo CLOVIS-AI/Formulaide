@@ -14,6 +14,8 @@ import kotlinx.serialization.Serializable
  * @property name The display name of this data type.
  * @property fields The different types that are part of this compound.
  * The list cannot be empty.
+ *
+ * @see formulaide.api.dsl.composite
  */
 @Serializable
 data class Composite(

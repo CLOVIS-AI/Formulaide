@@ -23,6 +23,8 @@ import kotlinx.serialization.Serializable
  * @property actions The steps taken to validate a [FormSubmission].
  * If the user querying this form is not allowed to see the list of actions
  * (for example, anonymous users), the list is empty.
+ *
+ * @see formulaide.api.dsl.form
  */
 @Serializable
 data class Form(

@@ -18,6 +18,8 @@ import formulaide.api.fields.FormField.Shallow.Composite as ShallowComposite
  *
  * In a form, [FormField.Deep.Composite] references a [CompositeData] and is able to override some of its properties.
  * All of its children must then recursively reference a matching [DataField] (see [FormField.Deep]).
+ *
+ * @see formulaide.api.dsl.formRoot
  */
 @Serializable
 data class FormRoot(
