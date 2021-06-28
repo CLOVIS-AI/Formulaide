@@ -29,9 +29,17 @@ data class Composite(
 		require(ids == fields.toList()) { "L'identité d'un champ ne doit pas apparaitre plusieurs fois dans une même donnée" }
 	}
 
-	fun validate(composites: List<Composite>) {
+	fun validate(composites: List<Composite>, allowRecursive: Boolean = false) {
+		var comps = composites
+
+		if (allowRecursive) {
+			comps = comps + Composite(SPECIAL_TOKEN_RECURSION,
+			                          "Myself (recursive)",
+			                          emptyList())
+		}
+
 		require(fields.isNotEmpty()) { "Il est interdit de créer une donnée vide" }
-		fields.forEach { it.validate(composites) }
+		fields.forEach { it.validate(comps) }
 	}
 }
 
