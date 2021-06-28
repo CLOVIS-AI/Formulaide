@@ -17,9 +17,9 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class Composite(
-	override val id: String,
-	val name: ReferenceId,
-	val fields: Set<DataField>,
+	override val id: ReferenceId,
+	val name: String,
+	val fields: List<DataField>,
 ) : Referencable {
 	init {
 		require(name.isNotBlank()) { "Le nom d'une donnée ne peut pas être vide : '$name'" }
@@ -29,7 +29,7 @@ data class Composite(
 		require(ids == fields.toList()) { "L'identité d'un champ ne doit pas apparaitre plusieurs fois dans une même donnée" }
 	}
 
-	fun validate(composites: Set<Composite>) {
+	fun validate(composites: List<Composite>) {
 		require(fields.isNotEmpty()) { "Il est interdit de créer une donnée vide" }
 		fields.forEach { it.validate(composites) }
 	}

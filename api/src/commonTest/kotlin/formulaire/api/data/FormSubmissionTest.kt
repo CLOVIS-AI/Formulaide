@@ -45,13 +45,13 @@ class FormSubmissionTest {
 		order = 4,
 		name = "Famille",
 		arity = Arity.list(0, 30),
-		Composite("Identité", "some random ID", emptySet()).createRef()
+		Composite("Identité", "some random ID", emptyList()).createRef()
 	)
 
 	private val identity = Composite(
 		id = "some random ID",
 		name = "Identité",
-		setOf(
+		listOf(
 			lastName,
 			firstName,
 			phoneNumber,
@@ -67,14 +67,14 @@ class FormSubmissionTest {
 			open = true,
 			public = true,
 			mainFields = FormRoot(
-				setOf(
+				listOf(
 					FormField.Shallow.Composite(
 						id = "7",
 						order = 1,
 						name = "Demandeur",
 						arity = Arity.mandatory(),
 						ref = identity.createRef(),
-						setOf(
+						listOf(
 							FormField.Deep.Simple(
 								lastName,
 								Text(Arity.mandatory())
@@ -90,7 +90,7 @@ class FormSubmissionTest {
 							FormField.Deep.Composite(
 								family,
 								arity = Arity.list(0, 10),
-								emptySet()
+								emptyList()
 							)
 						)
 					),
@@ -99,7 +99,7 @@ class FormSubmissionTest {
 						order = 2,
 						name = "Endroit préféré",
 						arity = Arity.mandatory(),
-						setOf(
+						listOf(
 							FormField.Shallow.Simple(
 								id = "10",
 								order = 1,
@@ -128,7 +128,7 @@ class FormSubmissionTest {
 		println("Identity: " + Json.encodeToString(identity))
 		println("Form: " + Json.encodeToString(form))
 
-		form.validate(setOf(identity))
+		form.validate(listOf(identity))
 
 		val submission1 = FormSubmission(
 			form.createRef(),
@@ -225,12 +225,12 @@ class FormSubmissionTest {
 		val familyRecursionField2 = FormField.Deep.Composite(
 			family,
 			arity = Arity.forbidden(),
-			emptySet()
+			emptyList()
 		)
 		val identityRecursionField = FormField.Deep.Composite(
 			family,
 			arity = Arity.list(0, 10),
-			setOf(
+			listOf(
 				lastNameField,
 				firstNameField,
 				phoneNumberRecursionField,
@@ -243,7 +243,7 @@ class FormSubmissionTest {
 			name = "Demandeur",
 			arity = Arity.mandatory(),
 			identity.createRef(),
-			setOf(
+			listOf(
 				lastNameField,
 				firstNameField,
 				phoneNumberField,
@@ -256,13 +256,13 @@ class FormSubmissionTest {
 			open = true,
 			public = true,
 			mainFields = FormRoot(
-				setOf(
+				listOf(
 					identityField
 				)
 			),
 			actions = emptyList()
 		)
-		form.validate(setOf(identity))
+		form.validate(listOf(identity))
 
 		val submission = form.createSubmission {
 			composite(identityField) {

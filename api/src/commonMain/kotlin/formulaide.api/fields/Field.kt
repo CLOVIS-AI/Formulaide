@@ -65,7 +65,7 @@ interface Field : Referencable, OrderedListElement {
 		 *
 		 * The user must choose a single one (no matter their [arity]).
 		 */
-		val options: Set<F>
+		val options: List<F>
 	}
 
 	/**
@@ -78,7 +78,7 @@ interface Field : Referencable, OrderedListElement {
 		 *
 		 * The user must fill in all of them (depending on their [arity]).
 		 */
-		val fields: Set<F>
+		val fields: List<F>
 	}
 
 	/**

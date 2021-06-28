@@ -39,7 +39,7 @@ data class Form(
 		require(name.isNotBlank()) { "Le nom d'un formulaire ne peut pas être vide : '$name'" }
 	}
 
-	fun validate(composites: Set<Composite>) {
+	fun validate(composites: List<Composite>) {
 		mainFields.validate(composites)
 	}
 }

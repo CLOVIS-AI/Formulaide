@@ -19,7 +19,7 @@ sealed class DataField : Field {
 	/**
 	 * Checks that all constraints of this [DataField] are respected, and loads all references.
 	 */
-	abstract fun validate(composites: Set<CompositeData>)
+	abstract fun validate(composites: List<CompositeData>)
 
 	/**
 	 * A field that represents a single data entry.
@@ -35,7 +35,7 @@ sealed class DataField : Field {
 		override val simple: SimpleField,
 	) : DataField(), Field.Simple {
 
-		override fun validate(composites: Set<CompositeData>) {} // Nothing to do
+		override fun validate(composites: List<CompositeData>) {} // Nothing to do
 	}
 
 	/**
@@ -50,10 +50,10 @@ sealed class DataField : Field {
 		override val order: Int,
 		override val name: String,
 		override val arity: Arity,
-		override val options: Set<DataField>,
+		override val options: List<DataField>,
 	) : DataField(), Field.Union<DataField> {
 
-		override fun validate(composites: Set<CompositeData>) {
+		override fun validate(composites: List<CompositeData>) {
 			options.forEach { it.validate(composites) }
 		}
 	}
@@ -78,7 +78,7 @@ sealed class DataField : Field {
 		override val ref: Ref<CompositeData>,
 	) : DataField(), Field.Reference<CompositeData> {
 
-		override fun validate(composites: Set<CompositeData>) {
+		override fun validate(composites: List<CompositeData>) {
 			ref.loadIfNecessary(composites)
 		}
 	}

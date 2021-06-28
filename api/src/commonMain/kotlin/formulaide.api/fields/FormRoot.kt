@@ -21,13 +21,13 @@ import formulaide.api.fields.FormField.Shallow.Composite as ShallowComposite
  */
 @Serializable
 data class FormRoot(
-	val fields: Set<Shallow>,
+	val fields: List<Shallow>,
 ) {
 
 	/**
 	 * Validates and loads references in this [FormRoot].
 	 */
-	fun validate(composites: Set<CompositeData>) {
+	fun validate(composites: List<CompositeData>) {
 		fields.forEach { it.validate(composites) }
 	}
 }
@@ -65,7 +65,7 @@ sealed interface FormField : Field {
 		/**
 		 * Loads [references][Ref] contained in this [FormField] (recursively).
 		 */
-		abstract fun validate(composites: Set<CompositeData>)
+		abstract fun validate(composites: List<CompositeData>)
 
 		/**
 		 * A field that represents a single data entry.
@@ -81,7 +81,7 @@ sealed interface FormField : Field {
 			override val simple: SimpleField,
 		) : Shallow(), FormField.Simple {
 
-			override fun validate(composites: Set<CompositeData>) =
+			override fun validate(composites: List<CompositeData>) =
 				Unit // Nothing to do
 		}
 
@@ -97,10 +97,10 @@ sealed interface FormField : Field {
 			override val order: Int,
 			override val name: String,
 			override val arity: Arity,
-			override val options: Set<Shallow>,
+			override val options: List<Shallow>,
 		) : Shallow(), FormField.Union<Shallow> {
 
-			override fun validate(composites: Set<CompositeData>) =
+			override fun validate(composites: List<CompositeData>) =
 				options.forEach { it.validate(composites) }
 		}
 
@@ -117,10 +117,10 @@ sealed interface FormField : Field {
 			override val name: String,
 			override val arity: Arity,
 			override val ref: Ref<CompositeData>,
-			override val fields: Set<Deep>,
+			override val fields: List<Deep>,
 		) : Shallow(), Field.Reference<CompositeData>, FormComposite {
 
-			override fun validate(composites: Set<CompositeData>) {
+			override fun validate(composites: List<CompositeData>) {
 				ref.loadIfNecessary(composites)
 				fields.forEach { it.validate(ref.obj.fields, composites) }
 			}
@@ -160,7 +160,7 @@ sealed interface FormField : Field {
 		 */
 		override val order get() = ref.obj.order // will throw if the reference is not loaded
 
-		open fun validate(fields: Set<DataField>, composites: Set<CompositeData>) {
+		open fun validate(fields: List<DataField>, composites: List<CompositeData>) {
 			ref.loadIfNecessary(fields)
 
 			require(arity.min >= ref.obj.arity.min) { "Un champ d'un formulaire ne peut pas accepter moins de réponses que le champ de la donnée correspondante ; la donnée (${ref.obj.id}, '${ref.obj.name}') accepte a une arité de ${ref.obj.arity} et le champ accepte une arité de $arity" }
@@ -182,8 +182,8 @@ sealed interface FormField : Field {
 			constructor(ref: DataField.Simple, simple: SimpleField) : this(ref.createRef(), simple)
 
 			override fun validate(
-				fields: Set<DataField>,
-				composites: Set<CompositeData>
+				fields: List<DataField>,
+				composites: List<CompositeData>
 			) {
 				super.validate(fields, composites)
 
@@ -203,14 +203,14 @@ sealed interface FormField : Field {
 		data class Union(
 			override val ref: Ref<DataField>,
 			override val arity: Arity,
-			override val options: Set<Deep>,
+			override val options: List<Deep>,
 		) : Deep(), FormField.Union<Deep> {
 
-			constructor(ref: DataField.Union, arity: Arity, options: Set<Deep>) : this(ref.createRef(), arity, options)
+			constructor(ref: DataField.Union, arity: Arity, options: List<Deep>) : this(ref.createRef(), arity, options)
 
 			override fun validate(
-				fields: Set<DataField>,
-				composites: Set<CompositeData>
+				fields: List<DataField>,
+				composites: List<CompositeData>
 			) {
 				super.validate(fields, composites)
 
@@ -233,14 +233,14 @@ sealed interface FormField : Field {
 		data class Composite(
 			override val ref: Ref<DataField>,
 			override val arity: Arity,
-			override val fields: Set<Deep>,
+			override val fields: List<Deep>,
 		) : Deep(), FormComposite {
 
-			constructor(ref: DataField.Composite, arity: Arity, fields: Set<Deep>) : this(ref.createRef(), arity, fields)
+			constructor(ref: DataField.Composite, arity: Arity, fields: List<Deep>) : this(ref.createRef(), arity, fields)
 
 			override fun validate(
-				fields: Set<DataField>,
-				composites: Set<CompositeData>
+				fields: List<DataField>,
+				composites: List<CompositeData>
 			) {
 				super.validate(fields, composites)
 
