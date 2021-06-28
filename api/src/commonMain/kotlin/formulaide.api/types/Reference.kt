@@ -111,5 +111,9 @@ data class Ref<R : Referencable>(
 
 		fun Iterable<Referencable>.ids() = map { it.id }
 
+		/**
+		 * Special reference that can be used for objects that are being created and that do not have an ID yet.
+		 */
+		const val SPECIAL_TOKEN_NEW: ReferenceId = "special:uninitialized"
 	}
 }
