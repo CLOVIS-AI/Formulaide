@@ -28,6 +28,11 @@ data class Composite(
 		val ids = fields.distinctBy { it.id }
 		require(ids == fields.toList()) { "L'identité d'un champ ne doit pas apparaitre plusieurs fois dans une même donnée" }
 	}
+
+	fun validate(composites: Set<Composite>) {
+		require(fields.isNotEmpty()) { "Il est interdit de créer une donnée vide" }
+		fields.forEach { it.validate(composites) }
+	}
 }
 
 /**

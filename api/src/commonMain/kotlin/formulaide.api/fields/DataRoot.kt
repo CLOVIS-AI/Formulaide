@@ -3,6 +3,7 @@ package formulaide.api.fields
 import formulaide.api.fields.DataField.Composite
 import formulaide.api.types.Arity
 import formulaide.api.types.Ref
+import formulaide.api.types.Ref.Companion.loadIfNecessary
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import formulaide.api.data.Composite as CompositeData
@@ -16,6 +17,11 @@ import formulaide.api.data.Composite as CompositeData
 sealed class DataField : Field {
 
 	/**
+	 * Checks that all constraints of this [DataField] are respected, and loads all references.
+	 */
+	abstract fun validate(composites: Set<CompositeData>)
+
+	/**
 	 * A field that represents a single data entry.
 	 *
 	 * For more information, see [Field.Simple].
@@ -27,7 +33,10 @@ sealed class DataField : Field {
 		override val order: Int,
 		override val name: String,
 		override val simple: SimpleField,
-	) : DataField(), Field.Simple
+	) : DataField(), Field.Simple {
+
+		override fun validate(composites: Set<CompositeData>) {} // Nothing to do
+	}
 
 	/**
 	 * A field that allows the user to choose between multiple [options].
@@ -42,7 +51,12 @@ sealed class DataField : Field {
 		override val name: String,
 		override val arity: Arity,
 		override val options: Set<DataField>,
-	) : DataField(), Field.Union<DataField>
+	) : DataField(), Field.Union<DataField> {
+
+		override fun validate(composites: Set<CompositeData>) {
+			options.forEach { it.validate(composites) }
+		}
+	}
 
 	/**
 	 * A field that represents another composite data structure.
@@ -62,5 +76,10 @@ sealed class DataField : Field {
 		override val name: String,
 		override val arity: Arity,
 		override val ref: Ref<CompositeData>,
-	) : DataField(), Field.Reference<CompositeData>
+	) : DataField(), Field.Reference<CompositeData> {
+
+		override fun validate(composites: Set<CompositeData>) {
+			ref.loadIfNecessary(composites)
+		}
+	}
 }
