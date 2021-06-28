@@ -1,9 +1,10 @@
 package formulaide.db
 
-import formulaide.api.data.Form
 import formulaide.api.data.FormSubmission.Companion.createSubmission
+import formulaide.api.dsl.form
+import formulaide.api.dsl.formRoot
+import formulaide.api.dsl.simple
 import formulaide.api.fields.FormField
-import formulaide.api.fields.FormRoot
 import formulaide.api.fields.SimpleField.Text
 import formulaide.api.types.Arity
 import formulaide.db.document.createForm
@@ -17,33 +18,17 @@ class SubmissionsTest {
 	fun simple() = runBlocking {
 		val db = testDatabase()
 
-		val lastName = FormField.Shallow.Simple(
-			id = "1",
-			order = 1,
-			name = "Nom",
-			Text(Arity.mandatory())
-		)
+		lateinit var lastName: FormField.Simple
+		lateinit var firstName: FormField.Simple
 
-		val firstName = FormField.Shallow.Simple(
-			id = "2",
-			order = 2,
-			name = "Prénom",
-			Text(Arity.optional())
-		)
-
-		val form = db.createForm(
-			Form(
-				name = "Un formulaire intéressant",
-				id = "0",
-				open = true,
-				public = true,
-				mainFields = FormRoot(listOf(
-					lastName,
-					firstName
-				)),
-				actions = emptyList()
-			)
-		)
+		val form = db.createForm(form(
+			"Un formulaire intéressant",
+			public = true,
+			mainFields = formRoot {
+				lastName = simple("Nom", Text(Arity.mandatory()))
+				firstName = simple("Prénom", Text(Arity.optional()))
+			}
+		))
 
 		val submission1 = form.createSubmission {
 			text(lastName, "Mon nom de famille")

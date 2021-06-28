@@ -1,11 +1,11 @@
 package formulaide.db
 
-import formulaide.api.data.Composite
-import formulaide.api.data.SPECIAL_TOKEN_RECURSION
+import formulaide.api.dsl.composite
+import formulaide.api.dsl.compositeItself
+import formulaide.api.dsl.simple
 import formulaide.api.fields.DataField
 import formulaide.api.fields.SimpleField.Text
 import formulaide.api.types.Arity
-import formulaide.api.types.Ref
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.db.document.createComposite
 import formulaide.db.document.listComposites
@@ -29,20 +29,15 @@ class CompositeTest {
 
 		val name = "Identité plate"
 
-		val data = db.createComposite(Composite("", name, listOf(
-			DataField.Simple(
-				id = "1",
-				order = 1,
-				name = "Test",
-				Text(Arity.mandatory())
-			)
-		)))
+		val data = db.createComposite(composite(name) {
+			simple("Test", Text(Arity.mandatory()))
+		})
 
 		assertEquals(name, data.name)
 
 		data.fields.first().run {
-			assertEquals("1", id)
-			assertEquals(1, order)
+			assertEquals("0", id)
+			assertEquals(0, order)
 			assertEquals(1, arity.min)
 			assertEquals(1, arity.max)
 			assertEquals("Test", this.name)
@@ -56,34 +51,23 @@ class CompositeTest {
 
 		val name = "Identité récursive"
 
-		val data = db.createComposite(Composite("", name, listOf(
-			DataField.Simple(
-				id = "1",
-				order = 1,
-				name = "Nom complet",
-				Text(Arity.mandatory())
-			),
-			DataField.Composite(
-				id = "2",
-				order = 2,
-				arity = Arity.mandatory(),
-				name = "Famille",
-				ref = Ref(SPECIAL_TOKEN_RECURSION)
-			)
-		)))
+		val data = db.createComposite(composite(name) {
+			simple("Nom complet", Text(Arity.mandatory()))
+			compositeItself("Famille", Arity.mandatory())
+		})
 
 		assertEquals(name, data.name)
 
 		val fullName = DataField.Simple(
-			id = "1",
-			order = 1,
+			id = "0",
+			order = 0,
 			name = "Nom complet",
 			Text(Arity.mandatory())
 		)
 
 		val family = DataField.Composite(
-			id = "2",
-			order = 2,
+			id = "1",
+			order = 1,
 			arity = Arity.mandatory(),
 			name = "Famille",
 			ref = data.createRef()
