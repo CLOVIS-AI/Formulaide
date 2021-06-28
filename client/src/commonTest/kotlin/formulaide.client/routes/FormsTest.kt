@@ -1,10 +1,10 @@
 package formulaide.client.routes
 
 import formulaide.api.data.Action
-import formulaide.api.data.Data
-import formulaide.api.data.Data.Simple.SimpleDataId.TEXT
-import formulaide.api.data.Form
-import formulaide.api.data.FormField
+import formulaide.api.dsl.form
+import formulaide.api.dsl.formRoot
+import formulaide.api.dsl.simple
+import formulaide.api.fields.SimpleField.Text
 import formulaide.api.types.Arity
 import formulaide.client.runTest
 import formulaide.client.testAdministrator
@@ -20,38 +20,22 @@ class FormsTest {
 		val admin = testAdministrator()
 		val me = admin.getMe()
 
-		val form = Form(
-			name = "Un autre formulaire de tests",
-			id = 0,
-			open = true,
+		val form = form(
+			"Un autre formulaide de tests",
 			public = true,
-			fields = listOf(
-				FormField(
-					id = 1,
-					order = 1,
-					name = "Nom de famille",
-					arity = Arity.mandatory(),
-					data = Data.simple(TEXT)
-				),
-				FormField(
-					id = 2,
-					order = 2,
-					name = "Prénom",
-					arity = Arity.optional(),
-					data = Data.simple(TEXT)
-				)
+			mainFields = formRoot {
+				simple("Nom de famille", Text(Arity.mandatory()))
+				simple("Prénom", Text(Arity.optional()))
+			},
+			Action.ServiceReview(
+				id = 1,
+				order = 1,
+				service = me.service
 			),
-			actions = listOf(
-				Action.ServiceReview(
-					id = 1,
-					order = 1,
-					service = me.service
-				),
-				Action.EmployeeReview(
-					id = 2,
-					order = 2,
-					employee = me
-				)
+			Action.EmployeeReview(
+				id = 2,
+				order = 2,
+				employee = me
 			)
 		)
 
