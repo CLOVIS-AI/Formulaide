@@ -1,12 +1,11 @@
 package formulaide.db.document
 
-import formulaide.api.data.Data
 import formulaide.api.data.Form
-import formulaide.api.data.FormId
+import formulaide.api.types.ReferenceId
 import formulaide.db.Database
+import formulaide.db.utils.generateId
 import org.litote.kmongo.eq
 import org.litote.kmongo.match
-import kotlin.random.Random
 
 /**
  * Gets the list of forms.
@@ -31,24 +30,15 @@ suspend fun Database.listForms(public: Boolean?, open: Boolean? = true): List<Fo
 	return forms.aggregate<Form>(pipeline).toList()
 }
 
-suspend fun Database.findForm(id: FormId) =
+suspend fun Database.findForm(id: ReferenceId) =
 	forms.findOne(Form::id eq id)
 
 suspend fun Database.createForm(form: Form): Form {
 	require(form.open) { "Il est interdit de créer un formulaire fermé" }
 
-	form.fields.forEach { field ->
-		val data = field.data
-		if (data is Data.Compound)
-			require(findData(data.id) != null) { "Le champ ${field.name} fait référence à une donnée qui n'existe pas : $data" }
-	}
+	form.validate(listComposites().toSet())
 
-	var id: Int
-	do {
-		id = Random.nextInt()
-	} while (findForm(id) != null)
-
-	val newForm = form.copy(id = id)
+	val newForm = form.copy(id = generateId<Form>())
 	forms.insertOne(newForm)
 	return newForm
 }

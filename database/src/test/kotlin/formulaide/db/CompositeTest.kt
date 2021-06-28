@@ -1,23 +1,25 @@
 package formulaide.db
 
-import formulaide.api.data.CompoundDataField
-import formulaide.api.data.Data
-import formulaide.api.data.Data.Simple.SimpleDataId.TEXT
-import formulaide.api.data.NewCompoundData
+import formulaide.api.data.Composite
+import formulaide.api.data.SPECIAL_TOKEN_RECURSION
+import formulaide.api.fields.DataField
+import formulaide.api.fields.SimpleField.Text
 import formulaide.api.types.Arity
-import formulaide.db.document.createData
-import formulaide.db.document.listData
+import formulaide.api.types.Ref
+import formulaide.api.types.Ref.Companion.createRef
+import formulaide.db.document.createComposite
+import formulaide.db.document.listComposites
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class CompoundDataTest {
+class CompositeTest {
 
 	@Test
 	fun listData() = runBlocking {
 		val db = testDatabase()
 
-		db.listData()
+		db.listComposites()
 		Unit
 	}
 
@@ -27,25 +29,24 @@ class CompoundDataTest {
 
 		val name = "Identité plate"
 
-		val data = db.createData(NewCompoundData(name, listOf(
-			CompoundDataField(
-				id = 1,
+		val data = db.createComposite(Composite("", name, setOf(
+			DataField.Simple(
+				id = "1",
 				order = 1,
-				arity = Arity.mandatory(),
 				name = "Test",
-				data = Data.simple(TEXT)
+				Text(Arity.mandatory())
 			)
 		)))
 
 		assertEquals(name, data.name)
 
-		data.fields[0].run {
-			assertEquals(1, id)
+		data.fields.first().run {
+			assertEquals("1", id)
 			assertEquals(1, order)
 			assertEquals(1, arity.min)
 			assertEquals(1, arity.max)
 			assertEquals("Test", this.name)
-			assertEquals(Data.simple(TEXT), this.data)
+			assertEquals(Text(Arity.mandatory()), (this as DataField.Simple).simple)
 		}
 	}
 
@@ -55,39 +56,37 @@ class CompoundDataTest {
 
 		val name = "Identité récursive"
 
-		val data = db.createData(NewCompoundData(name, listOf(
-			CompoundDataField(
-				id = 1,
+		val data = db.createComposite(Composite("", name, setOf(
+			DataField.Simple(
+				id = "1",
 				order = 1,
-				arity = Arity.mandatory(),
 				name = "Nom complet",
-				data = Data.simple(TEXT)
+				Text(Arity.mandatory())
 			),
-			CompoundDataField(
-				id = 2,
+			DataField.Composite(
+				id = "2",
 				order = 2,
 				arity = Arity.mandatory(),
 				name = "Famille",
-				data = Data.recursiveCompound()
+				ref = Ref(SPECIAL_TOKEN_RECURSION)
 			)
 		)))
 
 		assertEquals(name, data.name)
 
-		val fullName = CompoundDataField(
-			id = 1,
+		val fullName = DataField.Simple(
+			id = "1",
 			order = 1,
-			arity = Arity.mandatory(),
 			name = "Nom complet",
-			data = Data.simple(TEXT)
+			Text(Arity.mandatory())
 		)
 
-		val family = CompoundDataField(
-			id = 2,
+		val family = DataField.Composite(
+			id = "2",
 			order = 2,
 			arity = Arity.mandatory(),
 			name = "Famille",
-			data = Data.compound(data)
+			ref = data.createRef()
 		)
 
 		assertEquals(fullName, data.fields.find { it.id == fullName.id })
