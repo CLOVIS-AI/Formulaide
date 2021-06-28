@@ -37,7 +37,7 @@ class SubmissionsTest {
 				id = "0",
 				open = true,
 				public = true,
-				mainFields = FormRoot(setOf(
+				mainFields = FormRoot(listOf(
 					lastName,
 					firstName
 				)),

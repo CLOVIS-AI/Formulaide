@@ -16,9 +16,7 @@ suspend fun Database.findComposite(id: ReferenceId) =
 	data.findOne(Composite::id eq id)
 
 suspend fun Database.createComposite(composite: Composite): Composite {
-	val recursionSafeguard = Composite(SPECIAL_TOKEN_RECURSION, "Myself", emptySet())
-
-	composite.validate(listComposites().toSet() + recursionSafeguard)
+	composite.validate(listComposites(), allowRecursive = true)
 
 	val id = generateId<Composite>()
 
@@ -30,7 +28,7 @@ suspend fun Database.createComposite(composite: Composite): Composite {
 	val recursiveFields = composite.fields.map { it.cleanUpRecursionToken(created) }
 
 	// 3. Add the fields
-	val valid = created.copy(fields = recursiveFields.toSet())
+	val valid = created.copy(fields = recursiveFields)
 	data.updateOne(Composite::id eq id, valid)
 
 	return valid
@@ -41,9 +39,7 @@ private fun DataField.cleanUpRecursionToken(comp: Composite): DataField = when {
 		ref = comp.createRef()
 	)
 	this is DataField.Union -> copy(
-		options = options
-			.map { it.cleanUpRecursionToken(comp) }
-			.toSet()
+		options = options.map { it.cleanUpRecursionToken(comp) }
 	)
 	else -> this
 }

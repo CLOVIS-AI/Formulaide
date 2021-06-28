@@ -29,7 +29,7 @@ class CompositeTest {
 
 		val name = "Identité plate"
 
-		val data = db.createComposite(Composite("", name, setOf(
+		val data = db.createComposite(Composite("", name, listOf(
 			DataField.Simple(
 				id = "1",
 				order = 1,
@@ -56,7 +56,7 @@ class CompositeTest {
 
 		val name = "Identité récursive"
 
-		val data = db.createComposite(Composite("", name, setOf(
+		val data = db.createComposite(Composite("", name, listOf(
 			DataField.Simple(
 				id = "1",
 				order = 1,
