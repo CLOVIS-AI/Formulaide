@@ -7,7 +7,7 @@ import formulaide.api.fields.SimpleField
 import formulaide.api.types.Arity
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.text
-import kotlinx.html.js.onChangeFunction
+import kotlinx.html.js.onClickFunction
 import react.FunctionalComponent
 import react.child
 import react.dom.attrs
@@ -62,7 +62,9 @@ val RecursionEditor: FunctionalComponent<EditableFieldProps> = functionalCompone
 				button {
 					text("Ajouter un champ")
 					attrs {
-						onChangeFunction = {
+						onClickFunction = {
+							it.preventDefault()
+
 							val id = fields.size.toString()
 							val order = fields.size
 							val name = "Nouveau champ"
