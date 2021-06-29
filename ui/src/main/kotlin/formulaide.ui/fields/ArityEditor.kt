@@ -1,5 +1,7 @@
 package formulaide.ui.fields
 
+import formulaide.api.fields.Field
+import formulaide.api.fields.SimpleField
 import formulaide.api.types.Arity
 import formulaide.ui.utils.text
 import kotlinx.html.InputType
@@ -9,38 +11,48 @@ import react.dom.attrs
 import react.dom.input
 import react.dom.label
 import react.functionalComponent
-import react.useMemo
 
 val ArityEditor = functionalComponent<FieldProps2> { props ->
-	val arity = useMemo(props.field) { props.field.arity }
+	val field = props.field
+	val arity = field.arity
 
-	label { text("Nombre de réponses autorisées : de ") }
-	input(InputType.number, name = "item-arity-min") {
-		attrs {
-			required = true
-			value = arity.min.toString()
-			min = "0"
-			max = arity.max.toString()
-			onChangeFunction = {
-				val value = (it.target as HTMLInputElement).value.toInt()
-				props.replace(
-					props.field.set(arity = Arity(value, arity.max))
-				)
+	//region Allowed
+	// Editing the arity is allowed for all types but Message
+	val simpleOrNull = (field as? Field.Simple)?.simple
+	val allowModifications =
+		if (simpleOrNull != null) simpleOrNull::class != SimpleField.Message::class
+		else true
+	//endregion
+
+	if (allowModifications) {
+		label { text("Nombre de réponses autorisées : de ") }
+		input(InputType.number, name = "item-arity-min") {
+			attrs {
+				required = true
+				value = arity.min.toString()
+				min = "0"
+				max = arity.max.toString()
+				onChangeFunction = {
+					val value = (it.target as HTMLInputElement).value.toInt()
+					props.replace(
+						props.field.set(arity = Arity(value, arity.max))
+					)
+				}
 			}
 		}
-	}
-	label { text(" à ") }
-	input(InputType.number, name = "item-arity-max") {
-		attrs {
-			required = true
-			value = arity.max.toString()
-			min = arity.min.toString()
-			max = "1000"
-			onChangeFunction = {
-				val value = (it.target as HTMLInputElement).value.toInt()
-				props.replace(
-					props.field.set(arity = Arity(arity.min, value))
-				)
+		label { text(" à ") }
+		input(InputType.number, name = "item-arity-max") {
+			attrs {
+				required = true
+				value = arity.max.toString()
+				min = arity.min.toString()
+				max = "1000"
+				onChangeFunction = {
+					val value = (it.target as HTMLInputElement).value.toInt()
+					props.replace(
+						props.field.set(arity = Arity(arity.min, value))
+					)
+				}
 			}
 		}
 	} else {

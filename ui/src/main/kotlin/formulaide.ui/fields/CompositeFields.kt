@@ -26,7 +26,7 @@ fun FieldProps2.inheritFrom(props: FieldProps2) {
 }
 
 @Suppress("NAME_SHADOWING")
-fun SimpleField.set(arity: Arity? = null): SimpleField {
+internal fun SimpleField.set(arity: Arity? = null): SimpleField {
 	val arity = arity ?: this.arity
 
 	return when (this) {
@@ -34,12 +34,12 @@ fun SimpleField.set(arity: Arity? = null): SimpleField {
 		is SimpleField.Integer -> copy(arity = arity)
 		is SimpleField.Decimal -> copy(arity = arity)
 		is SimpleField.Boolean -> copy(arity = arity)
-		SimpleField.Message -> this
+		SimpleField.Message -> error("Modifier l'arité d'un Message est interdit")
 	}
 }
 
 @Suppress("NAME_SHADOWING")
-fun Field.set(name: String? = null, arity: Arity? = null): Field {
+internal fun Field.set(name: String? = null, arity: Arity? = null): Field {
 	val name = name ?: this.name
 	val arity = arity ?: this.arity
 
