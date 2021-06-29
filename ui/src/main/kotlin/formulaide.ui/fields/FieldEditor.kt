@@ -71,6 +71,8 @@ val FieldEditor = functionalComponent<FieldProps2> { props ->
 		}
 
 		br {}
-		//TODO: recursion
+		child(RecursionEditor) {
+			attrs { inheritFrom(props) }
+		}
 	}
 }
