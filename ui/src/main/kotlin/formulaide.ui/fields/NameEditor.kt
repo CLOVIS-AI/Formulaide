@@ -11,7 +11,7 @@ import react.dom.input
 import react.dom.label
 import react.functionalComponent
 
-val NameEditor = functionalComponent<FieldProps2> { props ->
+val NameEditor = functionalComponent<EditableFieldProps> { props ->
 	val field = props.field
 	val allowModification = field is DataField || field is FormField.Shallow
 

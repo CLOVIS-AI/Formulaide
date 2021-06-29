@@ -13,14 +13,14 @@ import react.dom.br
 import react.dom.div
 import react.functionalComponent
 
-external interface FieldProps2 : RProps {
+external interface EditableFieldProps : RProps {
 	var app: ScreenProps
 
 	var field: Field
 	var replace: (Field) -> Unit
 }
 
-fun FieldProps2.inheritFrom(props: FieldProps2) {
+fun EditableFieldProps.inheritFrom(props: EditableFieldProps) {
 	app = props.app
 	field = props.field
 	replace = props.replace
@@ -64,7 +64,7 @@ internal fun Field.set(name: String? = null, arity: Arity? = null): Field {
 	}
 }
 
-val FieldEditor = functionalComponent<FieldProps2> { props ->
+val FieldEditor = functionalComponent<EditableFieldProps> { props ->
 	div {
 		text("Champ ${props.field.order}")
 

@@ -16,7 +16,7 @@ import react.dom.div
 import react.dom.jsStyle
 import react.functionalComponent
 
-val RecursionEditor: FunctionalComponent<FieldProps2> = functionalComponent { props ->
+val RecursionEditor: FunctionalComponent<EditableFieldProps> = functionalComponent { props ->
 	val parent = props.field
 	val fields = (parent as? Field.Union<*>)?.options
 		?: (parent as? Field.Container<*>)?.fields

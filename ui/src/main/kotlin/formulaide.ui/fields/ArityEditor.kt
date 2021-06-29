@@ -12,7 +12,7 @@ import react.dom.input
 import react.dom.label
 import react.functionalComponent
 
-val ArityEditor = functionalComponent<FieldProps2> { props ->
+val ArityEditor = functionalComponent<EditableFieldProps> { props ->
 	val field = props.field
 	val arity = field.arity
 

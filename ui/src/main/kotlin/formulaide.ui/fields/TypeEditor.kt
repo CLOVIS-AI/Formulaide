@@ -20,7 +20,7 @@ import react.dom.option
 import react.dom.select
 import react.functionalComponent
 
-val TypeEditor = functionalComponent<FieldProps2> { props ->
+val TypeEditor = functionalComponent<EditableFieldProps> { props ->
 	val field = props.field
 
 	val allowTypeModifications = field is DataField || field is FormField.Shallow
@@ -127,7 +127,7 @@ private enum class SimpleFieldEnum(val displayName: String, val build: (Arity) -
 	}
 }
 
-private val SimpleOptions = functionalComponent<FieldProps2> { props ->
+private val SimpleOptions = functionalComponent<EditableFieldProps> { props ->
 	val field = props.field
 
 	val current = ((field as? DataField.Simple)?.simple
@@ -146,7 +146,7 @@ private val SimpleOptions = functionalComponent<FieldProps2> { props ->
 	}
 }
 
-private val UnionOptions = functionalComponent<FieldProps2> { props ->
+private val UnionOptions = functionalComponent<EditableFieldProps> { props ->
 	val field = props.field
 
 	option {
@@ -159,7 +159,7 @@ private val UnionOptions = functionalComponent<FieldProps2> { props ->
 	}
 }
 
-private val CompositeOptions = functionalComponent<FieldProps2> { props ->
+private val CompositeOptions = functionalComponent<EditableFieldProps> { props ->
 	val field = props.field
 
 	val current = (field as? DataField.Composite)?.ref
@@ -177,7 +177,7 @@ private val CompositeOptions = functionalComponent<FieldProps2> { props ->
 	}
 }
 
-private val RecursiveCompositeOptions = functionalComponent<FieldProps2> { props ->
+private val RecursiveCompositeOptions = functionalComponent<EditableFieldProps> { props ->
 	val field = props.field
 
 	// Only data can be recursive, forms cannot
