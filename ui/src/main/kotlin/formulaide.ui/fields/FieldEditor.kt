@@ -51,7 +51,7 @@ internal fun Field.set(name: String? = null, arity: Arity? = null): Field {
 	}
 }
 
-val FieldSimple = functionalComponent<FieldProps2> { props ->
+val FieldEditor = functionalComponent<FieldProps2> { props ->
 	div {
 		text("Champ ${props.field.order}")
 
@@ -69,5 +69,8 @@ val FieldSimple = functionalComponent<FieldProps2> { props ->
 		child(TypeEditor) {
 			attrs { inheritFrom(props) }
 		}
+
+		br {}
+		//TODO: recursion
 	}
 }
