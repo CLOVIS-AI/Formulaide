@@ -1,6 +1,6 @@
 package formulaide.ui
 
-import formulaide.api.data.CompoundData
+import formulaide.api.data.Composite
 import formulaide.api.data.Form
 import formulaide.api.users.User
 import formulaide.client.Client
@@ -46,9 +46,9 @@ external interface ApplicationProps : RProps {
 	var scope: CoroutineScope
 
 	// Common data
-	var compounds: List<CompoundData>
+	var composites: List<Composite>
 	var forms: List<Form>
-	var refreshCompounds: () -> Unit
+	var refreshComposites: () -> Unit
 	var refreshForms: () -> Unit
 }
 
@@ -115,9 +115,9 @@ val Window = functionalComponent<ApplicationProps> { props ->
 			connect = props.connect
 
 			scope = props.scope
-			compounds = props.compounds
+			composites = props.composites
 			forms = props.forms
-			refreshCompounds = props.refreshCompounds
+			refreshComposites = props.refreshComposites
 			refreshForms = props.refreshForms
 
 			currentScreen = screen

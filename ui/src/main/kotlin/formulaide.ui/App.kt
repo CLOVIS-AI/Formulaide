@@ -74,7 +74,7 @@ val App = functionalComponent<RProps> {
 			this.scope = scope
 
 			this.composites = composites
-			this.refreshCompounds = { setRefreshComposites(refreshComposites + 1) }
+			this.refreshComposites = { setRefreshComposites(refreshComposites + 1) }
 
 			this.forms = forms
 			this.refreshForms = { setRefreshForms(refreshForms + 1) }
