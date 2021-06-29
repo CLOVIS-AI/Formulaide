@@ -85,6 +85,8 @@ data class Ref<R : Referencable>(
 			?: error("Couldn't find any object with id '$id' in the given list.")
 	}
 
+	override fun toString() = "Ref(id: $id, obj: ${if (loaded) "loaded" else "not loaded"})"
+
 	companion object {
 
 		/**
