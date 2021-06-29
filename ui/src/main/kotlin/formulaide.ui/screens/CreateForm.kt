@@ -11,6 +11,7 @@ import formulaide.api.users.Service
 import formulaide.client.Client
 import formulaide.client.routes.createForm
 import formulaide.client.routes.listServices
+import formulaide.ui.Screen
 import formulaide.ui.ScreenProps
 import formulaide.ui.fields.FieldEditor
 import formulaide.ui.utils.replace
@@ -198,6 +199,9 @@ val CreateForm = functionalComponent<ScreenProps> { props ->
 
 				props.scope.launch {
 					client.createForm(form)
+
+					props.refreshForms()
+					props.navigateTo(Screen.ShowForms)
 				}
 			}
 		}
