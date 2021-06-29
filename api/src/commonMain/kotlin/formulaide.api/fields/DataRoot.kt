@@ -82,4 +82,8 @@ sealed class DataField : Field {
 			ref.loadIfNecessary(composites)
 		}
 	}
+
+	fun copyToSimple(simple: SimpleField) = Simple(id, order, name, simple)
+	fun copyToUnion(options: List<DataField>) = Union(id, order, name, arity, options)
+	fun copyToComposite(composite: Ref<CompositeData>) = Composite(id, order, name,  arity, composite)
 }

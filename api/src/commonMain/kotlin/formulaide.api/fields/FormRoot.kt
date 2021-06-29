@@ -127,6 +127,10 @@ sealed interface FormField : Field {
 				fields.forEach { it.validate(ref.obj.fields, composites) }
 			}
 		}
+
+		fun copyToSimple(simple: SimpleField) = Simple(id, order, name, simple)
+		fun copyToUnion(options: List<Shallow>) = Union(id, order, name, arity, options)
+		fun copyToComposite(composite: Ref<CompositeData>, fields: List<Deep>) = Composite(id, order, name, arity, composite, fields)
 	}
 
 	/**
