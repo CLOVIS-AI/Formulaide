@@ -2,8 +2,11 @@ package formulaide.ui.fields
 
 import formulaide.api.fields.DataField
 import formulaide.api.fields.Field
+import formulaide.api.fields.FormField
+import formulaide.api.fields.FormField.Deep.Companion.createMatchingFormField
 import formulaide.api.fields.SimpleField
 import formulaide.api.types.Arity
+import formulaide.api.types.Ref.Companion.loadIfNecessary
 import formulaide.ui.utils.text
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
@@ -57,9 +60,7 @@ val ArityEditor = functionalComponent<EditableFieldProps> { props ->
 				max = "1000"
 				onChangeFunction = {
 					val value = (it.target as HTMLInputElement).value.toInt()
-					props.replace(
-						props.field.set(arity = Arity(arity.min, value))
-					)
+					updateSubFieldsOnMaxArityChange(props, Arity(arity.min, value))
 				}
 			}
 		}
@@ -71,5 +72,27 @@ val ArityEditor = functionalComponent<EditableFieldProps> { props ->
 		Arity.optional() -> label { text("(facultatif)") }
 		Arity.forbidden() -> label { text("(interdit)") }
 		else -> label { text("(liste)") }
+	}
+}
+
+private fun updateSubFieldsOnMaxArityChange(props: EditableFieldProps, newArity: Arity) {
+	val newField = props.field.set(arity = newArity)
+
+	if (newField !is FormField.Composite) {
+		props.replace(newField)
+	} else {
+		val composite = when (newField) {
+			is FormField.Shallow.Composite -> newField.ref.also { it.loadIfNecessary(props.app.composites) }.obj
+			is FormField.Deep.Composite -> (newField.ref.obj as DataField.Composite).ref.also {
+				it.loadIfNecessary(props.app.composites)
+			}.obj
+			else -> error("This is impossible, the execution should never reach this point.")
+		}
+		val newFields = composite.fields.map { it.createMatchingFormField(props.app.composites) }
+
+		when (newField) {
+			is FormField.Shallow.Composite -> props.replace(newField.copy(fields = newFields))
+			is FormField.Deep.Composite -> props.replace(newField.copy(fields = newFields))
+		}
 	}
 }

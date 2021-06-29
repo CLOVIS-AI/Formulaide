@@ -260,6 +260,20 @@ sealed interface FormField : Field {
 				this.fields.forEach { it.validate(referencedComposite.obj.fields, composites) }
 			}
 		}
-	}
 
+		companion object {
+
+			fun DataField.createMatchingFormField(composites: List<CompositeData>): Deep =
+				when (this) {
+					is DataField.Simple -> Simple(this, simple)
+					is DataField.Union -> Union(
+						this,
+						arity,
+						options.map { it.createMatchingFormField(composites) }
+					)
+					is DataField.Composite -> Composite(this, Arity.forbidden(), emptyList())
+				}
+
+		}
+	}
 }
