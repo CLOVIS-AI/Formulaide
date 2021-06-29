@@ -84,8 +84,14 @@ val FieldEditor = functionalComponent<EditableFieldProps> { props ->
 		}
 
 		br {}
-		child(RecursionEditor) {
-			attrs { inheritFrom(props) }
+		if (props.field is Field.Union<*> || props.field is Field.Container<*>) {
+			if (props.field.arity != Arity.forbidden()) {
+				child(RecursionEditor) {
+					attrs { inheritFrom(props) }
+				}
+			} else {
+				text("Les sous-champs ne sont pas affichés, parce que cette donnée est interdite.")
+			}
 		}
 	}
 }
