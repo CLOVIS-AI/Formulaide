@@ -1,10 +1,11 @@
 package formulaide.client.routes
 
-import formulaide.api.data.Data
-import formulaide.api.data.Data.Simple.SimpleDataId.TEXT
-import formulaide.api.data.Form
-import formulaide.api.data.FormField
-import formulaide.api.data.FormSubmission
+import formulaide.api.data.FormSubmission.Companion.createSubmission
+import formulaide.api.dsl.form
+import formulaide.api.dsl.formRoot
+import formulaide.api.dsl.simple
+import formulaide.api.fields.FormField
+import formulaide.api.fields.SimpleField.Text
 import formulaide.api.types.Arity
 import formulaide.client.runTest
 import formulaide.client.testAdministrator
@@ -17,29 +18,21 @@ class SubmissionsTest {
 	fun simple() = runTest {
 		val admin = testAdministrator()
 
-		val form = admin.createForm(Form(
-			"Formulaire bête",
-			0,
-			open = true,
+		lateinit var test: FormField.Simple
+
+		val form = admin.createForm(form(
+			"Formulaide bête",
 			public = true,
-			fields = listOf(FormField(
-				0,
-				order = 1,
-				arity = Arity.mandatory(),
-				name = "Test",
-				data = Data.simple(TEXT)
-			)),
-			actions = emptyList()
+			mainFields = formRoot {
+				test = simple("Test", Text(Arity.mandatory()))
+			}
 		))
 
 		val client = testClient()
 
-		client.submitForm(FormSubmission(
-			form.id,
-			mapOf(
-				"0" to "Ma donnée de test"
-			)
-		))
+		client.submitForm(form.createSubmission {
+			text(test, "Ma donnée de test")
+		})
 	}
 
 }

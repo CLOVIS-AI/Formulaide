@@ -1,10 +1,10 @@
 package formulaide.db
 
 import formulaide.api.data.Action
-import formulaide.api.data.Data
-import formulaide.api.data.Data.Simple.SimpleDataId.TEXT
-import formulaide.api.data.Form
-import formulaide.api.data.FormField
+import formulaide.api.dsl.form
+import formulaide.api.dsl.formRoot
+import formulaide.api.dsl.simple
+import formulaide.api.fields.SimpleField.Text
 import formulaide.api.types.Arity
 import formulaide.db.document.createForm
 import formulaide.db.document.listForms
@@ -26,26 +26,16 @@ class FormsTest {
 	fun create() = runBlocking {
 		val db = testDatabase()
 
-		db.createForm(Form(
-			name = "Le formulaire des tests",
-			id = 0,
-			open = true,
+		db.createForm(form(
+			"Le formulaire des tests",
 			public = true,
-			fields = listOf(
-				FormField(
-					id = 1,
-					order = 1,
-					arity = Arity.mandatory(),
-					name = "Numéro fiscal",
-					data = Data.simple(TEXT)
-				)
-			),
-			actions = listOf(
-				Action.ServiceReview(
-					id = 1,
-					order = 1,
-					service = 1,
-				)
+			formRoot {
+				simple("Numéro fiscal", Text(Arity.mandatory()))
+			},
+			Action.ServiceReview(
+				id = 1,
+				order = 1,
+				service = 1
 			)
 		))
 		Unit

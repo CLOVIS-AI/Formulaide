@@ -2,10 +2,11 @@ package formulaide.ui.screens
 
 import formulaide.api.data.Form
 import formulaide.api.data.FormSubmission
+import formulaide.api.types.Ref.Companion.createRef
 import formulaide.client.routes.submitForm
 import formulaide.ui.Screen
 import formulaide.ui.ScreenProps
-import formulaide.ui.fields.topLevelField
+import formulaide.ui.fields.field
 import formulaide.ui.utils.text
 import kotlinx.coroutines.launch
 import kotlinx.html.InputType
@@ -25,8 +26,8 @@ fun SubmitForm(form: Form) = functionalComponent<ScreenProps> { props ->
 
 		p { text("Ce formulaire est ${if (form.public) "public" else "interne"}.") }
 
-		for (field in form.fields) {
-			topLevelField(props, field, null)
+		for (field in form.mainFields.fields) {
+			field(props, field)
 		}
 
 		br {}
@@ -47,17 +48,18 @@ fun SubmitForm(form: Form) = functionalComponent<ScreenProps> { props ->
 
 				//language=JavaScript
 				val formDataObject = js("""Object.fromEntries(formData.entries())""")
-				//language=JavaScript
+
+				@Suppress("JSUnresolvedVariable") //language=JavaScript
 				val formDataArray = js("""Object.keys(formDataObject)""") as Array<String>
 				val answers = formDataArray.associate { it to (formDataObject[it] as String) }
 					.filterValues { it.isNotBlank() }
 
 				val submission = FormSubmission(
-					form.id,
+					form.createRef(),
 					answers
 				)
 
-				submission.checkValidity(form, props.compounds) //TODO: display error message if any
+				submission.checkValidity(form) //TODO: display error message if any
 
 				props.scope.launch {
 					props.client.submitForm(submission)

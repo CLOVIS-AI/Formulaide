@@ -1,15 +1,23 @@
 package formulaide.api.data
 
-import formulaide.api.data.Data.Simple.SimpleDataId.MESSAGE
 import formulaide.api.data.FormSubmission.Companion.createSubmission
 import formulaide.api.data.FormSubmission.ReadOnlyAnswer.Companion.asAnswer
+import formulaide.api.fields.Field
+import formulaide.api.fields.FormField
+import formulaide.api.fields.SimpleField.Message
 import formulaide.api.types.Arity
+import formulaide.api.types.Ref
+import formulaide.api.types.Ref.Companion.createRef
+import formulaide.api.types.Ref.Companion.ids
 import kotlinx.serialization.Serializable
+
+@DslMarker
+annotation class FormSubmissionDsl
 
 /**
  * A submission of a [Form].
  *
- * Unlike [CompoundData], [UnionDataField] and [Form], this data point is not recursive,
+ * Unlike [Composite], and [Form], this data point is not recursive,
  * in order to make it easier to use. Instead, this is simply a [dictionary][Map]
  * of each value given by the user.
  *
@@ -19,19 +27,21 @@ import kotlinx.serialization.Serializable
  * - A key, that identifies which field is being submitted,
  * - A value, which is the user's response.
  *
- * The value is the JSON data corresponding to the field's [type][Data].
- * If the field is optional (see [Arity]) or doesn't require an answer (eg. [MESSAGE]), do not add the value if none is required (`null` will *not* be accepted).
+ * The value is a [String] corresponding to the field's [type][FormField].
+ * If the field is optional (see [Arity]) or doesn't require an answer (eg. [Message]),
+ * do not add the value if none is required (`null` will *not* be accepted).
  *
  * The key is formed by grouping different IDs, separated by the character 'colon' (`:`).
  * The key is built using the following steps (the order is important):
- * - Starting at the top-level of the form, the first ID is the top-level's field ID ([FormField.id])
+ * - Starting at the top-level of the form, the first ID is the top-level's field ID ([FormField.Shallow.id])
  * - If the field has a [maximum arity][Arity.max] greater than 1, an arbitrary integer
  * (of your choice) is used to represent the index of the element
  * (repeat until the maximum arity is 1).
- * - If the field is a [compound type][Data.Compound], [FormFieldComponent.id] is added
+ * - If the field is a [composite type][Composite], [Field.id] is added
  * (repeat from the previous step as long as necessary).
  *
- * [Unions][Data.Union] are treated as compound objects that only have one field, whose ID is the ID of the element of the enum that was selected.
+ * [Unions][Field.Union] are treated as compound objects that only have one field,
+ * whose ID is the ID of the element of the enum that was selected.
  * The value corresponds to the value of the selected union element.
  *
  * ### Example
@@ -42,7 +52,7 @@ import kotlinx.serialization.Serializable
  * and is provided in YAML-like format for readability (this format is **not** accepted by the API,
  * this is only an illustration of the key-value system).
  *
- * Example data (real data is modeled by [CompoundData]):
+ * Example data (real data is modeled by [Composite]):
  * ```yaml
  *   name: Identity
  *   id: 1
@@ -96,14 +106,21 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class FormSubmission(
-	val form: FormId,
+	val form: Ref<Form>,
 	val data: Map<String, String>,
 ) {
 
 	//region Check validity
 
-	fun checkValidity(form: Form, compounds: List<CompoundData>) {
-		require(this.form == form.id) { "L'identifiant du formulaire donné à checkValidity est différent de celui correspondant à cette saisie" }
+	/**
+	 * Checks the validity of this [FormSubmission].
+	 *
+	 * It is expected that the form is validated and loaded (see [Form.validate]).
+	 *
+	 * @throws IllegalStateException if the submission is invalid.
+	 */
+	fun checkValidity(form: Form) {
+		this.form.load(form)
 		println("\nChecking validity of $this…")
 
 		val topLevelAnswer = data
@@ -113,93 +130,42 @@ data class FormSubmission(
 			.toList()
 			.asAnswer()
 
-		checkTopLevelFieldsValidity(form.fields, topLevelAnswer, compounds)
-	}
-
-	private fun checkTopLevelFieldsValidity(
-		fields: List<FormField>,
-		topLevelAnswer: ReadOnlyAnswer,
-		compounds: List<CompoundData>
-	) {
-		for (field in fields) {
+		for (field in form.mainFields.fields) {
 			println("• Top-level field ${field.id}, ‘${field.name}’")
-			checkField(topLevelAnswer, field, null, field, compounds)
+			checkField(field, topLevelAnswer)
 		}
 	}
 
-	private fun checkDeepFieldsValidity(
-		fields: List<FormFieldComponent>,
-		topLevelAnswer: ReadOnlyAnswer,
-		compound: CompoundData,
-		compounds: List<CompoundData>,
-	) {
-		for (compoundField in compound.fields) {
-			println("• Field ${compoundField.id}, ’${compoundField.name}’")
-
-			// Finding the FormField that corresponds to this CompoundDataField
-			val formField = fields.find { it.id == compoundField.id }
-			requireNotNull(formField) { "La donnée '${compound.name}' ('${compound.id}') a un champ ${compoundField.id}, mais le formulaire donné n'a pas de champ équivalent : ${fields.map { it.id }}" }
-
-			checkField(topLevelAnswer, formField, compoundField, null, compounds)
-		}
-	}
-
+	/**
+	 * Checks that a specific [field] validates all its constraints.
+	 */
 	private fun checkField(
-		topLevelAnswer: ReadOnlyAnswer,
-		formField: AbstractFormField,
-		compoundField: CompoundDataField? = null,
-		topLevelFormField: FormField? = null,
-		compounds: List<CompoundData>
+		field: FormField,
+		answer: ReadOnlyAnswer,
 	) {
-		require((compoundField == null) xor (topLevelFormField == null)) { "Une seule des données entre 'compoundField' ($compoundField) et 'topLevelFormField' ($topLevelFormField) devraient être donnée" }
-		val expectedData = compoundField?.data ?: topLevelFormField?.data!!
-
 		// Checking field.id
-		val answerOrNull = topLevelAnswer.components[formField.id.toString()]
-
-		println("· Expected data: $expectedData\n· Given: $answerOrNull")
+		val childAnswerOrNull = answer.components[field.id]
 
 		// Checking field.arity
-		val answers = checkFieldArity(answerOrNull, formField)
+		val childrenAnswers = checkArity(field, childAnswerOrNull)
 
-		// Checking field.data for each answer
-		for (answer in answers) {
-			@Suppress("UNUSED_VARIABLE")
-			val e = when (expectedData) {
-				is Data.Simple -> checkSimple(expectedData, answer, formField)
-				is Data.Union -> checkUnion(expectedData, answer, formField, compounds)
-				is Data.Compound -> checkCompound(
-					expectedData,
-					answer,
-					formField,
-					compounds
-				)
+		// Checking field type for each answer
+		for (childAnswer in childrenAnswers) {
+			@Suppress("UNUSED_VARIABLE") // force exhaustive when
+			val e = when (field) {
+				is FormField.Simple -> checkSimple(field, childAnswer)
+				is FormField.Union<*> -> checkUnion(field, childAnswer)
+				is FormField.Composite -> checkComposite(field, childAnswer)
 			}
 		}
 	}
 
-	private fun checkCompound(
-		expectedType: Data.Compound,
-		answer: ReadOnlyAnswer,
-		field: AbstractFormField,
-		compounds: List<CompoundData>
-	) {
-		val matchingCompound = compounds.find { it.id == expectedType.id }
-		requireNotNull(matchingCompound) { "${fieldErrorMessage(field)} est de type COMPOUND et fait référence à '${expectedType.id}', mais la fonction de vérification n'y a pas accès (connues : ${compounds.map { it.id }})" }
-
-		checkDeepFieldsValidity(field.components!!, answer, matchingCompound, compounds)
-	}
-
-	private fun fieldErrorMessage(field: AbstractFormField) =
-		if (field is FormField) "Le champ '${field.id}' (nommé '${field.name}')"
-		else "Le champ '${field.id}'"
-
 	/**
-	 * Checks that an [answer] corresponds to the [arity][Arity] of a given [AbstractFormField].
+	 * Checks that an [answer] corresponds to [field]'s [arity][Field.arity].
 	 */
-	private fun checkFieldArity(
+	private fun checkArity(
+		field: FormField,
 		answer: ReadOnlyAnswer?,
-		field: AbstractFormField,
 	): List<ReadOnlyAnswer> {
 		val answers = when {
 			answer == null -> emptyList()
@@ -210,36 +176,53 @@ data class FormSubmission(
 		return answers
 	}
 
-	private fun checkUnion(
-		expected: Data.Union,
+	private fun checkComposite(
+		field: FormField.Composite,
 		answer: ReadOnlyAnswer,
-		field: AbstractFormField,
-		compounds: List<CompoundData>
+	) {
+		for (compositeField in field.fields) {
+			println("• Field ${compositeField.id}, ’${compositeField.name}’")
+
+			// Finding the FormField that corresponds to this CompoundDataField
+			val formField = field.fields.find { it.id == compositeField.id }
+			requireNotNull(formField) { "La donnée '${field.name}' ('${field.id}') a un champ ${compositeField.id}, mais le formulaire donné n'a pas de champ équivalent : ${field.fields.ids()}" }
+
+			checkField(formField, answer)
+		}
+	}
+
+	private fun checkUnion(
+		field: FormField.Union<*>,
+		answer: ReadOnlyAnswer,
 	) {
 		require(answer.components.size == 1) { "${fieldErrorMessage(field)} est une union, elle ne peut avoir qu'une seule valeur ; trouvé les clefs ${answer.components.map { it.key }}" }
 		val (unionAnswerId, unionAnswer) = answer.components.entries.first()
 
-		val match = expected.elements.find { it.id.toString() == unionAnswerId }
-		requireNotNull(match) { "${fieldErrorMessage(field)} est une union qui autorise les éléments ${expected.elements.map { it.id }}, dont la réponse donnée ne fait pas partie : ${answer.value}" }
+		val selectedFormField = field.options.find { it.id == unionAnswerId }
+		requireNotNull(selectedFormField) { "${fieldErrorMessage(field)} est une union qui autorise les éléments ${field.options.map { it.id }}, dont la réponse donnée ne fait pas partie : ${answer.value}" }
 
 		@Suppress("UNUSED_VARIABLE") // The variable is there to force the 'when' to be exhaustive
-		val e = when (val expectedType = match.type) {
-			is Data.Compound -> checkCompound(expectedType, unionAnswer, field, compounds)
-			is Data.Union -> checkUnion(expectedType, unionAnswer, field, compounds)
-			is Data.Simple -> checkSimple(expectedType, unionAnswer, field)
+		val e = when (val formField: FormField = selectedFormField) {
+			is FormField.Composite -> checkComposite(formField, unionAnswer)
+			is FormField.Union<*> -> checkUnion(formField, unionAnswer)
+			is FormField.Simple -> checkSimple(formField, unionAnswer)
 		}
 	}
 
+	/**
+	 * Checks that an [answer] corresponds to a given [field].
+	 */
 	private fun checkSimple(
-		expected: Data.Simple,
+		field: FormField.Simple,
 		answer: ReadOnlyAnswer,
-		field: AbstractFormField,
 	) {
-		val validated = expected.id.validate(answer.value)
-		requireNotNull(validated) { "${fieldErrorMessage(field)} est de type ${expected.id}, mais la valeur donnée ne correspond pas : '${answer.value}'" }
+		field.simple.validate(answer.value)
 
 		require(answer.components.isEmpty()) { "${fieldErrorMessage(field)} est de type SIMPLE, il ne peut pas avoir des sous-réponses ; trouvé ${answer.components}" }
 	}
+
+	private fun fieldErrorMessage(field: FormField) =
+		"Le champ '${field.id}' (nommé '${field.name}')"
 
 	//endregion
 	//region Form answers
@@ -265,7 +248,7 @@ data class FormSubmission(
 
 	private data class ReadOnlyAnswer(
 		override val value: String?,
-		override val components: Map<String, ReadOnlyAnswer>
+		override val components: Map<String, ReadOnlyAnswer>,
 	) : Answer() {
 
 		companion object {
@@ -298,39 +281,54 @@ data class FormSubmission(
 	/**
 	 * Mutable implementation of [Answer], used as a DSL in [Form.createSubmission].
 	 */
+	@FormSubmissionDsl
 	data class MutableAnswer internal constructor(
 		override val value: String?,
 		override val components: MutableMap<String, MutableAnswer> = HashMap(),
-		val compounds: List<CompoundData>,
 	) : Answer() {
 
 		//region Data DSL
 
-		private fun simpleValue(field: AbstractFormField, value: String?) {
-			components += field.id.toString() to MutableAnswer(value, compounds = compounds)
+		private fun simpleValue(field: FormField.Simple, value: String?) {
+			field.simple.validate(value)
+			components += field.id to MutableAnswer(value)
 		}
 
-		fun text(field: AbstractFormField, value: String) = simpleValue(field, value)
-		fun message(field: AbstractFormField) = simpleValue(field, null)
-		fun integer(field: AbstractFormField, value: Long) = simpleValue(field, value.toString())
-		fun decimal(field: AbstractFormField, value: Double) = simpleValue(field, value.toString())
-		fun boolean(field: AbstractFormField, value: Boolean) = simpleValue(field, value.toString())
+		fun text(field: FormField.Simple, value: String) = simpleValue(field, value)
+		fun message(field: FormField.Simple) = simpleValue(field, null)
+		fun integer(field: FormField.Simple, value: Long) =
+			simpleValue(field, value.toString())
 
-		private fun abstractList(field: AbstractFormField, headValue: String?, block: MutableAnswer.() -> Unit) {
-			val list = MutableAnswer(headValue, compounds = compounds)
+		fun decimal(field: FormField.Simple, value: Double) =
+			simpleValue(field, value.toString())
+
+		fun boolean(field: FormField.Simple, value: Boolean) =
+			simpleValue(field, value.toString())
+
+		private fun abstractList(
+			field: Field,
+			headValue: String?,
+			block: MutableAnswer.() -> Unit,
+		) {
+			val list = MutableAnswer(headValue)
 			list.block()
-			components += field.id.toString() to list
+			components += field.id to list
 		}
 
 		fun item(id: Int, block: MutableAnswer.() -> Unit) {
-			val list = MutableAnswer(null, compounds = compounds)
+			val list = MutableAnswer(null)
 			list.block()
 			components += id.toString() to list
 		}
 
-		fun union(field: AbstractFormField, choice: UnionDataField, block: MutableAnswer.() -> Unit) = abstractList(field, choice.id.toString(), block)
+		fun <F : FormField> union(
+			field: FormField.Union<F>,
+			choice: F,
+			block: MutableAnswer.() -> Unit,
+		) = abstractList(field, choice.id, block)
 
-		fun compound(field: AbstractFormField, block: MutableAnswer.() -> Unit) = abstractList(field, null, block)
+		fun composite(field: FormField.Composite, block: MutableAnswer.() -> Unit) =
+			abstractList(field, null, block)
 
 		//endregion
 
@@ -348,7 +346,7 @@ data class FormSubmission(
 				flatComponents
 		}
 
-		fun flatten(): Map<String, String> {
+		internal fun flatten(): Map<String, String> {
 			val flattened = flattenIntermediary()
 
 			@Suppress("UNCHECKED_CAST")
@@ -362,21 +360,22 @@ data class FormSubmission(
 
 		/**
 		 * DSL builder to create a valid [FormSubmission].
+		 *
+		 * It is expected that the [Form] this is called on has already been [validated][Form.validate].
 		 */
 		fun Form.createSubmission(
-			compounds: List<CompoundData>,
-			block: MutableAnswer.() -> Unit
+			block: MutableAnswer.() -> Unit,
 		): FormSubmission {
 			val form = this
-			val answer = MutableAnswer(null, mutableMapOf(), compounds)
+			val answer = MutableAnswer(null, mutableMapOf())
 
 			answer.block()
 
 			return FormSubmission(
-				form.id,
+				form.createRef(),
 				data = answer.flatten()
 			).apply {
-				checkValidity(form, compounds)
+				checkValidity(form)
 			}
 		}
 

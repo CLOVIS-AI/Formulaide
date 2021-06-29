@@ -1,6 +1,7 @@
 package formulaide.api.data
 
 import formulaide.api.types.Email
+import formulaide.api.types.OrderedListElement
 import formulaide.api.users.Service
 import formulaide.api.users.ServiceId
 import formulaide.api.users.User

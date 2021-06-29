@@ -1,6 +1,6 @@
 package formulaide.db
 
-import formulaide.api.data.CompoundData
+import formulaide.api.data.Composite
 import formulaide.api.data.Form
 import formulaide.db.document.DbService
 import formulaide.db.document.DbSubmission
@@ -34,7 +34,7 @@ class Database(
 
 	internal val users = database.getCollection<DbUser>("users")
 	internal val services = database.getCollection<DbService>("services")
-	internal val data = database.getCollection<CompoundData>("data")
+	internal val data = database.getCollection<Composite>("data")
 	internal val forms = database.getCollection<Form>("forms")
 	internal val submissions = database.getCollection<DbSubmission>("submissions")
 

@@ -1,8 +1,8 @@
 package formulaide.server.routes
 
-import formulaide.api.data.NewCompoundData
-import formulaide.db.document.createData
-import formulaide.db.document.listData
+import formulaide.api.data.Composite
+import formulaide.db.document.createComposite
+import formulaide.db.document.listComposites
 import formulaide.server.Auth.Companion.Employee
 import formulaide.server.Auth.Companion.requireAdmin
 import formulaide.server.Auth.Companion.requireEmployee
@@ -22,15 +22,15 @@ fun Routing.dataRoutes() {
 			get("/list") {
 				call.requireEmployee(database)
 
-				call.respond(database.listData())
+				call.respond(database.listComposites())
 			}
 
 			post("/create") {
 				call.requireAdmin(database)
 
-				val body = call.receive<NewCompoundData>()
+				val body = call.receive<Composite>()
 
-				call.respond(database.createData(body))
+				call.respond(database.createComposite(body))
 			}
 
 		}
