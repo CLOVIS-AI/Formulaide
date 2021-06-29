@@ -1,6 +1,6 @@
 package formulaide.ui
 
-import formulaide.api.data.CompoundData
+import formulaide.api.data.Composite
 import formulaide.api.data.Form
 import formulaide.api.users.User
 import formulaide.client.Client
@@ -35,12 +35,12 @@ val App = functionalComponent<RProps> {
 	//endregion
 
 	//region Global list of compounds
-	val (compounds, setCompounds) = useState<List<CompoundData>>(emptyList())
-	val (refreshCompounds, setRefreshCompounds) = useState(0)
-	useEffect(listOf(client, user, refreshCompounds)) {
+	val (composites, setComposites) = useState<List<Composite>>(emptyList())
+	val (refreshComposites, setRefreshComposites) = useState(0)
+	useEffect(listOf(client, user, refreshComposites)) {
 		if (client is Client.Authenticated) {
-			scope.launch { setCompounds(client.listData()) }
-		} else setCompounds(emptyList())
+			scope.launch { setComposites(client.listData()) }
+		} else setComposites(emptyList())
 	}
 	//endregion
 
@@ -73,8 +73,8 @@ val App = functionalComponent<RProps> {
 
 			this.scope = scope
 
-			this.compounds = compounds
-			this.refreshCompounds = { setRefreshCompounds(refreshCompounds + 1) }
+			this.composites = composites
+			this.refreshCompounds = { setRefreshComposites(refreshComposites + 1) }
 
 			this.forms = forms
 			this.refreshForms = { setRefreshForms(refreshForms + 1) }
