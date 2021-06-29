@@ -1,17 +1,19 @@
 package formulaide.ui.screens
 
 import formulaide.api.data.Action
-import formulaide.api.data.Data
-import formulaide.api.data.Data.Simple.SimpleDataId.TEXT
 import formulaide.api.data.Form
-import formulaide.api.data.FormField
+import formulaide.api.fields.FormField
+import formulaide.api.fields.FormRoot
+import formulaide.api.fields.SimpleField
 import formulaide.api.types.Arity
+import formulaide.api.types.Ref
 import formulaide.api.users.Service
 import formulaide.client.Client
 import formulaide.client.routes.createForm
 import formulaide.client.routes.listServices
 import formulaide.ui.ScreenProps
-import formulaide.ui.fields.editableField
+import formulaide.ui.fields.FieldEditor
+import formulaide.ui.utils.replace
 import formulaide.ui.utils.text
 import kotlinx.coroutines.launch
 import kotlinx.html.InputType
@@ -21,11 +23,8 @@ import kotlinx.html.js.onClickFunction
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
+import react.*
 import react.dom.*
-import react.functionalComponent
-import react.useEffect
-import react.useRef
-import react.useState
 
 val CreateForm = functionalComponent<ScreenProps> { props ->
 	val client = props.client
@@ -54,37 +53,16 @@ val CreateForm = functionalComponent<ScreenProps> { props ->
 			}
 		}
 
-		val (fields, setFields) = useState<List<FormField>>(emptyList())
-		fun replaceField(index: Int, value: FormField) =
-			setFields(fields.subList(0, index) + value + fields.subList(index + 1, fields.size))
+		val (fields, setFields) = useState<List<FormField.Shallow>>(emptyList())
 		for ((i, field) in fields.withIndex()) {
-			editableField {
-				this.name = field.name
-				this.order = field.order
-				this.arity = field.arity
-				this.data = field.data
-				this.compounds = props.compounds
-				this.set = { name, data, min, max, subFields ->
-					val newName = name ?: field.name
-					val newData = data ?: field.data
-					val newMin = min ?: field.arity.min
-					val newMax = max ?: field.arity.max
-					val newFields = subFields ?: field.components
-
-					replaceField(
-						i,
-						field.copy(
-							name = newName,
-							data = newData,
-							arity = Arity(newMin, newMax),
-							components = newFields
-						)
-					)
+			child(FieldEditor) {
+				attrs {
+					this.app = props
+					this.field = field
+					this.replace = {
+						setFields(fields.replace(i, it as FormField.Shallow))
+					}
 				}
-
-				this.recursive = true
-				this.allowModifications = true
-				this.allowCreationOfRecursiveData = false
 			}
 		}
 
@@ -94,12 +72,11 @@ val CreateForm = functionalComponent<ScreenProps> { props ->
 				value = "Ajouter un champ"
 				onClickFunction = {
 					setFields(
-						fields + FormField(
+						fields + FormField.Shallow.Simple(
 							order = fields.size,
-							arity = Arity.optional(),
-							id = fields.size,
+							id = fields.size.toString(),
 							name = "Nouveau champ",
-							data = Data.simple(TEXT)
+							simple = SimpleField.Text(Arity.optional())
 						)
 					)
 				}
@@ -107,8 +84,6 @@ val CreateForm = functionalComponent<ScreenProps> { props ->
 		}
 
 		val (actions, setActions) = useState<List<Action>>(emptyList())
-		fun replaceAction(index: Int, value: Action) =
-			setActions(actions.subList(0, index) + value + actions.subList(index + 1, actions.size))
 
 		val (services, setServices) = useState(emptyList<Service>())
 		useEffect(listOf(props.client)) {
@@ -167,9 +142,13 @@ val CreateForm = functionalComponent<ScreenProps> { props ->
 						attrs {
 							onChangeFunction = { event ->
 								val serviceId = (event.target as HTMLSelectElement).value.toInt()
-								val service = services.find { it.id == serviceId } ?: error("Impossible de trouver le service '$serviceId'")
+								val service = services.find { it.id == serviceId }
+									?: error("Impossible de trouver le service '$serviceId'")
 
-								replaceAction(i, Action.ServiceReview(action.id, action.order, service))
+								setActions(actions.replace(i,
+								                           Action.ServiceReview(action.id,
+								                                                action.order,
+								                                                service)))
 							}
 						}
 					}
@@ -209,11 +188,11 @@ val CreateForm = functionalComponent<ScreenProps> { props ->
 
 				val form = Form(
 					name = formName.current?.value ?: error("Le formulaire n'a pas de nom"),
-					id = 0,
+					id = Ref.SPECIAL_TOKEN_NEW,
 					public = public.current?.checked
 						?: error("Le formulaire ne précise pas s'il est public ou interne"),
 					open = true,
-					fields = fields,
+					mainFields = FormRoot(fields),
 					actions = actions
 				)
 
