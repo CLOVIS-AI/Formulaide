@@ -2,6 +2,7 @@ package formulaide.ui.fields
 
 import formulaide.api.fields.DataField
 import formulaide.api.fields.Field
+import formulaide.api.fields.FormField
 import formulaide.api.fields.SimpleField
 import formulaide.api.types.Arity
 import formulaide.ui.ScreenProps
@@ -44,10 +45,22 @@ internal fun Field.set(name: String? = null, arity: Arity? = null): Field {
 	val arity = arity ?: this.arity
 
 	return when (this) {
+		// Data fields
 		is DataField.Simple -> copy(name = name, simple = simple.set(arity = arity))
 		is DataField.Union -> copy(name = name, arity = arity)
 		is DataField.Composite -> copy(name = name, arity = arity)
-		else -> TODO("Le type de champ ${this::class} n'est pas géré")
+
+		// Shallow form fields
+		is FormField.Shallow.Simple -> copy(name = name, simple = simple.set(arity = arity))
+		is FormField.Shallow.Union -> copy(name = name, arity = arity)
+		is FormField.Shallow.Composite -> copy(name = name, arity = arity)
+
+		// Deep form fields: the name cannot be changed
+		is FormField.Deep.Simple -> copy(simple = simple.set(arity = arity))
+		is FormField.Deep.Union -> copy(arity = arity)
+		is FormField.Deep.Composite -> copy(arity = arity)
+
+		else -> error("Le type de ce champ n'est pas géré : ${this::class}, $this")
 	}
 }
 
