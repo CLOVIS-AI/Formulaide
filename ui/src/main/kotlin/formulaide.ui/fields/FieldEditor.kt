@@ -74,12 +74,12 @@ val FieldEditor = functionalComponent<EditableFieldProps> { props ->
 		}
 
 		br {}
-		child(ArityEditor) {
+		child(TypeEditor) {
 			attrs { inheritFrom(props) }
 		}
 
 		br {}
-		child(TypeEditor) {
+		child(ArityEditor) {
 			attrs { inheritFrom(props) }
 		}
 
