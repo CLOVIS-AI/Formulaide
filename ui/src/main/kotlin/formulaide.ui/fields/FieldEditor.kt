@@ -35,7 +35,7 @@ internal fun SimpleField.set(arity: Arity? = null): SimpleField {
 		is SimpleField.Integer -> copy(arity = arity)
 		is SimpleField.Decimal -> copy(arity = arity)
 		is SimpleField.Boolean -> copy(arity = arity)
-		SimpleField.Message -> error("Modifier l'arité d'un Message est interdit")
+		SimpleField.Message -> this
 	}
 }
 
