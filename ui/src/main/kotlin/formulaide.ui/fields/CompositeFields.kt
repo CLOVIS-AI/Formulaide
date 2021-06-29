@@ -66,6 +66,8 @@ val FieldSimple = functionalComponent<FieldProps2> { props ->
 		}
 
 		br {}
-		//TODO: edit the type
+		child(TypeEditor) {
+			attrs { inheritFrom(props) }
+		}
 	}
 }
