@@ -78,6 +78,10 @@ sealed class DataField : Field {
 		override val ref: Ref<CompositeData>,
 	) : DataField(), Field.Reference<CompositeData> {
 
+		init {
+			require(arity.min == 0) { "L'arité minimale d'une donnée composée doit être 0, pour éviter les récursions infinies" }
+		}
+
 		override fun validate(composites: List<CompositeData>) {
 			ref.loadIfNecessary(composites)
 		}

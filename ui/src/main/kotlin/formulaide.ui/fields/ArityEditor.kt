@@ -1,5 +1,6 @@
 package formulaide.ui.fields
 
+import formulaide.api.fields.DataField
 import formulaide.api.fields.Field
 import formulaide.api.fields.SimpleField
 import formulaide.api.types.Arity
@@ -25,22 +26,29 @@ val ArityEditor = functionalComponent<EditableFieldProps> { props ->
 	//endregion
 
 	if (allowModifications) {
-		label { text("Nombre de réponses autorisées : de ") }
-		input(InputType.number, name = "item-arity-min") {
-			attrs {
-				required = true
-				value = arity.min.toString()
-				min = "0"
-				max = arity.max.toString()
-				onChangeFunction = {
-					val value = (it.target as HTMLInputElement).value.toInt()
-					props.replace(
-						props.field.set(arity = Arity(value, arity.max))
-					)
+		text("Nombre de réponses autorisées : de ")
+		if (field !is DataField.Composite) {
+			input(InputType.number, name = "item-arity-min") {
+				attrs {
+					required = true
+					value = arity.min.toString()
+					min = "0"
+					max = arity.max.toString()
+					onChangeFunction = {
+						val value = (it.target as HTMLInputElement).value.toInt()
+						props.replace(
+							props.field.set(arity = Arity(value, arity.max))
+						)
+					}
 				}
 			}
+		} else {
+			text(arity.min.toString())
+
+			if (arity.min != 0)
+				props.replace(props.field.set(arity = Arity(0, arity.max)))
 		}
-		label { text(" à ") }
+		text(" à ")
 		input(InputType.number, name = "item-arity-max") {
 			attrs {
 				required = true

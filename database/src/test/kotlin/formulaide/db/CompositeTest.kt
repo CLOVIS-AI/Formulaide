@@ -53,7 +53,7 @@ class CompositeTest {
 
 		val data = db.createComposite(composite(name) {
 			simple("Nom complet", Text(Arity.mandatory()))
-			compositeItself("Famille", Arity.mandatory())
+			compositeItself("Famille", Arity.optional())
 		})
 
 		assertEquals(name, data.name)
@@ -68,7 +68,7 @@ class CompositeTest {
 		val family = DataField.Composite(
 			id = "1",
 			order = 1,
-			arity = Arity.mandatory(),
+			arity = Arity.optional(),
 			name = "Famille",
 			ref = data.createRef()
 		)
