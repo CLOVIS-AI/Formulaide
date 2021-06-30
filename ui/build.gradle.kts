@@ -37,3 +37,22 @@ dependencies {
 
 	implementation(kotlinxCoroutines("core-js"))
 }
+
+val copyTailwindConfig = tasks.register<Copy>("copyTailwindConfig") {
+	from("./tailwind.config.js")
+	into("${rootProject.buildDir}/js/packages/${rootProject.name}-${project.name}")
+
+	dependsOn(":kotlinNpmInstall")
+}
+
+val copyPostcssConfig = tasks.register<Copy>("copyPostcssConfig") {
+	from("./postcss.config.js")
+	into("${rootProject.buildDir}/js/packages/${rootProject.name}-${project.name}")
+
+	dependsOn(":kotlinNpmInstall")
+}
+
+tasks.named("processResources") {
+	dependsOn(copyTailwindConfig)
+	dependsOn(copyPostcssConfig)
+}
