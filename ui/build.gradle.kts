@@ -30,5 +30,10 @@ dependencies {
 	implementation(npm("react", Version.react))
 	implementation(npm("react-dom", Version.react))
 
+	implementation(npm("postcss", Version.postcss))
+	implementation(npm("postcss-loader", Version.postcssLoader))
+	implementation(npm("autoprefixer", Version.autoprefixer))
+	implementation(npm("tailwindcss", Version.tailwind))
+
 	implementation(kotlinxCoroutines("core-js"))
 }
