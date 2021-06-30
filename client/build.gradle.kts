@@ -9,7 +9,7 @@ repositories {
 }
 
 kotlin {
-	js {
+	js(IR) {
 		browser {
 			testTask {
 				useMocha {
