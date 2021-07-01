@@ -1,5 +1,6 @@
 package formulaide.ui.fields
 
+import formulaide.api.fields.Field
 import formulaide.api.fields.FormField
 import formulaide.api.fields.SimpleField
 import formulaide.api.types.Arity
@@ -65,7 +66,9 @@ private val RenderField = functionalComponent<FieldProps> { props ->
 					}
 				}
 
-				field(props.app, selected, "${props.id}:${selected.id}")
+				if (selected !is Field.Simple || selected.simple != SimpleField.Message) {
+					field(props.app, selected, "${props.id}:${selected.id}")
+				}
 			}
 		}
 	}
