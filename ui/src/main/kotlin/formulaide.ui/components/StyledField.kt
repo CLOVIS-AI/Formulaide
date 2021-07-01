@@ -30,7 +30,7 @@ fun RBuilder.styledInput(
 				text("*")
 		}
 
-		input(type) {
+		input(type, classes = "border focus:border-4") {
 			attrs {
 				this.id = id
 				this.name = id
