@@ -5,13 +5,17 @@ import formulaide.api.fields.SimpleField
 import formulaide.api.types.Arity
 import formulaide.ui.ScreenProps
 import formulaide.ui.components.styledInput
+import formulaide.ui.components.styledNesting
 import formulaide.ui.utils.text
 import kotlinx.html.INPUT
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
 import react.*
-import react.dom.*
+import react.dom.attrs
+import react.dom.input
+import react.dom.label
+import react.dom.p
 
 private external interface FieldProps : RProps {
 	var app: ScreenProps
@@ -41,13 +45,7 @@ private val Field: FunctionalComponent<FieldProps> = functionalComponent { props
 		is FormField.Composite -> {
 			val subFields = field.fields
 
-			div {
-				attrs {
-					jsStyle {
-						marginLeft = "2rem"
-					}
-				}
-
+			styledNesting {
 				for (subField in subFields) {
 					field(props.app, subField, "${props.id}:${subField.id}")
 				}
@@ -57,13 +55,7 @@ private val Field: FunctionalComponent<FieldProps> = functionalComponent { props
 			val subFields = field.options
 			val (selected, setSelected) = useState(subFields.first())
 
-			div {
-				attrs {
-					jsStyle {
-						marginLeft = "2rem"
-					}
-				}
-
+			styledNesting {
 				for (subField in subFields) {
 					input(InputType.radio, name = "${props.id}:${subField.id}") {
 						attrs {
