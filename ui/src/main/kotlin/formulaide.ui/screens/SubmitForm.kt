@@ -21,6 +21,8 @@ import react.functionalComponent
 fun SubmitForm(form: Form) = functionalComponent<ScreenProps> { props ->
 	require(form.open) { "Impossible de saisir des données dans un formulaire fermé" }
 
+	form.validate(props.composites)
+
 	form {
 		h2 { text(form.name) }
 
