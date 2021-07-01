@@ -17,7 +17,7 @@ object Version {
 	const val printCoverage = "2.0.0"
 
 	const val react = "17.0.2"
-	const val kotlinReact = "$react-pre.206-kotlin-$kotlinVersion"
+	const val kotlinReact = "$react-pre.214-kotlin-$kotlinVersion"
 
 	const val postcss = "8.3.5"
 	const val postcssLoader = "4.2.0"
