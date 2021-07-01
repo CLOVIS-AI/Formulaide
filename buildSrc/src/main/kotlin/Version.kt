@@ -1,6 +1,5 @@
 @file:Suppress("MemberVisibilityCanBePrivate")
 
-import Version.arrow
 import Version.bcrypt
 import Version.kmongo
 import Version.ktor
@@ -29,8 +28,6 @@ object Version {
 	const val logback = "1.2.3"
 	const val bcrypt = "0.9.0"
 
-	const val arrow = "0.13.2"
-
 	const val kmongo = "4.2.7"
 }
 
@@ -55,9 +52,6 @@ fun logback(name: String) =
 
 fun bcrypt() =
 	"at.favre.lib:bcrypt:$bcrypt"
-
-fun arrow(name: String) =
-	"io.arrow-kt:arrow-$name:$arrow"
 
 fun kmongo(name: String) =
 	"org.litote.kmongo:$name:$kmongo"
