@@ -26,7 +26,7 @@ val App = functionalComponent<RProps> {
 	val (scope, _) = useState(MainScope())
 
 	//region Refresh the user if necessary
-	useEffect(listOf(client)) {
+	useEffect(client) {
 		scope.launch {
 			if (client is Client.Authenticated)
 				setUser(client.getMe())
@@ -37,7 +37,7 @@ val App = functionalComponent<RProps> {
 	//region Global list of compounds
 	val (composites, setComposites) = useState<List<Composite>>(emptyList())
 	val (refreshComposites, setRefreshComposites) = useState(0)
-	useEffect(listOf(client, user, refreshComposites)) {
+	useEffect(client, user, refreshComposites) {
 		if (client is Client.Authenticated) {
 			scope.launch { setComposites(client.listData()) }
 		} else setComposites(emptyList())
@@ -47,7 +47,7 @@ val App = functionalComponent<RProps> {
 	//region Global list of forms
 	val (forms, setForms) = useState<List<Form>>(emptyList())
 	val (refreshForms, setRefreshForms) = useState(0)
-	useEffect(listOf(client, user, refreshForms)) {
+	useEffect(client, user, refreshForms) {
 		scope.launch {
 			setForms(
 				if (client is Client.Authenticated) client.listAllForms()

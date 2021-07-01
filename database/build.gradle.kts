@@ -15,8 +15,6 @@ dependencies {
 
 	api(project(":api"))
 
-	api(arrow("core"))
-
 	api(kotlinxCoroutines("core"))
 	testImplementation(kotlinxCoroutines("test"))
 	implementation(kmongo("kmongo-coroutine-serialization"))

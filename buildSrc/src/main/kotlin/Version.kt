@@ -1,13 +1,12 @@
 @file:Suppress("MemberVisibilityCanBePrivate")
 
-import Version.arrow
 import Version.bcrypt
 import Version.kmongo
 import Version.ktor
 import Version.logback
 
 object Version {
-	const val kotlinVersion = "1.5.10"
+	const val kotlinVersion = "1.5.20"
 
 	const val dokka = "1.4.32"
 
@@ -18,10 +17,10 @@ object Version {
 	const val printCoverage = "2.0.0"
 
 	const val react = "17.0.2"
-	const val kotlinReact = "$react-pre.206-kotlin-$kotlinVersion"
+	const val kotlinReact = "$react-pre.214-kotlin-$kotlinVersion"
 
 	const val postcss = "8.3.5"
-	const val postcssLoader = "4.2.0"
+	const val postcssLoader = "6.1.0"
 	const val autoprefixer = "10.2.6"
 	const val tailwind = "2.2.4"
 
@@ -29,9 +28,7 @@ object Version {
 	const val logback = "1.2.3"
 	const val bcrypt = "0.9.0"
 
-	const val arrow = "0.13.2"
-
-	const val kmongo = "4.2.7"
+	const val kmongo = "4.2.8"
 }
 
 fun kotlinxSerialization(name: String) =
@@ -55,9 +52,6 @@ fun logback(name: String) =
 
 fun bcrypt() =
 	"at.favre.lib:bcrypt:$bcrypt"
-
-fun arrow(name: String) =
-	"io.arrow-kt:arrow-$name:$arrow"
 
 fun kmongo(name: String) =
 	"org.litote.kmongo:$name:$kmongo"

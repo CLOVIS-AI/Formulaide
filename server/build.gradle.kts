@@ -28,8 +28,6 @@ dependencies {
 	implementation(ktor("auth-jwt"))
 	implementation(bcrypt())
 
-	implementation(arrow("core"))
-
 	implementation(kotlinxCoroutines("core"))
 	testImplementation(kotlinxCoroutines("test"))
 }
