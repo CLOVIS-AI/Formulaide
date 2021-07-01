@@ -8,6 +8,7 @@ import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
 import react.RBuilder
 import react.dom.attrs
+import react.dom.br
 import react.dom.input
 import react.dom.label
 
@@ -19,10 +20,9 @@ fun RBuilder.styledInput(
 	onChangeFunction: (HTMLInputElement) -> Unit = {},
 	handler: INPUT.() -> Unit = {},
 ) {
+	br {}
 	label {
-		attrs {
-			htmlFor = id
-		}
+		attrs["htmlFor"] = id
 
 		text(displayName)
 
