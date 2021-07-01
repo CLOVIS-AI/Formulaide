@@ -1,13 +1,13 @@
 package formulaide.ui.components
 
+import formulaide.ui.utils.text
 import kotlinx.html.DIV
 import react.RBuilder
-import react.dom.RDOMBuilder
-import react.dom.attrs
-import react.dom.div
-import react.dom.jsStyle
+import react.dom.*
 
-fun RBuilder.styledNesting(block: RDOMBuilder<DIV>.() -> Unit) {
+fun RBuilder.styledNesting(displayName: String, block: RDOMBuilder<DIV>.() -> Unit) {
+	br {}
+	label { text(displayName) }
 	div {
 		attrs {
 			jsStyle {

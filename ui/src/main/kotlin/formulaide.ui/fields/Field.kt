@@ -45,7 +45,7 @@ private val Field: FunctionalComponent<FieldProps> = functionalComponent { props
 		is FormField.Composite -> {
 			val subFields = field.fields
 
-			styledNesting {
+			styledNesting(field.name) {
 				for (subField in subFields) {
 					field(props.app, subField, "${props.id}:${subField.id}")
 				}
@@ -55,7 +55,7 @@ private val Field: FunctionalComponent<FieldProps> = functionalComponent { props
 			val subFields = field.options
 			val (selected, setSelected) = useState(subFields.first())
 
-			styledNesting {
+			styledNesting(field.name) {
 				for (subField in subFields) {
 					input(InputType.radio, name = props.id) {
 						attrs {
