@@ -52,7 +52,6 @@ private val Field: FunctionalComponent<FieldProps> = functionalComponent { props
 				configureName()
 				configureRequired()
 			}
-			is SimpleField.Message -> Unit // Nothing to do, see MESSAGE
 			is SimpleField.Decimal -> input(InputType.number) {
 				configureName()
 				configureRequired()
@@ -63,6 +62,7 @@ private val Field: FunctionalComponent<FieldProps> = functionalComponent { props
 			is SimpleField.Boolean -> input(InputType.checkBox) {
 				configureName()
 			}
+			is SimpleField.Message -> p { text(field.name) }
 		}
 		is FormField.Composite -> {
 			val subFields = field.fields
