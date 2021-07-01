@@ -7,15 +7,11 @@ import formulaide.ui.ScreenProps
 import formulaide.ui.components.styledFormField
 import formulaide.ui.components.styledInput
 import formulaide.ui.components.styledNesting
+import formulaide.ui.components.styledRadioButton
 import formulaide.ui.utils.text
 import kotlinx.html.INPUT
 import kotlinx.html.InputType
-import kotlinx.html.js.onChangeFunction
-import org.w3c.dom.HTMLInputElement
 import react.*
-import react.dom.attrs
-import react.dom.input
-import react.dom.label
 
 private external interface FieldProps : RProps {
 	var app: ScreenProps
@@ -56,20 +52,16 @@ private val Field: FunctionalComponent<FieldProps> = functionalComponent { props
 			val (selected, setSelected) = useState(subFields.first())
 
 			styledNesting(field.name) {
-				for (subField in subFields) {
-					input(InputType.radio, name = props.id) {
-						attrs {
-							value = subField.id
-							checked = subField == selected
-
-							onChangeFunction = { event ->
-								setSelected(subFields.first { it.id == (event.target as HTMLInputElement).value })
-							}
-						}
-					}
-					label {
-						text(subField.name)
-						attrs { htmlFor = "${props.id}:${subField.id}" }
+				styledFormField {
+					for (subField in subFields) {
+						styledRadioButton(
+							radioId = props.id,
+							buttonId = "${props.id}-${subField.id}",
+							value = subField.id,
+							text = subField.name,
+							checked = subField == selected,
+							onClick = { setSelected(subField) }
+						)
 					}
 				}
 

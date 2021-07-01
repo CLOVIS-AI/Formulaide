@@ -51,3 +51,27 @@ fun RBuilder.styledFormField(contents: RBuilder.() -> Unit) {
 		contents()
 	}
 }
+
+fun RBuilder.styledRadioButton(
+	radioId: String,
+	buttonId: String,
+	value: String,
+	text: String,
+	checked: Boolean = false,
+	onClick: () -> Unit = {},
+) {
+	input(InputType.radio, name = radioId, classes = "mr-1") {
+		attrs {
+			this.id = buttonId
+			this.value = value
+			this.checked = checked
+
+			onChangeFunction = { onClick() }
+		}
+	}
+
+	label(classes = "mr-2") {
+		text(text)
+		attrs["htmlFor"] = buttonId
+	}
+}
