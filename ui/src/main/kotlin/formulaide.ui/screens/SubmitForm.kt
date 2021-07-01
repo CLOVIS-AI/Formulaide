@@ -28,7 +28,7 @@ fun SubmitForm(form: Form) = functionalComponent<ScreenProps> { props ->
 
 	styledCard(
 		form.name,
-		"Ce formulaire est ${if (form.public) "public" else "interne"}.",
+		"Ce formulaire est ${if (form.public) "public" else "interne"}, les champs marqués par une * sont obligatoires.",
 	) {
 		form {
 			for (field in form.mainFields.fields) {
