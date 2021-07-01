@@ -20,6 +20,11 @@ object Version {
 	const val react = "17.0.2"
 	const val kotlinReact = "$react-pre.206-kotlin-$kotlinVersion"
 
+	const val postcss = "8.3.5"
+	const val postcssLoader = "4.2.0"
+	const val autoprefixer = "10.2.6"
+	const val tailwind = "2.2.4"
+
 	const val ktor = "1.6.0"
 	const val logback = "1.2.3"
 	const val bcrypt = "0.9.0"
