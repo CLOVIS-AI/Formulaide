@@ -9,7 +9,7 @@ import react.dom.label
 
 fun RBuilder.styledNesting(displayName: String, block: RDOMBuilder<DIV>.() -> Unit) {
 	label("block") { text(displayName) }
-	div("p-4 pl-8 pr-8") {
+	div("p-2 pl-4 pr-4") {
 		block()
 	}
 }
