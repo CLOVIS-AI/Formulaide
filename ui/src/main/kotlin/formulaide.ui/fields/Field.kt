@@ -20,7 +20,7 @@ private external interface FieldProps : RProps {
 	var id: String
 }
 
-private val Field: FunctionalComponent<FieldProps> = functionalComponent { props ->
+private val RenderField = functionalComponent<FieldProps> { props ->
 	val field = props.field
 	val required = field.arity == Arity.mandatory()
 
@@ -66,6 +66,19 @@ private val Field: FunctionalComponent<FieldProps> = functionalComponent { props
 				}
 
 				field(props.app, selected, "${props.id}:${selected.id}")
+			}
+		}
+	}
+}
+
+private val Field: FunctionalComponent<FieldProps> = functionalComponent { props ->
+
+	if (props.field.arity != Arity.forbidden()) {
+		child(RenderField) {
+			attrs {
+				this.app = props.app
+				this.field = props.field
+				this.id = props.id
 			}
 		}
 	}
