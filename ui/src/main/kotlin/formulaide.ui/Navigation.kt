@@ -97,7 +97,7 @@ val Window = functionalComponent<ApplicationProps> { props ->
 
 	child(Navigation) {
 		attrs {
-			navigateTo = setScreen
+			navigateTo = { setScreen(it) }
 			currentScreen = screen
 			user = props.user
 			connect = props.connect
@@ -106,7 +106,7 @@ val Window = functionalComponent<ApplicationProps> { props ->
 
 	if (screen.requiredRole > props.user.role) {
 		child(CannotAccessThisPage) {
-			attrs { navigateTo = setScreen }
+			attrs { navigateTo = { setScreen(it) } }
 		}
 	} else child(screen.component) {
 		attrs {

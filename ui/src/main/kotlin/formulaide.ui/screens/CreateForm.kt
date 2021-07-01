@@ -87,7 +87,7 @@ val CreateForm = functionalComponent<ScreenProps> { props ->
 		val (actions, setActions) = useState<List<Action>>(emptyList())
 
 		val (services, setServices) = useState(emptyList<Service>())
-		useEffect(listOf(props.client)) {
+		useEffect(props.client) {
 			props.scope.launch {
 				setServices(client.listServices())
 			}
