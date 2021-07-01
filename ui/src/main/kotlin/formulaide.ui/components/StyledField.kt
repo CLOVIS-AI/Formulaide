@@ -8,6 +8,7 @@ import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
 import react.RBuilder
 import react.dom.attrs
+import react.dom.div
 import react.dom.input
 import react.dom.label
 
@@ -19,26 +20,34 @@ fun RBuilder.styledInput(
 	onChangeFunction: (HTMLInputElement) -> Unit = {},
 	handler: INPUT.() -> Unit = {},
 ) {
-	label("block") {
-		attrs["htmlFor"] = id
+	styledFormField {
+		label("block") {
+			attrs["htmlFor"] = id
 
-		text(displayName)
+			text(displayName)
 
-		if (required)
-			text("*")
-	}
-
-	input(type) {
-		attrs {
-			this.id = id
-			this.name = id
-			this.required = required
-
-			this.onChangeFunction = {
-				onChangeFunction(it.target as HTMLInputElement)
-			}
-
-			handler()
+			if (required)
+				text("*")
 		}
+
+		input(type) {
+			attrs {
+				this.id = id
+				this.name = id
+				this.required = required
+
+				this.onChangeFunction = {
+					onChangeFunction(it.target as HTMLInputElement)
+				}
+
+				handler()
+			}
+		}
+	}
+}
+
+fun RBuilder.styledFormField(contents: RBuilder.() -> Unit) {
+	div("mb-2") {
+		contents()
 	}
 }

@@ -4,6 +4,7 @@ import formulaide.api.fields.FormField
 import formulaide.api.fields.SimpleField
 import formulaide.api.types.Arity
 import formulaide.ui.ScreenProps
+import formulaide.ui.components.styledFormField
 import formulaide.ui.components.styledInput
 import formulaide.ui.components.styledNesting
 import formulaide.ui.utils.text
@@ -15,7 +16,6 @@ import react.*
 import react.dom.attrs
 import react.dom.input
 import react.dom.label
-import react.dom.p
 
 private external interface FieldProps : RProps {
 	var app: ScreenProps
@@ -40,7 +40,7 @@ private val Field: FunctionalComponent<FieldProps> = functionalComponent { props
 				step = "any"
 			}
 			is SimpleField.Boolean -> simpleInput(InputType.checkBox, false) {}
-			is SimpleField.Message -> p { text(field.name) }
+			is SimpleField.Message -> styledFormField { text(field.name) }
 		}
 		is FormField.Composite -> {
 			val subFields = field.fields
