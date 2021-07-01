@@ -57,9 +57,9 @@ private val Field: FunctionalComponent<FieldProps> = functionalComponent { props
 
 			styledNesting {
 				for (subField in subFields) {
-					input(InputType.radio, name = "${props.id}:${subField.id}") {
+					input(InputType.radio, name = props.id) {
 						attrs {
-							value = field.id
+							value = subField.id
 							checked = subField == selected
 
 							onChangeFunction = { event ->
