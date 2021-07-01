@@ -6,7 +6,7 @@ import Version.ktor
 import Version.logback
 
 object Version {
-	const val kotlinVersion = "1.5.10"
+	const val kotlinVersion = "1.5.20"
 
 	const val dokka = "1.4.32"
 
