@@ -4,6 +4,7 @@ import formulaide.api.fields.FormField
 import formulaide.api.fields.SimpleField
 import formulaide.api.types.Arity
 import formulaide.ui.ScreenProps
+import formulaide.ui.components.styledInput
 import formulaide.ui.utils.text
 import kotlinx.html.INPUT
 import kotlinx.html.InputType
@@ -21,47 +22,20 @@ private external interface FieldProps : RProps {
 
 private val Field: FunctionalComponent<FieldProps> = functionalComponent { props ->
 	val field = props.field
+	val required = field.arity == Arity.mandatory()
 
-	br {}
-	label {
-		text(field.name)
-
-		if (field.arity == Arity.mandatory())
-			text("*")
-	}
-
-	val configureName: RDOMBuilder<INPUT>.() -> Unit = {
-		attrs {
-			name = props.id
-		}
-	}
-
-	val configureRequired: RDOMBuilder<INPUT>.() -> Unit = {
-		attrs {
-			required = field.arity == Arity.mandatory()
-		}
+	val simpleInput = { type: InputType, _required: Boolean, handler: INPUT.() -> Unit ->
+		styledInput(type, props.id, field.name, required = _required, handler = handler)
 	}
 
 	when (field) {
 		is FormField.Simple -> when (field.simple) { //TODO: check validity of value
-			is SimpleField.Text -> input(InputType.text) {
-				configureName()
-				configureRequired()
+			is SimpleField.Text -> simpleInput(InputType.text, required) {}
+			is SimpleField.Integer -> simpleInput(InputType.number, required) {}
+			is SimpleField.Decimal -> simpleInput(InputType.number, required) {
+				step = "any"
 			}
-			is SimpleField.Integer -> input(InputType.number) {
-				configureName()
-				configureRequired()
-			}
-			is SimpleField.Decimal -> input(InputType.number) {
-				configureName()
-				configureRequired()
-				attrs {
-					step = "any"
-				}
-			}
-			is SimpleField.Boolean -> input(InputType.checkBox) {
-				configureName()
-			}
+			is SimpleField.Boolean -> simpleInput(InputType.checkBox, false) {}
 			is SimpleField.Message -> p { text(field.name) }
 		}
 		is FormField.Composite -> {
