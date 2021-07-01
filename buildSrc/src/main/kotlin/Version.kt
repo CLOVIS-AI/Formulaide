@@ -28,7 +28,7 @@ object Version {
 	const val logback = "1.2.3"
 	const val bcrypt = "0.9.0"
 
-	const val kmongo = "4.2.7"
+	const val kmongo = "4.2.8"
 }
 
 fun kotlinxSerialization(name: String) =
