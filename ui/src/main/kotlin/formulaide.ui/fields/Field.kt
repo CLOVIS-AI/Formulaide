@@ -5,14 +5,12 @@ import formulaide.api.fields.FormField
 import formulaide.api.fields.SimpleField
 import formulaide.api.types.Arity
 import formulaide.ui.ScreenProps
-import formulaide.ui.components.styledFormField
-import formulaide.ui.components.styledInput
-import formulaide.ui.components.styledNesting
-import formulaide.ui.components.styledRadioButton
-import formulaide.ui.utils.text
+import formulaide.ui.components.*
 import kotlinx.html.INPUT
 import kotlinx.html.InputType
 import react.*
+import react.dom.attrs
+import react.dom.div
 
 private external interface FieldProps : RProps {
 	var app: ScreenProps
@@ -26,7 +24,7 @@ private val RenderField = functionalComponent<FieldProps> { props ->
 	val required = field.arity == Arity.mandatory()
 
 	val simpleInput = { type: InputType, _required: Boolean, handler: INPUT.() -> Unit ->
-		styledInput(type, props.id, field.name, required = _required, handler = handler)
+		styledInput(type, props.id, required = _required, handler = handler)
 	}
 
 	when (field) {
@@ -37,12 +35,12 @@ private val RenderField = functionalComponent<FieldProps> { props ->
 				step = "any"
 			}
 			is SimpleField.Boolean -> simpleInput(InputType.checkBox, false) {}
-			is SimpleField.Message -> styledFormField { text(field.name) }
+			is SimpleField.Message -> Unit // The message has already been displayed
 		}
 		is FormField.Composite -> {
 			val subFields = field.fields
 
-			styledNesting(field.name) {
+			styledNesting {
 				for (subField in subFields) {
 					field(props.app, subField, "${props.id}:${subField.id}")
 				}
@@ -52,7 +50,7 @@ private val RenderField = functionalComponent<FieldProps> { props ->
 			val subFields = field.options
 			val (selected, setSelected) = useState(subFields.first())
 
-			styledNesting(field.name) {
+			styledNesting {
 				styledFormField {
 					for (subField in subFields) {
 						styledRadioButton(
@@ -76,17 +74,50 @@ private val RenderField = functionalComponent<FieldProps> { props ->
 
 private val Field: FunctionalComponent<FieldProps> = functionalComponent { props ->
 
-	if (props.field.arity != Arity.forbidden()) {
-		child(RenderField) {
-			attrs {
-				this.app = props.app
-				this.field = props.field
-				this.id = props.id
+	if (props.field.arity.max == 1) {
+		styledField(props.id, props.field.name) {
+			child(RenderField) {
+				attrs {
+					this.app = props.app
+					this.field = props.field
+					this.id = props.id
+				}
 			}
 		}
-	}
+	} else if (props.field.arity.max > 1) {
+		val (fieldIds, setFieldIds) = useState(List(props.field.arity.min) { it })
 
-	//TODO: lists
+		styledField(props.id, props.field.name) {
+			for ((i, fieldId) in fieldIds.withIndex()) {
+				div {
+					child(RenderField) {
+						attrs {
+							this.app = props.app
+							this.field = props.field
+							this.id = "${props.id}:$fieldId"
+						}
+					}
+					if (fieldIds.size > props.field.arity.min) {
+						styledButton("×") {
+							setFieldIds(
+								fieldIds.subList(0, i) +
+										fieldIds.subList(i + 1, fieldIds.size)
+							)
+						}
+					}
+
+					attrs {
+						key = fieldId.toString()
+					}
+				}
+			}
+			if (fieldIds.size < props.field.arity.max) {
+				styledButton("Ajouter une réponse") {
+					setFieldIds(fieldIds + ((fieldIds.maxOrNull() ?: 0) + 1))
+				}
+			}
+		}
+	} // else: max arity is 0, the field is forbidden, so there is nothing to display
 }
 
 fun RBuilder.field(
