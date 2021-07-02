@@ -64,7 +64,7 @@ internal fun Field.set(name: String? = null, arity: Arity? = null): Field {
 }
 
 val FieldEditor = functionalComponent<EditableFieldProps> { props ->
-	styledFieldEditorShell("Champ ${props.field.order}") {
+	styledFieldEditorShell("item-editor-${props.field.id}", "Champ ${props.field.order}") {
 
 		child(NameEditor) {
 			attrs { inheritFrom(props) }
