@@ -72,7 +72,7 @@ private val RenderField = functionalComponent<FieldProps> { props ->
 
 private val Field: FunctionalComponent<FieldProps> = functionalComponent { props ->
 
-	if (props.field.arity != Arity.forbidden()) {
+	if (props.field.arity.max == 1) {
 		styledField(props.id, props.field.name) {
 			child(RenderField) {
 				attrs {
@@ -82,9 +82,21 @@ private val Field: FunctionalComponent<FieldProps> = functionalComponent { props
 				}
 			}
 		}
-	}
+	} else if (props.field.arity.max > 1) {
+		val (fieldIds, setFieldIds) = useState(List(props.field.arity.min) { it })
 
-	//TODO: lists
+		styledField(props.id, props.field.name) {
+			for (fieldId in fieldIds) {
+				child(RenderField) {
+					attrs {
+						this.app = props.app
+						this.field = props.field
+						this.id = "${props.id}:$fieldId"
+					}
+				}
+			}
+		}
+	} // else: max arity is 0, the field is forbidden, so there is nothing to display
 }
 
 fun RBuilder.field(
