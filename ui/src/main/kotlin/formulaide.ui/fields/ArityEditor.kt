@@ -11,7 +11,6 @@ import formulaide.ui.components.styledSmallNumberInput
 import formulaide.ui.utils.text
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
-import react.dom.label
 import react.functionalComponent
 
 val ArityEditor = functionalComponent<EditableFieldProps> { props ->
@@ -57,13 +56,13 @@ val ArityEditor = functionalComponent<EditableFieldProps> { props ->
 			}
 		}
 	} else {
-		label { text("Nombre de réponses autorisées : de ${arity.min} à ${arity.max} ") }
+		text("Nombre de réponses autorisées : de ${arity.min} à ${arity.max} ")
 	}
 	when (arity) {
-		Arity.mandatory() -> label { text("(obligatoire)") }
-		Arity.optional() -> label { text("(facultatif)") }
-		Arity.forbidden() -> label { text("(interdit)") }
-		else -> label { text("(liste)") }
+		Arity.mandatory() -> text(" (obligatoire)")
+		Arity.optional() -> text(" (facultatif)")
+		Arity.forbidden() -> text(" (interdit)")
+		else -> text(" (liste)")
 	}
 }
 
