@@ -3,13 +3,15 @@ package formulaide.ui.components
 import formulaide.ui.utils.text
 import kotlinx.html.INPUT
 import kotlinx.html.InputType
+import kotlinx.html.SELECT
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
+import org.w3c.dom.HTMLSelectElement
 import react.RBuilder
-import react.dom.attrs
-import react.dom.div
-import react.dom.input
-import react.dom.label
+import react.dom.*
+
+private const val inputStyle =
+	"rounded bg-gray-200 border-b-2 border-gray-400 focus:border-purple-800 my-1 mr-3 w-60"
 
 fun RBuilder.styledField(
 	id: String,
@@ -34,7 +36,7 @@ fun RBuilder.styledInput(
 	handler: INPUT.() -> Unit = {},
 ) {
 	input(type,
-	      classes = "rounded bg-gray-200 border-b-2 border-gray-400 focus:border-purple-800 my-1 mr-3") {
+	      classes = inputStyle) {
 		attrs {
 			this.id = id
 			this.name = id
@@ -74,5 +76,21 @@ fun RBuilder.styledRadioButton(
 	label(classes = "mr-2") {
 		text(text)
 		attrs["htmlFor"] = buttonId
+	}
+}
+
+fun RBuilder.styledSelect(
+	handler: SELECT.() -> Unit = {},
+	onSelect: (HTMLSelectElement) -> Unit = {},
+	contents: RDOMBuilder<SELECT>.() -> Unit,
+) {
+	select(inputStyle) {
+		attrs {
+			onChangeFunction = { onSelect(it.target as HTMLSelectElement) }
+
+			handler()
+		}
+
+		contents()
 	}
 }
