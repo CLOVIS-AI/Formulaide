@@ -7,6 +7,7 @@ import formulaide.api.fields.SimpleField
 import formulaide.api.types.Arity
 import formulaide.ui.ScreenProps
 import formulaide.ui.components.styledFieldEditorShell
+import formulaide.ui.components.styledFormField
 import formulaide.ui.utils.text
 import react.RProps
 import react.child
@@ -84,7 +85,7 @@ val FieldEditor = functionalComponent<EditableFieldProps> { props ->
 					attrs { inheritFrom(props) }
 				}
 			} else {
-				text("Les sous-champs ne sont pas affichés, parce que cette donnée est interdite.")
+				styledFormField { text("Les sous-champs ne sont pas affichés, parce que cette donnée est interdite.") }
 			}
 		}
 	}
