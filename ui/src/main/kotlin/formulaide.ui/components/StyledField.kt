@@ -100,6 +100,20 @@ fun RBuilder.styledRadioButton(
 	}
 }
 
+fun RBuilder.styledCheckbox(
+	id: String,
+	message: String,
+	required: Boolean = false,
+	ref: RRef? = null,
+	handler: INPUT.() -> Unit = {},
+) {
+	styledInput(InputType.checkBox, id, required, ref, handler)
+	label {
+		text(message)
+		attrs["htmlFor"] = id
+	}
+}
+
 fun RBuilder.styledSelect(
 	handler: SELECT.() -> Unit = {},
 	onSelect: (HTMLSelectElement) -> Unit = {},
