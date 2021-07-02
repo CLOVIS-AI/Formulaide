@@ -8,6 +8,7 @@ import formulaide.api.types.Ref
 import formulaide.client.Client
 import formulaide.client.routes.createData
 import formulaide.ui.ScreenProps
+import formulaide.ui.components.styledCard
 import formulaide.ui.fields.FieldEditor
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.text
@@ -27,8 +28,9 @@ val CreateData = functionalComponent<ScreenProps> { props ->
 	val client = props.client
 	require(client is Client.Authenticated)
 
-	div {
-		text("Données existantes :")
+	styledCard(
+		"Données existantes"
+	) {
 		ul {
 			for (data in props.composites) {
 				li {
