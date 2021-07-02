@@ -17,7 +17,7 @@ private fun RBuilder.styledCardShell(contents: RDOMBuilder<DIV>.() -> Unit) =
 
 fun RBuilder.styledCard(
 	title: String,
-	secondary: String?,
+	secondary: String? = null,
 	vararg actions: Pair<String, () -> Unit>,
 	contents: RBuilder.() -> Unit,
 ) {
