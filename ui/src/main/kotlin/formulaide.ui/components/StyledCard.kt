@@ -17,19 +17,22 @@ private fun RBuilder.styledCardShell(contents: RDOMBuilder<DIV>.() -> Unit) =
 
 fun RBuilder.styledCard(
 	title: String,
-	secondary: String?,
+	secondary: String? = null,
 	vararg actions: Pair<String, () -> Unit>,
 	contents: RBuilder.() -> Unit,
 ) {
 	styledCardShell {
 		styledCardTitle(title, secondary)
 
-		div("py-4") {
+		div("pt-4") {
 			contents()
 		}
 
-		for (action in actions) {
-			styledButton(action.first, default = action == actions.first()) { action.second() }
+		if (actions.isNotEmpty()) div("pt-4") {
+			for (action in actions) {
+				styledButton(action.first,
+				             default = action == actions.first()) { action.second() }
+			}
 		}
 	}
 }

@@ -8,6 +8,7 @@ import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLSelectElement
 import react.RBuilder
+import react.RRef
 import react.dom.*
 
 private const val commonInputStyle =
@@ -35,6 +36,7 @@ fun RBuilder.styledInput(
 	type: InputType,
 	id: String,
 	required: Boolean = false,
+	ref: RRef? = null,
 	handler: INPUT.() -> Unit = {},
 ) {
 	input(type, classes = largeInputStyle) {
@@ -45,17 +47,21 @@ fun RBuilder.styledInput(
 
 			handler()
 		}
+
+		if (ref != null) this.ref = ref
 	}
 	if (required)
 		text(" *")
 }
 
-fun RBuilder.styledSmallNumberInput(
+fun RBuilder.styledSmallInput(
+	type: InputType,
 	id: String,
 	required: Boolean = false,
+	ref: RRef? = null,
 	handler: INPUT.() -> Unit = {},
 ) {
-	input(InputType.number, classes = smallInputStyle) {
+	input(type, classes = smallInputStyle) {
 		attrs {
 			this.id = id
 			this.name = id
@@ -63,6 +69,8 @@ fun RBuilder.styledSmallNumberInput(
 
 			handler()
 		}
+
+		if (ref != null) this.ref = ref
 	}
 }
 
@@ -93,6 +101,20 @@ fun RBuilder.styledRadioButton(
 	label(classes = "mr-2") {
 		text(text)
 		attrs["htmlFor"] = buttonId
+	}
+}
+
+fun RBuilder.styledCheckbox(
+	id: String,
+	message: String,
+	required: Boolean = false,
+	ref: RRef? = null,
+	handler: INPUT.() -> Unit = {},
+) {
+	styledSmallInput(InputType.checkBox, id, required, ref, handler)
+	label {
+		text(message)
+		attrs["htmlFor"] = id
 	}
 }
 
