@@ -9,6 +9,8 @@ import formulaide.api.fields.SimpleField
 import formulaide.api.types.Arity
 import formulaide.api.types.Ref
 import formulaide.ui.components.styledField
+import formulaide.ui.components.styledFormField
+import formulaide.ui.components.styledLightText
 import formulaide.ui.components.styledSelect
 import formulaide.ui.fields.SimpleFieldEnum.Companion.asEnum
 import formulaide.ui.utils.text
@@ -23,8 +25,8 @@ val TypeEditor = functionalComponent<EditableFieldProps> { props ->
 
 	val allowTypeModifications = field is DataField || field is FormField.Shallow
 
-	styledField("item-type-${props.field.id}", "Type") {
-		if (allowTypeModifications) {
+	if (allowTypeModifications) {
+		styledField("item-type-${props.field.id}", "Type") {
 			styledSelect(
 				onSelect = { onSelect(it.value, field, props) }
 			) {
@@ -50,20 +52,20 @@ val TypeEditor = functionalComponent<EditableFieldProps> { props ->
 					required = true
 				}
 			}
-		} else {
-			val typeName = when (field) {
-				is Field.Union<*> -> "Choix"
-				is Field.Simple -> field.simple
-					.asEnum()
-					.displayName
-				is FormField.Deep.Composite ->
-					if (!field.ref.loaded) error("Le champ n'est pas chargé, impossible d'afficher ce qu'il référence : $field")
-					else (field.ref.obj as DataField.Composite).name
-				else -> error("Impossible d'afficher le type du champ $field")
-			}
-
-			text(typeName)
 		}
+	} else {
+		val typeName = when (field) {
+			is Field.Union<*> -> "Choix"
+			is Field.Simple -> field.simple
+				.asEnum()
+				.displayName
+			is FormField.Deep.Composite ->
+				if (!field.ref.loaded) error("Le champ n'est pas chargé, impossible d'afficher ce qu'il référence : $field")
+				else (field.ref.obj as DataField.Composite).name
+			else -> error("Impossible d'afficher le type du champ $field")
+		}
+
+		styledFormField { text(field.name + " "); styledLightText(typeName) }
 	}
 }
 
