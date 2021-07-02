@@ -167,12 +167,16 @@ data class FormSubmission(
 		field: FormField,
 		answer: ReadOnlyAnswer?,
 	): List<ReadOnlyAnswer> {
+		val fieldArity =
+			if (field is Field.Simple && field.simple == Message) Arity.forbidden()
+			else field.arity
+
 		val answers = when {
 			answer == null -> emptyList()
-			field.arity.max > 1 -> answer.components.map { (_, value) -> value }
+			fieldArity.max > 1 -> answer.components.map { (_, value) -> value }
 			else -> listOf(answer)
 		}
-		require(answers.size in field.arity.range) { "${fieldErrorMessage(field)} a une arité de ${field.arity}, mais ${answers.size} valeurs ont été données : $answer" }
+		require(answers.size in fieldArity.range) { "${fieldErrorMessage(field)} a une arité de ${field.arity}, mais ${answers.size} valeurs ont été données : $answer" }
 		return answers
 	}
 
