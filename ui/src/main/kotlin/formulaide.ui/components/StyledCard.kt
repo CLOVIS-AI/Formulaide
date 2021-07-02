@@ -12,7 +12,7 @@ private fun RBuilder.styledCardTitle(title: String, secondary: String?) {
 }
 
 private fun RBuilder.styledCardShell(contents: RDOMBuilder<DIV>.() -> Unit) =
-	div("m-4 p-4 shadow-lg rounded-lg") {
+	div("m-4 p-4 shadow-xl rounded-lg") {
 		contents()
 	}
 
