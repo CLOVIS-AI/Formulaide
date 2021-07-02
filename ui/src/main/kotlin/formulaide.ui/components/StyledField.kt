@@ -54,12 +54,14 @@ fun RBuilder.styledInput(
 		text(" *")
 }
 
-fun RBuilder.styledSmallNumberInput(
+fun RBuilder.styledSmallInput(
+	type: InputType,
 	id: String,
 	required: Boolean = false,
+	ref: RRef? = null,
 	handler: INPUT.() -> Unit = {},
 ) {
-	input(InputType.number, classes = smallInputStyle) {
+	input(type, classes = smallInputStyle) {
 		attrs {
 			this.id = id
 			this.name = id
@@ -67,6 +69,8 @@ fun RBuilder.styledSmallNumberInput(
 
 			handler()
 		}
+
+		if (ref != null) this.ref = ref
 	}
 }
 
@@ -107,7 +111,7 @@ fun RBuilder.styledCheckbox(
 	ref: RRef? = null,
 	handler: INPUT.() -> Unit = {},
 ) {
-	styledInput(InputType.checkBox, id, required, ref, handler)
+	styledSmallInput(InputType.checkBox, id, required, ref, handler)
 	label {
 		text(message)
 		attrs["htmlFor"] = id

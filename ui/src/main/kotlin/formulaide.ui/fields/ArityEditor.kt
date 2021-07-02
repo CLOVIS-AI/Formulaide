@@ -7,8 +7,9 @@ import formulaide.api.fields.FormField.Deep.Companion.createMatchingFormField
 import formulaide.api.fields.SimpleField
 import formulaide.api.types.Arity
 import formulaide.api.types.Ref.Companion.loadIfNecessary
-import formulaide.ui.components.styledSmallNumberInput
+import formulaide.ui.components.styledSmallInput
 import formulaide.ui.utils.text
+import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
 import react.functionalComponent
@@ -28,7 +29,9 @@ val ArityEditor = functionalComponent<EditableFieldProps> { props ->
 	if (allowModifications) {
 		text("Nombre de réponses autorisées : de ")
 		if (field !is DataField.Composite) {
-			styledSmallNumberInput("item-arity-min-${props.field.id}", required = true) {
+			styledSmallInput(InputType.number,
+			                 "item-arity-min-${props.field.id}",
+			                 required = true) {
 				value = arity.min.toString()
 				min = "0"
 				max = arity.max.toString()
@@ -46,7 +49,7 @@ val ArityEditor = functionalComponent<EditableFieldProps> { props ->
 				props.replace(props.field.set(arity = Arity(0, arity.max)))
 		}
 		text(" à ")
-		styledSmallNumberInput("item-arity-min-${props.field.id}", required = true) {
+		styledSmallInput(InputType.number, "item-arity-min-${props.field.id}", required = true) {
 			value = arity.max.toString()
 			min = arity.min.toString()
 			max = "1000"
