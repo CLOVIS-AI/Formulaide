@@ -119,6 +119,12 @@ class FormSubmissionTest {
 						order = 3,
 						name = "Notes",
 						Text(Arity.optional())
+					),
+					FormField.Shallow.Simple(
+						id = "13",
+						order = 4,
+						name = "Merci de votre coopération",
+						SimpleField.Message
 					)
 				)
 			),
