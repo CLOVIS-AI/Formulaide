@@ -7,13 +7,10 @@ import formulaide.api.fields.FormField.Deep.Companion.createMatchingFormField
 import formulaide.api.fields.SimpleField
 import formulaide.api.types.Arity
 import formulaide.api.types.Ref.Companion.loadIfNecessary
+import formulaide.ui.components.styledSmallNumberInput
 import formulaide.ui.utils.text
-import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
-import react.dom.attrs
-import react.dom.input
-import react.dom.label
 import react.functionalComponent
 
 val ArityEditor = functionalComponent<EditableFieldProps> { props ->
@@ -31,18 +28,15 @@ val ArityEditor = functionalComponent<EditableFieldProps> { props ->
 	if (allowModifications) {
 		text("Nombre de réponses autorisées : de ")
 		if (field !is DataField.Composite) {
-			input(InputType.number, name = "item-arity-min") {
-				attrs {
-					required = true
-					value = arity.min.toString()
-					min = "0"
-					max = arity.max.toString()
-					onChangeFunction = {
-						val value = (it.target as HTMLInputElement).value.toInt()
-						props.replace(
-							props.field.set(arity = Arity(value, arity.max))
-						)
-					}
+			styledSmallNumberInput("item-arity-min-${props.field.id}", required = true) {
+				value = arity.min.toString()
+				min = "0"
+				max = arity.max.toString()
+				onChangeFunction = {
+					val value = (it.target as HTMLInputElement).value.toInt()
+					props.replace(
+						props.field.set(arity = Arity(value, arity.max))
+					)
 				}
 			}
 		} else {
@@ -52,26 +46,23 @@ val ArityEditor = functionalComponent<EditableFieldProps> { props ->
 				props.replace(props.field.set(arity = Arity(0, arity.max)))
 		}
 		text(" à ")
-		input(InputType.number, name = "item-arity-max") {
-			attrs {
-				required = true
-				value = arity.max.toString()
-				min = arity.min.toString()
-				max = "1000"
-				onChangeFunction = {
-					val value = (it.target as HTMLInputElement).value.toInt()
-					updateSubFieldsOnMaxArityChange(props, Arity(arity.min, value))
-				}
+		styledSmallNumberInput("item-arity-min-${props.field.id}", required = true) {
+			value = arity.max.toString()
+			min = arity.min.toString()
+			max = "1000"
+			onChangeFunction = {
+				val value = (it.target as HTMLInputElement).value.toInt()
+				updateSubFieldsOnMaxArityChange(props, Arity(arity.min, value))
 			}
 		}
 	} else {
-		label { text("Nombre de réponses autorisées : de ${arity.min} à ${arity.max} ") }
+		text("Nombre de réponses autorisées : de ${arity.min} à ${arity.max} ")
 	}
 	when (arity) {
-		Arity.mandatory() -> label { text("(obligatoire)") }
-		Arity.optional() -> label { text("(facultatif)") }
-		Arity.forbidden() -> label { text("(interdit)") }
-		else -> label { text("(liste)") }
+		Arity.mandatory() -> text(" (obligatoire)")
+		Arity.optional() -> text(" (facultatif)")
+		Arity.forbidden() -> text(" (interdit)")
+		else -> text(" (liste)")
 	}
 }
 

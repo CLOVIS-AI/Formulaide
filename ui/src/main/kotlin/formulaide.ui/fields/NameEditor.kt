@@ -2,13 +2,11 @@ package formulaide.ui.fields
 
 import formulaide.api.fields.DataField
 import formulaide.api.fields.FormField
-import formulaide.ui.utils.text
+import formulaide.ui.components.styledField
+import formulaide.ui.components.styledInput
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
-import react.dom.attrs
-import react.dom.input
-import react.dom.label
 import react.functionalComponent
 
 val NameEditor = functionalComponent<EditableFieldProps> { props ->
@@ -16,10 +14,8 @@ val NameEditor = functionalComponent<EditableFieldProps> { props ->
 	val allowModification = field is DataField || field is FormField.Shallow
 
 	if (allowModification) {
-		label { text("Nom") }
-		input(InputType.text, name = "item-name") {
-			attrs {
-				required = true
+		styledField("item-name-${field.id}", "Nom") {
+			styledInput(InputType.text, "item-name-${field.id}", required = true) {
 				placeholder = "Nom du champ"
 				onChangeFunction = {
 					props.replace(
@@ -27,7 +23,5 @@ val NameEditor = functionalComponent<EditableFieldProps> { props ->
 				}
 			}
 		}
-	} else {
-		text(" ${props.field.name}")
 	}
 }

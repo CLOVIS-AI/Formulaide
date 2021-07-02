@@ -1,14 +1,13 @@
 package formulaide.ui.components
 
-import formulaide.ui.utils.text
 import kotlinx.html.DIV
 import kotlinx.html.FORM
 import react.RBuilder
 import react.dom.*
 
 private fun RBuilder.styledCardTitle(title: String, secondary: String?) {
-	h2("text-xl") { text(title) }
-	if (secondary != null) p("text-gray-600") { text(secondary) }
+	styledTitle(title)
+	if (secondary != null) p { styledLightText(secondary) }
 }
 
 private fun RBuilder.styledCardShell(contents: RDOMBuilder<DIV>.() -> Unit) =
