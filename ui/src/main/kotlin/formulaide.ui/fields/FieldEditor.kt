@@ -6,11 +6,10 @@ import formulaide.api.fields.FormField
 import formulaide.api.fields.SimpleField
 import formulaide.api.types.Arity
 import formulaide.ui.ScreenProps
+import formulaide.ui.components.styledFieldEditorShell
 import formulaide.ui.utils.text
 import react.RProps
 import react.child
-import react.dom.br
-import react.dom.div
 import react.functionalComponent
 
 external interface EditableFieldProps : RProps {
@@ -65,25 +64,20 @@ internal fun Field.set(name: String? = null, arity: Arity? = null): Field {
 }
 
 val FieldEditor = functionalComponent<EditableFieldProps> { props ->
-	div {
-		text("Champ ${props.field.order}")
+	styledFieldEditorShell("Champ ${props.field.order}") {
 
-		br {}
 		child(NameEditor) {
 			attrs { inheritFrom(props) }
 		}
 
-		br {}
 		child(TypeEditor) {
 			attrs { inheritFrom(props) }
 		}
 
-		br {}
 		child(ArityEditor) {
 			attrs { inheritFrom(props) }
 		}
 
-		br {}
 		if (props.field is Field.Union<*> || props.field is Field.Container<*>) {
 			if (props.field.arity != Arity.forbidden()) {
 				child(RecursionEditor) {
