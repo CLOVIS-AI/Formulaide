@@ -9,6 +9,8 @@ import formulaide.ui.components.*
 import kotlinx.html.INPUT
 import kotlinx.html.InputType
 import react.*
+import react.dom.attrs
+import react.dom.div
 
 private external interface FieldProps : RProps {
 	var app: ScreenProps
@@ -86,13 +88,32 @@ private val Field: FunctionalComponent<FieldProps> = functionalComponent { props
 		val (fieldIds, setFieldIds) = useState(List(props.field.arity.min) { it })
 
 		styledField(props.id, props.field.name) {
-			for (fieldId in fieldIds) {
-				child(RenderField) {
-					attrs {
-						this.app = props.app
-						this.field = props.field
-						this.id = "${props.id}:$fieldId"
+			for ((i, fieldId) in fieldIds.withIndex()) {
+				div {
+					child(RenderField) {
+						attrs {
+							this.app = props.app
+							this.field = props.field
+							this.id = "${props.id}:$fieldId"
+						}
 					}
+					if (fieldIds.size > props.field.arity.min) {
+						styledButton("×") {
+							setFieldIds(
+								fieldIds.subList(0, i) +
+										fieldIds.subList(i + 1, fieldIds.size)
+							)
+						}
+					}
+
+					attrs {
+						key = fieldId.toString()
+					}
+				}
+			}
+			if (fieldIds.size < props.field.arity.max) {
+				styledButton("Ajouter une réponse") {
+					setFieldIds(fieldIds + ((fieldIds.maxOrNull() ?: 0) + 1))
 				}
 			}
 		}

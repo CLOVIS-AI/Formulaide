@@ -10,7 +10,8 @@ import react.dom.input
 
 private const val buttonClasses = "rounded-full py-1 px-3 hover:bg-purple-500"
 private const val buttonDefaultClasses = "bg-purple-800 text-white"
-private const val buttonNonDefaultClasses = "text-purple-900 border-purple-800 hover:text-white"
+private const val buttonNonDefaultClasses =
+	"text-purple-800 border-1 border-purple-800 hover:text-white"
 
 fun RBuilder.styledButton(
 	text: String,
@@ -21,7 +22,7 @@ fun RBuilder.styledButton(
 		text(text)
 
 		attrs {
-			onClickFunction = { action() }
+			onClickFunction = { it.preventDefault(); action() }
 		}
 	}
 }
