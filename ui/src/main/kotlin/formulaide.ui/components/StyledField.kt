@@ -11,34 +11,40 @@ import react.dom.div
 import react.dom.input
 import react.dom.label
 
-fun RBuilder.styledInput(
-	type: InputType,
+fun RBuilder.styledField(
 	id: String,
 	displayName: String,
-	required: Boolean = false,
-	handler: INPUT.() -> Unit = {},
+	contents: RBuilder.() -> Unit,
 ) {
 	styledFormField {
 		label("block") {
 			attrs["htmlFor"] = id
 
 			text(displayName)
-
-			if (required)
-				text("*")
 		}
 
-		input(type,
-		      classes = "rounded bg-gray-200 border-b-2 border-gray-400 focus:border-purple-800") {
-			attrs {
-				this.id = id
-				this.name = id
-				this.required = required
+		contents()
+	}
+}
 
-				handler()
-			}
+fun RBuilder.styledInput(
+	type: InputType,
+	id: String,
+	required: Boolean = false,
+	handler: INPUT.() -> Unit = {},
+) {
+	input(type,
+	      classes = "rounded bg-gray-200 border-b-2 border-gray-400 focus:border-purple-800") {
+		attrs {
+			this.id = id
+			this.name = id
+			this.required = required
+
+			handler()
 		}
 	}
+	if (required)
+		text(" *")
 }
 
 fun RBuilder.styledFormField(contents: RBuilder.() -> Unit) {
