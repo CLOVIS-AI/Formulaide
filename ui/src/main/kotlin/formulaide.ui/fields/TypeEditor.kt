@@ -8,16 +8,14 @@ import formulaide.api.fields.FormField
 import formulaide.api.fields.SimpleField
 import formulaide.api.types.Arity
 import formulaide.api.types.Ref
+import formulaide.ui.components.styledField
+import formulaide.ui.components.styledSelect
 import formulaide.ui.fields.SimpleFieldEnum.Companion.asEnum
 import formulaide.ui.utils.text
 import kotlinx.html.id
-import kotlinx.html.js.onChangeFunction
-import org.w3c.dom.HTMLSelectElement
 import react.child
 import react.dom.attrs
-import react.dom.label
 import react.dom.option
-import react.dom.select
 import react.functionalComponent
 
 val TypeEditor = functionalComponent<EditableFieldProps> { props ->
@@ -25,80 +23,87 @@ val TypeEditor = functionalComponent<EditableFieldProps> { props ->
 
 	val allowTypeModifications = field is DataField || field is FormField.Shallow
 
-	if (allowTypeModifications) {
-		label { text("Type") }
+	styledField("item-type-${props.field.id}", "Type") {
+		if (allowTypeModifications) {
+			styledSelect(
+				onSelect = { onSelect(it.value, field, props) }
+			) {
+				child(SimpleOptions) {
+					attrs { inheritFrom(props) }
+				}
 
-		select {
-			child(SimpleOptions) {
-				attrs { inheritFrom(props) }
-			}
+				child(UnionOptions) {
+					attrs { inheritFrom(props) }
+				}
 
-			child(UnionOptions) {
-				attrs { inheritFrom(props) }
-			}
+				child(CompositeOptions) {
+					attrs { inheritFrom(props) }
+				}
 
-			child(CompositeOptions) {
-				attrs { inheritFrom(props) }
-			}
+				// Select itself
+				child(RecursiveCompositeOptions) {
+					attrs { inheritFrom(props) }
+				}
 
-			// Select itself
-			child(RecursiveCompositeOptions) {
-				attrs { inheritFrom(props) }
-			}
-
-			attrs {
-				id = "field-editor-${field.id}"
-				required = true
-
-				onChangeFunction = { event ->
-					val selected = (event.target as HTMLSelectElement).value
-
-					when {
-						selected.startsWith("simple:") -> {
-							val newSimple = SimpleFieldEnum.fromString(selected.substringAfter(":",
-							                                                                   missingDelimiterValue = ""))
-								.build(Arity.mandatory())
-							when (field) {
-								is DataField -> props.replace(field.copyToSimple(newSimple))
-								is FormField.Shallow -> props.replace(field.copyToSimple(newSimple))
-							}
-						}
-						selected == "union" -> when (field) {
-							is DataField -> props.replace(field.copyToUnion(emptyList()))
-							is FormField.Shallow -> props.replace(field.copyToUnion(emptyList()))
-							else -> error("Il n'est pas possible de modifier le type du champ $field")
-						}
-						selected.startsWith("composite:") -> {
-							val selectedCompositeId =
-								selected.substringAfter(":", missingDelimiterValue = "")
-							val ref = Ref<Composite>(selectedCompositeId)
-							if (selectedCompositeId != SPECIAL_TOKEN_RECURSION) ref.loadFrom(props.app.composites)
-
-							when (field) {
-								is DataField -> props.replace(field.copyToComposite(ref))
-								is FormField.Shallow -> props.replace(
-									field.copyToComposite(ref,
-									                      emptyList())
-										.copy(arity = Arity.forbidden()))
-							}
-						}
-					}
+				attrs {
+					id = "field-editor-${field.id}"
+					required = true
 				}
 			}
-		}
-	} else {
-		val typeName = when (field) {
-			is Field.Union<*> -> "Choix"
-			is Field.Simple -> field.simple
-				.asEnum()
-				.displayName
-			is FormField.Deep.Composite ->
-				if (!field.ref.loaded) error("Le champ n'est pas chargé, impossible d'afficher ce qu'il référence : $field")
-				else (field.ref.obj as DataField.Composite).name
-			else -> error("Impossible d'afficher le type du champ $field")
-		}
+		} else {
+			val typeName = when (field) {
+				is Field.Union<*> -> "Choix"
+				is Field.Simple -> field.simple
+					.asEnum()
+					.displayName
+				is FormField.Deep.Composite ->
+					if (!field.ref.loaded) error("Le champ n'est pas chargé, impossible d'afficher ce qu'il référence : $field")
+					else (field.ref.obj as DataField.Composite).name
+				else -> error("Impossible d'afficher le type du champ $field")
+			}
 
-		label { text("Type : $typeName") }
+			text(typeName)
+		}
+	}
+}
+
+private fun onSelect(
+	selected: String,
+	field: Field,
+	props: EditableFieldProps,
+) {
+	when {
+		selected.startsWith("simple:") -> {
+			val newSimple =
+				SimpleFieldEnum.fromString(selected.substringAfter(":",
+				                                                   missingDelimiterValue = ""))
+					.build(Arity.mandatory())
+			when (field) {
+				is DataField -> props.replace(field.copyToSimple(newSimple))
+				is FormField.Shallow -> props.replace(field.copyToSimple(
+					newSimple))
+			}
+		}
+		selected == "union" -> when (field) {
+			is DataField -> props.replace(field.copyToUnion(emptyList()))
+			is FormField.Shallow -> props.replace(field.copyToUnion(emptyList()))
+			else -> error("Il n'est pas possible de modifier le type du champ $field")
+		}
+		selected.startsWith("composite:") -> {
+			val selectedCompositeId =
+				selected.substringAfter(":", missingDelimiterValue = "")
+			val ref = Ref<Composite>(selectedCompositeId)
+			if (selectedCompositeId != SPECIAL_TOKEN_RECURSION) ref.loadFrom(
+				props.app.composites)
+
+			when (field) {
+				is DataField -> props.replace(field.copyToComposite(ref))
+				is FormField.Shallow -> props.replace(
+					field.copyToComposite(ref,
+					                      emptyList())
+						.copy(arity = Arity.forbidden()))
+			}
+		}
 	}
 }
 
