@@ -10,8 +10,10 @@ import org.w3c.dom.HTMLSelectElement
 import react.RBuilder
 import react.dom.*
 
-private const val inputStyle =
-	"rounded bg-gray-200 border-b-2 border-gray-400 focus:border-purple-800 my-1 mr-3 w-60"
+private const val commonInputStyle =
+	"rounded bg-gray-200 border-b-2 border-gray-400 focus:border-purple-800 my-1"
+private const val largeInputStyle = "$commonInputStyle w-60 mr-3"
+private const val smallInputStyle = "$commonInputStyle w-10"
 
 fun RBuilder.styledField(
 	id: String,
@@ -35,8 +37,7 @@ fun RBuilder.styledInput(
 	required: Boolean = false,
 	handler: INPUT.() -> Unit = {},
 ) {
-	input(type,
-	      classes = inputStyle) {
+	input(type, classes = largeInputStyle) {
 		attrs {
 			this.id = id
 			this.name = id
@@ -47,6 +48,22 @@ fun RBuilder.styledInput(
 	}
 	if (required)
 		text(" *")
+}
+
+fun RBuilder.styledSmallNumberInput(
+	id: String,
+	required: Boolean = false,
+	handler: INPUT.() -> Unit = {},
+) {
+	input(InputType.number, classes = smallInputStyle) {
+		attrs {
+			this.id = id
+			this.name = id
+			this.required = required
+
+			handler()
+		}
+	}
 }
 
 fun RBuilder.styledFormField(contents: RBuilder.() -> Unit) {
@@ -84,7 +101,7 @@ fun RBuilder.styledSelect(
 	onSelect: (HTMLSelectElement) -> Unit = {},
 	contents: RDOMBuilder<SELECT>.() -> Unit,
 ) {
-	select(inputStyle) {
+	select(largeInputStyle) {
 		attrs {
 			onChangeFunction = { onSelect(it.target as HTMLSelectElement) }
 
