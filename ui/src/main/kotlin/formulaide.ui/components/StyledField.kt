@@ -34,7 +34,7 @@ fun RBuilder.styledInput(
 	handler: INPUT.() -> Unit = {},
 ) {
 	input(type,
-	      classes = "rounded bg-gray-200 border-b-2 border-gray-400 focus:border-purple-800 my-1 mx-3") {
+	      classes = "rounded bg-gray-200 border-b-2 border-gray-400 focus:border-purple-800 my-1 mr-3") {
 		attrs {
 			this.id = id
 			this.name = id
