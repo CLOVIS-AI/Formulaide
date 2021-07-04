@@ -10,7 +10,7 @@ version: "3.6"
 # Production environment:
 #
 # Start locally:
-#   docker-compose up -f docker-compose.yml -f docker-compose.yml up -d
+#   docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 # Deploy to a Docker Swarm:
 #   docker stack deploy -c docker-compose.yml -c docker-compose.prod.yml formulaide
 #
