@@ -147,7 +147,7 @@ class FormSubmissionTest {
 				"7:5:1:2" to "Le Nom de Famille de ma sœur",
 				"7:5:1:3" to "Le Prénom de ma sœur",
 				"7:5:1:4" to "+33 2 34 56 78 91",
-				"9:10" to "",
+				"9" to "10",
 			)
 		)
 		submission1.checkValidity(form)
@@ -164,7 +164,7 @@ class FormSubmissionTest {
 				"7:5:1:3" to "Le Prénom de ma sœur",
 				"7:5:1:4" to "+33 2 34 56 78 91",
 				"12" to "Mes notes",
-				"9:11" to "",
+				"9" to "11",
 			)
 		)
 		submission2.checkValidity(form)
@@ -177,7 +177,7 @@ class FormSubmissionTest {
 				"7:4" to "+33 1 23 45 67 89",
 				"12:0" to "Mes notes",
 				"12:1" to "Mes notes 2",
-				"9:10" to "",
+				"9" to "10",
 			)
 		)
 		assertFails {
