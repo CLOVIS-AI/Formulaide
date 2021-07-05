@@ -73,8 +73,11 @@ private val CannotAccessThisPage = functionalComponent<ScreenProps> { props ->
 
 private val Navigation = functionalComponent<ScreenProps> { props ->
 	div {
-		for (screen in Screen.availableScreens(props.user).filter { it != props.currentScreen }) {
-			styledButton(screen.displayName) { props.navigateTo(screen) }
+		for (screen in Screen.availableScreens(props.user)) {
+			if (screen != props.currentScreen)
+				styledButton(screen.displayName) { props.navigateTo(screen) }
+			else
+				styledDisabledButton(screen.displayName)
 		}
 	}
 }
