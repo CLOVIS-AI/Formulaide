@@ -138,6 +138,36 @@ sealed class SimpleField {
 	}
 
 	/**
+	 * A date, represented in the format `yyyy-mm-dd`.
+	 *
+	 * - year: `0..3000`
+	 * - month: `1..12`
+	 * - day: `1..31`
+	 */
+	@Serializable
+	@SerialName("DATE")
+	data class Date(
+		override val arity: Arity,
+	) : SimpleField() {
+
+		override fun validate(value: String?) {
+			requireNotNull(value) { "Une date ne peut pas être vide : trouvé $value" }
+
+			val parts = value.split('-')
+			require(parts.size == 3) { "Une date doit être composée de 3 parties, séparées par des tirets : trouvé $value" }
+
+			val (year, month, day) = parts.map { it.toIntOrNull() }
+			requireNotNull(year) { "L'année devrait être un entier : $year" }
+			requireNotNull(month) { "Le mois devrait être un entier : $month" }
+			requireNotNull(day) { "Le jour devrait être un entier : $day" }
+
+			require(year in 0..3_000) { "L'année est invalide : $year" }
+			require(month in 1..12) { "Le mois est invalide : $month" }
+			require(day in 1..31) { "Le jour est invalide : $day" }
+		}
+	}
+
+	/**
 	 * A message should be displayed to the user, but they shouldn't have anything to fill in.
 	 * The [arity] is always [Arity.mandatory].
 	 */
