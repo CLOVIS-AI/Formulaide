@@ -6,6 +6,7 @@ import formulaide.api.users.User
 import formulaide.client.Client
 import formulaide.ui.Role.Companion.role
 import formulaide.ui.auth.LoginAccess
+import formulaide.ui.components.styledCard
 import formulaide.ui.screens.CreateData
 import formulaide.ui.screens.CreateForm
 import formulaide.ui.screens.FormList
@@ -85,22 +86,20 @@ private val Navigation = functionalComponent<ScreenProps> { props ->
 val Window = functionalComponent<ApplicationProps> { props ->
 	val (screen, setScreen) = useState<Screen>(Screen.Home)
 
-	h1 {
-		var title = "Formulaide"
-		title += " • ${screen.displayName}"
-		title += when (props.user) {
-			null -> " • Accès anonyme"
-			else -> " • Bonjour ${props.user!!.fullName}"
-		}
-		text(title)
+	val title = "Formulaide • ${screen.displayName}"
+	val subtitle = when (props.user) {
+		null -> "Accès anonyme"
+		else -> "Bonjour ${props.user!!.fullName}"
 	}
 
-	child(Navigation) {
-		attrs {
-			navigateTo = { setScreen(it) }
-			currentScreen = screen
-			user = props.user
-			connect = props.connect
+	styledCard(title, subtitle) {
+		child(Navigation) {
+			attrs {
+				navigateTo = { setScreen(it) }
+				currentScreen = screen
+				user = props.user
+				connect = props.connect
+			}
 		}
 	}
 
