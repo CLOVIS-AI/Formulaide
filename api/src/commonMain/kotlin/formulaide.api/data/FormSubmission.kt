@@ -40,9 +40,9 @@ annotation class FormSubmissionDsl
  * - If the field is a [composite type][Composite], [Field.id] is added
  * (repeat from the previous step as long as necessary).
  *
- * [Unions][Field.Union] are treated as compound objects that only have one field,
- * whose ID is the ID of the element of the enum that was selected.
- * The value corresponds to the value of the selected union element.
+ * When encountering a [Unions][Field.Union], you should:
+ * - Answer the union (as if it were a simple field) by giving the ID of the selected field,
+ * - Provide any required subfields as if the union was a composite object that had a single field.
  *
  * ### Example
  *
