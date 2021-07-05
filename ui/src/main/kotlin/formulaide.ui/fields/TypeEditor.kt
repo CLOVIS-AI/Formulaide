@@ -115,6 +115,7 @@ private enum class SimpleFieldEnum(val displayName: String, val build: (Arity) -
 	DECIMAL("Nombre à virgule", { SimpleField.Decimal(it) }),
 	BOOLEAN("Bouton à cocher", { SimpleField.Boolean(it) }),
 	MESSAGE("Message", { SimpleField.Message }),
+	EMAIL("Adresse mail", { SimpleField.Email(it) })
 	;
 
 	companion object {
@@ -124,6 +125,7 @@ private enum class SimpleFieldEnum(val displayName: String, val build: (Arity) -
 			is SimpleField.Decimal -> DECIMAL
 			is SimpleField.Boolean -> BOOLEAN
 			is SimpleField.Message -> MESSAGE
+			is SimpleField.Email -> EMAIL
 		}
 
 		/**

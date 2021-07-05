@@ -35,6 +35,7 @@ internal fun SimpleField.set(arity: Arity? = null): SimpleField {
 		is SimpleField.Integer -> copy(arity = arity)
 		is SimpleField.Decimal -> copy(arity = arity)
 		is SimpleField.Boolean -> copy(arity = arity)
+		is SimpleField.Email -> copy(arity = arity)
 		SimpleField.Message -> this
 	}
 }

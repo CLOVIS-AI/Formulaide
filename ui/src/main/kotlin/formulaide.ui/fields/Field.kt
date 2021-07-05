@@ -36,6 +36,7 @@ private val RenderField = functionalComponent<FieldProps> { props ->
 			}
 			is SimpleField.Boolean -> simpleInput(InputType.checkBox, false) {}
 			is SimpleField.Message -> Unit // The message has already been displayed
+			is SimpleField.Email -> simpleInput(InputType.email, required) {}
 		}
 		is FormField.Composite -> {
 			val subFields = field.fields
