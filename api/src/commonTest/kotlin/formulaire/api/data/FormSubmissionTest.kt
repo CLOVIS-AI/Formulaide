@@ -256,6 +256,18 @@ class FormSubmissionTest {
 				identityRecursionField
 			)
 		)
+		val unionChoice1 = FormField.Shallow.Simple("1", 1, "1", SimpleField.Message)
+		val unionChoice2 = FormField.Shallow.Simple("2", 2, "2", SimpleField.Message)
+		val union = FormField.Shallow.Union(
+			"12",
+			2,
+			"Choix",
+			Arity.mandatory(),
+			options = listOf(
+				unionChoice1,
+				unionChoice2
+			)
+		)
 		val form = Form(
 			id = "6",
 			name = "Foo",
@@ -263,8 +275,9 @@ class FormSubmissionTest {
 			public = true,
 			mainFields = FormRoot(
 				listOf(
-					identityField
-				)
+					identityField,
+					union
+				),
 			),
 			actions = emptyList()
 		)
@@ -287,6 +300,7 @@ class FormSubmissionTest {
 					}
 				}
 			}
+			union(union, unionChoice1) { /* it's a MESSAGE, nothing to provide */ }
 		}
 		val expected = FormSubmission(
 			form = form.createRef(),
@@ -299,6 +313,7 @@ class FormSubmissionTest {
 				"7:5:50:4" to "Le numéro de téléphone de mon frère",
 				"7:5:100:2" to "Le nom de famille de ma sœur",
 				"7:5:100:3" to "Le prénom de ma sœur",
+				"12" to "1",
 			)
 		)
 		assertEquals(expected, submission)
