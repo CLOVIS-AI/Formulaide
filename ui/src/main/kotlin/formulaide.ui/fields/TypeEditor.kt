@@ -117,6 +117,7 @@ private enum class SimpleFieldEnum(val displayName: String, val build: (Arity) -
 	MESSAGE("Message", { SimpleField.Message }),
 	EMAIL("Adresse mail", { SimpleField.Email(it) }),
 	DATE("Date", { SimpleField.Date(it) }),
+	TIME("Heure", { SimpleField.Time(it) }),
 	;
 
 	companion object {
@@ -128,6 +129,7 @@ private enum class SimpleFieldEnum(val displayName: String, val build: (Arity) -
 			is SimpleField.Message -> MESSAGE
 			is SimpleField.Email -> EMAIL
 			is SimpleField.Date -> DATE
+			is SimpleField.Time -> TIME
 		}
 
 		/**

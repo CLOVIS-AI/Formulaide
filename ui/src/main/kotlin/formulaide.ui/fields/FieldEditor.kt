@@ -37,6 +37,7 @@ internal fun SimpleField.set(arity: Arity? = null): SimpleField {
 		is SimpleField.Boolean -> copy(arity = arity)
 		is SimpleField.Email -> copy(arity = arity)
 		is SimpleField.Date -> copy(arity = arity)
+		is SimpleField.Time -> copy(arity = arity)
 		SimpleField.Message -> this
 	}
 }

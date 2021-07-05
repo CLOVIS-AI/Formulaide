@@ -168,6 +168,33 @@ sealed class SimpleField {
 	}
 
 	/**
+	 * A time, represented in `hh:mm`.
+	 *
+	 * - hour: `0..23`
+	 * - minutes: `0..59`
+	 */
+	@Serializable
+	@SerialName("TIME")
+	data class Time(
+		override val arity: Arity,
+	) : SimpleField() {
+
+		override fun validate(value: String?) {
+			requireNotNull(value) { "Une heure ne peut pas être vide : trouvé $value" }
+
+			val parts = value.split(':')
+			require(parts.size == 2) { "Une heure doit être composée de deux parties, séparées par des ':' : trouvé $value" }
+
+			val (hour, minutes) = parts.map { it.toIntOrNull() }
+			requireNotNull(hour) { "L'heure devrait être un entier : $hour" }
+			requireNotNull(minutes) { "Les minutes devraient être un entier : $minutes" }
+
+			require(hour in 0..23) { "L'heure est invalide : $hour" }
+			require(minutes in 0..59) { "Les minutes sont invalides : $minutes" }
+		}
+	}
+
+	/**
 	 * A message should be displayed to the user, but they shouldn't have anything to fill in.
 	 * The [arity] is always [Arity.mandatory].
 	 */
