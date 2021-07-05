@@ -8,6 +8,7 @@ import formulaide.ui.Role.Companion.role
 import formulaide.ui.auth.LoginAccess
 import formulaide.ui.components.styledButton
 import formulaide.ui.components.styledCard
+import formulaide.ui.components.styledDisabledButton
 import formulaide.ui.screens.CreateData
 import formulaide.ui.screens.CreateForm
 import formulaide.ui.screens.FormList
@@ -23,12 +24,13 @@ abstract class Screen(
 	val component: FunctionalComponent<ScreenProps>
 ) {
 
-	object Home : Screen("Page d'acceuil", Role.ANONYMOUS, LoginAccess)
-	object ShowForms : Screen("Liste des formulaires", Role.ANONYMOUS, FormList)
+	object Home : Screen("Acceuil", Role.ANONYMOUS, LoginAccess)
+	object ShowForms : Screen("Formulaires", Role.ANONYMOUS, FormList)
 	object NewData : Screen("Créer une donnée", Role.ADMINISTRATOR, CreateData)
 	object NewForm : Screen("Créer un formulaire", Role.ADMINISTRATOR, CreateForm)
 
-	class SubmitForm(form: Form) : Screen("Saisie", Role.ANONYMOUS, formulaide.ui.screens.SubmitForm(form))
+	class SubmitForm(form: Form) :
+		Screen("Saisie", Role.ANONYMOUS, formulaide.ui.screens.SubmitForm(form))
 
 	companion object {
 		val regularScreens = sequenceOf(Home, ShowForms, NewData, NewForm)
