@@ -12,7 +12,7 @@ import react.RRef
 import react.dom.*
 
 private const val commonInputStyle =
-	"rounded bg-gray-200 border-b-2 border-gray-400 focus:border-purple-800 my-1"
+	"rounded bg-gray-200 border-b-2 border-gray-400 focus:border-purple-800 my-1 focus:outline-none"
 private const val largeInputStyle = "$commonInputStyle w-60 mr-3"
 private const val smallInputStyle = "$commonInputStyle w-10"
 
