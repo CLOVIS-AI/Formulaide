@@ -6,6 +6,7 @@ import formulaide.api.users.User
 import formulaide.client.Client
 import formulaide.ui.Role.Companion.role
 import formulaide.ui.auth.LoginAccess
+import formulaide.ui.components.styledButton
 import formulaide.ui.components.styledCard
 import formulaide.ui.screens.CreateData
 import formulaide.ui.screens.CreateForm
@@ -73,12 +74,7 @@ private val CannotAccessThisPage = functionalComponent<ScreenProps> { props ->
 private val Navigation = functionalComponent<ScreenProps> { props ->
 	div {
 		for (screen in Screen.availableScreens(props.user).filter { it != props.currentScreen }) {
-			button {
-				text(screen.displayName)
-				attrs {
-					onClickFunction = { props.navigateTo(screen) }
-				}
-			}
+			styledButton(screen.displayName) { props.navigateTo(screen) }
 		}
 	}
 }
