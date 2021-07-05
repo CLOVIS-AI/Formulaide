@@ -4,21 +4,18 @@ import formulaide.api.users.PasswordLogin
 import formulaide.client.Client
 import formulaide.client.routes.login
 import formulaide.ui.ScreenProps
+import formulaide.ui.components.styledCard
 import formulaide.ui.components.styledField
 import formulaide.ui.components.styledFormCard
 import formulaide.ui.components.styledInput
 import formulaide.ui.defaultClient
-import formulaide.ui.utils.text
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.html.InputType
-import kotlinx.html.js.onClickFunction
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
 import react.RProps
 import react.child
-import react.dom.attrs
-import react.dom.button
 import react.functionalComponent
 import react.useRef
 
@@ -84,11 +81,10 @@ val LoginAccess = functionalComponent<ScreenProps> { props ->
 			}
 		}
 	} else {
-		button {
-			text("Se déconnecter")
-			attrs {
-				onClickFunction = { props.connect(defaultClient) }
-			}
-		}
+		styledCard(
+			"Espace employé",
+			null,
+			"Se déconnecter" to { props.connect(defaultClient) }
+		) {}
 	}
 }
