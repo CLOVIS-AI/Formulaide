@@ -6,6 +6,9 @@ import formulaide.api.users.User
 import formulaide.client.Client
 import formulaide.ui.Role.Companion.role
 import formulaide.ui.auth.LoginAccess
+import formulaide.ui.components.styledButton
+import formulaide.ui.components.styledCard
+import formulaide.ui.components.styledDisabledButton
 import formulaide.ui.screens.CreateData
 import formulaide.ui.screens.CreateForm
 import formulaide.ui.screens.FormList
@@ -21,12 +24,13 @@ abstract class Screen(
 	val component: FunctionalComponent<ScreenProps>
 ) {
 
-	object Home : Screen("Page d'acceuil", Role.ANONYMOUS, LoginAccess)
-	object ShowForms : Screen("Liste des formulaires", Role.ANONYMOUS, FormList)
+	object Home : Screen("Acceuil", Role.ANONYMOUS, LoginAccess)
+	object ShowForms : Screen("Formulaires", Role.ANONYMOUS, FormList)
 	object NewData : Screen("Créer une donnée", Role.ADMINISTRATOR, CreateData)
 	object NewForm : Screen("Créer un formulaire", Role.ADMINISTRATOR, CreateForm)
 
-	class SubmitForm(form: Form) : Screen("Saisie", Role.ANONYMOUS, formulaide.ui.screens.SubmitForm(form))
+	class SubmitForm(form: Form) :
+		Screen("Saisie", Role.ANONYMOUS, formulaide.ui.screens.SubmitForm(form))
 
 	companion object {
 		val regularScreens = sequenceOf(Home, ShowForms, NewData, NewForm)
@@ -71,13 +75,11 @@ private val CannotAccessThisPage = functionalComponent<ScreenProps> { props ->
 
 private val Navigation = functionalComponent<ScreenProps> { props ->
 	div {
-		for (screen in Screen.availableScreens(props.user).filter { it != props.currentScreen }) {
-			button {
-				text(screen.displayName)
-				attrs {
-					onClickFunction = { props.navigateTo(screen) }
-				}
-			}
+		for (screen in Screen.availableScreens(props.user)) {
+			if (screen != props.currentScreen)
+				styledButton(screen.displayName) { props.navigateTo(screen) }
+			else
+				styledDisabledButton(screen.displayName)
 		}
 	}
 }
@@ -85,22 +87,20 @@ private val Navigation = functionalComponent<ScreenProps> { props ->
 val Window = functionalComponent<ApplicationProps> { props ->
 	val (screen, setScreen) = useState<Screen>(Screen.Home)
 
-	h1 {
-		var title = "Formulaide"
-		title += " • ${screen.displayName}"
-		title += when (props.user) {
-			null -> " • Accès anonyme"
-			else -> " • Bonjour ${props.user!!.fullName}"
-		}
-		text(title)
+	val title = "Formulaide • ${screen.displayName}"
+	val subtitle = when (props.user) {
+		null -> "Accès anonyme"
+		else -> "Bonjour ${props.user!!.fullName}"
 	}
 
-	child(Navigation) {
-		attrs {
-			navigateTo = { setScreen(it) }
-			currentScreen = screen
-			user = props.user
-			connect = props.connect
+	styledCard(title, subtitle) {
+		child(Navigation) {
+			attrs {
+				navigateTo = { setScreen(it) }
+				currentScreen = screen
+				user = props.user
+				connect = props.connect
+			}
 		}
 	}
 
