@@ -176,7 +176,7 @@ data class FormSubmission(
 			fieldArity.max > 1 -> answer.components.map { (_, value) -> value }
 			else -> listOf(answer)
 		}
-		require(answers.size in fieldArity.range) { "${fieldErrorMessage(field)} a une arité de ${field.arity}, mais ${answers.size} valeurs ont été données : $answer" }
+		require(answers.size in fieldArity.range) { "${fieldErrorMessage(field)} a une arité de ${fieldArity}, mais ${answers.size} valeurs ont été données : $answer" }
 		return answers
 	}
 
