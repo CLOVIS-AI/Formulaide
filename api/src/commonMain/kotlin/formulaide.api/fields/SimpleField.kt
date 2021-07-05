@@ -124,6 +124,19 @@ sealed class SimpleField {
 		}
 	}
 
+	@Serializable
+	@SerialName("EMAIL")
+	data class Email(
+		override val arity: Arity,
+	) : SimpleField() {
+
+		override fun validate(value: String?) {
+			requireNotNull(value) { "Un email ne peut pas être vide : trouvé $value" }
+			require('@' in value) { "Un email doit contenir une arobase : $value" }
+			require(' ' !in value) { "Un email ne peut pas contenir d'espaces : $value" }
+		}
+	}
+
 	/**
 	 * A message should be displayed to the user, but they shouldn't have anything to fill in.
 	 * The [arity] is always [Arity.mandatory].
