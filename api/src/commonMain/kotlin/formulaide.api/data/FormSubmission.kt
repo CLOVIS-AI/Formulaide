@@ -40,9 +40,9 @@ annotation class FormSubmissionDsl
  * - If the field is a [composite type][Composite], [Field.id] is added
  * (repeat from the previous step as long as necessary).
  *
- * [Unions][Field.Union] are treated as compound objects that only have one field,
- * whose ID is the ID of the element of the enum that was selected.
- * The value corresponds to the value of the selected union element.
+ * When encountering a [Unions][Field.Union], you should:
+ * - Answer the union (as if it were a simple field) by giving the ID of the selected field,
+ * - Provide any required subfields as if the union was a composite object that had a single field.
  *
  * ### Example
  *
@@ -176,7 +176,7 @@ data class FormSubmission(
 			fieldArity.max > 1 -> answer.components.map { (_, value) -> value }
 			else -> listOf(answer)
 		}
-		require(answers.size in fieldArity.range) { "${fieldErrorMessage(field)} a une arité de ${field.arity}, mais ${answers.size} valeurs ont été données : $answer" }
+		require(answers.size in fieldArity.range) { "${fieldErrorMessage(field)} a une arité de ${fieldArity}, mais ${answers.size} valeurs ont été données : $answer" }
 		return answers
 	}
 
@@ -199,17 +199,27 @@ data class FormSubmission(
 		field: FormField.Union<*>,
 		answer: ReadOnlyAnswer,
 	) {
-		require(answer.components.size == 1) { "${fieldErrorMessage(field)} est une union, elle ne peut avoir qu'une seule valeur ; trouvé les clefs ${answer.components.map { it.key }}" }
-		val (unionAnswerId, unionAnswer) = answer.components.entries.first()
+		val selectedId = answer.value
+			?: error("${fieldErrorMessage(field)} est une union, elle doit avoir une unique valeur ; trouvé le choix ${answer.value}")
+		val selectedField = field.options.find { it.id == selectedId }
+			?: error("${fieldErrorMessage(field)} est une union, mais le choix donné ne correspond à aucun des choix disponibles : $selectedId")
 
-		val selectedFormField = field.options.find { it.id == unionAnswerId }
-		requireNotNull(selectedFormField) { "${fieldErrorMessage(field)} est une union qui autorise les éléments ${field.options.map { it.id }}, dont la réponse donnée ne fait pas partie : ${answer.value}" }
+		val selectedChildren = checkArity(
+			selectedField,
+			answer.takeIf { it.components.isNotEmpty() }
+				?.copy(value = null)
+		)
+		require(selectedChildren.size <= 1) { "${fieldErrorMessage(field)} est une union, elle ne peut pas avoir plus d'une valeur ; trouvé les clefs ${answer.components.map { it.key }}" }
+		val selectedChild =
+			selectedChildren.firstOrNull() // we can't lose data because the max size is 1
 
-		@Suppress("UNUSED_VARIABLE") // The variable is there to force the 'when' to be exhaustive
-		val e = when (val formField: FormField = selectedFormField) {
-			is FormField.Composite -> checkComposite(formField, unionAnswer)
-			is FormField.Union<*> -> checkUnion(formField, unionAnswer)
-			is FormField.Simple -> checkSimple(formField, unionAnswer)
+		if (selectedChild != null) {
+			@Suppress("UNUSED_VARIABLE") // The variable is there to force the 'when' to be exhaustive
+			val e = when (val formField: FormField = selectedField) {
+				is FormField.Composite -> checkComposite(formField, selectedChild)
+				is FormField.Union<*> -> checkUnion(formField, selectedChild)
+				is FormField.Simple -> checkSimple(formField, selectedChild)
+			}
 		}
 	}
 
