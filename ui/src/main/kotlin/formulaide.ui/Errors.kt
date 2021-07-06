@@ -4,6 +4,7 @@ import formulaide.ui.components.styledCard
 import formulaide.ui.utils.text
 import io.ktor.client.call.*
 import io.ktor.client.features.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import react.functionalComponent
 import react.useEffect
@@ -59,9 +60,16 @@ inline fun reportExceptions(reporter: (Throwable) -> Unit, block: () -> Unit) {
 inline fun reportExceptions(props: ScreenProps, block: () -> Unit) =
 	reportExceptions(props.reportError, block)
 
-inline fun launchAndReportExceptions(props: ScreenProps, crossinline block: suspend () -> Unit) =
-	props.scope.launch {
-		reportExceptions(props) {
+inline fun launchAndReportExceptions(
+	crossinline reporter: (Throwable) -> Unit,
+	scope: CoroutineScope,
+	crossinline block: suspend () -> Unit,
+) =
+	scope.launch {
+		reportExceptions(reporter) {
 			block()
 		}
 	}
+
+inline fun launchAndReportExceptions(props: ScreenProps, crossinline block: suspend () -> Unit) =
+	launchAndReportExceptions(props.reportError, props.scope, block)
