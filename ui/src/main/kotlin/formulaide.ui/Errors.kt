@@ -26,7 +26,7 @@ val ErrorCard = functionalComponent<ErrorProps> { props ->
 	useEffect(error) {
 		props.scope.launch {
 			when (error) {
-				is ServerResponseException -> {
+				is ResponseException -> {
 					val responseText = error.response.receive<String>()
 
 					if (responseText.isBlank()) {

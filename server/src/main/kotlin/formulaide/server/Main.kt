@@ -11,6 +11,8 @@ import io.ktor.application.*
 import io.ktor.auth.*
 import io.ktor.auth.jwt.*
 import io.ktor.features.*
+import io.ktor.http.*
+import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.serialization.*
 import kotlinx.coroutines.runBlocking
@@ -60,6 +62,12 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 
 			verifier(auth.verifier)
 			validate { auth.checkTokenJWT(it.payload) }
+		}
+	}
+
+	install(StatusPages) {
+		exception<Throwable> { error ->
+			call.respondText(error.message ?: error.toString(), status = HttpStatusCode.BadRequest)
 		}
 	}
 
