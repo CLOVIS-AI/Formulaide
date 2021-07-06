@@ -12,6 +12,8 @@ import react.useState
 
 external interface ErrorProps : ScreenProps {
 	var error: Throwable
+
+	var hide: () -> Unit
 }
 
 val ErrorCard = functionalComponent<ErrorProps> { props ->
@@ -43,7 +45,7 @@ val ErrorCard = functionalComponent<ErrorProps> { props ->
 	styledCard(
 		title,
 		subtitle,
-		"OK" to { },
+		"OK" to { props.hide() },
 		failed = true,
 	) { body?.let { text(it) } }
 }

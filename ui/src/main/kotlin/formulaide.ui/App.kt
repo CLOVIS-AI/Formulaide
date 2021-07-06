@@ -102,12 +102,13 @@ val App = functionalComponent<RProps> {
 		}
 	}
 
-	for (error in errors) {
+	for ((i, error) in errors.withIndex()) {
 		child(ErrorCard) {
+			key = error.hashCode().toString()
 			attrs {
 				this.scope = scope
-
 				this.error = error
+				this.hide = { setErrors(errors.subList(0, i) + errors.subList(i + 1, errors.size)) }
 			}
 		}
 	}
