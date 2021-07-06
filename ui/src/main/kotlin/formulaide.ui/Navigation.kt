@@ -52,8 +52,10 @@ external interface ApplicationProps : RProps {
 	// Common data
 	var composites: List<Composite>
 	var forms: List<Form>
+	var services: List<Service>
 	var refreshComposites: () -> Unit
 	var refreshForms: () -> Unit
+	var refreshServices: () -> Unit
 }
 
 external interface ScreenProps : ApplicationProps {
@@ -117,8 +119,10 @@ val Window = functionalComponent<ApplicationProps> { props ->
 			scope = props.scope
 			composites = props.composites
 			forms = props.forms
+			services = props.services
 			refreshComposites = props.refreshComposites
 			refreshForms = props.refreshForms
+			refreshServices = props.refreshServices
 
 			currentScreen = screen
 			navigateTo = { setScreen(it) }

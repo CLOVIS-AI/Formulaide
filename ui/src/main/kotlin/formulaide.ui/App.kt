@@ -2,12 +2,10 @@ package formulaide.ui
 
 import formulaide.api.data.Composite
 import formulaide.api.data.Form
+import formulaide.api.users.Service
 import formulaide.api.users.User
 import formulaide.client.Client
-import formulaide.client.routes.getMe
-import formulaide.client.routes.listAllForms
-import formulaide.client.routes.listData
-import formulaide.client.routes.listForms
+import formulaide.client.routes.*
 import kotlinx.browser.window
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
@@ -65,6 +63,21 @@ val App = functionalComponent<RProps> {
 	}
 	//endregion
 
+	//region Global list of services (only if admin)
+	val (services, setServices) = useState(emptyList<Service>())
+	val (refreshServices, setRefreshServices) = useState(0)
+	useEffect(client, user, refreshServices) {
+		if (client is Client.Authenticated) {
+			scope.launch {
+				setServices(
+					if (user!!.administrator) client.listAllServices()
+					else client.listServices()
+				)
+			}
+		} else setServices(emptyList())
+	}
+	//endregion
+
 	child(Window) {
 		attrs {
 			this.client = client
@@ -78,6 +91,9 @@ val App = functionalComponent<RProps> {
 
 			this.forms = forms
 			this.refreshForms = { setRefreshForms(refreshForms + 1) }
+
+			this.services = services
+			this.refreshServices = { setRefreshServices(refreshServices + 1) }
 		}
 	}
 
