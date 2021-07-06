@@ -9,20 +9,16 @@ import formulaide.ui.components.styledField
 import formulaide.ui.components.styledFormCard
 import formulaide.ui.components.styledInput
 import formulaide.ui.defaultClient
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
+import formulaide.ui.launchAndReportExceptions
 import kotlinx.html.InputType
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
-import react.RProps
 import react.child
 import react.functionalComponent
 import react.useRef
 
-external interface LoginProps : RProps {
-	var client: Client
+external interface LoginProps : ScreenProps {
 	var onLogin: (Client) -> Unit
-	var scope: CoroutineScope
 }
 
 /**
@@ -52,7 +48,7 @@ val Login = functionalComponent<LoginProps> { props ->
 		onSubmitFunction = {
 			it.preventDefault()
 
-			props.scope.launch {
+			launchAndReportExceptions(props) {
 				val credentials = PasswordLogin(
 					email = email.current?.value ?: error("Email manquant"),
 					password = password.current?.value ?: error("Mot de passe manquant")
@@ -78,6 +74,7 @@ val LoginAccess = functionalComponent<ScreenProps> { props ->
 				client = props.client
 				onLogin = props.connect
 				scope = props.scope
+				reportError = props.reportError
 			}
 		}
 	} else {

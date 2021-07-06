@@ -20,7 +20,7 @@ import react.dom.*
 abstract class Screen(
 	val displayName: String,
 	val requiredRole: Role,
-	val component: FunctionalComponent<ScreenProps>
+	val component: FunctionalComponent<ScreenProps>,
 ) {
 
 	object Home : Screen("Acceuil", Role.ANONYMOUS, LoginAccess)
@@ -64,6 +64,9 @@ external interface ScreenProps : ApplicationProps {
 	// Navigation
 	var currentScreen: Screen
 	var navigateTo: (Screen) -> Unit
+
+	// Failures
+	var reportError: (Throwable) -> Unit
 }
 
 private val CannotAccessThisPage = functionalComponent<ScreenProps> { props ->
@@ -89,6 +92,7 @@ private val Navigation = functionalComponent<ScreenProps> { props ->
 
 val Window = functionalComponent<ApplicationProps> { props ->
 	val (screen, setScreen) = useState<Screen>(Screen.Home)
+	val (errors, setErrors) = useState(emptyList<Throwable>())
 
 	val title = "Formulaide • ${screen.displayName}"
 	val subtitle = when (props.user) {
@@ -96,23 +100,8 @@ val Window = functionalComponent<ApplicationProps> { props ->
 		else -> "Bonjour ${props.user!!.fullName}"
 	}
 
-	styledCard(title, subtitle) {
-		child(Navigation) {
-			attrs {
-				navigateTo = { setScreen(it) }
-				currentScreen = screen
-				user = props.user
-				connect = props.connect
-			}
-		}
-	}
-
-	if (screen.requiredRole > props.user.role) {
-		child(CannotAccessThisPage) {
-			attrs { navigateTo = { setScreen(it) } }
-		}
-	} else child(screen.component) {
-		attrs {
+	val setProps = { it: ScreenProps ->
+		with(it) {
 			client = props.client
 			user = props.user
 			connect = props.connect
@@ -127,6 +116,35 @@ val Window = functionalComponent<ApplicationProps> { props ->
 
 			currentScreen = screen
 			navigateTo = { setScreen(it) }
+
+			reportError = { setErrors(errors + it) }
+		}
+	}
+
+	styledCard(title, subtitle) {
+		child(Navigation) {
+			attrs {
+				setProps(this)
+			}
+		}
+	}
+
+	if (screen.requiredRole > props.user.role) {
+		child(CannotAccessThisPage) {
+			attrs { setProps(this) }
+		}
+	} else {
+		child(screen.component) {
+			attrs { setProps(this) }
+		}
+	}
+
+	for (error in errors) {
+		child(ErrorCard) {
+			attrs {
+				setProps(this)
+				this.error = error
+			}
 		}
 	}
 }
