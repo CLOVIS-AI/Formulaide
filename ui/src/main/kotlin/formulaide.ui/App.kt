@@ -23,6 +23,8 @@ val App = functionalComponent<RProps> {
 	val (user, setUser) = useState<User?>(null)
 	val (scope, _) = useState(MainScope())
 
+	val (errors, setErrors) = useState(emptyList<Throwable>())
+
 	//region Refresh the user if necessary
 	useEffect(client) {
 		scope.launch {
@@ -94,7 +96,18 @@ val App = functionalComponent<RProps> {
 
 			this.services = services
 			this.refreshServices = { setRefreshServices(refreshServices + 1) }
+
+			this.reportError = { setErrors(errors + it) }
 		}
 	}
 
+	for (error in errors) {
+		child(ErrorCard) {
+			attrs {
+				this.scope = scope
+
+				this.error = error
+			}
+		}
+	}
 }

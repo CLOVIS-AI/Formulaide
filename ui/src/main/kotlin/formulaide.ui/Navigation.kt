@@ -57,6 +57,9 @@ external interface ApplicationProps : RProps {
 	var refreshComposites: () -> Unit
 	var refreshForms: () -> Unit
 	var refreshServices: () -> Unit
+
+	// Failures
+	var reportError: (Throwable) -> Unit
 }
 
 external interface ScreenProps : ApplicationProps {
@@ -65,8 +68,6 @@ external interface ScreenProps : ApplicationProps {
 	var currentScreen: Screen
 	var navigateTo: (Screen) -> Unit
 
-	// Failures
-	var reportError: (Throwable) -> Unit
 }
 
 private val CannotAccessThisPage = functionalComponent<ScreenProps> { props ->
@@ -92,7 +93,6 @@ private val Navigation = functionalComponent<ScreenProps> { props ->
 
 val Window = functionalComponent<ApplicationProps> { props ->
 	val (screen, setScreen) = useState<Screen>(Screen.Home)
-	val (errors, setErrors) = useState(emptyList<Throwable>())
 
 	val title = "Formulaide • ${screen.displayName}"
 	val subtitle = when (props.user) {
@@ -117,7 +117,7 @@ val Window = functionalComponent<ApplicationProps> { props ->
 			currentScreen = screen
 			navigateTo = { setScreen(it) }
 
-			reportError = { setErrors(errors + it) }
+			reportError = props.reportError
 		}
 	}
 
@@ -136,15 +136,6 @@ val Window = functionalComponent<ApplicationProps> { props ->
 	} else {
 		child(screen.component) {
 			attrs { setProps(this) }
-		}
-	}
-
-	for (error in errors) {
-		child(ErrorCard) {
-			attrs {
-				setProps(this)
-				this.error = error
-			}
 		}
 	}
 }
