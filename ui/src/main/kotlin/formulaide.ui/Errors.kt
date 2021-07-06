@@ -15,6 +15,7 @@ val ErrorCard = functionalComponent<ErrorProps> { props ->
 	styledCard(
 		error.message ?: error.toString(),
 		error::class.simpleName,
+		failed = true
 	) {
 		text("Here, in the future: an error message")
 	}
