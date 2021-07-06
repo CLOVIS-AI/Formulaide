@@ -13,9 +13,10 @@ import formulaide.ui.Screen
 import formulaide.ui.ScreenProps
 import formulaide.ui.components.*
 import formulaide.ui.fields.FieldEditor
+import formulaide.ui.launchAndReportExceptions
+import formulaide.ui.reportExceptions
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.text
-import kotlinx.coroutines.launch
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onSubmitFunction
@@ -170,17 +171,19 @@ val CreateForm = functionalComponent<ScreenProps> { props ->
 		onSubmitFunction = {
 			it.preventDefault()
 
-			val form = Form(
-				name = formName.current?.value ?: error("Le formulaire n'a pas de nom"),
-				id = Ref.SPECIAL_TOKEN_NEW,
-				public = public.current?.checked
-					?: error("Le formulaire ne précise pas s'il est public ou interne"),
-				open = true,
-				mainFields = FormRoot(fields),
-				actions = actions
-			)
+			val form = reportExceptions(props) {
+				Form(
+					name = formName.current?.value ?: error("Le formulaire n'a pas de nom"),
+					id = Ref.SPECIAL_TOKEN_NEW,
+					public = public.current?.checked
+						?: error("Le formulaire ne précise pas s'il est public ou interne"),
+					open = true,
+					mainFields = FormRoot(fields),
+					actions = actions
+				)
+			}
 
-			props.scope.launch {
+			launchAndReportExceptions(props) {
 				client.createForm(form)
 
 				props.refreshForms()

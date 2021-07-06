@@ -20,7 +20,7 @@ import react.dom.*
 abstract class Screen(
 	val displayName: String,
 	val requiredRole: Role,
-	val component: FunctionalComponent<ScreenProps>
+	val component: FunctionalComponent<ScreenProps>,
 ) {
 
 	object Home : Screen("Acceuil", Role.ANONYMOUS, LoginAccess)
@@ -57,6 +57,9 @@ external interface ApplicationProps : RProps {
 	var refreshComposites: () -> Unit
 	var refreshForms: () -> Unit
 	var refreshServices: () -> Unit
+
+	// Failures
+	var reportError: (Throwable) -> Unit
 }
 
 external interface ScreenProps : ApplicationProps {
@@ -64,6 +67,7 @@ external interface ScreenProps : ApplicationProps {
 	// Navigation
 	var currentScreen: Screen
 	var navigateTo: (Screen) -> Unit
+
 }
 
 private val CannotAccessThisPage = functionalComponent<ScreenProps> { props ->
@@ -96,23 +100,8 @@ val Window = functionalComponent<ApplicationProps> { props ->
 		else -> "Bonjour ${props.user!!.fullName}"
 	}
 
-	styledCard(title, subtitle) {
-		child(Navigation) {
-			attrs {
-				navigateTo = { setScreen(it) }
-				currentScreen = screen
-				user = props.user
-				connect = props.connect
-			}
-		}
-	}
-
-	if (screen.requiredRole > props.user.role) {
-		child(CannotAccessThisPage) {
-			attrs { navigateTo = { setScreen(it) } }
-		}
-	} else child(screen.component) {
-		attrs {
+	val setProps = { it: ScreenProps ->
+		with(it) {
 			client = props.client
 			user = props.user
 			connect = props.connect
@@ -127,6 +116,26 @@ val Window = functionalComponent<ApplicationProps> { props ->
 
 			currentScreen = screen
 			navigateTo = { setScreen(it) }
+
+			reportError = props.reportError
+		}
+	}
+
+	styledCard(title, subtitle) {
+		child(Navigation) {
+			attrs {
+				setProps(this)
+			}
+		}
+	}
+
+	if (screen.requiredRole > props.user.role) {
+		child(CannotAccessThisPage) {
+			attrs { setProps(this) }
+		}
+	} else {
+		child(screen.component) {
+			attrs { setProps(this) }
 		}
 	}
 }

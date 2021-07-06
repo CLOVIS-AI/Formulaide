@@ -10,9 +10,10 @@ import formulaide.client.routes.createData
 import formulaide.ui.ScreenProps
 import formulaide.ui.components.*
 import formulaide.ui.fields.FieldEditor
+import formulaide.ui.launchAndReportExceptions
+import formulaide.ui.reportExceptions
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.text
-import kotlinx.coroutines.launch
 import kotlinx.html.InputType
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
@@ -85,13 +86,15 @@ val CreateData = functionalComponent<ScreenProps> { props ->
 		onSubmitFunction = {
 			it.preventDefault()
 
-			val data = Composite(
-				id = Ref.SPECIAL_TOKEN_NEW,
-				name = formName.current?.value ?: error("Cette donnée n'a pas de nom"),
-				fields = fields
-			)
+			val data = reportExceptions(props) {
+				Composite(
+					id = Ref.SPECIAL_TOKEN_NEW,
+					name = formName.current?.value ?: error("Cette donnée n'a pas de nom"),
+					fields = fields
+				)
+			}
 
-			props.scope.launch {
+			launchAndReportExceptions(props) {
 				client.createData(data)
 				props.refreshComposites()
 			}

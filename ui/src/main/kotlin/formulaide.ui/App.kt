@@ -23,9 +23,12 @@ val App = functionalComponent<RProps> {
 	val (user, setUser) = useState<User?>(null)
 	val (scope, _) = useState(MainScope())
 
+	val (errors, setErrors) = useState(emptyList<Throwable>())
+	val addError = { error: Throwable -> setErrors(errors + error) }
+
 	//region Refresh the user if necessary
 	useEffect(client) {
-		scope.launch {
+		launchAndReportExceptions(addError, scope) {
 			if (client is Client.Authenticated)
 				setUser(client.getMe())
 		}
@@ -37,7 +40,7 @@ val App = functionalComponent<RProps> {
 	val (refreshComposites, setRefreshComposites) = useState(0)
 	useEffect(client, user, refreshComposites) {
 		if (client is Client.Authenticated) {
-			scope.launch { setComposites(client.listData()) }
+			launchAndReportExceptions(addError, scope) { setComposites(client.listData()) }
 		} else setComposites(emptyList())
 	}
 	//endregion
@@ -67,10 +70,10 @@ val App = functionalComponent<RProps> {
 	val (services, setServices) = useState(emptyList<Service>())
 	val (refreshServices, setRefreshServices) = useState(0)
 	useEffect(client, user, refreshServices) {
-		if (client is Client.Authenticated) {
-			scope.launch {
+		if (client is Client.Authenticated && user != null) {
+			launchAndReportExceptions(addError, scope) {
 				setServices(
-					if (user!!.administrator) client.listAllServices()
+					if (user.administrator) client.listAllServices()
 					else client.listServices()
 				)
 			}
@@ -94,7 +97,19 @@ val App = functionalComponent<RProps> {
 
 			this.services = services
 			this.refreshServices = { setRefreshServices(refreshServices + 1) }
+
+			this.reportError = addError
 		}
 	}
 
+	for ((i, error) in errors.withIndex()) {
+		child(ErrorCard) {
+			key = error.hashCode().toString()
+			attrs {
+				this.scope = scope
+				this.error = error
+				this.hide = { setErrors(errors.subList(0, i) + errors.subList(i + 1, errors.size)) }
+			}
+		}
+	}
 }
