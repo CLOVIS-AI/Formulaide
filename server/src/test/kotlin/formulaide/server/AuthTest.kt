@@ -2,6 +2,7 @@ package formulaide.server
 
 import at.favre.lib.crypto.bcrypt.BCrypt
 import formulaide.api.types.Email
+import formulaide.api.types.Ref
 import formulaide.api.users.NewUser
 import formulaide.api.users.PasswordLogin
 import formulaide.api.users.User
@@ -50,7 +51,7 @@ class AuthTest {
 		// Creating the account
 
 		val apiUser = User(
-			Email(email), "Auth Test User", service.id, false)
+			Email(email), "Auth Test User", Ref(service.id.toString()), false)
 		val user = NewUser(password, apiUser)
 		val (token1, dbUser1) = auth.newAccount(user)
 

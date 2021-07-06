@@ -6,6 +6,7 @@ import formulaide.api.dsl.formRoot
 import formulaide.api.dsl.simple
 import formulaide.api.fields.SimpleField.Text
 import formulaide.api.types.Arity
+import formulaide.api.types.Ref
 import formulaide.db.document.createForm
 import formulaide.db.document.listForms
 import kotlinx.coroutines.runBlocking
@@ -32,10 +33,10 @@ class FormsTest {
 			formRoot {
 				simple("Numéro fiscal", Text(Arity.mandatory()))
 			},
-			Action.ServiceReview(
-				id = 1,
+			Action(
+				id = "1",
 				order = 1,
-				service = 1
+				Ref("1")
 			)
 		))
 		Unit

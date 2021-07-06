@@ -1,6 +1,7 @@
 package formulaide.client.routes
 
 import formulaide.api.types.Email
+import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.users.NewUser
 import formulaide.api.users.PasswordLogin
 import formulaide.api.users.User
@@ -38,7 +39,11 @@ class UsersTest {
 		val client = testAdministrator()
 
 		val email = Email("mon email ${Random.nextInt()} @zut")
-		val response = client.createUser(NewUser("mon mot de passe", User(email, "Mon Identité", client.listServices()[0].id, false)))
+		val response = client.createUser(NewUser("mon mot de passe",
+		                                         User(email,
+		                                              "Mon Identité",
+		                                              client.listServices()[0].createRef(),
+		                                              false)))
 
 		println(response)
 		assertTrue(true) // on failure, exceptions are thrown previously
@@ -52,7 +57,10 @@ class UsersTest {
 			client.createUser(
 				NewUser(
 					"mon mot de passe",
-					User(Email("mon email ${Random.nextInt()}"), "Mon Identité", client.listServices()[0].id, false)
+					User(Email("mon email ${Random.nextInt()}"),
+					     "Mon Identité",
+					     client.listServices()[0].createRef(),
+					     false)
 				)
 			)
 		}

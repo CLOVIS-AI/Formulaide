@@ -40,17 +40,17 @@ fun Routing.serviceRoutes() {
 				val service = call.receive<String>()
 				val created = database.createService(service)
 
-				call.respond(created)
+				call.respond(created.toApi())
 			}
 
 			post("/close") {
 				call.requireAdmin(database)
 
 				val service = call.receive<ServiceModification>()
-				database.manageService(service.id, service.open)
+				database.manageService(service.id.id.toInt(), service.open)
 
 				call.respond(
-					database.findService(service.id)
+					database.findService(service.id.id.toInt())?.toApi()
 						?: error("Le service est introuvable alors qu'il a déjà été modifié, c'est impossible")
 				)
 			}
