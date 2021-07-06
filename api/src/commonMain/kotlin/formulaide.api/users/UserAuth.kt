@@ -1,5 +1,6 @@
 package formulaide.api.users
 
+import formulaide.api.types.Email
 import kotlinx.serialization.Serializable
 
 /**
@@ -22,7 +23,7 @@ data class NewUser(
 @Serializable
 data class PasswordLogin(
 	val password: String,
-	val email: String
+	val email: String,
 )
 
 /**
@@ -32,4 +33,17 @@ data class PasswordLogin(
 @Serializable
 data class TokenResponse(
 	val token: String,
+)
+
+/**
+ * Data required to edit a [user].
+ *
+ * All fields (but [user]) represent the request to edit the corresponding field in [User].
+ * A value of `null` means that no modification is requested.
+ * At least one modification should be requested.
+ */
+@Serializable
+data class UserEdits(
+	val user: Email,
+	val enabled: Boolean? = null,
 )
