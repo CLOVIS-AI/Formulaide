@@ -53,3 +53,22 @@ suspend fun Database.createUser(user: DbUser): DbUser {
 
 	return user
 }
+
+/**
+ * Edits a [user].
+ *
+ * All optional arguments represent modification requests. `null` means that no modification is requested.
+ *
+ * At least one argument must be non-`null`.
+ */
+suspend fun Database.editUser(user: DbUser, newEnabled: Boolean? = null): DbUser {
+	var newUser = user
+
+	if (newEnabled != null)
+		newUser = newUser.copy(enabled = newEnabled)
+
+	require(user != newUser) { "La demande de modification de l'utilisateur ${user.email} n'apporte aucune modification" }
+
+	users.updateOne(DbUser::id eq user.id, newUser)
+	return newUser
+}
