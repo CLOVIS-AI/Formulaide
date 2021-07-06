@@ -27,16 +27,11 @@ class FormsTest {
 				simple("Nom de famille", Text(Arity.mandatory()))
 				simple("Prénom", Text(Arity.optional()))
 			},
-			Action.ServiceReview(
-				id = 1,
+			Action(
+				id = "1",
 				order = 1,
-				service = me.service
+				me.service
 			),
-			Action.EmployeeReview(
-				id = 2,
-				order = 2,
-				employee = me
-			)
 		)
 
 		admin.createForm(form)

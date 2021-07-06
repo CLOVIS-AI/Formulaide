@@ -44,7 +44,7 @@ class Auth(private val database: Database) {
 				newUser.user.email.email,
 				hashedPassword,
 				newUser.user.fullName,
-				newUser.user.service,
+				newUser.user.service.id.toInt(),
 				newUser.user.administrator
 			)
 		)

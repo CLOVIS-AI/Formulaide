@@ -1,5 +1,6 @@
 package formulaide.client.routes
 
+import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.users.Service
 import formulaide.api.users.ServiceModification
 import formulaide.client.Client
@@ -43,7 +44,7 @@ suspend fun Client.Authenticated.createService(name: String) =
  * - Response: [Service]
  */
 suspend fun Client.Authenticated.closeService(service: Service) =
-	post<Service>("/services/close", body = ServiceModification(service.id, false))
+	post<Service>("/services/close", body = ServiceModification(service.createRef(), false))
 
 /**
  * Opens a [service].
@@ -54,4 +55,4 @@ suspend fun Client.Authenticated.closeService(service: Service) =
  * - Response: [Service]
  */
 suspend fun Client.Authenticated.reopenService(service: Service) =
-	post<Service>("/services/close", body = ServiceModification(service.id, true))
+	post<Service>("/services/close", body = ServiceModification(service.createRef(), true))

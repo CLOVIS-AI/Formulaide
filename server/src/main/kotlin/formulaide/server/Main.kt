@@ -1,6 +1,7 @@
 package formulaide.server
 
 import formulaide.api.types.Email
+import formulaide.api.types.Ref
 import formulaide.api.users.NewUser
 import formulaide.api.users.User
 import formulaide.db.Database
@@ -27,8 +28,16 @@ fun main(args: Array<String>) {
 		runBlocking {
 			val service = database.createService("Service informatique")
 			val auth = Auth(database)
-			auth.newAccount(NewUser("admin-development-password", User(Email("admin@formulaide"), "Administrateur", service.id, true)))
-			auth.newAccount(NewUser("employee-development-password", User(Email("employee@formulaide"), "Employé", service.id, false)))
+			auth.newAccount(NewUser("admin-development-password",
+			                        User(Email("admin@formulaide"),
+			                             "Administrateur",
+			                             Ref(service.id.toString()),
+			                             true)))
+			auth.newAccount(NewUser("employee-development-password",
+			                        User(Email("employee@formulaide"),
+			                             "Employé",
+			                             Ref(service.id.toString()),
+			                             false)))
 		}
 	}
 

@@ -1,6 +1,7 @@
 package formulaide.ui.screens
 
 import formulaide.api.types.Email
+import formulaide.api.types.Ref
 import formulaide.api.users.NewUser
 import formulaide.api.users.User
 import formulaide.client.Client
@@ -54,12 +55,12 @@ val CreateUser = functionalComponent<ScreenProps> { props ->
 			}
 
 			styledField("employee-service", "Service") {
-				styledSelect(onSelect = { option -> setSelectedService(props.services.find { it.id.toString() == option.value }) }) {
+				styledSelect(onSelect = { option -> setSelectedService(props.services.find { it.id == option.value }) }) {
 					for (service in props.services) {
 						option {
 							text(service.name)
 							attrs {
-								value = service.id.toString()
+								value = service.id
 							}
 						}
 					}
@@ -121,7 +122,7 @@ val CreateUser = functionalComponent<ScreenProps> { props ->
 					User(
 						email = Email(emailOrFail),
 						fullName = fullNameOrFail,
-						service = serviceOrFail,
+						service = Ref(serviceOrFail),
 						administrator = adminOrFail == "on"
 					)
 				))

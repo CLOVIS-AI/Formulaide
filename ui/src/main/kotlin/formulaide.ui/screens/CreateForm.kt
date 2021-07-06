@@ -7,6 +7,7 @@ import formulaide.api.fields.FormRoot
 import formulaide.api.fields.SimpleField
 import formulaide.api.types.Arity
 import formulaide.api.types.Ref
+import formulaide.api.types.Ref.Companion.createRef
 import formulaide.client.Client
 import formulaide.client.routes.createForm
 import formulaide.ui.Screen
@@ -56,10 +57,10 @@ val CreateForm = functionalComponent<ScreenProps> { props ->
 		},
 		"Ajouter une étape" to {
 			setActions(
-				actions + Action.ServiceReview(
-					id = actions.size,
+				actions + Action(
+					id = actions.size.toString(),
 					order = actions.size,
-					service = services.getOrNull(0) ?: error("Aucun service n'a été trouvé")
+					services.getOrNull(0)?.createRef() ?: error("Aucun service n'a été trouvé")
 				)
 			)
 		},
@@ -95,73 +96,36 @@ val CreateForm = functionalComponent<ScreenProps> { props ->
 			styledField("new-form-actions", "Étapes") {
 				styledNesting {
 					for ((i, action) in actions.withIndex()) {
-						styledField("action-$i", "Action $i") {
-							styledSelect(
-								onSelect = {
-									when (it.value) {
-										"SERVICE_REVIEW" -> Action.ServiceReview(
-											action.id,
-											action.id,
-											services.getOrNull(0)
-												?: error("Aucun service n'a été trouvé"))
-										"EMPLOYEE_REVIEW" -> TODO("La responsabilité d'un employé n'est pas encore implémentée")
-									}
-								}
-							) {
-								option {
-									text("Vérification par un service")
 
-									attrs {
-										value = "SERVICE_REVIEW"
-										selected = action is Action.ServiceReview
-									}
-								}
-								option {
-									text("Vérification par un employé")
-
-									attrs {
-										value = "EMPLOYEE_REVIEW"
-										selected = action is Action.EmployeeReview
-									}
-								}
-							}
-						}
-
-						when (action) {
-							is Action.ServiceReview -> {
-								styledField("new-form-action-${action.id}-select",
-								            "Choix du service") {
-									styledSelect {
-										for (service in services) {
-											option {
-												text(service.name)
-
-												attrs {
-													value = service.id.toString()
-													selected = action.service == service.id
-												}
-											}
-										}
+						styledField("new-form-action-${action.id}-select",
+						            "Choix du service") {
+							styledSelect {
+								for (service in services) {
+									option {
+										text(service.name)
 
 										attrs {
-											onChangeFunction = { event ->
-												val serviceId =
-													(event.target as HTMLSelectElement).value.toInt()
-												val service = services.find { it.id == serviceId }
-													?: error("Impossible de trouver le service '$serviceId'")
-
-												setActions(
-													actions.replace(
-														i,
-														Action.ServiceReview(action.id,
-														                     action.order,
-														                     service)))
-											}
+											value = service.id
+											selected = action.reviewer.id == service.id
 										}
 									}
 								}
+
+								attrs {
+									onChangeFunction = { event ->
+										val serviceId = (event.target as HTMLSelectElement).value
+										val service = services.find { it.id == serviceId }
+											?: error("Impossible de trouver le service '$serviceId'")
+
+										setActions(
+											actions.replace(
+												i,
+												Action(action.id,
+												       action.order,
+												       service.createRef())))
+									}
+								}
 							}
-							is Action.EmployeeReview -> TODO("La responsabilité d'un employé n'est pas encore implémentée")
 						}
 					}
 				}
