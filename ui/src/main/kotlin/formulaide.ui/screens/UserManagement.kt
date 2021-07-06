@@ -6,17 +6,20 @@ import formulaide.api.users.NewUser
 import formulaide.api.users.User
 import formulaide.client.Client
 import formulaide.client.routes.createUser
+import formulaide.client.routes.listUsers
 import formulaide.ui.Screen
 import formulaide.ui.ScreenProps
 import formulaide.ui.components.*
 import formulaide.ui.launchAndReportExceptions
 import formulaide.ui.utils.text
 import kotlinx.html.InputType
+import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
 import react.dom.attrs
 import react.dom.option
 import react.functionalComponent
+import react.useEffect
 import react.useRef
 import react.useState
 
@@ -26,7 +29,32 @@ val UserList = functionalComponent<ScreenProps> { props ->
 		null,
 		"Créer un employé" to { props.navigateTo(Screen.NewUser) }
 	) {
-		text("Ici, dans le futur : la liste des utilisateurs") //TODO in #79, #76
+		var listDisabledUsers by useState(false)
+
+		styledField("hide-disabled", "Utilisateurs désactivés") {
+			styledCheckbox("hide-disabled", "Afficher les comptes désactivés") {
+				onChangeFunction = { listDisabledUsers = (it.target as HTMLInputElement).checked }
+			}
+		}
+
+		var users by useState(emptyList<User>())
+		useEffect(props.user, props.client, listDisabledUsers) {
+			launchAndReportExceptions(props) {
+				val client = props.client
+				require(client is Client.Authenticated) { "Seul un administrateur a le droit de voir la liste des utilisateurs" }
+
+				users = client.listUsers(listDisabledUsers)
+			}
+		}
+
+		for (user in users) {
+			styledFormField {
+				text(user.fullName + " ")
+				styledLightText(user.email.email)
+
+				text("\nActivé : ${user.enabled}")
+			}
+		}
 	}
 }
 
