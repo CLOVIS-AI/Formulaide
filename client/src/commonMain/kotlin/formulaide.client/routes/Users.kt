@@ -46,3 +46,15 @@ suspend fun Client.Authenticated.getMe() =
  */
 suspend fun Client.Authenticated.editUser(user: User, enabled: Boolean? = null) =
 	post<User>("/users/edit", body = UserEdits(user.email, enabled))
+
+/**
+ * Gets the list of [users][User].
+ *
+ * - GET /users/listEnabled
+ * - GET /users/listAll
+ * - Response: list of [User]
+ *
+ * @param evenDisabled If `true`, users that are disabled are queried as well.
+ */
+suspend fun Client.Authenticated.listUsers(evenDisabled: Boolean = false) =
+	get<List<User>>(if (!evenDisabled) "/users/listEnabled" else "/users/listAll")

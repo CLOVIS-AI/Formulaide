@@ -4,9 +4,7 @@ import formulaide.api.users.NewUser
 import formulaide.api.users.PasswordLogin
 import formulaide.api.users.TokenResponse
 import formulaide.api.users.UserEdits
-import formulaide.db.document.editUser
-import formulaide.db.document.findUser
-import formulaide.db.document.toApi
+import formulaide.db.document.*
 import formulaide.server.Auth
 import formulaide.server.Auth.Companion.Employee
 import formulaide.server.Auth.Companion.requireAdmin
@@ -58,6 +56,16 @@ fun Routing.userRoutes(auth: Auth) {
 				)
 
 				call.respond(editedUser.toApi())
+			}
+
+			get("/listEnabled") {
+				call.requireAdmin(database)
+				call.respond(database.listEnabledUsers().map { it.toApi() })
+			}
+
+			get("/listAll") {
+				call.requireAdmin(database)
+				call.respond(database.listAllUsers().map { it.toApi() })
 			}
 
 			get("/me") {
