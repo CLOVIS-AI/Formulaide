@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
 /**
  * Represents a user.
  *
+ * @property enabled `true` if it is currently allowed to login as this user.
  * @see NewUser
  * @see PasswordLogin
  */
@@ -16,4 +17,5 @@ data class User(
 	val fullName: String,
 	val service: Ref<Service>,
 	val administrator: Boolean,
+	val enabled: Boolean = true,
 )
