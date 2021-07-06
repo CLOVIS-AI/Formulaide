@@ -6,6 +6,7 @@ import formulaide.api.users.User
 import formulaide.db.Database
 import kotlinx.serialization.Serializable
 import org.litote.kmongo.eq
+import org.litote.kmongo.ne
 
 typealias DbUserId = String
 
@@ -20,7 +21,7 @@ data class DbUser(
 	val fullName: String,
 	val service: DbServiceId,
 	val isAdministrator: Boolean,
-	val enabled: Boolean = true,
+	val enabled: Boolean? = true,
 )
 
 /**
@@ -53,6 +54,12 @@ suspend fun Database.createUser(user: DbUser): DbUser {
 
 	return user
 }
+
+suspend fun Database.listEnabledUsers(): List<DbUser> =
+	users.find(DbUser::enabled ne false).toList()
+
+suspend fun Database.listAllUsers(): List<DbUser> =
+	users.find().toList()
 
 /**
  * Edits a [user].
