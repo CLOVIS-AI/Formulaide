@@ -11,6 +11,7 @@ import formulaide.server.Auth.Companion.requireEmployee
 import formulaide.server.database
 import io.ktor.application.*
 import io.ktor.auth.*
+import io.ktor.http.*
 import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
@@ -20,9 +21,16 @@ fun Routing.userRoutes(auth: Auth) {
 
 		post("/login") {
 			val login = call.receive<PasswordLogin>()
-			val (token, _) = auth.login(login)
 
-			call.respond(TokenResponse(token))
+			try {
+				val (token, _) = auth.login(login)
+
+				call.respond(TokenResponse(token))
+			} catch (e: Exception) {
+				e.printStackTrace()
+				call.respondText("Les informations de connexion sont incorrectes.",
+				                 status = HttpStatusCode.Forbidden)
+			}
 		}
 
 		authenticate(Employee) {
