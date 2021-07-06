@@ -2,6 +2,7 @@ package formulaide.ui
 
 import formulaide.api.data.Composite
 import formulaide.api.data.Form
+import formulaide.api.users.Service
 import formulaide.api.users.User
 import formulaide.client.Client
 import formulaide.ui.Role.Companion.role
@@ -9,9 +10,7 @@ import formulaide.ui.auth.LoginAccess
 import formulaide.ui.components.styledButton
 import formulaide.ui.components.styledCard
 import formulaide.ui.components.styledDisabledButton
-import formulaide.ui.screens.CreateData
-import formulaide.ui.screens.CreateForm
-import formulaide.ui.screens.FormList
+import formulaide.ui.screens.*
 import formulaide.ui.utils.text
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.html.js.onClickFunction
@@ -28,12 +27,14 @@ abstract class Screen(
 	object ShowForms : Screen("Formulaires", Role.ANONYMOUS, FormList)
 	object NewData : Screen("Créer une donnée", Role.ADMINISTRATOR, CreateData)
 	object NewForm : Screen("Créer un formulaire", Role.ADMINISTRATOR, CreateForm)
+	object ShowUsers : Screen("Employés", Role.ADMINISTRATOR, UserList)
+	object NewUser : Screen("Créer un employé", Role.ADMINISTRATOR, CreateUser)
 
 	class SubmitForm(form: Form) :
 		Screen("Saisie", Role.ANONYMOUS, formulaide.ui.screens.SubmitForm(form))
 
 	companion object {
-		val regularScreens = sequenceOf(Home, ShowForms, NewData, NewForm)
+		val regularScreens = sequenceOf(Home, ShowForms, NewData, NewForm, ShowUsers)
 		fun availableScreens(user: User?) = regularScreens
 			.filter { it.requiredRole <= user.role }
 	}
