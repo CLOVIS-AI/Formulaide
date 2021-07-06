@@ -7,10 +7,8 @@ import formulaide.api.fields.FormRoot
 import formulaide.api.fields.SimpleField
 import formulaide.api.types.Arity
 import formulaide.api.types.Ref
-import formulaide.api.users.Service
 import formulaide.client.Client
 import formulaide.client.routes.createForm
-import formulaide.client.routes.listServices
 import formulaide.ui.Screen
 import formulaide.ui.ScreenProps
 import formulaide.ui.components.*
@@ -23,9 +21,12 @@ import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
-import react.*
+import react.child
 import react.dom.attrs
 import react.dom.option
+import react.functionalComponent
+import react.useRef
+import react.useState
 
 val CreateForm = functionalComponent<ScreenProps> { props ->
 	val client = props.client
@@ -37,12 +38,7 @@ val CreateForm = functionalComponent<ScreenProps> { props ->
 	val (fields, setFields) = useState<List<FormField.Shallow>>(emptyList())
 	val (actions, setActions) = useState<List<Action>>(emptyList())
 
-	val (services, setServices) = useState(emptyList<Service>())
-	useEffect(props.client) {
-		props.scope.launch {
-			setServices(client.listServices())
-		}
-	}
+	val services = props.services.filter { it.open }
 
 	styledFormCard(
 		"Créer un formulaire", null,
