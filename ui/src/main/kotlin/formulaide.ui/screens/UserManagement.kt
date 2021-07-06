@@ -8,8 +8,8 @@ import formulaide.client.routes.createUser
 import formulaide.ui.Screen
 import formulaide.ui.ScreenProps
 import formulaide.ui.components.*
+import formulaide.ui.launchAndReportExceptions
 import formulaide.ui.utils.text
-import kotlinx.coroutines.launch
 import kotlinx.html.InputType
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
@@ -94,13 +94,13 @@ val CreateUser = functionalComponent<ScreenProps> { props ->
 		onSubmitFunction = {
 			it.preventDefault()
 
-			val password1Value = password1.current?.value
-			val password2Value = password2.current?.value
+			launchAndReportExceptions(props) {
+				val password1Value = password1.current?.value
+				val password2Value = password2.current?.value
 
-			require((password1Value
-				?: Unit) == password2Value) { "Les deux mots de passes ne correspondent pas." }
+				require((password1Value
+					?: Unit) == password2Value) { "Les deux mots de passes ne correspondent pas." }
 
-			props.scope.launch {
 				val passwordOrFail = (password1Value
 					?: error("Le mot de passe ne peut pas être vide, trouvé $password1"))
 

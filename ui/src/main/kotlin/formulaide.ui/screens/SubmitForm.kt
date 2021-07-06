@@ -8,7 +8,8 @@ import formulaide.ui.Screen
 import formulaide.ui.ScreenProps
 import formulaide.ui.components.styledFormCard
 import formulaide.ui.fields.field
-import kotlinx.coroutines.launch
+import formulaide.ui.launchAndReportExceptions
+import formulaide.ui.reportExceptions
 import kotlinx.html.id
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLFormElement
@@ -36,25 +37,26 @@ fun SubmitForm(form: Form) = functionalComponent<ScreenProps> { props ->
 		onSubmitFunction = { event ->
 			event.preventDefault()
 
-			@Suppress("UNUSED_VARIABLE") // used in 'js' function
-			val formData = FormData(event.target as HTMLFormElement)
+			val submission = reportExceptions(props) {
 
-			//language=JavaScript
-			val formDataObject = js("""Object.fromEntries(formData.entries())""")
+				@Suppress("UNUSED_VARIABLE") // used in 'js' function
+				val formData = FormData(event.target as HTMLFormElement)
 
-			@Suppress("JSUnresolvedVariable") //language=JavaScript
-			val formDataArray = js("""Object.keys(formDataObject)""") as Array<String>
-			val answers = formDataArray.associate { it to (formDataObject[it] as String) }
-				.filterValues { it.isNotBlank() }
+				//language=JavaScript
+				val formDataObject = js("""Object.fromEntries(formData.entries())""")
 
-			val submission = FormSubmission(
-				form.createRef(),
-				answers
-			)
+				@Suppress("JSUnresolvedVariable") //language=JavaScript
+				val formDataArray = js("""Object.keys(formDataObject)""") as Array<String>
+				val answers = formDataArray.associateWith { (formDataObject[it] as String) }
+					.filterValues { it.isNotBlank() }
 
-			submission.checkValidity(form) //TODO: display error message if any
+				FormSubmission(
+					form.createRef(),
+					answers
+				).also { it.checkValidity(form) }
+			}
 
-			props.scope.launch {
+			launchAndReportExceptions(props) {
 				props.client.submitForm(submission)
 
 				props.navigateTo(Screen.ShowForms)

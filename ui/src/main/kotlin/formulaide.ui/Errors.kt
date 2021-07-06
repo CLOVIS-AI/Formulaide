@@ -48,16 +48,15 @@ val ErrorCard = functionalComponent<ErrorProps> { props ->
 	) { body?.let { text(it) } }
 }
 
-inline fun reportExceptions(reporter: (Throwable) -> Unit, block: () -> Unit) {
-	try {
-		block()
-	} catch (e: Exception) {
-		console.error(e)
-		reporter(e)
-	}
+inline fun <R> reportExceptions(reporter: (Throwable) -> Unit, block: () -> R): R = try {
+	block()
+} catch (e: Exception) {
+	console.error(e)
+	reporter(e)
+	throw RuntimeException("Impossible de continuer", cause = e)
 }
 
-inline fun reportExceptions(props: ScreenProps, block: () -> Unit) =
+inline fun <R> reportExceptions(props: ScreenProps, block: () -> R) =
 	reportExceptions(props.reportError, block)
 
 inline fun launchAndReportExceptions(
