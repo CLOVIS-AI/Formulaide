@@ -3,6 +3,9 @@ package formulaide.server.routes
 import formulaide.api.users.NewUser
 import formulaide.api.users.PasswordLogin
 import formulaide.api.users.TokenResponse
+import formulaide.api.users.UserEdits
+import formulaide.db.document.editUser
+import formulaide.db.document.findUser
 import formulaide.db.document.toApi
 import formulaide.server.Auth
 import formulaide.server.Auth.Companion.Employee
@@ -41,6 +44,20 @@ fun Routing.userRoutes(auth: Auth) {
 				val (token, _) = auth.newAccount(data)
 
 				call.respond(TokenResponse(token))
+			}
+
+			post("/edit") {
+				call.requireAdmin(database)
+				val data = call.receive<UserEdits>()
+
+				val user = database.findUser(data.user.email)
+					?: error("Impossible de trouver un utilisateur ayant cette adresse mail")
+				val editedUser = database.editUser(
+					user,
+					newEnabled = data.enabled
+				)
+
+				call.respond(editedUser.toApi())
 			}
 
 			get("/me") {
