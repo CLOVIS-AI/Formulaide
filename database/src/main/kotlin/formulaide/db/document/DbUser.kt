@@ -19,14 +19,15 @@ data class DbUser(
 	val hashedPassword: String,
 	val fullName: String,
 	val service: DbServiceId,
-	val isAdministrator: Boolean
+	val isAdministrator: Boolean,
+	val enabled: Boolean = true,
 )
 
 /**
  * Converts a database [DbUser] to a [User].
  */
 fun DbUser.toApi() = User(
-	Email(email), fullName, Ref(service.toString()), isAdministrator)
+	Email(email), fullName, Ref(service.toString()), isAdministrator, enabled ?: false)
 
 /**
  * Finds a user in the database, by searching for an exact match with its [email].
