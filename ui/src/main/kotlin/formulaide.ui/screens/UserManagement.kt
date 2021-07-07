@@ -6,17 +6,20 @@ import formulaide.api.users.NewUser
 import formulaide.api.users.User
 import formulaide.client.Client
 import formulaide.client.routes.createUser
+import formulaide.client.routes.editUser
 import formulaide.client.routes.listUsers
 import formulaide.ui.Screen
 import formulaide.ui.ScreenProps
 import formulaide.ui.components.*
 import formulaide.ui.launchAndReportExceptions
+import formulaide.ui.utils.replace
 import formulaide.ui.utils.text
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
 import react.dom.attrs
+import react.dom.div
 import react.dom.option
 import react.functionalComponent
 import react.useEffect
@@ -47,12 +50,24 @@ val UserList = functionalComponent<ScreenProps> { props ->
 			}
 		}
 
-		for (user in users) {
+		for ((i, user) in users.withIndex()) {
 			styledFormField {
 				text(user.fullName + " ")
 				styledLightText(user.email.email)
 
-				text("\nActivé : ${user.enabled}")
+				div { // buttons
+
+					styledButton(if (user.enabled) "Désactiver" else "Activer", default = false) {
+						launchAndReportExceptions(props) {
+							val client = props.client
+							require(client is Client.Authenticated) { "Seul un administrateur peut activer ou désactiver un compte" }
+
+							val newUser = client.editUser(user, enabled = !user.enabled)
+							users = users.replace(i, newUser)
+						}
+					}
+
+				}
 			}
 		}
 	}
