@@ -6,10 +6,13 @@ import formulaide.api.users.Service
 import formulaide.api.users.User
 import formulaide.client.Client
 import formulaide.client.routes.*
+import formulaide.ui.components.styledCard
+import formulaide.ui.utils.text
 import kotlinx.browser.window
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import react.*
+import react.dom.p
 
 internal val defaultClient =
 	Client.Anonymous.connect(window.location.protocol + "//" + window.location.host)
@@ -110,6 +113,18 @@ val App = functionalComponent<RProps> {
 				this.error = error
 				this.hide = { setErrors(errors.subList(0, i) + errors.subList(i + 1, errors.size)) }
 			}
+		}
+	}
+
+	if (!client.hostUrl.startsWith("https://")) {
+		styledCard(
+			"Votre accès n'est pas sécurisé",
+			"Alerte de sécurité",
+			failed = true
+		) {
+			p { text("Formulaide est connecté à l'API via l'URL ${client.hostUrl}. Cette URL ne commence pas par 'https://'.") }
+
+			p { text("Actuellement, il est possible d'accéder à tout ce que vous faites, dont votre compte et les mots de passes tapés. Veuillez contacter l'administrateur du site.") }
 		}
 	}
 }

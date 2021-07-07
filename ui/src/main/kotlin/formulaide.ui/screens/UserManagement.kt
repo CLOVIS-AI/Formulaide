@@ -70,6 +70,12 @@ val UserList = functionalComponent<ScreenProps> { props ->
 						}
 					}
 
+					styledButton("Modifier le mot de passe") {
+						launchAndReportExceptions(props) {
+							props.navigateTo(Screen.EditPassword(user.email, Screen.ShowUsers))
+						}
+					}
+
 				}
 			}
 		}

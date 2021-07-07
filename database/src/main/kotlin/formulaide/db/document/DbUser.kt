@@ -12,6 +12,8 @@ typealias DbUserId = String
 
 /**
  * Database class that corresponds to [User].
+ *
+ * @property tokenVersion An integer
  */
 @Serializable
 data class DbUser(
@@ -22,6 +24,7 @@ data class DbUser(
 	val service: DbServiceId,
 	val isAdministrator: Boolean,
 	val enabled: Boolean? = true,
+	val tokenVersion: ULong = 0u,
 )
 
 /**
@@ -47,8 +50,8 @@ suspend fun Database.findUserById(id: DbUserId): DbUser? =
  */
 suspend fun Database.createUser(user: DbUser): DbUser {
 	checkNotNull(findService(user.service)) { "Le service ${user.service} n'existe pas" }
-	check(findUser(user.email) == null) { "Un utilisateur avec cette adresse mail existe déjà" }
-	check(findUserById(user.id) == null) { "Un utilisateur avec cet identifiant existe déjà" }
+	check(findUser(user.email) == null) { "Un utilisateur avec cette adresse mail existe déjà : ${user.email}" }
+	check(findUserById(user.id) == null) { "Un utilisateur avec cet identifiant existe déjà : ${user.id}" }
 
 	users.insertOne(user)
 
@@ -84,5 +87,20 @@ suspend fun Database.editUser(
 	require(user != newUser) { "La demande de modification de l'utilisateur ${user.email} n'apporte aucune modification" }
 
 	users.updateOne(DbUser::id eq user.id, newUser)
+	return newUser
+}
+
+/**
+ * Replaces the [user]'s password.
+ *
+ * This function does not do any security check. It is the caller's responsibility to check whether the password should, in fact, be replaced.
+ */
+suspend fun Database.editUserPassword(user: DbUser, newHashedPassword: String): DbUser {
+	val newUser = user.copy(
+		hashedPassword = newHashedPassword,
+		tokenVersion = user.tokenVersion + 1u,
+	)
+
+	users.updateOne(DbUser::id eq newUser.id, newUser)
 	return newUser
 }

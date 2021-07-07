@@ -52,6 +52,17 @@ suspend fun Client.Authenticated.editUser(
 	post<User>("/users/edit", body = UserEdits(user.email, enabled, administrator))
 
 /**
+ * Edits a user's password.
+ *
+ * - POST /users/password
+ * - Requires 'employee' rights
+ * - Body: [PasswordEdit]
+ * - Response: a success message
+ */
+suspend fun Client.Authenticated.editPassword(edit: PasswordEdit) =
+	post<String>("/users/password", body = edit)
+
+/**
  * Gets the list of [users][User].
  *
  * - GET /users/listEnabled

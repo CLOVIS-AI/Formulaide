@@ -1,9 +1,6 @@
 package formulaide.server.routes
 
-import formulaide.api.users.NewUser
-import formulaide.api.users.PasswordLogin
-import formulaide.api.users.TokenResponse
-import formulaide.api.users.UserEdits
+import formulaide.api.users.*
 import formulaide.db.document.*
 import formulaide.server.Auth
 import formulaide.server.Auth.Companion.Employee
@@ -42,6 +39,36 @@ fun Routing.userRoutes(auth: Auth) {
 				val (token, _) = auth.newAccount(data)
 
 				call.respond(TokenResponse(token))
+			}
+
+			post("/password") {
+				val me = call.requireEmployee(database)
+				val data = call.receive<PasswordEdit>()
+				require(me.email == data.user.email || me.isAdministrator) { "Seul un administrateur, ou la personne concernée, peuvent modifier un mot de passe" }
+
+				val user =
+					if (me.email == data.user.email) me
+					else database.findUser(data.user.email)
+						?: error("Aucun utilisateur ne correspond à l'adresse mail ${data.user.email}")
+
+				if (data.oldPassword != null) {
+					val oldPassword = data.oldPassword!!
+
+					try {
+						auth.login(PasswordLogin(email = user.email, password = oldPassword))
+					} catch (e: Exception) {
+						e.printStackTrace()
+						call.respondText("Les informations de connexion sont incorrectes.",
+						                 status = HttpStatusCode.Forbidden)
+					}
+				} else {
+					require(me.isAdministrator) { "Seul un administrateur peut modifier un mot de passe sans fournir sa valeur précédente" }
+				}
+
+				val newHashedPassword = Auth.hash(data.newPassword)
+				database.editUserPassword(user, newHashedPassword)
+
+				call.respondText("Le mot de passe a été modifié.")
 			}
 
 			post("/edit") {
