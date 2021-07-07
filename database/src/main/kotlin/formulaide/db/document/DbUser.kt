@@ -86,3 +86,15 @@ suspend fun Database.editUser(
 	users.updateOne(DbUser::id eq user.id, newUser)
 	return newUser
 }
+
+/**
+ * Replaces the [user]'s password.
+ *
+ * This function does not do any security check. It is the caller's responsibility to check whether the password should, in fact, be replaced.
+ */
+suspend fun Database.editUserPassword(user: DbUser, newHashedPassword: String): DbUser {
+	val newUser = user.copy(hashedPassword = newHashedPassword)
+
+	users.updateOne(DbUser::id eq newUser.id, newUser)
+	return newUser
+}
