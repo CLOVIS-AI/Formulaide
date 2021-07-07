@@ -48,3 +48,15 @@ data class UserEdits(
 	val enabled: Boolean? = null,
 	val administrator: Boolean? = null,
 )
+
+/**
+ * Data required to edit a [user]'s password.
+ *
+ * @property oldPassword The currently-used password. The administrator doesn't have to provide this.
+ */
+@Serializable
+data class PasswordEdit(
+	val user: Email,
+	val oldPassword: String?,
+	val newPassword: String,
+)
