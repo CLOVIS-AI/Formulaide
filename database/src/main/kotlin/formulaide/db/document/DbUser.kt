@@ -68,11 +68,18 @@ suspend fun Database.listAllUsers(): List<DbUser> =
  *
  * At least one argument must be non-`null`.
  */
-suspend fun Database.editUser(user: DbUser, newEnabled: Boolean? = null): DbUser {
+suspend fun Database.editUser(
+	user: DbUser,
+	newEnabled: Boolean? = null,
+	newIsAdministrator: Boolean? = null,
+): DbUser {
 	var newUser = user
 
 	if (newEnabled != null)
 		newUser = newUser.copy(enabled = newEnabled)
+
+	if (newIsAdministrator != null)
+		newUser = newUser.copy(isAdministrator = newIsAdministrator)
 
 	require(user != newUser) { "La demande de modification de l'utilisateur ${user.email} n'apporte aucune modification" }
 

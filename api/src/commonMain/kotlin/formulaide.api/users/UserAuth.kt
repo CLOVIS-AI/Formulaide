@@ -46,4 +46,5 @@ data class TokenResponse(
 data class UserEdits(
 	val user: Email,
 	val enabled: Boolean? = null,
+	val administrator: Boolean? = null,
 )

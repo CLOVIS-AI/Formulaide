@@ -44,8 +44,12 @@ suspend fun Client.Authenticated.getMe() =
  * - Body: [UserEdits]
  * - Response: [User]
  */
-suspend fun Client.Authenticated.editUser(user: User, enabled: Boolean? = null) =
-	post<User>("/users/edit", body = UserEdits(user.email, enabled))
+suspend fun Client.Authenticated.editUser(
+	user: User,
+	enabled: Boolean? = null,
+	administrator: Boolean? = null,
+) =
+	post<User>("/users/edit", body = UserEdits(user.email, enabled, administrator))
 
 /**
  * Gets the list of [users][User].
