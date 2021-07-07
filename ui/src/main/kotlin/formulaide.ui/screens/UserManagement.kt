@@ -58,18 +58,37 @@ val UserList = functionalComponent<ScreenProps> { props ->
 				div { // buttons
 
 					styledButton(if (user.enabled) "Désactiver" else "Activer", default = false) {
-						launchAndReportExceptions(props) {
-							val client = props.client
-							require(client is Client.Authenticated) { "Seul un administrateur peut activer ou désactiver un compte" }
+						editUser(user, props, enabled = !user.enabled) {
+							users = users.replace(i, it)
+						}
+					}
 
-							val newUser = client.editUser(user, enabled = !user.enabled)
-							users = users.replace(i, newUser)
+					styledButton(if (user.administrator) "Enlever le droit d'administration" else "Donner le droit d'administration",
+					             default = false) {
+						editUser(user, props, administrator = !user.administrator) {
+							users = users.replace(i, it)
 						}
 					}
 
 				}
 			}
 		}
+	}
+}
+
+private fun editUser(
+	user: User,
+	props: ScreenProps,
+	enabled: Boolean? = null,
+	administrator: Boolean? = null,
+	onChange: (User) -> Unit,
+) {
+	launchAndReportExceptions(props) {
+		val client = props.client
+		require(client is Client.Authenticated) { "Seul un administrateur peut activer ou désactiver un compte" }
+
+		val newUser = client.editUser(user, enabled, administrator)
+		onChange(newUser)
 	}
 }
 
