@@ -52,7 +52,8 @@ fun Routing.userRoutes(auth: Auth) {
 					?: error("Impossible de trouver un utilisateur ayant cette adresse mail")
 				val editedUser = database.editUser(
 					user,
-					newEnabled = data.enabled
+					newEnabled = data.enabled,
+					newIsAdministrator = data.administrator,
 				)
 
 				call.respond(editedUser.toApi())
