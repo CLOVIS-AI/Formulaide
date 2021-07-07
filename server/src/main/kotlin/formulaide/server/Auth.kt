@@ -5,6 +5,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces.DecodedJWT
 import com.auth0.jwt.interfaces.Payload
+import formulaide.api.types.Email
 import formulaide.api.users.NewUser
 import formulaide.api.users.PasswordLogin
 import formulaide.db.Database
@@ -49,7 +50,7 @@ class Auth(private val database: Database) {
 			)
 		)
 
-		return signAccessToken(id, createdUser.tokenVersion) to createdUser
+		return signAccessToken(newUser.user.email, createdUser.tokenVersion) to createdUser
 	}
 
 	/**
@@ -67,7 +68,7 @@ class Auth(private val database: Database) {
 		)
 		check(passwordIsVerified) { "Le mot de passe donné ne correspond pas à celui stocké" }
 
-		return signAccessToken(user.email, user.tokenVersion) to user
+		return signAccessToken(Email(user.email), user.tokenVersion) to user
 	}
 
 	/**
@@ -99,14 +100,16 @@ class Auth(private val database: Database) {
 
 		val tokenVersion: ULong? = payload.getClaim("tokenVersion").asLong()?.toULong()
 		checkNotNull(tokenVersion) { "Le token ne contient pas de 'tokenVersion'" }
-		check(tokenVersion == database.findUser(userId)?.tokenVersion) { "La version du token ne correspond pas, par exemple parce que le mot de passe a été modifié récemment" }
+		val databaseUser = database.findUser(userId)
+		checkNotNull(databaseUser) { "Le token ne correspond à aucun utilisateur connu, c'est impossible !" }
+		check(tokenVersion == databaseUser.tokenVersion) { "La version du token ne correspond pas, par exemple parce que le mot de passe a été modifié récemment" }
 
 		return AuthPrincipal(payload, userId)
 	}
 
-	private fun signAccessToken(email: String, tokenVersion: ULong): String = JWT.create()
+	private fun signAccessToken(email: Email, tokenVersion: ULong): String = JWT.create()
 		.withIssuer("formulaide")
-		.withClaim("userId", email)
+		.withClaim("userId", email.email)
 		.withClaim("tokenVersion", tokenVersion.toLong())
 		.sign(algorithm)
 

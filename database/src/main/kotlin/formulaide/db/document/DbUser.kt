@@ -50,8 +50,8 @@ suspend fun Database.findUserById(id: DbUserId): DbUser? =
  */
 suspend fun Database.createUser(user: DbUser): DbUser {
 	checkNotNull(findService(user.service)) { "Le service ${user.service} n'existe pas" }
-	check(findUser(user.email) == null) { "Un utilisateur avec cette adresse mail existe déjà" }
-	check(findUserById(user.id) == null) { "Un utilisateur avec cet identifiant existe déjà" }
+	check(findUser(user.email) == null) { "Un utilisateur avec cette adresse mail existe déjà : ${user.email}" }
+	check(findUserById(user.id) == null) { "Un utilisateur avec cet identifiant existe déjà : ${user.id}" }
 
 	users.insertOne(user)
 
