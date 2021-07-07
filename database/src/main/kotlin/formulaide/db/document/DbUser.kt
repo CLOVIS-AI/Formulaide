@@ -12,6 +12,8 @@ typealias DbUserId = String
 
 /**
  * Database class that corresponds to [User].
+ *
+ * @property tokenVersion An integer
  */
 @Serializable
 data class DbUser(
@@ -22,6 +24,7 @@ data class DbUser(
 	val service: DbServiceId,
 	val isAdministrator: Boolean,
 	val enabled: Boolean? = true,
+	val tokenVersion: ULong = 0u,
 )
 
 /**
@@ -93,7 +96,10 @@ suspend fun Database.editUser(
  * This function does not do any security check. It is the caller's responsibility to check whether the password should, in fact, be replaced.
  */
 suspend fun Database.editUserPassword(user: DbUser, newHashedPassword: String): DbUser {
-	val newUser = user.copy(hashedPassword = newHashedPassword)
+	val newUser = user.copy(
+		hashedPassword = newHashedPassword,
+		tokenVersion = user.tokenVersion + 1u,
+	)
 
 	users.updateOne(DbUser::id eq newUser.id, newUser)
 	return newUser

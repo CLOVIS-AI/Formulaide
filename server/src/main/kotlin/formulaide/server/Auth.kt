@@ -49,7 +49,7 @@ class Auth(private val database: Database) {
 			)
 		)
 
-		return signAccessToken(id) to createdUser
+		return signAccessToken(id, createdUser.tokenVersion) to createdUser
 	}
 
 	/**
@@ -67,14 +67,14 @@ class Auth(private val database: Database) {
 		)
 		check(passwordIsVerified) { "Le mot de passe donné ne correspond pas à celui stocké" }
 
-		return signAccessToken(user.email) to user
+		return signAccessToken(user.email, user.tokenVersion) to user
 	}
 
 	/**
 	 * Checks the validity of a given [token].
 	 */
-	fun checkToken(
-		token: String
+	suspend fun checkToken(
+		token: String,
 	): AuthPrincipal? {
 		val accessToken: DecodedJWT
 		try {
@@ -91,18 +91,23 @@ class Auth(private val database: Database) {
 	 * Checks the validity of a given [payload].
 	 * @throws IllegalStateException if the token doesn't have the correct fields
 	 */
-	fun checkTokenJWT(
-		payload: Payload
+	suspend fun checkTokenJWT(
+		payload: Payload,
 	): AuthPrincipal {
 		val userId: String? = payload.getClaim("userId").asString()
 		checkNotNull(userId) { "Le token ne contient pas de 'userId'" }
 
+		val tokenVersion: ULong? = payload.getClaim("tokenVersion").asLong()?.toULong()
+		checkNotNull(tokenVersion) { "Le token ne contient pas de 'tokenVersion'" }
+		check(tokenVersion == database.findUser(userId)?.tokenVersion) { "La version du token ne correspond pas, par exemple parce que le mot de passe a été modifié récemment" }
+
 		return AuthPrincipal(payload, userId)
 	}
 
-	private fun signAccessToken(email: String): String = JWT.create()
+	private fun signAccessToken(email: String, tokenVersion: ULong): String = JWT.create()
 		.withIssuer("formulaide")
 		.withClaim("userId", email)
+		.withClaim("tokenVersion", tokenVersion.toLong())
 		.sign(algorithm)
 
 	/**
