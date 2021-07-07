@@ -2,11 +2,13 @@ package formulaide.ui
 
 import formulaide.api.data.Composite
 import formulaide.api.data.Form
+import formulaide.api.types.Email
 import formulaide.api.users.Service
 import formulaide.api.users.User
 import formulaide.client.Client
 import formulaide.ui.Role.Companion.role
 import formulaide.ui.auth.LoginAccess
+import formulaide.ui.auth.PasswordModification
 import formulaide.ui.components.styledButton
 import formulaide.ui.components.styledCard
 import formulaide.ui.components.styledDisabledButton
@@ -29,6 +31,9 @@ abstract class Screen(
 	object NewForm : Screen("Créer un formulaire", Role.ADMINISTRATOR, CreateForm)
 	object ShowUsers : Screen("Employés", Role.ADMINISTRATOR, UserList)
 	object NewUser : Screen("Créer un employé", Role.ADMINISTRATOR, CreateUser)
+
+	class EditPassword(user: Email, redirectTo: Screen) :
+		Screen("Modifier mon mot de passe", Role.EMPLOYEE, PasswordModification(user, redirectTo))
 
 	class SubmitForm(form: Form) :
 		Screen("Saisie", Role.ANONYMOUS, formulaide.ui.screens.SubmitForm(form))
