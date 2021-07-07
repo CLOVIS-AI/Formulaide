@@ -59,6 +59,7 @@ class Auth(private val database: Database) {
 	suspend fun login(login: PasswordLogin): Pair<String, DbUser> {
 		val user = database.findUser(login.email)
 		checkNotNull(user) { "Aucun utilisateur n'a été trouvé avec cette adresse mail" }
+		check(user.enabled == true) { "Cet utilisateur n'est pas activé" }
 
 		val passwordIsVerified = checkHash(
 			login.password,
@@ -132,7 +133,12 @@ class Auth(private val database: Database) {
 		suspend fun ApplicationCall.requireEmployee(database: Database): DbUser {
 			val principal = authentication.principal ?: error("Authentification manquante")
 			require(principal is AuthPrincipal) { "Authentification invalide" }
-			return database.findUser(principal.userId) ?: error("Aucun utilisateur ne correspond à ce token")
+
+			val user = database.findUser(principal.userId)
+			requireNotNull(user) { "Aucun utilisateur ne correspond à ce token" }
+			require(user.enabled == true) { "Cet utilisateur a été désactivé, le token est donc invalide" }
+
+			return user
 		}
 
 		suspend fun ApplicationCall.requireAdmin(database: Database): DbUser {

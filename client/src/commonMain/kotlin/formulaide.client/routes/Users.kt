@@ -1,9 +1,6 @@
 package formulaide.client.routes
 
-import formulaide.api.users.NewUser
-import formulaide.api.users.PasswordLogin
-import formulaide.api.users.TokenResponse
-import formulaide.api.users.User
+import formulaide.api.users.*
 import formulaide.client.Client
 
 /**
@@ -36,3 +33,28 @@ suspend fun Client.Authenticated.createUser(newUser: NewUser) =
  */
 suspend fun Client.Authenticated.getMe() =
 	get<User>("/users/me")
+
+/**
+ * Edits a [user]'s information.
+ *
+ * See [UserEdits] for an explanation of the parameters.
+ *
+ * - POST /users/edit
+ * - Requires 'administrator' rights
+ * - Body: [UserEdits]
+ * - Response: [User]
+ */
+suspend fun Client.Authenticated.editUser(user: User, enabled: Boolean? = null) =
+	post<User>("/users/edit", body = UserEdits(user.email, enabled))
+
+/**
+ * Gets the list of [users][User].
+ *
+ * - GET /users/listEnabled
+ * - GET /users/listAll
+ * - Response: list of [User]
+ *
+ * @param evenDisabled If `true`, users that are disabled are queried as well.
+ */
+suspend fun Client.Authenticated.listUsers(evenDisabled: Boolean = false) =
+	get<List<User>>(if (!evenDisabled) "/users/listEnabled" else "/users/listAll")
