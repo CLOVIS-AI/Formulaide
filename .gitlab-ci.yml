@@ -7,10 +7,11 @@ stages:
 
 variables:
   JDK_IMAGE: "openjdk:11"
-  JS_CHROME_IMAGE: "$CI_REGISTRY_IMAGE/js-chrome:$CI_PIPELINE_IID"
+  JS_CHROME_IMAGE: "$CI_REGISTRY_IMAGE/js-chrome:build-$CI_PIPELINE_IID"
   JS_CHROME_IMAGE_LATEST: "$CI_REGISTRY_IMAGE/js-chrome:latest"
-  SERVER_BIN_IMAGE: "$CI_REGISTRY_IMAGE/server:$CI_PIPELINE_IID"
+  SERVER_BIN_IMAGE: "$CI_REGISTRY_IMAGE/server:build-$CI_PIPELINE_IID"
   SERVER_BIN_IMAGE_LATEST: "$CI_REGISTRY_IMAGE/server:latest"
+  SERVER_BIN_IMAGE_TAG: "$CI_REGISTRY_IMAGE/server:$CI_COMMIT_TAG"
 
 # *** Phantom Jobs *** #
 
@@ -222,6 +223,15 @@ server-bin-docker-latest:
     - docker push $SERVER_BIN_IMAGE_LATEST
   only:
     - main
+
+server-bin-docker-tag:
+  extends: .docker-latest
+  script:
+    - docker pull $SERVER_BIN_IMAGE
+    - docker tag $SERVER_BIN_IMAGE $SERVER_BIN_IMAGE_LATEST
+    - docker push $SERVER_BIN_IMAGE_TAG
+  only:
+    - tags
 
 pages:
   image: alpine:latest
