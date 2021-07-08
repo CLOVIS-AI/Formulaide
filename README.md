@@ -42,7 +42,7 @@ export formulaide_password="some-password"
 export formulaide_jwt_secret="some secret"
 ```
 
-Par défaut, le serveur écoute sur le port 8000.
+Par défaut, le serveur écoute sur le port 8000. L'interface web est accessible à l'URL `http://<host>:<port>/front/index.html`.
 
 ### Initialisation de la base de données
 
