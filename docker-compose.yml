@@ -48,6 +48,7 @@ services:
       formulaide_database: "formulaide"
       formulaide_username: "root"
       formulaide_password: "development-password"
+      formulaide_jwt_secret: "some basic secret"
 
 volumes:
   data:

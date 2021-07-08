@@ -23,7 +23,7 @@ Nous recommandons l'utilisation de Docker (gestion des dépendances automatisée
 
 ### Configuration du serveur
 
-Le serveur nécessite le paramétrage de 5 variables d'environnement :
+Le serveur nécessite le paramétrage de variables d'environnement :
 
 ```shell
 # Les coordonnées de MongoDB
@@ -37,6 +37,9 @@ export formulaide_database="formulaide"
 # Les informations pour se connecter à la base de données
 export formulaide_username="root"
 export formulaide_password="some-password"
+
+# Le secret utilisé par le protocole JWT
+export formulaide_jwt_secret="some secret"
 ```
 
 Par défaut, le serveur écoute sur le port 8000.

@@ -23,7 +23,8 @@ import java.util.*
  */
 class Auth(private val database: Database) {
 
-	private val secretKey = "some secret key here" //TODO
+	private val secretKey = System.getenv("formulaide_jwt_secret")
+		?: error("La variable d'environnement 'formulaide_jwt_secret' n'est pas paramétrée")
 	private val algorithm = Algorithm.HMAC256(secretKey)
 	internal val verifier = JWT
 		.require(algorithm)
