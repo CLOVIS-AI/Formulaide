@@ -8,6 +8,10 @@ services:
         delay: 10s
 
   server:
+    ports:
+      - target: 8000
+        published: 8001
+        protocol: tcp
     deploy:
       replicas: 2
       update_config:

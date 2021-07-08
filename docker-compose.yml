@@ -38,7 +38,7 @@ services:
     image: "registry.gitlab.com/arcachon-ville/formulaide/server:latest"
     ports:
       - target: 8000
-        published: 8001
+        published: 8002
         protocol: tcp
     depends_on: [ mongo ]
     networks: [ database ]
