@@ -1,29 +1,5 @@
 version: "3.6"
 
-# Docker Compose configuration for Formulaide
-
-# Development environment:
-#
-# Start locally:
-#   docker-compose up -d
-
-# Production environment:
-#
-# Start locally:
-#   docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-# Deploy to a Docker Swarm:
-#   docker stack deploy -c docker-compose.yml -c docker-compose.prod.yml formulaide
-#
-# To create/administrate a Docker Swarm, see: https://docs.docker.com/engine/swarm/
-
-# First initialization
-#
-# To create the administrator and employee accounts:
-# Locally with Docker Compose:
-#   add '-f docker-compose.init.yml' to the command shown previously
-# In a Swarm:
-#   add '-c docker-compose.init.yml' to the command shown previously
-
 services:
   mongo:
     image: "mongo"
