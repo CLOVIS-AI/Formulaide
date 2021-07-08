@@ -17,6 +17,7 @@ variables:
 .gradle:
   before_script: &prepare_gradle
     - export GRADLE_USER_HOME=$(pwd)/.gradle
+    - export formulaide_jwt_secret="the jwt secret used by gitlab"
   cache:
     paths:
       - .gradle/wrapper

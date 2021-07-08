@@ -22,6 +22,8 @@ import kotlinx.serialization.json.Json
 val database = Database("localhost", 27017, "formulaide", "root", "development-password")
 
 fun main(args: Array<String>) {
+	println("Starting up; CLI arguments: $args")
+
 	if (args.isNotEmpty() && args[0] == "--init") {
 		require(System.getenv("formulaide_allow_init") == "true") { "For security reasons, you need to set the 'formulaide_allow_init' environment variable to 'true' before you initialize the database." }
 

@@ -23,7 +23,7 @@ Nous recommandons l'utilisation de Docker (gestion des dépendances automatisée
 
 ### Configuration du serveur
 
-Le serveur nécessite le paramétrage de 5 variables d'environnement :
+Le serveur nécessite le paramétrage de variables d'environnement :
 
 ```shell
 # Les coordonnées de MongoDB
@@ -37,9 +37,12 @@ export formulaide_database="formulaide"
 # Les informations pour se connecter à la base de données
 export formulaide_username="root"
 export formulaide_password="some-password"
+
+# Le secret utilisé par le protocole JWT
+export formulaide_jwt_secret="some secret"
 ```
 
-Par défaut, le serveur écoute sur le port 8000.
+Par défaut, le serveur écoute sur le port 8000. L'interface web est accessible à l'URL `http://<host>:<port>/front/index.html`.
 
 ### Initialisation de la base de données
 
@@ -60,14 +63,64 @@ Les comptes créés sont :
 
 Pour des raisons de sécurité, il est très fortement conseillé de désactiver ces comptes.
 
-### Docker Compose & Docker Swarm
-
-Une configuration pour Docker Compose est disponible dans le fichier [docker-compose.yml](docker-compose.yml). Pour l'utiliser, il suffit de télécharger les 4 fichiers appelés `docker.compose[…].yml` à la racine du dépôt. Les explications sont données en commentaire dans le fichier principal.
-
-Cette configuration est encouragée pour les environnements de développement. Pour un environnement de production, il faut changer les mots de passe et ajouter des sauvegardes de la base de données.
-
 ### Maintenance
 
 Le serveur ne requiert aucune maintenance particulière, à part le mettre à jour lorsqu'une nouvelle version est disponible (il n'y a aucune sauvegarde nécessaire). Il est encouragé de sauvegarder les logs, pour aider à la résolution des problèmes.
 
 La base de données est une installation standard de MongoDB. La documentation pour sa maintenance [se trouve ici](https://docs.mongodb.com/manual/administration/). En particulier, il est essentiel de paramétrer la sauvegarde de la base de données.
+
+### Docker Compose & Docker Swarm
+
+Une configuration pour Docker Compose est disponible dans le fichier [docker-compose.yml](docker-compose.yml). Pour l'utiliser, il suffit de télécharger les 4 fichiers appelés `docker.compose[…].yml` à la racine du dépôt.
+
+Cette configuration est encouragée pour les environnements de développement. Pour un environnement de production, il faut changer les mots de passe et ajouter des sauvegardes de la base de données et des logs.
+
+#### Environnement de développement conseillé (Docker Compose)
+
+Avec cette configuration, on retrouve :
+
+- Le serveur (stable) sur le port 8002
+- La base de données sur le port 27017
+- Mongo Express, une interface d'administration de Mongo, sur le port 8081
+
+```shell
+# Démarrer l'environnement de développement
+docker-compose up -d
+
+# La première fois, pour créer les comptes :
+docker-compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.init.yml up -d
+```
+
+#### Environnement de production (Docker Compose)
+
+Avant d'utiliser cet environnement, lisez les paragraphes précédents sur la maintenance et le fonctionnement de Docker Compose.
+
+Avec cette configuration, on retrouve :
+
+- Le serveur (stable) sur le port 8001
+- La base de données n'est pas exposée au réseau extérieur
+
+```shell
+# Démarrer l'environnement de production
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+# La première fois, pour créer les comptes :
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.init.yml up -d
+```
+
+#### Environnement de production (Docker Swarm)
+
+Avant d'utiliser cet environnement, lisez les paragraphes précédents sur la maintenance et le fonctionnement de Docker Compose.
+
+Avec cette configuration, on retrouve :
+
+- Le serveur (stable) sur le port 8001, 2 répliques
+- La base de données n'est pas exposée au réseau extérieur, 1 réplique
+
+```shell
+# Déployer le projet sur un Swarm
+docker stack deploy -c docker-compose.yml -c docker-compose.prod.yml formulaide
+
+# La première fois, pour créer les comptes :
+docker stack deploy -c docker-compose.yml -c docker-compose.prod.yml -c docker-compose.init.yml formulaide
+```
