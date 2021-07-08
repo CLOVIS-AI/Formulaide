@@ -5,6 +5,12 @@ services:
     ports:
       - "27017:27017"
 
+  server:
+    ports:
+      - target: 8000
+        published: 8002
+        protocol: tcp
+
   mongo-express:
     image: "mongo-express"
     ports:
