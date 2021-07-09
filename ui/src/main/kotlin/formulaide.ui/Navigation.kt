@@ -31,6 +31,7 @@ abstract class Screen(
 	object NewForm : Screen("Créer un formulaire", Role.ADMINISTRATOR, CreateForm)
 	object ShowUsers : Screen("Employés", Role.ADMINISTRATOR, UserList)
 	object NewUser : Screen("Créer un employé", Role.ADMINISTRATOR, CreateUser)
+	object ShowServices : Screen("Services", Role.ADMINISTRATOR, ServiceList)
 
 	class EditPassword(user: Email, redirectTo: Screen) :
 		Screen("Modifier mon mot de passe", Role.EMPLOYEE, PasswordModification(user, redirectTo))
@@ -39,7 +40,7 @@ abstract class Screen(
 		Screen("Saisie", Role.ANONYMOUS, formulaide.ui.screens.SubmitForm(form))
 
 	companion object {
-		val regularScreens = sequenceOf(Home, ShowForms, NewData, NewForm, ShowUsers)
+		val regularScreens = sequenceOf(Home, ShowForms, NewData, NewForm, ShowServices, ShowUsers)
 		fun availableScreens(user: User?) = regularScreens
 			.filter { it.requiredRole <= user.role }
 	}

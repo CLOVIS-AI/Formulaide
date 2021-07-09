@@ -37,7 +37,7 @@ fun Routing.serviceRoutes() {
 			post("/create") {
 				call.requireAdmin(database)
 
-				val service = call.receive<String>()
+				val service = call.receive<String>().removeSurrounding("\"")
 				val created = database.createService(service)
 
 				call.respond(created.toApi())
