@@ -5,11 +5,11 @@
         <option name="envFilePath" value="" />
         <option name="secondarySourceFiles">
           <list>
-            <option value="docker-compose.override.yml" />
-            <option value="docker-compose.init.yml" />
+            <option value="docker/docker-compose.override.yml" />
+            <option value="docker/docker-compose.init.yml" />
           </list>
         </option>
-        <option name="sourceFilePath" value="docker-compose.yml" />
+        <option name="sourceFilePath" value="docker/docker-compose.yml" />
       </settings>
     </deployment>
     <method v="2" />

@@ -71,7 +71,7 @@ La base de données est une installation standard de MongoDB. La documentation p
 
 ### Docker Compose & Docker Swarm
 
-Une configuration pour Docker Compose est disponible dans le fichier [docker-compose.yml](docker-compose.yml). Pour l'utiliser, il suffit de télécharger les 4 fichiers appelés `docker.compose[…].yml` à la racine du dépôt.
+Une configuration pour Docker Compose est disponible dans le fichier [docker-compose.yml](docker/docker-compose.yml). Pour l'utiliser, il suffit de télécharger les 4 fichiers appelés `docker.compose[…].yml` dans le dossier `docker`.
 
 Cette configuration est encouragée pour les environnements de développement. Pour un environnement de production, il faut changer les mots de passe et ajouter des sauvegardes de la base de données et des logs.
 
