@@ -7,7 +7,6 @@ import io.ktor.client.features.auth.*
 import io.ktor.client.features.auth.providers.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.json.serializer.*
-import io.ktor.client.features.logging.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 
@@ -57,10 +56,6 @@ sealed class Client(
 		private fun createClient(token: String? = null) = HttpClient {
 			install(JsonFeature) {
 				serializer = KotlinxSerializer()
-			}
-
-			install(Logging) {
-				level = LogLevel.ALL
 			}
 
 			if (token != null)
