@@ -22,18 +22,6 @@ services:
       formulaide_password: "development-password"
       formulaide_jwt_secret: "some basic secret"
 
-  proxy:
-    image: "caddy:2.4.3-alpine"
-    command: "caddy reverse-proxy --from localhost --to server:8000"
-    depends_on: [ server ]
-    networks: [ internal-proxy ]
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - caddy_data:/data
-      - caddy_config:/config
-
 volumes:
   data:
     name: data
