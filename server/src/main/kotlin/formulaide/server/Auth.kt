@@ -10,12 +10,13 @@ import formulaide.api.users.NewUser
 import formulaide.api.users.PasswordLogin
 import formulaide.db.Database
 import formulaide.db.document.DbUser
-import formulaide.db.document.DbUserId
 import formulaide.db.document.createUser
 import formulaide.db.document.findUser
 import io.ktor.application.*
 import io.ktor.auth.*
 import org.slf4j.LoggerFactory
+import java.time.Duration
+import java.time.Instant
 import java.util.*
 
 /**
@@ -51,9 +52,7 @@ class Auth(private val database: Database) {
 			)
 		)
 
-		return signAccessToken(newUser.user.email,
-		                       newUser.user.administrator,
-		                       createdUser.tokenVersion) to createdUser
+		return signAccessToken(newUser.user.email, newUser.user.administrator) to createdUser
 	}
 
 	/**
@@ -71,13 +70,13 @@ class Auth(private val database: Database) {
 		)
 		check(passwordIsVerified) { "Le mot de passe donné ne correspond pas à celui stocké" }
 
-		return signAccessToken(Email(user.email), user.isAdministrator, user.tokenVersion) to user
+		return signAccessToken(Email(user.email), user.isAdministrator) to user
 	}
 
 	/**
 	 * Checks the validity of a given [token].
 	 */
-	suspend fun checkToken(
+	fun checkToken(
 		token: String,
 	): AuthPrincipal? {
 		val accessToken: DecodedJWT
@@ -91,42 +90,85 @@ class Auth(private val database: Database) {
 		return checkTokenJWT(accessToken)
 	}
 
+	private fun checkCommonTokenJWT(
+		payload: Payload,
+	): String {
+		val dateNow = Date.from(Instant.now())
+
+		check(payload.issuer == "formulaide") { "Le token est invalide, il ne provient pas de 'formulaide' : ${payload.issuer}" }
+		check(payload.expiresAt >= dateNow) { "Le token a expiré à ${payload.expiresAt}" }
+
+		return payload.getClaim("userId").asString()
+			?: error("Le token est invalide, il ne contient pas de 'userId'")
+	}
+
 	/**
 	 * Checks the validity of a given [payload].
 	 * @throws IllegalStateException if the token doesn't have the correct fields
 	 */
-	suspend fun checkTokenJWT(
+	fun checkTokenJWT(
 		payload: Payload,
 	): AuthPrincipal {
-		val userId: String? = payload.getClaim("userId").asString()
-		checkNotNull(userId) { "Le token ne contient pas de 'userId'" }
+		val email = checkCommonTokenJWT(payload)
 
-		val tokenVersion: ULong? = payload.getClaim("tokenVersion").asLong()?.toULong()
-		checkNotNull(tokenVersion) { "Le token ne contient pas de 'tokenVersion'" }
-		val databaseUser = database.findUser(userId)
-		checkNotNull(databaseUser) { "Le token ne correspond à aucun utilisateur connu, c'est impossible !" }
-		check(tokenVersion == databaseUser.tokenVersion) { "La version du token ne correspond pas, par exemple parce que le mot de passe a été modifié récemment" }
+		val type: String? = payload.getClaim("type").asString()
+		check(type == "access") { "Le token est invalide parce qu'il est du mauvais type ('access' était attendu) : $type" }
 
-		return AuthPrincipal(payload, userId)
+		val isAdmin: Boolean? = payload.getClaim("admin").asBoolean()
+		checkNotNull(isAdmin) { "Le token est invalide, il ne contient pas de rôle ('admin') : $isAdmin" }
+
+		return AuthPrincipal(payload, Email(email), isAdmin)
 	}
 
-	private fun signAccessToken(email: Email, admin: Boolean, tokenVersion: ULong): String =
+	suspend fun checkRefreshTokenJWT(
+		payload: Payload,
+	) {
+		val email = checkCommonTokenJWT(payload)
+
+		val type: String? = payload.getClaim("type").asString()
+		check(type == "refresh") { "Le token est invalide parce qu'il est du mauvais type ('refresh' était attendu) : $type" }
+
+		val tokenVersion: ULong? = payload.getClaim("tokVer").asLong()?.toULong()
+		checkNotNull(tokenVersion) { "Le token est invalide, il ne contient pas de 'tokVer', ou a une valeur invalide : $tokenVersion" }
+
+		val databaseUser = database.findUser(email)
+			?: error("Aucun utilisateur ne correspond à l'identité de ce token, c'est impossible !")
+
+		check(tokenVersion == databaseUser.tokenVersion) { "La version du token ne correspond pas, par exemple parce que le mot de passe a été modifié récemment" }
+	}
+
+	private fun signAccessToken(email: Email, admin: Boolean): String =
 		JWT.create()
 			.withIssuer("formulaide")
 			.withClaim("userId", email.email)
 			.withClaim("admin", admin)
-			.withClaim("tokenVersion", tokenVersion.toLong())
+			.withClaim("type", "access")
+			.withExpiresAt(Date.from(Instant.now() + accessTokenExpiration))
+			.sign(algorithm)
+
+	private fun signRefreshToken(email: Email, tokenVersion: ULong): String =
+		JWT.create()
+			.withIssuer("formulaide")
+			.withClaim("userId", email.email)
+			.withClaim("tokVer", tokenVersion.toLong())
+			.withClaim("type", "refresh")
+			.withExpiresAt(Date.from(Instant.now() + refreshTokenExpiration))
 			.sign(algorithm)
 
 	/**
 	 * The [Principal] that represents that a user has the right to access the employee-only section of Formulaide.
 	 * @property payload The JWT token that proves the legality of the access
-	 * @property userId The ID of the user accessing the data
+	 * @property email The email of the user accessing the data
+	 * @property isAdmin Whether this user has the 'admin' right or not
 	 */
-	data class AuthPrincipal(val payload: Payload, val userId: DbUserId) : Principal
+	data class AuthPrincipal(val payload: Payload, val email: Email, val isAdmin: Boolean) :
+		Principal
 
 	companion object {
 		private val logger = LoggerFactory.getLogger(Auth::class.java)
+
+		val accessTokenExpiration: Duration = Duration.ofMinutes(30)
+		val refreshTokenExpiration: Duration = Duration.ofDays(7)
 
 		internal fun hash(clearText: String): String {
 			return BCrypt.withDefaults()
@@ -147,7 +189,7 @@ class Auth(private val database: Database) {
 			val principal = authentication.principal ?: error("Authentification manquante")
 			require(principal is AuthPrincipal) { "Authentification invalide" }
 
-			val user = database.findUser(principal.userId)
+			val user = database.findUser(principal.email.email)
 			requireNotNull(user) { "Aucun utilisateur ne correspond à ce token" }
 			require(user.enabled == true) { "Cet utilisateur a été désactivé, le token est donc invalide" }
 
