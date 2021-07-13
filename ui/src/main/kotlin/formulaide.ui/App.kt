@@ -5,6 +5,7 @@ import formulaide.api.data.Form
 import formulaide.api.users.Service
 import formulaide.api.users.User
 import formulaide.client.Client
+import formulaide.client.refreshToken
 import formulaide.client.routes.*
 import formulaide.ui.components.styledCard
 import formulaide.ui.utils.text
@@ -86,6 +87,23 @@ val App = functionalComponent<RProps> {
 			}
 		} else setServices(emptyList())
 	}
+	//endregion
+
+	//region Refresh token management
+
+	// If the client is anonymous, try to see if we currently have a refreshToken in a cookie
+	// If we do, we can bypass the login step
+	useEffect(client) {
+		if (client is Client.Anonymous) {
+			launchAndReportExceptions(addError, scope) {
+				val accessToken = client.refreshToken()
+
+				if (accessToken != null)
+					setClient(client.authenticate(accessToken))
+			}
+		}
+	}
+
 	//endregion
 
 	child(Window) {
