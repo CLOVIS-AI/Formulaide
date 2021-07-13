@@ -7,6 +7,7 @@ import io.ktor.client.features.auth.*
 import io.ktor.client.features.auth.providers.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.json.serializer.*
+import io.ktor.client.features.json.serializer.KotlinxSerializer.Companion.DefaultJson
 import io.ktor.client.request.*
 import io.ktor.http.*
 
@@ -53,9 +54,11 @@ sealed class Client(
 
 	companion object {
 
+		internal val jsonSerializer = DefaultJson
+
 		private fun createClient(token: String? = null) = HttpClient {
 			install(JsonFeature) {
-				serializer = KotlinxSerializer()
+				serializer = KotlinxSerializer(jsonSerializer)
 			}
 
 			if (token != null)
