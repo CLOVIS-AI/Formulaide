@@ -57,16 +57,19 @@ val UserList = functionalComponent<ScreenProps> { props ->
 
 				div { // buttons
 
-					styledButton(if (user.enabled) "Désactiver" else "Activer", default = false) {
-						editUser(user, props, enabled = !user.enabled) {
-							users = users.replace(i, it)
+					if (user != props.user) {
+						styledButton(if (user.enabled) "Désactiver" else "Activer",
+						             default = false) {
+							editUser(user, props, enabled = !user.enabled) {
+								users = users.replace(i, it)
+							}
 						}
-					}
 
-					styledButton(if (user.administrator) "Enlever le droit d'administration" else "Donner le droit d'administration",
-					             default = false) {
-						editUser(user, props, administrator = !user.administrator) {
-							users = users.replace(i, it)
+						styledButton(if (user.administrator) "Enlever le droit d'administration" else "Donner le droit d'administration",
+						             default = false) {
+							editUser(user, props, administrator = !user.administrator) {
+								users = users.replace(i, it)
+							}
 						}
 					}
 
