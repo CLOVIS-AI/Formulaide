@@ -36,6 +36,12 @@ application {
 	mainClass.set("formulaide.server.MainKt")
 }
 
+tasks.named<JavaExec>("run") {
+	description = "Runs this project as a JVM application (development mode)"
+
+	jvmArgs = listOf("-Dio.ktor.development=true")
+}
+
 jacoco {
 	toolVersion = Version.jacocoVersion
 }

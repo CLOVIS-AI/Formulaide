@@ -53,6 +53,9 @@ fun main(args: Array<String>) {
 fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = false) {
 	val auth = Auth(database)
 
+	if (developmentMode)
+		System.err.println("WARNING. The server is running in development mode. This is NOT safe for production. See https://ktor.io/docs/development-mode.html")
+
 	install(ContentNegotiation) {
 		json(Json(DefaultJson) {
 			useArrayPolymorphism = false
