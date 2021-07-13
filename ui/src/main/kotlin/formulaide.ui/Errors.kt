@@ -4,6 +4,7 @@ import formulaide.ui.components.styledCard
 import formulaide.ui.utils.text
 import io.ktor.client.call.*
 import io.ktor.client.features.*
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import react.functionalComponent
@@ -53,8 +54,12 @@ val ErrorCard = functionalComponent<ErrorProps> { props ->
 inline fun <R> reportExceptions(reporter: (Throwable) -> Unit, block: () -> R): R = try {
 	block()
 } catch (e: Exception) {
-	console.error(e)
-	reporter(e)
+	if (e !is CancellationException) {
+		// don't report jobs being cancelled, that's normal
+
+		console.error(e)
+		reporter(e)
+	}
 	throw RuntimeException("Impossible de continuer", cause = e)
 }
 
