@@ -129,7 +129,7 @@ client-js-test:
     - mv server/build/distributions/server*.tar server.tar
     - tar -xf server.tar
   script:
-    - "formulaide_allow_init=true ./server-*/bin/server --init &"
+    - "formulaide_allow_init=true formulaide_allow_unsafe_cookie=true ./server-*/bin/server --init &"
     - sleep 5
     - "./gradlew :client:jsBrowserTest"
   artifacts:
