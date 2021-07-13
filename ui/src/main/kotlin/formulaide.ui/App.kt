@@ -14,9 +14,12 @@ import kotlinx.coroutines.launch
 import react.*
 import react.dom.p
 
-internal val defaultClient =
-	Client.Anonymous.connect(window.location.protocol + "//" + window.location.host)
-private val defaultClientTest = Client.Anonymous.connect("http://localhost:8000")
+internal var inProduction = true
+internal val defaultClient
+	get() = when (inProduction) {
+		true -> Client.Anonymous.connect(window.location.protocol + "//" + window.location.host)
+		false -> Client.Anonymous.connect("http://localhost:8000")
+	}
 
 /**
  * The main app screen.
@@ -60,7 +63,8 @@ val App = functionalComponent<RProps> {
 						client.listForms()
 					} catch (e: Exception) {
 						console.warn("Couldn't access the list of forms, this client is probably dead. Switching to the test client.")
-						setClient(defaultClientTest)
+						inProduction = false
+						setClient(defaultClient)
 						setUser(null)
 						emptyList()
 					}
