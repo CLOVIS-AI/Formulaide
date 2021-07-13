@@ -10,8 +10,7 @@ import formulaide.client.routes.*
 import formulaide.ui.components.styledCard
 import formulaide.ui.utils.text
 import kotlinx.browser.window
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import react.*
 import react.dom.p
 
@@ -102,6 +101,24 @@ val App = functionalComponent<RProps> {
 					setClient(client.authenticate(accessToken))
 			}
 		}
+	}
+
+	// If the client is connected, wait a few minutes and refresh the access token, to ensure it never gets out of date
+	useEffect(client) {
+		val job = Job()
+
+		if (client is Client.Authenticated) {
+			launchAndReportExceptions(addError, CoroutineScope(job)) {
+				delay(1000L * 60 * 10) // every 10 minutes
+
+				val accessToken = client.refreshToken()
+				checkNotNull(accessToken) { "Le serveur a refusé de rafraichir le token d'accès. Une raison possible est que votre mot de passe a été modifié." }
+
+				setClient(defaultClient.authenticate(accessToken))
+			}
+		}
+
+		cleanup { job.cancel() }
 	}
 
 	//endregion
