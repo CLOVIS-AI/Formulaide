@@ -135,7 +135,6 @@ client-js-test:
   artifacts:
     reports:
       junit: client/build/test-results/jsBrowserTest/**/TEST-*.xml
-  retry: 2
 
 ui-test:
   image: $JS_CHROME_IMAGE
