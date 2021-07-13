@@ -46,6 +46,11 @@ fun Routing.userRoutes(auth: Auth) {
 			}
 		}
 
+		post("logout") {
+			call.setRefreshTokenCookie("NO COOKIE SET")
+			call.respondText("You have been logged out.")
+		}
+
 		authenticate(Employee) {
 			post("/create") {
 				call.requireAdmin(database)

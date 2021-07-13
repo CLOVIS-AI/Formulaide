@@ -86,8 +86,17 @@ sealed class Client(
 	}
 
 	class Authenticated private constructor(client: HttpClient, hostUrl: String) : Client(hostUrl, client) {
+
+		/**
+		 * Disconnects this client.
+		 *
+		 * Calling this method is important because it will clear the cookies set by the login.
+		 */
+		suspend fun logout() = post<String>("/users/logout")
+
 		companion object {
-			fun connect(hostUrl: String, token: String) = Authenticated(createClient(token), hostUrl)
+			fun connect(hostUrl: String, token: String) =
+				Authenticated(createClient(token), hostUrl)
 		}
 	}
 }
