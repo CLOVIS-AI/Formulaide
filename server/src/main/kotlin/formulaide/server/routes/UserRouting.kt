@@ -13,6 +13,20 @@ import io.ktor.http.*
 import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
+import io.ktor.util.date.*
+
+private fun ApplicationCall.setRefreshTokenCookie(value: String) {
+	response.cookies.append(Cookie(
+		"REFRESH-TOKEN",
+		value = value,
+		expires = GMTDate() + Auth.refreshTokenExpiration.toMillis(),
+		secure = !this.application.developmentMode,
+		httpOnly = true,
+		extensions = mapOf(
+			"SameSite" to "Strict",
+		)
+	))
+}
 
 fun Routing.userRoutes(auth: Auth) {
 	route("/users") {
@@ -21,9 +35,10 @@ fun Routing.userRoutes(auth: Auth) {
 			val login = call.receive<PasswordLogin>()
 
 			try {
-				val (token, _) = auth.login(login)
+				val (accessToken, refreshToken, _) = auth.login(login)
 
-				call.respond(TokenResponse(token))
+				call.setRefreshTokenCookie(refreshToken)
+				call.respond(TokenResponse(accessToken))
 			} catch (e: Exception) {
 				e.printStackTrace()
 				call.respondText("Les informations de connexion sont incorrectes.",

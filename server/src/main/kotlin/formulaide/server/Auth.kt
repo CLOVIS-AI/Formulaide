@@ -57,9 +57,9 @@ class Auth(private val database: Database) {
 
 	/**
 	 * Checks the validity of a connection based on a hashed password.
-	 * @return A valid token if the password was valid.
+	 * @return A triple of an access token, a refresh token, and their matching user.
 	 */
-	suspend fun login(login: PasswordLogin): Pair<String, DbUser> {
+	suspend fun login(login: PasswordLogin): Triple<String, String, DbUser> {
 		val user = database.findUser(login.email)
 		checkNotNull(user) { "Aucun utilisateur n'a été trouvé avec cette adresse mail" }
 		check(user.enabled == true) { "Cet utilisateur n'est pas activé" }
@@ -70,7 +70,9 @@ class Auth(private val database: Database) {
 		)
 		check(passwordIsVerified) { "Le mot de passe donné ne correspond pas à celui stocké" }
 
-		return signAccessToken(Email(user.email), user.isAdministrator) to user
+		return Triple(signAccessToken(Email(user.email), user.isAdministrator),
+		              signRefreshToken(Email(user.email), user.tokenVersion),
+		              user)
 	}
 
 	/**
