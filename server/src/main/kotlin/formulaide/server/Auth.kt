@@ -51,7 +51,9 @@ class Auth(private val database: Database) {
 			)
 		)
 
-		return signAccessToken(newUser.user.email, createdUser.tokenVersion) to createdUser
+		return signAccessToken(newUser.user.email,
+		                       newUser.user.administrator,
+		                       createdUser.tokenVersion) to createdUser
 	}
 
 	/**
@@ -69,7 +71,7 @@ class Auth(private val database: Database) {
 		)
 		check(passwordIsVerified) { "Le mot de passe donné ne correspond pas à celui stocké" }
 
-		return signAccessToken(Email(user.email), user.tokenVersion) to user
+		return signAccessToken(Email(user.email), user.isAdministrator, user.tokenVersion) to user
 	}
 
 	/**
@@ -108,11 +110,13 @@ class Auth(private val database: Database) {
 		return AuthPrincipal(payload, userId)
 	}
 
-	private fun signAccessToken(email: Email, tokenVersion: ULong): String = JWT.create()
-		.withIssuer("formulaide")
-		.withClaim("userId", email.email)
-		.withClaim("tokenVersion", tokenVersion.toLong())
-		.sign(algorithm)
+	private fun signAccessToken(email: Email, admin: Boolean, tokenVersion: ULong): String =
+		JWT.create()
+			.withIssuer("formulaide")
+			.withClaim("userId", email.email)
+			.withClaim("admin", admin)
+			.withClaim("tokenVersion", tokenVersion.toLong())
+			.sign(algorithm)
 
 	/**
 	 * The [Principal] that represents that a user has the right to access the employee-only section of Formulaide.
