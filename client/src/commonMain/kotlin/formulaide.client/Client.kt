@@ -100,3 +100,12 @@ sealed class Client(
 		}
 	}
 }
+
+/**
+ * Gets a new **access token** using the currently existing **refresh token** stored in the cookies.
+ *
+ * This method is not multiplatform because it requires access to the cookies, which Ktor doesn't provide at the moment.
+ *
+ * @return a valid access token if one could be queried, `null` otherwise
+ */
+expect suspend fun Client.refreshToken(): String?
