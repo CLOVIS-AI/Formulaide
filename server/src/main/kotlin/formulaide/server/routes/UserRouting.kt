@@ -46,9 +46,19 @@ fun Routing.userRoutes(auth: Auth) {
 			}
 		}
 
-		post("logout") {
+		post("/logout") {
 			call.setRefreshTokenCookie("NO COOKIE SET")
 			call.respondText("You have been logged out.")
+		}
+
+		post("/refreshToken") {
+			val refreshToken = call.request.cookies["REFRESH-TOKEN"]
+				?: error("L'endpoint /users/refreshToken nécessite d'avoir le cookie REFRESH-TOKEN paramétré")
+
+			val (accessToken, _) = auth.loginWithRefreshToken(refreshToken)
+
+			call.setRefreshTokenCookie(refreshToken)
+			call.respond(TokenResponse(accessToken))
 		}
 
 		authenticate(Employee) {

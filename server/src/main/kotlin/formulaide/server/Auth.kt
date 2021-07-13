@@ -70,9 +70,25 @@ class Auth(private val database: Database) {
 		)
 		check(passwordIsVerified) { "Le mot de passe donné ne correspond pas à celui stocké" }
 
-		return Triple(signAccessToken(Email(user.email), user.isAdministrator),
-		              signRefreshToken(Email(user.email), user.tokenVersion),
-		              user)
+		return Triple(
+			signAccessToken(Email(user.email), user.isAdministrator),
+			signRefreshToken(Email(user.email), user.tokenVersion),
+			user
+		)
+	}
+
+	/**
+	 * Checks the validity of a connection based on a refresh token.
+	 *
+	 * @return a pair of an access token and its matching user.
+	 */
+	suspend fun loginWithRefreshToken(refreshToken: String): Pair<String, DbUser> {
+		val user = checkRefreshTokenJWT(verifier.verify(JWT.decode(refreshToken)))
+
+		return Pair(
+			signAccessToken(Email(user.email), user.isAdministrator),
+			user
+		)
 	}
 
 	/**
@@ -122,9 +138,9 @@ class Auth(private val database: Database) {
 		return AuthPrincipal(payload, Email(email), isAdmin)
 	}
 
-	suspend fun checkRefreshTokenJWT(
+	private suspend fun checkRefreshTokenJWT(
 		payload: Payload,
-	) {
+	): DbUser {
 		val email = checkCommonTokenJWT(payload)
 
 		val type: String? = payload.getClaim("type").asString()
@@ -137,6 +153,8 @@ class Auth(private val database: Database) {
 			?: error("Aucun utilisateur ne correspond à l'identité de ce token, c'est impossible !")
 
 		check(tokenVersion == databaseUser.tokenVersion) { "La version du token ne correspond pas, par exemple parce que le mot de passe a été modifié récemment" }
+
+		return databaseUser
 	}
 
 	private fun signAccessToken(email: Email, admin: Boolean): String =
