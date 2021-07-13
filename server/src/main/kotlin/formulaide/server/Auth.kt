@@ -21,6 +21,23 @@ import java.util.*
 
 /**
  * Handles the authentication of users, with a [JWT] using Bcrypt.
+ *
+ * ### Authentication API
+ *
+ * The authentication API is constituted of two different JWT tokens:
+ * - an **access token**,
+ * - a **refresh token**.
+ *
+ * The **access token** is used as identification for the user when they use the API.
+ * It is [short-lived][Auth.accessTokenExpiration] and transmitted through the `Authorization: Bearer` header
+ * ([Ktor](https://ktor.io/docs/auth.html#bearer), [RFC-6750](https://datatracker.ietf.org/doc/html/rfc6750)).
+ *
+ * The **refresh token** is used by the user to request another **access token** when one has expired.
+ * It is [longer-lived][Auth.refreshTokenExpiration] and transmitted as an `HttpOnly` and `Secure` cookie
+ * ([MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies)).
+ * A JavaScript client should never have access to the refresh token (the browser should hide it from JS to prevent XSS & CSRF attacks).
+ *
+ * The `Client` class in the `client` module of this project handles all of this transparently.
  */
 class Auth(private val database: Database) {
 
