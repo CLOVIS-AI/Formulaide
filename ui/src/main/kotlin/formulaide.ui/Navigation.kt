@@ -15,6 +15,8 @@ import formulaide.ui.components.styledCard
 import formulaide.ui.components.styledDisabledButton
 import formulaide.ui.screens.*
 import formulaide.ui.utils.text
+import kotlinx.browser.document
+import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import org.w3c.dom.url.URL
 import react.*
@@ -157,6 +159,11 @@ val Window = functionalComponent<ApplicationProps> { props ->
 				setProps(this)
 			}
 		}
+	}
+
+	useEffect(screen) {
+		window.history.pushState(null, screen.displayName, "?d=" + screen.route)
+		document.title = "${screen.displayName} • Formulaide"
 	}
 
 	if (props.user.role >= screen.requiredRole) {
