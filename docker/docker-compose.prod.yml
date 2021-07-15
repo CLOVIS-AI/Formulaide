@@ -13,7 +13,7 @@ services:
         published: 8001
         protocol: tcp
     deploy:
-      replicas: 2
+      replicas: 1
       update_config:
         delay: 30s
 
@@ -29,6 +29,6 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     deploy:
-      replicas: 2
+      replicas: 1
       update_config:
         delay: 60s
