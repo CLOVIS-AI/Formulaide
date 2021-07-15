@@ -77,12 +77,13 @@ external interface ScreenProps : ApplicationProps {
 }
 
 private val CannotAccessThisPage = functionalComponent<ScreenProps> { props ->
-	p { text("Vous n'avez pas l'autorisation d'accéder à cette page.") }
-
-	br {}
-	button {
-		text("Retourner à la page d'accueil")
-		attrs { onClickFunction = { props.navigateTo(Screen.Home) } }
+	styledCard(
+		"Vous n'avez pas l'autorisation d'accéder à cette page",
+		null,
+		"Retourner à la page d'accueil" to { props.navigateTo(Screen.Home) },
+		failed = true
+	) {
+		text("Si vous pensez que c'est anormal, veuillez contacter l'administrateur.")
 	}
 }
 
