@@ -6,6 +6,7 @@ import formulaide.server.Auth
 import formulaide.server.Auth.Companion.Employee
 import formulaide.server.Auth.Companion.requireAdmin
 import formulaide.server.Auth.Companion.requireEmployee
+import formulaide.server.allowUnsafeCookie
 import formulaide.server.database
 import io.ktor.application.*
 import io.ktor.auth.*
@@ -20,7 +21,7 @@ private fun ApplicationCall.setRefreshTokenCookie(value: String) {
 		"REFRESH-TOKEN",
 		value = value,
 		expires = GMTDate() + Auth.refreshTokenExpiration.toMillis(),
-		secure = !this.application.developmentMode,
+		secure = !this.application.developmentMode && !allowUnsafeCookie,
 		httpOnly = true,
 		extensions = mapOf(
 			"SameSite" to "Strict",
