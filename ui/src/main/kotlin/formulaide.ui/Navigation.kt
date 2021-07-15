@@ -3,6 +3,7 @@ package formulaide.ui
 import formulaide.api.data.Composite
 import formulaide.api.data.Form
 import formulaide.api.types.Email
+import formulaide.api.types.Ref
 import formulaide.api.users.Service
 import formulaide.api.users.User
 import formulaide.client.Client
@@ -15,34 +16,56 @@ import formulaide.ui.components.styledDisabledButton
 import formulaide.ui.screens.*
 import formulaide.ui.utils.text
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.html.js.onClickFunction
+import org.w3c.dom.url.URL
 import react.*
-import react.dom.*
+import react.dom.div
 
 abstract class Screen(
 	val displayName: String,
 	val requiredRole: Role,
 	val component: FunctionalComponent<ScreenProps>,
+	val route: String,
 ) {
 
-	object Home : Screen("Acceuil", Role.ANONYMOUS, LoginAccess)
-	object ShowForms : Screen("Formulaires", Role.ANONYMOUS, FormList)
-	object NewData : Screen("Créer une donnée", Role.ADMINISTRATOR, CreateData)
-	object NewForm : Screen("Créer un formulaire", Role.ADMINISTRATOR, CreateForm)
-	object ShowUsers : Screen("Employés", Role.ADMINISTRATOR, UserList)
-	object NewUser : Screen("Créer un employé", Role.ADMINISTRATOR, CreateUser)
-	object ShowServices : Screen("Services", Role.ADMINISTRATOR, ServiceList)
+	object Home : Screen("Acceuil", Role.ANONYMOUS, LoginAccess, "home")
+	object ShowForms : Screen("Formulaires", Role.ANONYMOUS, FormList, "forms")
+	object NewData : Screen("Créer une donnée", Role.ADMINISTRATOR, CreateData, "createData")
+	object NewForm : Screen("Créer un formulaire", Role.ADMINISTRATOR, CreateForm, "createForm")
+	object ShowUsers : Screen("Employés", Role.ADMINISTRATOR, UserList, "employees")
+	object NewUser : Screen("Créer un employé", Role.ADMINISTRATOR, CreateUser, "createEmployee")
+	object ShowServices : Screen("Services", Role.ADMINISTRATOR, ServiceList, "services")
 
 	class EditPassword(user: Email, redirectTo: Screen) :
-		Screen("Modifier mon mot de passe", Role.EMPLOYEE, PasswordModification(user, redirectTo))
+		Screen("Modifier mon mot de passe",
+		       Role.EMPLOYEE,
+		       PasswordModification(user, redirectTo),
+		       "editUser-${user.email}")
 
-	class SubmitForm(form: Form) :
-		Screen("Saisie", Role.ANONYMOUS, formulaide.ui.screens.SubmitForm(form))
+	class SubmitForm(form: Ref<Form>) :
+		Screen("Saisie",
+		       Role.ANONYMOUS,
+		       formulaide.ui.screens.SubmitForm(form),
+		       "submit-${form.id}")
 
 	companion object {
 		val regularScreens = sequenceOf(Home, ShowForms, NewData, NewForm, ShowServices, ShowUsers)
 		fun availableScreens(user: User?) = regularScreens
 			.filter { it.requiredRole <= user.role }
+
+		fun routeDecoder(route: String): Screen? {
+			val simpleRoutes = listOf(
+				Home, ShowForms, NewData, NewForm, ShowUsers, NewUser, ShowServices
+			)
+			for (screen in simpleRoutes)
+				if (route == screen.route)
+					return screen
+
+			return when {
+				route.startsWith("editUser-") -> EditPassword(Email(route.split('-')[1]), Home)
+				route.startsWith("submit-") -> SubmitForm(Ref(route.split('-')[1]))
+				else -> null
+			}
+		}
 	}
 }
 
