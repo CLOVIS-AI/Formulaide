@@ -26,3 +26,5 @@ services:
 networks:
   database:
     name: database_dev
+  internal-proxy:
+    name: internal_proxy_dev
