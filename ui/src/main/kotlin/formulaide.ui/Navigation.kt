@@ -159,12 +159,12 @@ val Window = functionalComponent<ApplicationProps> { props ->
 		}
 	}
 
-	if (screen.requiredRole > props.user.role) {
-		child(CannotAccessThisPage) {
+	if (props.user.role >= screen.requiredRole) {
+		child(screen.component) {
 			attrs { setProps(this) }
 		}
 	} else {
-		child(screen.component) {
+		child(CannotAccessThisPage) {
 			attrs { setProps(this) }
 		}
 	}
