@@ -57,7 +57,7 @@ class AuthTest {
 
 		// Logging in
 
-		val (token2, dbUser2) = auth.login(PasswordLogin(password, email))
+		val (token2, _, dbUser2) = auth.login(PasswordLogin(password, email))
 
 		// Checking token validity
 

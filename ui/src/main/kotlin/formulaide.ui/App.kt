@@ -5,18 +5,21 @@ import formulaide.api.data.Form
 import formulaide.api.users.Service
 import formulaide.api.users.User
 import formulaide.client.Client
+import formulaide.client.refreshToken
 import formulaide.client.routes.*
 import formulaide.ui.components.styledCard
 import formulaide.ui.utils.text
 import kotlinx.browser.window
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import react.*
 import react.dom.p
 
-internal val defaultClient =
-	Client.Anonymous.connect(window.location.protocol + "//" + window.location.host)
-private val defaultClientTest = Client.Anonymous.connect("http://localhost:8000")
+internal var inProduction = true
+internal val defaultClient
+	get() = when (inProduction) {
+		true -> Client.Anonymous.connect(window.location.protocol + "//" + window.location.host)
+		false -> Client.Anonymous.connect("http://localhost:8000")
+	}
 
 /**
  * The main app screen.
@@ -60,7 +63,8 @@ val App = functionalComponent<RProps> {
 						client.listForms()
 					} catch (e: Exception) {
 						console.warn("Couldn't access the list of forms, this client is probably dead. Switching to the test client.")
-						setClient(defaultClientTest)
+						inProduction = false
+						setClient(defaultClient)
 						setUser(null)
 						emptyList()
 					}
@@ -82,6 +86,41 @@ val App = functionalComponent<RProps> {
 			}
 		} else setServices(emptyList())
 	}
+	//endregion
+
+	//region Refresh token management
+
+	// If the client is anonymous, try to see if we currently have a refreshToken in a cookie
+	// If we do, we can bypass the login step
+	useEffect(client) {
+		if (client is Client.Anonymous) {
+			launchAndReportExceptions(addError, scope) {
+				val accessToken = client.refreshToken()
+
+				if (accessToken != null)
+					setClient(client.authenticate(accessToken))
+			}
+		}
+	}
+
+	// If the client is connected, wait a few minutes and refresh the access token, to ensure it never gets out of date
+	useEffect(client) {
+		val job = Job()
+
+		if (client is Client.Authenticated) {
+			launchAndReportExceptions(addError, CoroutineScope(job)) {
+				delay(1000L * 60 * 10) // every 10 minutes
+
+				val accessToken = client.refreshToken()
+				checkNotNull(accessToken) { "Le serveur a refusé de rafraichir le token d'accès. Une raison possible est que votre mot de passe a été modifié." }
+
+				setClient(defaultClient.authenticate(accessToken))
+			}
+		}
+
+		cleanup { job.cancel() }
+	}
+
 	//endregion
 
 	child(Window) {

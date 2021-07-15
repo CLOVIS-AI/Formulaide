@@ -20,6 +20,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 
 val database = Database("localhost", 27017, "formulaide", "root", "development-password")
+val allowUnsafeCookie = System.getenv("formulaide_allow_unsafe_cookie").toBoolean()
 
 fun main(args: Array<String>) {
 	println("Starting up; CLI arguments: $args")
@@ -52,6 +53,11 @@ fun main(args: Array<String>) {
 @Suppress("unused") // see application.conf
 fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = false) {
 	val auth = Auth(database)
+
+	if (developmentMode)
+		System.err.println("WARNING. The server is running in development mode. This is NOT safe for production. See https://ktor.io/docs/development-mode.html")
+	if (allowUnsafeCookie)
+		System.err.println("WARNING. The server has been allowed to create non-safe HTTP cookies. Remove the environment variable 'formulaide_allow_unsafe_cookie' for production use.")
 
 	install(ContentNegotiation) {
 		json(Json(DefaultJson) {

@@ -6,6 +6,7 @@ import formulaide.server.Auth
 import formulaide.server.Auth.Companion.Employee
 import formulaide.server.Auth.Companion.requireAdmin
 import formulaide.server.Auth.Companion.requireEmployee
+import formulaide.server.allowUnsafeCookie
 import formulaide.server.database
 import io.ktor.application.*
 import io.ktor.auth.*
@@ -13,6 +14,20 @@ import io.ktor.http.*
 import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
+import io.ktor.util.date.*
+
+private fun ApplicationCall.setRefreshTokenCookie(value: String) {
+	response.cookies.append(Cookie(
+		"REFRESH-TOKEN",
+		value = value,
+		expires = GMTDate() + Auth.refreshTokenExpiration.toMillis(),
+		secure = !this.application.developmentMode && !allowUnsafeCookie,
+		httpOnly = true,
+		extensions = mapOf(
+			"SameSite" to "Strict",
+		)
+	))
+}
 
 fun Routing.userRoutes(auth: Auth) {
 	route("/users") {
@@ -21,14 +36,30 @@ fun Routing.userRoutes(auth: Auth) {
 			val login = call.receive<PasswordLogin>()
 
 			try {
-				val (token, _) = auth.login(login)
+				val (accessToken, refreshToken, _) = auth.login(login)
 
-				call.respond(TokenResponse(token))
+				call.setRefreshTokenCookie(refreshToken)
+				call.respond(TokenResponse(accessToken))
 			} catch (e: Exception) {
 				e.printStackTrace()
 				call.respondText("Les informations de connexion sont incorrectes.",
 				                 status = HttpStatusCode.Forbidden)
 			}
+		}
+
+		post("/logout") {
+			call.setRefreshTokenCookie("NO COOKIE SET")
+			call.respondText("You have been logged out.")
+		}
+
+		post("/refreshToken") {
+			val refreshToken = call.request.cookies["REFRESH-TOKEN"]
+				?: error("L'endpoint /users/refreshToken nécessite d'avoir le cookie REFRESH-TOKEN paramétré")
+
+			val (accessToken, _) = auth.loginWithRefreshToken(refreshToken)
+
+			call.setRefreshTokenCookie(refreshToken)
+			call.respond(TokenResponse(accessToken))
 		}
 
 		authenticate(Employee) {

@@ -148,7 +148,14 @@ val LoginAccess = functionalComponent<ScreenProps> { props ->
 		styledCard(
 			"Espace employé",
 			null,
-			"Déconnexion" to { props.connect(defaultClient) },
+			"Déconnexion" to {
+				launchAndReportExceptions(props) {
+					val client = props.client
+					if (client is Client.Authenticated) client.logout()
+
+					props.connect(defaultClient)
+				}
+			},
 			"Modifier mon mot de passe" to {
 				props.navigateTo(Screen.EditPassword(props.user!!.email,
 				                                     Screen.Home))
