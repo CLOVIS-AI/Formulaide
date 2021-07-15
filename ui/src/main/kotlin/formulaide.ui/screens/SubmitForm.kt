@@ -2,25 +2,62 @@ package formulaide.ui.screens
 
 import formulaide.api.data.Form
 import formulaide.api.data.FormSubmission
+import formulaide.api.types.Ref
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.client.routes.submitForm
 import formulaide.ui.Screen
 import formulaide.ui.ScreenProps
+import formulaide.ui.components.styledCard
 import formulaide.ui.components.styledFormCard
 import formulaide.ui.fields.field
 import formulaide.ui.launchAndReportExceptions
 import formulaide.ui.reportExceptions
+import formulaide.ui.utils.text
 import kotlinx.html.id
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLFormElement
 import org.w3c.xhr.FormData
 import react.functionalComponent
+import react.useState
 
 @Suppress("FunctionName")
-fun SubmitForm(form: Form) = functionalComponent<ScreenProps> { props ->
+fun SubmitForm(formRef: Ref<Form>) = functionalComponent<ScreenProps> { props ->
+	val formRefState by useState(formRef)
+
+	if (!formRefState.loaded) {
+		console.info("The current page refers to an unloaded form")
+
+		val referencedForm = props.forms.find { it.id == formRefState.id }
+		if (referencedForm != null)
+			formRefState.load(referencedForm)
+	}
+
+	if (!formRefState.loaded) {
+		console.info("Couldn't find which form is referenced by the current page")
+
+		styledCard(
+			"Formulaire",
+			null,
+		) { text("Chargement en cours…") }
+
+		return@functionalComponent
+	}
+
+	val form = formRef.obj
 	require(form.open) { "Impossible de saisir des données dans un formulaire fermé" }
 
-	form.validate(props.composites)
+	try {
+		form.validate(props.composites)
+	} catch (e: RuntimeException) {
+		console.warn("Cannot load form submission at the moment", e)
+
+		styledCard(
+			"Formulaire",
+			null,
+		) { text("Chargement en cours…") }
+
+		return@functionalComponent
+	}
 
 	styledFormCard(
 		form.name,
