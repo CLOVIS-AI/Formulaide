@@ -18,6 +18,7 @@ import formulaide.ui.utils.text
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
+import org.w3c.dom.events.Event
 import org.w3c.dom.url.URL
 import react.*
 import react.dom.div
@@ -123,11 +124,27 @@ private val Navigation = functionalComponent<ScreenProps> { props ->
 	}
 }
 
+private fun getScreenFromWindow(): Screen? =
+	URL(window.location.href)
+		.searchParams
+		.get("d")
+		?.let { Screen.routeDecoder(it) }
+
 val Window = functionalComponent<ApplicationProps> { props ->
 	val (screen, setScreen) = useState(
-		Screen.routeDecoder(URL(window.location.href).searchParams.get("d") ?: "home")
-			?: Screen.Home
+		getScreenFromWindow() ?: Screen.Home
 	)
+
+	useEffectOnce {
+		val handler = { _: Event ->
+			setScreen(getScreenFromWindow() ?: Screen.Home)
+		}
+		window.addEventListener("popstate", handler)
+
+		cleanup {
+			window.removeEventListener("popstate", handler)
+		}
+	}
 
 	val title = "Formulaide • ${screen.displayName}"
 	val subtitle = when (props.user) {
