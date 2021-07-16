@@ -81,9 +81,14 @@ data class Ref<R : Referencable>(
 	 *
 	 * If [allowNotFound] is set to `false`, the function will throw if [objs] doesn't have the correct object.
 	 *
+	 * When [lazy] is set to `true`, the function will only attempt to find one of the [objs] if the referenced is unloaded.
+	 *
 	 * @see loadIfNecessary
 	 */
-	fun loadFrom(objs: Iterable<R>, allowNotFound: Boolean = false) {
+	fun loadFrom(objs: Iterable<R>, allowNotFound: Boolean = false, lazy: Boolean = false) {
+		if (lazy && loaded)
+			return
+
 		val candidate = objs.find { it.id == id }
 
 		if (candidate != null)
@@ -100,8 +105,11 @@ data class Ref<R : Referencable>(
 		 * Loads this reference by executing [loader], only if it has not been loaded yet.
 		 */
 		// inline to allow suspend lambdas
-		inline fun <R : Referencable> Ref<R>.loadIfNecessary(crossinline loader: (ReferenceId) -> R) {
-			if (!loaded)
+		inline fun <R : Referencable> Ref<R>.loadIfNecessary(
+			lazy: Boolean = true,
+			crossinline loader: (ReferenceId) -> R,
+		) {
+			if (!lazy || !loaded)
 				load(loader(id))
 		}
 
@@ -111,10 +119,7 @@ data class Ref<R : Referencable>(
 		fun <R : Referencable> Ref<R>.loadIfNecessary(
 			objs: Iterable<R>,
 			allowNotFound: Boolean = false,
-		) {
-			if (!loaded)
-				loadFrom(objs, allowNotFound)
-		}
+		) = loadFrom(objs, allowNotFound, lazy = true)
 
 		/**
 		 * Convenience method to get a reference on an object.
