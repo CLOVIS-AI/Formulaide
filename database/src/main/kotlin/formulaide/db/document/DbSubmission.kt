@@ -24,7 +24,8 @@ suspend fun Database.saveSubmission(submission: FormSubmission): DbSubmission {
 	val form = findForm(submission.form.id)
 		?: error("Une saisie a été reçue pour le formulaire '${submission.form}', qui n'existe pas.")
 
-	form.validate(composites)
+	form.load(composites)
+	form.validate()
 	submission.checkValidity(form)
 
 	return DbSubmission(form = form.id, data = submission.data).also {

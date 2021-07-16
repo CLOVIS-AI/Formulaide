@@ -131,7 +131,8 @@ class FormSubmissionTest {
 		println("Identity: " + Json.encodeToString(identity))
 		println("Form: " + Json.encodeToString(form))
 
-		form.validate(listOf(identity))
+		form.load(listOf(identity))
+		form.validate()
 
 		val submission1 = FormSubmission(
 			form.createRef(),
@@ -278,7 +279,8 @@ class FormSubmissionTest {
 			),
 			actions = emptyList()
 		)
-		form.validate(listOf(identity))
+		form.load(listOf(identity))
+		form.validate()
 
 		val submission = form.createSubmission {
 			composite(identityField) {

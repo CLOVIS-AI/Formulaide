@@ -2,6 +2,7 @@ package formulaide.api.data
 
 import formulaide.api.fields.FormRoot
 import formulaide.api.types.OrderedListElement.Companion.checkOrderValidity
+import formulaide.api.types.Ref
 import formulaide.api.types.Referencable
 import formulaide.api.users.TokenResponse
 import kotlinx.serialization.Serializable
@@ -41,7 +42,21 @@ data class Form(
 		require(name.isNotBlank()) { "Le nom d'un formulaire ne peut pas être vide : '$name'" }
 	}
 
-	fun validate(composites: List<Composite>) {
-		mainFields.validate(composites)
+	/**
+	 * Loads all there is to load in this [Form] (recursively).
+	 *
+	 * Parameters [allowNotFound] and [lazy] are passed to [Ref.loadFrom].
+	 */
+	fun load(composites: List<Composite>, allowNotFound: Boolean = false, lazy: Boolean = true) {
+		mainFields.load(composites, allowNotFound, lazy)
+	}
+
+	/**
+	 * Validates all constraints in this form.
+	 *
+	 * The form should be [loaded][load] beforehand.
+	 */
+	fun validate() {
+		mainFields.validate()
 	}
 }

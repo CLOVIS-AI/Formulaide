@@ -47,7 +47,7 @@ fun SubmitForm(formRef: Ref<Form>) = functionalComponent<ScreenProps> { props ->
 	require(form.open) { "Impossible de saisir des données dans un formulaire fermé" }
 
 	try {
-		form.validate(props.composites)
+		form.load(props.composites)
 	} catch (e: RuntimeException) {
 		console.warn("Cannot load form submission at the moment", e)
 

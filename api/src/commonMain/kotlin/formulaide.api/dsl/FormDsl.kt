@@ -39,7 +39,10 @@ fun formRoot(
 
 	return FormRoot(
 		dsl.fields
-	).also { it.validate(composites) }
+	).also {
+		it.load(composites)
+		it.validate()
+	}
 }
 
 fun formRoot(

@@ -1,6 +1,7 @@
 package formulaide.api.fields
 
 import formulaide.api.data.Form
+import formulaide.api.types.Ref
 import kotlinx.serialization.Serializable
 import formulaide.api.data.Composite as CompositeData
 import formulaide.api.fields.FormField.Composite as FormComposite
@@ -19,10 +20,23 @@ data class FormRoot(
 ) {
 
 	/**
-	 * Validates and loads references in this [FormRoot].
+	 * Loads the different fields in this root (recursively).
+	 *
+	 * Parameters [allowNotFound] and [lazy] are passed to [Ref.loadFrom].
 	 */
-	fun validate(composites: List<CompositeData>) {
-		fields.forEach { it.validate(composites) }
+	fun load(
+		composites: List<CompositeData>,
+		allowNotFound: Boolean = false,
+		lazy: Boolean = true,
+	) {
+		fieldMonad().forEach { it.load(composites, allowNotFound, lazy) }
+	}
+
+	/**
+	 * Validates this [FormRoot].
+	 */
+	fun validate() {
+		fieldMonad().forEach { it.validate() }
 	}
 }
 
@@ -32,6 +46,21 @@ data class FormRoot(
  * Fields from the [FormRoot] to the first [FormComposite] are modeled
  */
 sealed interface FormField : Field {
+
+	/**
+	 * Loads the references contained by this [FormField].
+	 *
+	 * This function is not recursive; see [fieldMonad].
+	 */
+	fun load(composites: List<CompositeData>, allowNotFound: Boolean = false, lazy: Boolean = true)
+
+	/**
+	 * Checks that this field validates all of its constraints.
+	 *
+	 * The field should be [loaded][load] before this function is called.
+	 * This function is not recursive; see [fieldMonad].
+	 */
+	fun validate()
 
 	/**
 	 * Marker interface for simple fields that appear in forms.

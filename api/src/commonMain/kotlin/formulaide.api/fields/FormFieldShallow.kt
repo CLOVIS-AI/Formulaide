@@ -2,10 +2,11 @@ package formulaide.api.fields
 
 import formulaide.api.fields.ShallowFormField.Composite
 import formulaide.api.types.Arity
+import formulaide.api.types.OrderedListElement.Companion.checkOrderValidity
 import formulaide.api.types.Ref
-import formulaide.api.types.Ref.Companion.loadIfNecessary
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import formulaide.api.data.Composite as CompositeData
 
 /**
  * Fields that do not have a transitive [Composite] parent.
@@ -15,10 +16,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed class ShallowFormField : FormField {
 
-	/**
-	 * Loads [references][Ref] contained in this [FormField] (recursively).
-	 */
-	abstract fun validate(composites: List<formulaide.api.data.Composite>)
+	override fun load(composites: List<CompositeData>, allowNotFound: Boolean, lazy: Boolean) {}
+	override fun validate() {}
 
 	/**
 	 * A field that represents a single data entry.
@@ -32,11 +31,7 @@ sealed class ShallowFormField : FormField {
 		override val order: Int,
 		override val name: String,
 		override val simple: SimpleField,
-	) : ShallowFormField(), FormField.Simple {
-
-		override fun validate(composites: List<formulaide.api.data.Composite>) =
-			Unit // Nothing to do
-	}
+	) : ShallowFormField(), FormField.Simple
 
 	/**
 	 * A field that allows the user to choose between multiple [options].
@@ -53,12 +48,14 @@ sealed class ShallowFormField : FormField {
 		override val options: List<ShallowFormField>,
 	) : ShallowFormField(), FormField.Union<ShallowFormField> {
 
-		override fun validate(composites: List<formulaide.api.data.Composite>) =
-			options.forEach { it.validate(composites) }
+		override fun validate() {
+			super.validate()
+			options.checkOrderValidity()
+		}
 	}
 
 	/**
-	 * A field that corresponds to a [composite data structure][formulaide.api.data.Composite].
+	 * A field that corresponds to a [composite data structure][CompositeData].
 	 *
 	 * All of its children must reference the corresponding data structure as well: see [DeepFormField].
 	 */
@@ -69,20 +66,27 @@ sealed class ShallowFormField : FormField {
 		override val order: Int,
 		override val name: String,
 		override val arity: Arity,
-		override val ref: Ref<formulaide.api.data.Composite>,
+		override val ref: Ref<CompositeData>,
 		override val fields: List<DeepFormField>,
-	) : ShallowFormField(), Field.Reference<formulaide.api.data.Composite>, FormField.Composite {
+	) : ShallowFormField(), Field.Reference<CompositeData>, FormField.Composite {
 
-		override fun validate(composites: List<formulaide.api.data.Composite>) {
-			ref.loadIfNecessary(composites)
-			fields.forEach { it.validate(ref.obj.fields, composites) }
+		override fun load(composites: List<CompositeData>, allowNotFound: Boolean, lazy: Boolean) {
+			super.load(composites, allowNotFound, lazy)
+			ref.loadFrom(composites, allowNotFound, lazy)
+
+			fields.forEach { it.loadRef(ref.obj, allowNotFound, lazy) }
+		}
+
+		override fun validate() {
+			super.validate()
+			fields.checkOrderValidity()
 		}
 	}
 
 	fun copyToSimple(simple: SimpleField) = Simple(id, order, name, simple)
 	fun copyToUnion(options: List<ShallowFormField>) = Union(id, order, name, arity, options)
 	fun copyToComposite(
-		composite: Ref<formulaide.api.data.Composite>,
+		composite: Ref<CompositeData>,
 		fields: List<DeepFormField>,
 	) = Composite(id, order, name, arity, composite, fields)
 }

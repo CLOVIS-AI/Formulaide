@@ -4,12 +4,12 @@ import formulaide.api.types.Arity
 import formulaide.api.types.Ref
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.types.Ref.Companion.ids
-import formulaide.api.types.Ref.Companion.loadIfNecessary
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import formulaide.api.data.Composite as CompositeData
 
 /**
- * A field in a [form][FormRoot], that matches a field in a [composite data structure][formulaide.api.data.Composite].
+ * A field in a [form][FormRoot], that matches a field in a [composite data structure][CompositeData].
  *
  * The [id] and [name] must match with the corresponding field, however the [arity] is allowed to be different (but shouldn't conflict).
  */
@@ -21,6 +21,8 @@ sealed class DeepFormField : FormField, Field.Reference<DataField> {
 	 * @see DeepFormField
 	 */
 	abstract override val ref: Ref<DataField>
+
+	abstract val obj: DataField
 
 	/**
 	 * The identifier of the referenced [DataField].
@@ -41,8 +43,16 @@ sealed class DeepFormField : FormField, Field.Reference<DataField> {
 	 */
 	override val order get() = ref.obj.order // will throw if the reference is not loaded
 
-	open fun validate(fields: List<DataField>, composites: List<formulaide.api.data.Composite>) {
-		ref.loadIfNecessary(fields)
+	/**
+	 * Loads the [ref] to the [CompositeData] that this field mirrors.
+	 */
+	fun loadRef(composite: CompositeData, allowNotFound: Boolean, lazy: Boolean) {
+		ref.loadFrom(composite.fields, allowNotFound, lazy)
+	}
+
+	override fun load(composites: List<CompositeData>, allowNotFound: Boolean, lazy: Boolean) {}
+	override fun validate() {
+		require(ref.loaded) { "Ce champ de formulaire aurait déjà du être chargé (cf. loadRef)" }
 
 		require(arity.min >= ref.obj.arity.min) { "Un champ d'un formulaire ne peut pas accepter moins de réponses que le champ de la donnée correspondante ; la donnée (${ref.obj.id}, '${ref.obj.name}') accepte a une arité de ${ref.obj.arity} et le champ accepte une arité de $arity" }
 		require(arity.max <= ref.obj.arity.max) { "Un champ d'un formulaire ne peut pas accepter plus de réponses que le champ de la donnée correspondante ; la donnée (${ref.obj.id}, '${ref.obj.name}') accepte a une arité de ${ref.obj.arity} et le champ accepte une arité de $arity" }
@@ -62,14 +72,13 @@ sealed class DeepFormField : FormField, Field.Reference<DataField> {
 
 		constructor(ref: DataField.Simple, simple: SimpleField) : this(ref.createRef(), simple)
 
-		override fun validate(
-			fields: List<DataField>,
-			composites: List<formulaide.api.data.Composite>,
-		) {
-			super.validate(fields, composites)
+		override val obj
+			get() = ref.obj as? DataField.Simple
+				?: error("Ce champ est de type SIMPLE, mais il référence un champ de type ${ref.obj::class}")
 
-			val obj = ref.obj
-			require(obj is DataField.Simple) { "Ce champ est de type SIMPLE, mais il référence un champ de type ${obj::class}" }
+		override fun validate() {
+			super.validate()
+
 			obj.simple.validateCompatibility(simple)
 		}
 	}
@@ -93,18 +102,14 @@ sealed class DeepFormField : FormField, Field.Reference<DataField> {
 			options: List<DeepFormField>,
 		) : this(ref.createRef(), arity, options)
 
-		override fun validate(
-			fields: List<DataField>,
-			composites: List<formulaide.api.data.Composite>,
-		) {
-			super.validate(fields, composites)
+		override val obj
+			get() = ref.obj as? DataField.Union
+				?: error("Ce champ est de type UNION, mais il référence un champ de type ${ref.obj::class}")
 
-			val dataField = ref.obj
-			require(dataField is DataField.Union) { "Ce champ est de type UNION, mais il référence un champ de type ${dataField::class}" }
+		override fun validate() {
+			super.validate()
 
-			require(dataField.options.ids() == options.ids()) { "Ce champ est de type UNION, et référence un champ ayant comme options ${dataField.options} mais n'autorise que les options $options" }
-
-			options.forEach { it.validate(dataField.options, composites) }
+			require(obj.options.ids() == options.ids()) { "Ce champ est de type UNION, et référence un champ ayant comme options ${obj.options} mais n'autorise que les options $options" }
 		}
 	}
 
@@ -127,26 +132,34 @@ sealed class DeepFormField : FormField, Field.Reference<DataField> {
 			fields: List<DeepFormField>,
 		) : this(ref.createRef(), arity, fields)
 
-		override fun validate(
-			fields: List<DataField>,
-			composites: List<formulaide.api.data.Composite>,
+		override val obj
+			get() = ref.obj as? DataField.Composite
+				?: error("Ce champ est de type COMPOSITE, mais il référence un champ de type ${ref.obj::class}")
+
+		override fun load(
+			composites: List<CompositeData>,
+			allowNotFound: Boolean,
+			lazy: Boolean,
 		) {
-			super.validate(fields, composites)
+			super.load(composites, allowNotFound, lazy)
+
+			// Load the corresponding DataField.Composite, just in case
+			obj.fieldMonad().map { it.load(composites, allowNotFound, lazy = true) }
+
+			fields.forEach { it.loadRef(obj.ref.obj, allowNotFound, lazy = true) }
+		}
+
+		override fun validate() {
+			super.validate()
 
 			val dataField = ref.obj
 			require(dataField is DataField.Composite) { "Ce champ est de type COMPOSITE, mais il référence un champ de type ${dataField::class}" }
-
-			// Load the corresponding DataField.Composite
-			val referencedComposite = dataField.ref
-			referencedComposite.loadIfNecessary(composites)
-
-			this.fields.forEach { it.validate(referencedComposite.obj.fields, composites) }
 		}
 	}
 
 	companion object {
 
-		fun DataField.createMatchingFormField(composites: List<formulaide.api.data.Composite>): DeepFormField =
+		fun DataField.createMatchingFormField(composites: List<CompositeData>): DeepFormField =
 			when (this) {
 				is DataField.Simple -> Simple(this, simple)
 				is DataField.Union -> Union(
