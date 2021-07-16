@@ -27,11 +27,8 @@ data class Arity(
 	val max: Int,
 ) {
 	init {
-		if (min < 0)
-			throw IllegalArgumentException("L'arité minimale d'une donnée ne peut pas être négative : $min")
-
-		if (max < min)
-			throw IllegalArgumentException("L'arité maximale d'une donnée doit être supérieure ou égale à son arité minimale : min=$min, max=$max")
+		require(min >= 0) { "L'arité minimale d'une donnée ne peut pas être négative : $min" }
+		require(max >= min) { "L'arité maximale d'une donnée doit être supérieure ou égale à son arité minimale : min=$min, max=$max" }
 	}
 
 	/**
