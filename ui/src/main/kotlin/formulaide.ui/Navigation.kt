@@ -131,13 +131,13 @@ private fun getScreenFromWindow(): Screen? =
 		?.let { Screen.routeDecoder(it) }
 
 val Window = functionalComponent<ApplicationProps> { props ->
-	val (screen, setScreen) = useState(
+	var screen by useState(
 		getScreenFromWindow() ?: Screen.Home
 	)
 
 	useEffectOnce {
 		val handler = { _: Event ->
-			setScreen(getScreenFromWindow() ?: Screen.Home)
+			screen = getScreenFromWindow() ?: Screen.Home
 		}
 		window.addEventListener("popstate", handler)
 
@@ -167,7 +167,11 @@ val Window = functionalComponent<ApplicationProps> { props ->
 			refreshServices = props.refreshServices
 
 			currentScreen = screen
-			navigateTo = { setScreen(it) }
+			navigateTo = {
+				screen = it
+				window.history.pushState(null, it.displayName, "?d=" + it.route)
+				document.title = "${it.displayName} • Formulaide"
+			}
 
 			reportError = props.reportError
 		}
@@ -179,11 +183,6 @@ val Window = functionalComponent<ApplicationProps> { props ->
 				setProps(this)
 			}
 		}
-	}
-
-	useEffect(screen) {
-		window.history.pushState(null, screen.displayName, "?d=" + screen.route)
-		document.title = "${screen.displayName} • Formulaide"
 	}
 
 	if (props.user.role >= screen.requiredRole) {
