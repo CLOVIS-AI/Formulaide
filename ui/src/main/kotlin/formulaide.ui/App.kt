@@ -37,6 +37,7 @@ val App = functionalComponent<RProps> {
 		launchAndReportExceptions(addError, scope) {
 			if (client is Client.Authenticated)
 				setUser(client.getMe())
+			console.log("Reloaded user")
 		}
 	}
 	//endregion
@@ -48,6 +49,7 @@ val App = functionalComponent<RProps> {
 		if (client is Client.Authenticated) {
 			launchAndReportExceptions(addError, scope) { setComposites(client.listData()) }
 		} else setComposites(emptyList())
+		console.log("Loaded ${composites.size} composites")
 	}
 	//endregion
 
@@ -69,6 +71,7 @@ val App = functionalComponent<RProps> {
 						emptyList()
 					}
 			)
+			console.log("Loaded ${forms.size} forms")
 		}
 	}
 	//endregion
@@ -85,6 +88,7 @@ val App = functionalComponent<RProps> {
 				)
 			}
 		} else setServices(emptyList())
+		console.log("Loaded ${services.size} services")
 	}
 	//endregion
 
@@ -97,8 +101,10 @@ val App = functionalComponent<RProps> {
 			launchAndReportExceptions(addError, scope) {
 				val accessToken = client.refreshToken()
 
-				if (accessToken != null)
+				if (accessToken != null) {
 					setClient(client.authenticate(accessToken))
+					console.log("Got an access token from the cookie-stored refresh token (page loading)")
+				}
 			}
 		}
 	}
@@ -115,6 +121,7 @@ val App = functionalComponent<RProps> {
 				checkNotNull(accessToken) { "Le serveur a refusé de rafraichir le token d'accès. Une raison possible est que votre mot de passe a été modifié." }
 
 				setClient(defaultClient.authenticate(accessToken))
+				console.log("Got an access token from the cookie-stored refresh token (expiration time was near)")
 			}
 		}
 

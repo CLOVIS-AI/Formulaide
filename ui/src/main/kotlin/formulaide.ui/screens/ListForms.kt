@@ -1,5 +1,6 @@
 package formulaide.ui.screens
 
+import formulaide.api.types.Ref.Companion.createRef
 import formulaide.ui.Screen
 import formulaide.ui.ScreenProps
 import formulaide.ui.components.styledButton
@@ -16,7 +17,7 @@ val FormList = functionalComponent<ScreenProps> { props ->
 		contents = {
 			for (form in forms) {
 				styledField("form-${form.id}", form.name) {
-					styledButton("Remplir") { props.navigateTo(Screen.SubmitForm(form)) }
+					styledButton("Remplir") { props.navigateTo(Screen.SubmitForm(form.createRef())) }
 				}
 			}
 		}

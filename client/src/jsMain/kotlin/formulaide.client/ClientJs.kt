@@ -22,7 +22,7 @@ actual suspend fun Client.refreshToken(): String? {
 			.decodeFromString<TokenResponse>(response.text().await())
 			.token
 		else -> {
-			console.warn("La récupération du refresh token a échoué", response)
+			console.warn("La récupération de l'access token a échoué", response)
 			null
 		}
 	}
