@@ -85,6 +85,7 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 	install(StatusPages) {
 		exception<Throwable> { error ->
 			call.respondText(error.message ?: error.toString(), status = HttpStatusCode.BadRequest)
+			error.printStackTrace()
 		}
 	}
 
