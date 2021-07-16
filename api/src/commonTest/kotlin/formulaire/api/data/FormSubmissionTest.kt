@@ -4,10 +4,7 @@ import formulaide.api.data.Composite
 import formulaide.api.data.Form
 import formulaide.api.data.FormSubmission
 import formulaide.api.data.FormSubmission.Companion.createSubmission
-import formulaide.api.fields.DataField
-import formulaide.api.fields.FormField
-import formulaide.api.fields.FormRoot
-import formulaide.api.fields.SimpleField
+import formulaide.api.fields.*
 import formulaide.api.fields.SimpleField.Text
 import formulaide.api.types.Arity
 import formulaide.api.types.Ref.Companion.createRef
@@ -68,45 +65,45 @@ class FormSubmissionTest {
 			public = true,
 			mainFields = FormRoot(
 				listOf(
-					FormField.Shallow.Composite(
+					ShallowFormField.Composite(
 						id = "7",
 						order = 1,
 						name = "Demandeur",
 						arity = Arity.mandatory(),
 						ref = identity.createRef(),
 						listOf(
-							FormField.Deep.Simple(
+							DeepFormField.Simple(
 								lastName,
 								Text(Arity.mandatory())
 							),
-							FormField.Deep.Simple(
+							DeepFormField.Simple(
 								firstName,
 								Text(Arity.mandatory())
 							),
-							FormField.Deep.Simple(
+							DeepFormField.Simple(
 								phoneNumber,
 								Text(Arity.mandatory())
 							),
-							FormField.Deep.Composite(
+							DeepFormField.Composite(
 								family,
 								arity = Arity.list(0, 10),
 								emptyList()
 							)
 						)
 					),
-					FormField.Shallow.Union(
+					ShallowFormField.Union(
 						id = "9",
 						order = 2,
 						name = "Endroit préféré",
 						arity = Arity.mandatory(),
 						listOf(
-							FormField.Shallow.Simple(
+							ShallowFormField.Simple(
 								id = "10",
 								order = 1,
 								name = "Proche de la mer",
 								SimpleField.Message
 							),
-							FormField.Shallow.Simple(
+							ShallowFormField.Simple(
 								id = "11",
 								order = 2,
 								name = "Proche de la mairie",
@@ -114,13 +111,13 @@ class FormSubmissionTest {
 							)
 						)
 					),
-					FormField.Shallow.Simple(
+					ShallowFormField.Simple(
 						id = "12",
 						order = 3,
 						name = "Notes",
 						Text(Arity.optional())
 					),
-					FormField.Shallow.Simple(
+					ShallowFormField.Simple(
 						id = "13",
 						order = 4,
 						name = "Merci de votre coopération",
@@ -212,28 +209,28 @@ class FormSubmissionTest {
 
 	@Test
 	fun submitDsl() {
-		val lastNameField = FormField.Deep.Simple(
+		val lastNameField = DeepFormField.Simple(
 			lastName,
 			Text(Arity.mandatory())
 		)
-		val firstNameField = FormField.Deep.Simple(
+		val firstNameField = DeepFormField.Simple(
 			firstName,
 			Text(Arity.mandatory())
 		)
-		val phoneNumberField = FormField.Deep.Simple(
+		val phoneNumberField = DeepFormField.Simple(
 			phoneNumber,
 			Text(Arity.mandatory())
 		)
-		val phoneNumberRecursionField = FormField.Deep.Simple(
+		val phoneNumberRecursionField = DeepFormField.Simple(
 			phoneNumber,
 			Text(Arity.optional())
 		)
-		val familyRecursionField2 = FormField.Deep.Composite(
+		val familyRecursionField2 = DeepFormField.Composite(
 			family,
 			arity = Arity.forbidden(),
 			emptyList()
 		)
-		val identityRecursionField = FormField.Deep.Composite(
+		val identityRecursionField = DeepFormField.Composite(
 			family,
 			arity = Arity.list(0, 10),
 			listOf(
@@ -243,7 +240,7 @@ class FormSubmissionTest {
 				familyRecursionField2,
 			)
 		)
-		val identityField = FormField.Shallow.Composite(
+		val identityField = ShallowFormField.Composite(
 			id = "7",
 			order = 1,
 			name = "Demandeur",
@@ -256,9 +253,9 @@ class FormSubmissionTest {
 				identityRecursionField
 			)
 		)
-		val unionChoice1 = FormField.Shallow.Simple("1", 1, "1", SimpleField.Message)
-		val unionChoice2 = FormField.Shallow.Simple("2", 2, "2", SimpleField.Message)
-		val union = FormField.Shallow.Union(
+		val unionChoice1 = ShallowFormField.Simple("1", 1, "1", SimpleField.Message)
+		val unionChoice2 = ShallowFormField.Simple("2", 2, "2", SimpleField.Message)
+		val union = ShallowFormField.Union(
 			"12",
 			2,
 			"Choix",

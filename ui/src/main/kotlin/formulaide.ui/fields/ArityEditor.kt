@@ -1,10 +1,7 @@
 package formulaide.ui.fields
 
-import formulaide.api.fields.DataField
-import formulaide.api.fields.Field
-import formulaide.api.fields.FormField
-import formulaide.api.fields.FormField.Deep.Companion.createMatchingFormField
-import formulaide.api.fields.SimpleField
+import formulaide.api.fields.*
+import formulaide.api.fields.DeepFormField.Companion.createMatchingFormField
 import formulaide.api.types.Arity
 import formulaide.api.types.Ref.Companion.loadIfNecessary
 import formulaide.ui.components.styledSmallInput
@@ -76,8 +73,8 @@ private fun updateSubFieldsOnMaxArityChange(props: EditableFieldProps, newArity:
 		props.replace(newField)
 	} else {
 		val composite = when (newField) {
-			is FormField.Shallow.Composite -> newField.ref.also { it.loadIfNecessary(props.app.composites) }.obj
-			is FormField.Deep.Composite -> (newField.ref.obj as DataField.Composite).ref.also {
+			is ShallowFormField.Composite -> newField.ref.also { it.loadIfNecessary(props.app.composites) }.obj
+			is DeepFormField.Composite -> (newField.ref.obj as DataField.Composite).ref.also {
 				it.loadIfNecessary(props.app.composites)
 			}.obj
 			else -> error("This is impossible, the execution should never reach this point.")
@@ -85,8 +82,8 @@ private fun updateSubFieldsOnMaxArityChange(props: EditableFieldProps, newArity:
 		val newFields = composite.fields.map { it.createMatchingFormField(props.app.composites) }
 
 		when (newField) {
-			is FormField.Shallow.Composite -> props.replace(newField.copy(fields = newFields))
-			is FormField.Deep.Composite -> props.replace(newField.copy(fields = newFields))
+			is ShallowFormField.Composite -> props.replace(newField.copy(fields = newFields))
+			is DeepFormField.Composite -> props.replace(newField.copy(fields = newFields))
 		}
 	}
 }
