@@ -124,7 +124,10 @@ private val Navigation = functionalComponent<ScreenProps> { props ->
 }
 
 val Window = functionalComponent<ApplicationProps> { props ->
-	val (screen, setScreen) = useState<Screen>(Screen.Home)
+	val (screen, setScreen) = useState(
+		Screen.routeDecoder(URL(window.location.href).searchParams.get("d") ?: "home")
+			?: Screen.Home
+	)
 
 	val title = "Formulaide • ${screen.displayName}"
 	val subtitle = when (props.user) {
