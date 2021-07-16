@@ -16,7 +16,8 @@ suspend fun Database.findComposite(id: ReferenceId) =
 	data.findOne(Composite::id eq id)
 
 suspend fun Database.createComposite(composite: Composite): Composite {
-	composite.validate(listComposites(), allowRecursive = true)
+	composite.loadAllowRecursive(listComposites())
+	composite.validate()
 
 	val id = generateId<Composite>()
 
