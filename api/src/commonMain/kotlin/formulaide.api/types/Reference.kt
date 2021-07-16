@@ -78,11 +78,18 @@ data class Ref<R : Referencable>(
 
 	/**
 	 * Loads an object by finding it in [objs].
+	 *
+	 * If [allowNotFound] is set to `false`, the function will throw if [objs] doesn't have the correct object.
+	 *
 	 * @see loadIfNecessary
 	 */
-	fun loadFrom(objs: Iterable<R>) {
-		obj = objs.find { it.id == id }
-			?: error("Couldn't find any object with id '$id' in the given list.")
+	fun loadFrom(objs: Iterable<R>, allowNotFound: Boolean = false) {
+		val candidate = objs.find { it.id == id }
+
+		if (candidate != null)
+			obj = candidate
+		else if (!allowNotFound)
+			error("Couldn't find any object with id '$id' in the given list.")
 	}
 
 	override fun toString() = "Ref(id: $id, obj: ${if (loaded) "loaded" else "not loaded"})"
@@ -101,9 +108,12 @@ data class Ref<R : Referencable>(
 		/**
 		 * Loads this reference by finding it in [objs], only if it has not been loaded yet.
 		 */
-		fun <R : Referencable> Ref<R>.loadIfNecessary(objs: Iterable<R>) {
+		fun <R : Referencable> Ref<R>.loadIfNecessary(
+			objs: Iterable<R>,
+			allowNotFound: Boolean = false,
+		) {
 			if (!loaded)
-				loadFrom(objs)
+				loadFrom(objs, allowNotFound)
 		}
 
 		/**
