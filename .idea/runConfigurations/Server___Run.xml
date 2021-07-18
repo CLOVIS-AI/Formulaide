@@ -1,5 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Server » Run" type="GradleRunConfiguration" factoryName="Gradle">
+    <output_file path="$PROJECT_DIR$/server/build/server.logs" is_save="true" />
+    <log_file alias="logs" path="$PROJECT_DIR$/server/build/server.logs" />
     <ExternalSystemSettings>
       <option name="env">
         <map>
