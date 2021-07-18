@@ -247,13 +247,14 @@ server-bin-docker-tag:
 pages:
   image: alpine:latest
   stage: deploy
-  dependencies: [ dokka, server-bin ]
-  needs: [ dokka, server-bin ]
+  dependencies: [ dokka, server-bin, qodana ]
+  needs: [ dokka, server-bin, qodana ]
   script:
-    - mkdir -p public/documentation public/bin
+    - mkdir -p public/documentation public/bin public/qodana
     - mv build/dokka/htmlMultiModule/* public/documentation/
     - mv server/build/distributions/server*.tar public/bin/server.tar
     - mv server/build/distributions/server*.zip public/bin/server.zip
+    - mv qodana/ public/qodana
   artifacts:
     paths:
       - public
