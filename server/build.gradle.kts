@@ -64,5 +64,6 @@ tasks.create<Copy>("copyFrontend") {
 }
 
 tasks.processResources {
-	dependsOn("copyFrontend")
+	if (!project.hasProperty("devMode"))
+		dependsOn("copyFrontend")
 }
