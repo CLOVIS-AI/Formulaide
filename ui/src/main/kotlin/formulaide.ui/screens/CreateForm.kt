@@ -2,8 +2,8 @@ package formulaide.ui.screens
 
 import formulaide.api.data.Action
 import formulaide.api.data.Form
-import formulaide.api.fields.FormField
 import formulaide.api.fields.FormRoot
+import formulaide.api.fields.ShallowFormField
 import formulaide.api.fields.SimpleField
 import formulaide.api.types.Arity
 import formulaide.api.types.Ref
@@ -37,7 +37,7 @@ val CreateForm = functionalComponent<ScreenProps> { props ->
 	val formName = useRef<HTMLInputElement>()
 	val public = useRef<HTMLInputElement>()
 
-	val (fields, setFields) = useState<List<FormField.Shallow>>(emptyList())
+	val (fields, setFields) = useState<List<ShallowFormField>>(emptyList())
 	val (actions, setActions) = useState<List<Action>>(emptyList())
 
 	val services = props.services.filter { it.open }
@@ -47,7 +47,7 @@ val CreateForm = functionalComponent<ScreenProps> { props ->
 		"Créer ce formulaire",
 		"Ajouter un champ" to {
 			setFields(
-				fields + FormField.Shallow.Simple(
+				fields + ShallowFormField.Simple(
 					order = fields.size,
 					id = fields.size.toString(),
 					name = "Nouveau champ",
@@ -85,7 +85,7 @@ val CreateForm = functionalComponent<ScreenProps> { props ->
 								this.app = props
 								this.field = field
 								this.replace = {
-									setFields(fields.replace(i, it as FormField.Shallow))
+									setFields(fields.replace(i, it as ShallowFormField))
 								}
 							}
 						}

@@ -78,11 +78,23 @@ data class Ref<R : Referencable>(
 
 	/**
 	 * Loads an object by finding it in [objs].
+	 *
+	 * If [allowNotFound] is set to `false`, the function will throw if [objs] doesn't have the correct object.
+	 *
+	 * When [lazy] is set to `true`, the function will only attempt to find one of the [objs] if the referenced is unloaded.
+	 *
 	 * @see loadIfNecessary
 	 */
-	fun loadFrom(objs: Iterable<R>) {
-		obj = objs.find { it.id == id }
-			?: error("Couldn't find any object with id '$id' in the given list.")
+	fun loadFrom(objs: Iterable<R>, allowNotFound: Boolean = false, lazy: Boolean = false) {
+		if (lazy && loaded)
+			return
+
+		val candidate = objs.find { it.id == id }
+
+		if (candidate != null)
+			obj = candidate
+		else if (!allowNotFound)
+			error("Couldn't find any object with id '$id' in the given list.")
 	}
 
 	override fun toString() = "Ref(id: $id, obj: ${if (loaded) "loaded" else "not loaded"})"
@@ -93,18 +105,21 @@ data class Ref<R : Referencable>(
 		 * Loads this reference by executing [loader], only if it has not been loaded yet.
 		 */
 		// inline to allow suspend lambdas
-		inline fun <R : Referencable> Ref<R>.loadIfNecessary(crossinline loader: (ReferenceId) -> R) {
-			if (!loaded)
+		inline fun <R : Referencable> Ref<R>.loadIfNecessary(
+			lazy: Boolean = true,
+			crossinline loader: (ReferenceId) -> R,
+		) {
+			if (!lazy || !loaded)
 				load(loader(id))
 		}
 
 		/**
 		 * Loads this reference by finding it in [objs], only if it has not been loaded yet.
 		 */
-		fun <R : Referencable> Ref<R>.loadIfNecessary(objs: Iterable<R>) {
-			if (!loaded)
-				loadFrom(objs)
-		}
+		fun <R : Referencable> Ref<R>.loadIfNecessary(
+			objs: Iterable<R>,
+			allowNotFound: Boolean = false,
+		) = loadFrom(objs, allowNotFound, lazy = true)
 
 		/**
 		 * Convenience method to get a reference on an object.

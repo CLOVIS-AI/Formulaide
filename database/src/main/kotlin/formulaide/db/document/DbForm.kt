@@ -36,7 +36,8 @@ suspend fun Database.findForm(id: ReferenceId) =
 suspend fun Database.createForm(form: Form): Form {
 	require(form.open) { "Il est interdit de créer un formulaire fermé" }
 
-	form.validate(listComposites())
+	form.load(listComposites())
+	form.validate()
 
 	val newForm = form.copy(id = generateId<Form>())
 	forms.insertOne(newForm)

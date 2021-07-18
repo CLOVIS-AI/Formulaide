@@ -3,10 +3,7 @@ package formulaide.api.dsl
 import formulaide.api.data.Action
 import formulaide.api.data.Composite
 import formulaide.api.data.Form
-import formulaide.api.fields.DataField
-import formulaide.api.fields.FormField
-import formulaide.api.fields.FormRoot
-import formulaide.api.fields.SimpleField
+import formulaide.api.fields.*
 import formulaide.api.types.Arity
 import formulaide.api.types.Ref
 import formulaide.api.types.Ref.Companion.createRef
@@ -35,87 +32,91 @@ fun form(
  */
 fun formRoot(
 	composites: List<Composite>,
-	fields: FormDsl<FormField.Shallow>.() -> Unit
+	fields: FormDsl<ShallowFormField>.() -> Unit,
 ): FormRoot {
-	val dsl = FormDsl<FormField.Shallow>()
+	val dsl = FormDsl<ShallowFormField>()
 	dsl.fields()
 
 	return FormRoot(
 		dsl.fields
-	).also { it.validate(composites) }
+	).also {
+		it.load(composites)
+		it.validate()
+	}
 }
 
 fun formRoot(
 	vararg composites: Composite,
-	fields: FormDsl<FormField.Shallow>.() -> Unit
+	fields: FormDsl<ShallowFormField>.() -> Unit,
 ) = formRoot(composites.asList(), fields)
 
-fun FieldDsl<FormField.Shallow>.simple(
+fun FieldDsl<ShallowFormField>.simple(
 	name: String,
-	simple: SimpleField
-) : FormField.Shallow.Simple {
+	simple: SimpleField,
+): ShallowFormField.Simple {
 	val (id, order) = nextInfo()
 
-	return FormField.Shallow.Simple(id, order, name, simple).also { fields += it }
+	return ShallowFormField.Simple(id, order, name, simple).also { fields += it }
 }
 
-fun FieldDsl<FormField.Shallow>.union(
+fun FieldDsl<ShallowFormField>.union(
 	name: String,
 	arity: Arity,
-	options: FormDsl<FormField.Shallow>.() -> Unit
-) : FormField.Shallow.Union {
+	options: FormDsl<ShallowFormField>.() -> Unit,
+): ShallowFormField.Union {
 	val (id, order) = nextInfo()
 
-	val dsl = FormDsl<FormField.Shallow>()
+	val dsl = FormDsl<ShallowFormField>()
 	dsl.options()
 
-	return FormField.Shallow.Union(id, order, name, arity, dsl.fields).also { fields += it }
+	return ShallowFormField.Union(id, order, name, arity, dsl.fields).also { fields += it }
 }
 
-fun FieldDsl<FormField.Shallow>.composite(
+fun FieldDsl<ShallowFormField>.composite(
 	name: String,
 	arity: Arity,
 	composite: Ref<Composite>,
-	fields: FormDsl<FormField.Deep>.() -> Unit
-) : FormField.Shallow.Composite {
+	fields: FormDsl<DeepFormField>.() -> Unit,
+): ShallowFormField.Composite {
 	val (id, order) = nextInfo()
 
-	val dsl = FormDsl<FormField.Deep>()
+	val dsl = FormDsl<DeepFormField>()
 	dsl.fields()
 
-	return FormField.Shallow.Composite(id, order, name, arity, composite, dsl.fields).also { this.fields += it }
+	return ShallowFormField.Composite(id, order, name, arity, composite, dsl.fields)
+		.also { this.fields += it }
 }
 
-fun FieldDsl<FormField.Shallow>.composite(
+fun FieldDsl<ShallowFormField>.composite(
 	name: String,
 	arity: Arity,
 	composite: Composite,
-	fields: FormDsl<FormField.Deep>.() -> Unit
+	fields: FormDsl<DeepFormField>.() -> Unit,
 ) = this.composite(name, arity, composite.createRef(), fields)
 
-fun FieldDsl<FormField.Deep>.simple(
+fun FieldDsl<DeepFormField>.simple(
 	field: DataField.Simple,
-	simple: SimpleField
-) = FormField.Deep.Simple(field.createRef(), simple).also { fields += it }
+	simple: SimpleField,
+) = DeepFormField.Simple(field.createRef(), simple).also { fields += it }
 
-fun FieldDsl<FormField.Deep>.union(
+fun FieldDsl<DeepFormField>.union(
 	field: DataField.Union,
 	arity: Arity,
-	options: FormDsl<FormField.Deep>.() -> Unit,
-): FormField.Deep.Union {
-	val dsl = FormDsl<FormField.Deep>()
+	options: FormDsl<DeepFormField>.() -> Unit,
+): DeepFormField.Union {
+	val dsl = FormDsl<DeepFormField>()
 	dsl.options()
 
-	return FormField.Deep.Union(field, arity, dsl.fields).also { fields += it }
+	return DeepFormField.Union(field, arity, dsl.fields).also { fields += it }
 }
 
-fun FieldDsl<FormField.Deep>.composite(
+fun FieldDsl<DeepFormField>.composite(
 	field: DataField.Composite,
 	arity: Arity,
-	fields: FormDsl<FormField.Deep>.() -> Unit,
-): FormField.Deep.Composite {
-	val dsl = FormDsl<FormField.Deep>()
+	fields: FormDsl<DeepFormField>.() -> Unit,
+): DeepFormField.Composite {
+	val dsl = FormDsl<DeepFormField>()
 	dsl.fields()
 
-	return FormField.Deep.Composite(field, arity, dsl.fields).also { this.fields += it }
+	return DeepFormField.Composite(field, arity, dsl.fields).also { this.fields += it }
 }

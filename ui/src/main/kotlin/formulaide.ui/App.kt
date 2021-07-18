@@ -42,10 +42,10 @@ val App = functionalComponent<RProps> {
 	}
 	//endregion
 
-	//region Global list of compounds
+	//region Global list of composites
 	val (composites, setComposites) = useState<List<Composite>>(emptyList())
 	val (refreshComposites, setRefreshComposites) = useState(0)
-	useEffect(client, user, refreshComposites) {
+	useEffect(client, refreshComposites) {
 		if (client is Client.Authenticated) {
 			launchAndReportExceptions(addError, scope) { setComposites(client.listData()) }
 		} else setComposites(emptyList())

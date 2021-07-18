@@ -2,10 +2,7 @@ package formulaide.ui.fields
 
 import formulaide.api.data.Composite
 import formulaide.api.data.SPECIAL_TOKEN_RECURSION
-import formulaide.api.fields.DataField
-import formulaide.api.fields.Field
-import formulaide.api.fields.FormField
-import formulaide.api.fields.SimpleField
+import formulaide.api.fields.*
 import formulaide.api.types.Arity
 import formulaide.api.types.Ref
 import formulaide.ui.components.styledField
@@ -23,7 +20,7 @@ import react.functionalComponent
 val TypeEditor = functionalComponent<EditableFieldProps> { props ->
 	val field = props.field
 
-	val allowTypeModifications = field is DataField || field is FormField.Shallow
+	val allowTypeModifications = field is DataField || field is ShallowFormField
 
 	if (allowTypeModifications) {
 		styledField("item-type-${props.field.id}", "Type") {
@@ -59,7 +56,7 @@ val TypeEditor = functionalComponent<EditableFieldProps> { props ->
 			is Field.Simple -> field.simple
 				.asEnum()
 				.displayName
-			is FormField.Deep.Composite ->
+			is DeepFormField.Composite ->
 				if (!field.ref.loaded) error("Le champ n'est pas chargé, impossible d'afficher ce qu'il référence : $field")
 				else (field.ref.obj as DataField.Composite).name
 			else -> error("Impossible d'afficher le type du champ $field")
@@ -82,13 +79,13 @@ private fun onSelect(
 					.build(Arity.mandatory())
 			when (field) {
 				is DataField -> props.replace(field.copyToSimple(newSimple))
-				is FormField.Shallow -> props.replace(field.copyToSimple(
+				is ShallowFormField -> props.replace(field.copyToSimple(
 					newSimple))
 			}
 		}
 		selected == "union" -> when (field) {
 			is DataField -> props.replace(field.copyToUnion(emptyList()))
-			is FormField.Shallow -> props.replace(field.copyToUnion(emptyList()))
+			is ShallowFormField -> props.replace(field.copyToUnion(emptyList()))
 			else -> error("Il n'est pas possible de modifier le type du champ $field")
 		}
 		selected.startsWith("composite:") -> {
@@ -100,7 +97,7 @@ private fun onSelect(
 
 			when (field) {
 				is DataField -> props.replace(field.copyToComposite(ref))
-				is FormField.Shallow -> props.replace(
+				is ShallowFormField -> props.replace(
 					field.copyToComposite(ref,
 					                      emptyList())
 						.copy(arity = Arity.forbidden()))
@@ -144,7 +141,7 @@ private val SimpleOptions = functionalComponent<EditableFieldProps> { props ->
 	val field = props.field
 
 	val current = ((field as? DataField.Simple)?.simple
-		?: (field as? FormField.Shallow.Simple)?.simple)
+		?: (field as? ShallowFormField.Simple)?.simple)
 		?.asEnum()
 
 	for (simple in SimpleFieldEnum.values()) {
@@ -176,7 +173,7 @@ private val CompositeOptions = functionalComponent<EditableFieldProps> { props -
 	val field = props.field
 
 	val current = (field as? DataField.Composite)?.ref
-		?: (field as? FormField.Shallow.Composite)?.ref
+		?: (field as? ShallowFormField.Composite)?.ref
 
 	for (composite in props.app.composites) {
 		option {

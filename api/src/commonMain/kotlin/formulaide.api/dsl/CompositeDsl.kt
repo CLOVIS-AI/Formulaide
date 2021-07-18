@@ -25,7 +25,7 @@ fun composite(
 		Ref.SPECIAL_TOKEN_NEW,
 		name,
 		dsl.fields
-	).also { it.validate(composites, allowRecursive = true) }
+	).also { it.loadAllowRecursive(composites); it.validate() }
 }
 
 fun composite(

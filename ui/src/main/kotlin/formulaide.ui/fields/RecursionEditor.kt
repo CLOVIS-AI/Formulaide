@@ -1,9 +1,6 @@
 package formulaide.ui.fields
 
-import formulaide.api.fields.DataField
-import formulaide.api.fields.Field
-import formulaide.api.fields.FormField
-import formulaide.api.fields.SimpleField
+import formulaide.api.fields.*
 import formulaide.api.types.Arity
 import formulaide.ui.components.styledButton
 import formulaide.ui.components.styledFormField
@@ -35,14 +32,14 @@ val RecursionEditor: FunctionalComponent<EditableFieldProps> = functionalCompone
 						val newParent = when (parent) {
 							is DataField.Union -> parent.copy(options = parent.options
 								.replace(i, newField as DataField))
-							is FormField.Shallow.Union -> parent.copy(options = parent.options
-								.replace(i, newField as FormField.Shallow))
-							is FormField.Deep.Union -> parent.copy(options = parent.options
-								.replace(i, newField as FormField.Deep))
-							is FormField.Shallow.Composite -> parent.copy(fields = parent.fields
-								.replace(i, newField as FormField.Deep))
-							is FormField.Deep.Composite -> parent.copy(fields = parent.fields
-								.replace(i, newField as FormField.Deep))
+							is ShallowFormField.Union -> parent.copy(options = parent.options
+								.replace(i, newField as ShallowFormField))
+							is DeepFormField.Union -> parent.copy(options = parent.options
+								.replace(i, newField as DeepFormField))
+							is ShallowFormField.Composite -> parent.copy(fields = parent.fields
+								.replace(i, newField as DeepFormField))
+							is DeepFormField.Composite -> parent.copy(fields = parent.fields
+								.replace(i, newField as DeepFormField))
 							else -> error("Impossible de modifier les sous-champs de $parent")
 						}
 
@@ -52,7 +49,7 @@ val RecursionEditor: FunctionalComponent<EditableFieldProps> = functionalCompone
 			}
 		}
 
-		if (parent is DataField.Union || parent is DataField.Composite || parent is FormField.Shallow.Union) {
+		if (parent is DataField.Union || parent is DataField.Composite || parent is ShallowFormField.Union) {
 			styledButton("Ajouter un champ") {
 				val id = fields.size.toString()
 				val order = fields.size
@@ -62,8 +59,8 @@ val RecursionEditor: FunctionalComponent<EditableFieldProps> = functionalCompone
 				val newParent = when (parent) {
 					is DataField.Union -> parent.copy(options = parent.options +
 							DataField.Simple(id, order, name, simple))
-					is FormField.Shallow.Union -> parent.copy(options = parent.options +
-							FormField.Shallow.Simple(id, order, name, simple))
+					is ShallowFormField.Union -> parent.copy(options = parent.options +
+							ShallowFormField.Simple(id, order, name, simple))
 					else -> error("Impossible d'ajouter un sous-champ à $parent")
 				}
 
