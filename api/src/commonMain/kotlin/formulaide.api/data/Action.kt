@@ -1,7 +1,9 @@
 package formulaide.api.data
 
+import formulaide.api.fields.FormRoot
 import formulaide.api.types.OrderedListElement
 import formulaide.api.types.Ref
+import formulaide.api.types.Referencable
 import formulaide.api.types.ReferenceId
 import formulaide.api.users.Service
 import kotlinx.serialization.Serializable
@@ -12,7 +14,10 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class Action(
-	val id: ReferenceId,
+	override val id: ReferenceId,
 	override val order: Int,
 	val reviewer: Ref<Service>,
-) : OrderedListElement
+) : OrderedListElement, Referencable {
+
+	val fields: FormRoot get() = TODO("Will be implemented in #102")
+}
