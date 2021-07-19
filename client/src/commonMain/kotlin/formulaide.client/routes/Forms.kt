@@ -1,5 +1,6 @@
 package formulaide.client.routes
 
+import formulaide.api.data.Composite
 import formulaide.api.data.Form
 import formulaide.client.Client
 
@@ -47,3 +48,13 @@ suspend fun Client.Authenticated.listClosedForms() =
  */
 suspend fun Client.Authenticated.createForm(form: Form) =
 	post<Form>("/forms/create", body = form)
+
+/**
+ * Fetches all the composites that are referenced in a [form].
+ *
+ * - POST /forms/references
+ * - Body: [Form.id]
+ * - Response: list of [Composite]
+ */
+suspend fun Client.compositesReferencedIn(form: Form) =
+	post<List<Composite>>("/forms/references", body = form.id)
