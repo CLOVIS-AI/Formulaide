@@ -1,8 +1,11 @@
 package formulaide.server.routes
 
 import formulaide.api.data.Form
+import formulaide.api.types.ReferenceId
 import formulaide.db.document.createForm
+import formulaide.db.document.findForm
 import formulaide.db.document.listForms
+import formulaide.db.document.referencedComposites
 import formulaide.server.Auth.Companion.Employee
 import formulaide.server.Auth.Companion.requireAdmin
 import formulaide.server.Auth.Companion.requireEmployee
@@ -18,6 +21,14 @@ fun Routing.formRoutes() {
 
 		get("/list") {
 			call.respond(database.listForms(public = true))
+		}
+
+		post("/references") {
+			val formId = call.receive<ReferenceId>().removeSurrounding("\"")
+			val form = database.findForm(formId)
+				?: error("Aucun formulaire ne correspond à l'identifiant $formId")
+
+			call.respond(database.referencedComposites(form))
 		}
 
 		authenticate(Employee) {
