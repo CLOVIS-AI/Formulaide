@@ -79,7 +79,7 @@ sealed class ShallowFormField : FormField {
 			super.load(composites, allowNotFound, lazy)
 			ref.loadFrom(composites, allowNotFound, lazy)
 
-			fields.forEach { it.loadRef(ref.obj, allowNotFound, lazy) }
+			fields.forEach { it.loadRef(ref.obj.fields, allowNotFound, lazy) }
 		}
 
 		override fun validate() {

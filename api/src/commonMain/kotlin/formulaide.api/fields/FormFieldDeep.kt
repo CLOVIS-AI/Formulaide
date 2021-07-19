@@ -46,8 +46,8 @@ sealed class DeepFormField : FormField, Field.Reference<DataField> {
 	/**
 	 * Loads the [ref] to the [CompositeData] that this field mirrors.
 	 */
-	fun loadRef(composite: CompositeData, allowNotFound: Boolean, lazy: Boolean) {
-		ref.loadFrom(composite.fields, allowNotFound, lazy)
+	fun loadRef(parentFields: List<DataField>, allowNotFound: Boolean, lazy: Boolean) {
+		ref.loadFrom(parentFields, allowNotFound, lazy)
 	}
 
 	override fun load(composites: List<CompositeData>, allowNotFound: Boolean, lazy: Boolean) {}
@@ -108,6 +108,19 @@ sealed class DeepFormField : FormField, Field.Reference<DataField> {
 			get() = ref.obj as? DataField.Union
 				?: error("Ce champ est de type UNION, mais il référence un champ de type ${ref.obj::class}")
 
+		override fun load(
+			composites: List<CompositeData>,
+			allowNotFound: Boolean,
+			lazy: Boolean,
+		) {
+			super.load(composites, allowNotFound, lazy)
+
+			// Load the corresponding DataField.Union, just in case
+			obj.load(composites, allowNotFound, lazy = true)
+
+			options.forEach { it.loadRef(obj.options, allowNotFound, lazy = true) }
+		}
+
 		override fun validate() {
 			super.validate()
 
@@ -148,9 +161,9 @@ sealed class DeepFormField : FormField, Field.Reference<DataField> {
 			super.load(composites, allowNotFound, lazy)
 
 			// Load the corresponding DataField.Composite, just in case
-			obj.fieldMonad().map { it.load(composites, allowNotFound, lazy = true) }
+			obj.load(composites, allowNotFound, lazy = true)
 
-			fields.forEach { it.loadRef(obj.ref.obj, allowNotFound, lazy = true) }
+			fields.forEach { it.loadRef(obj.ref.obj.fields, allowNotFound, lazy = true) }
 		}
 
 		override fun validate() {
