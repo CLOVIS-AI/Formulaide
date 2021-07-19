@@ -89,7 +89,7 @@ fun SubmitForm(formRef: Ref<Form>) = functionalComponent<ScreenProps> { props ->
 
 				FormSubmission(
 					form.createRef(),
-					answers
+					data = answers
 				).also { it.checkValidity(form) }
 			}
 

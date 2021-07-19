@@ -15,6 +15,7 @@ import org.litote.kmongo.newId
 data class DbSubmission(
 	@SerialName("_id") @Contextual val id: Id<DbSubmission> = newId(),
 	val form: ReferenceId,
+	val action: ReferenceId? = null,
 	val data: Map<String, String>,
 )
 
@@ -36,4 +37,4 @@ suspend fun Database.saveSubmission(submission: FormSubmission): DbSubmission {
 suspend fun Database.findSubmission(form: ReferenceId): List<DbSubmission> =
 	submissions.find(DbSubmission::form eq form).toList()
 
-fun DbSubmission.toApi() = FormSubmission(Ref(form), data)
+fun DbSubmission.toApi() = FormSubmission(Ref(form), action?.let { Ref(it) }, data)
