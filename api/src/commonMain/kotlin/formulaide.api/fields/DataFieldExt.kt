@@ -9,7 +9,7 @@ import formulaide.api.types.Ref
  * Use the generated sequence to recursively do some operation on all fields.
  */
 fun DataField.fieldMonad(): Sequence<DataField> = when (this) {
-	is DataField.Union -> options.asSequence().flatMap { it.fieldMonad() } + this
+	is DataField.Union -> sequenceOf(this) + options.asSequence().flatMap { it.fieldMonad() }
 	is DataField.Simple, is DataField.Composite -> sequenceOf(this)
 }
 
