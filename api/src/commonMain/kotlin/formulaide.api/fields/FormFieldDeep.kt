@@ -81,6 +81,8 @@ sealed class DeepFormField : FormField, Field.Reference<DataField> {
 
 			obj.simple.validateCompatibility(simple)
 		}
+
+		override fun toString() = "Deep.Simple($ref, $simple)"
 	}
 
 	/**
@@ -111,6 +113,8 @@ sealed class DeepFormField : FormField, Field.Reference<DataField> {
 
 			require(obj.options.ids() == options.ids()) { "Ce champ est de type UNION, et référence un champ ayant comme options ${obj.options} mais n'autorise que les options $options" }
 		}
+
+		override fun toString() = "Deep.Union($ref, $arity, $options)"
 	}
 
 	/**
@@ -155,6 +159,8 @@ sealed class DeepFormField : FormField, Field.Reference<DataField> {
 			val dataField = ref.obj
 			require(dataField is DataField.Composite) { "Ce champ est de type COMPOSITE, mais il référence un champ de type ${dataField::class}" }
 		}
+
+		override fun toString() = "Deep.Composite($ref, $arity, $fields)"
 	}
 
 	companion object {

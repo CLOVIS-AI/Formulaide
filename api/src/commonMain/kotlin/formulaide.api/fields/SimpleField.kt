@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
  * A field that represents some specific data.
  *
  * This class does not implement [Field], because it is meant to be wrapped inside a [Field] implementation:
- * see [DataField.Simple], [FormField.Shallow.Simple] and [FormField.Deep.Simple].
+ * see [DataField.Simple], [ShallowFormField.Simple] and [DeepFormField.Simple].
  * For this reason, this class doesn't have an [id][Field.id] nor a [name][Field.name].
  */
 @Serializable
@@ -203,6 +203,8 @@ sealed class SimpleField {
 	object Message : SimpleField() {
 		override val arity get() = Arity.mandatory()
 		override fun validate(value: String?) {} // whatever is always valid
+
+		override fun toString() = "Message"
 	}
 
 }
