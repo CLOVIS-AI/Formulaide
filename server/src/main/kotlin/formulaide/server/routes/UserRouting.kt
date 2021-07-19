@@ -17,15 +17,19 @@ import io.ktor.routing.*
 import io.ktor.util.date.*
 
 private fun ApplicationCall.setRefreshTokenCookie(value: String) {
+	val extensions = HashMap<String, String?>()
+	extensions["SameSite"] = "Strict"
+
+	if (!this.application.developmentMode && !allowUnsafeCookie)
+		extensions["Secure"] = null
+
 	response.cookies.append(Cookie(
 		"REFRESH-TOKEN",
 		value = value,
 		expires = GMTDate() + Auth.refreshTokenExpiration.toMillis(),
-		secure = !this.application.developmentMode && !allowUnsafeCookie,
 		httpOnly = true,
-		extensions = mapOf(
-			"SameSite" to "Strict",
-		)
+		path = "/",
+		extensions = extensions,
 	))
 }
 

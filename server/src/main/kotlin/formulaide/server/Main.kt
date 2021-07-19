@@ -68,6 +68,7 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 	install(CORS) { //TODO: audit
 		anyHost()
 		allowCredentials = true
+		allowSameOrigin = true
 		header("Accept")
 		header("Content-Type")
 		header("Authorization")
