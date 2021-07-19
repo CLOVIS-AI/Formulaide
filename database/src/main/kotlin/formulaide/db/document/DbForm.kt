@@ -1,9 +1,16 @@
 package formulaide.db.document
 
+import formulaide.api.data.Composite
 import formulaide.api.data.Form
+import formulaide.api.fields.DeepFormField
+import formulaide.api.fields.ShallowFormField
+import formulaide.api.fields.fieldMonad
 import formulaide.api.types.ReferenceId
 import formulaide.db.Database
 import formulaide.db.utils.generateId
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import org.litote.kmongo.eq
 import org.litote.kmongo.match
 
@@ -42,4 +49,25 @@ suspend fun Database.createForm(form: Form): Form {
 	val newForm = form.copy(id = generateId<Form>())
 	forms.insertOne(newForm)
 	return newForm
+}
+
+suspend fun Database.referencedComposites(form: Form): List<Composite> {
+	form.mainFields.load(listComposites())
+
+	val compositeIds = form.mainFields
+		.fieldMonad()
+		.flatMap { field ->
+			when (field) {
+				is ShallowFormField.Composite -> sequenceOf(field.ref.id)
+				is DeepFormField.Composite -> sequenceOf(field.obj.ref.id)
+				else -> emptySequence()
+			}
+		}
+		.toHashSet()
+
+	return coroutineScope {
+		compositeIds.map {
+			async { findComposite(it) ?: error("La donnée composée $it est introuvable") }
+		}.awaitAll()
+	}
 }
