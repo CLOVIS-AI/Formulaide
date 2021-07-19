@@ -68,7 +68,7 @@ val CreateData = functionalComponent<ScreenProps> { props ->
 
 			styledField("data-fields", "Champs") {
 				styledNesting {
-					for ((i, field) in fields.withIndex()) {
+					for ((i, field) in fields.sortedBy { it.order }.withIndex()) {
 						child(FieldEditor) {
 							attrs {
 								app = props

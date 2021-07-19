@@ -79,7 +79,7 @@ val CreateForm = functionalComponent<ScreenProps> { props ->
 
 			styledField("new-form-fields", "Champs") {
 				styledNesting {
-					for ((i, field) in fields.withIndex()) {
+					for ((i, field) in fields.sortedBy { it.order }.withIndex()) {
 						child(FieldEditor) {
 							attrs {
 								this.app = props
@@ -95,7 +95,7 @@ val CreateForm = functionalComponent<ScreenProps> { props ->
 
 			styledField("new-form-actions", "Étapes") {
 				styledNesting {
-					for ((i, action) in actions.withIndex()) {
+					for ((i, action) in actions.sortedBy { it.order }.withIndex()) {
 
 						styledField("new-form-action-${action.id}-select",
 						            "Choix du service") {

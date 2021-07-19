@@ -64,7 +64,7 @@ fun SubmitForm(formRef: Ref<Form>) = functionalComponent<ScreenProps> { props ->
 		"Ce formulaire est ${if (form.public) "public" else "interne"}, les champs marqués par une * sont obligatoires.",
 		submit = "Envoyer",
 		contents = {
-			for (field in form.mainFields.fields) {
+			for (field in form.mainFields.fields.sortedBy { it.order }) {
 				field(props, field)
 			}
 		},

@@ -23,7 +23,7 @@ val RecursionEditor: FunctionalComponent<EditableFieldProps> = functionalCompone
 			}
 		}
 
-		for ((i, field) in fields.withIndex()) {
+		for ((i, field) in fields.sortedBy { it.order }.withIndex()) {
 			child(FieldEditor) {
 				attrs {
 					app = props.app
