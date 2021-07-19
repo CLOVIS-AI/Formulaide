@@ -136,7 +136,7 @@ class FormSubmissionTest {
 
 		val submission1 = FormSubmission(
 			form.createRef(),
-			mapOf(
+			data = mapOf(
 				"7:2" to "Mon Nom de Famille",
 				"7:3" to "Mon Prénom",
 				"7:4" to "+33 1 23 45 67 89",
@@ -152,7 +152,7 @@ class FormSubmissionTest {
 
 		val submission2 = FormSubmission(
 			form.createRef(),
-			mapOf(
+			data = mapOf(
 				"7:2" to "Mon Nom de Famille",
 				"7:3" to "Mon Prénom",
 				"7:4" to "+33 1 23 45 67 89",
@@ -169,7 +169,7 @@ class FormSubmissionTest {
 
 		val submission3 = FormSubmission(
 			form.createRef(),
-			mapOf(
+			data = mapOf(
 				"7:2" to "Mon Nom de Famille",
 				"7:3" to "Mon Prénom",
 				"7:4" to "+33 1 23 45 67 89",

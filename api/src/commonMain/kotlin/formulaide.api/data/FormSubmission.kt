@@ -4,6 +4,7 @@ import formulaide.api.data.FormSubmission.Companion.createSubmission
 import formulaide.api.data.FormSubmission.ReadOnlyAnswer.Companion.asAnswer
 import formulaide.api.fields.Field
 import formulaide.api.fields.FormField
+import formulaide.api.fields.ShallowFormField
 import formulaide.api.fields.SimpleField.Message
 import formulaide.api.types.Arity
 import formulaide.api.types.Ref
@@ -33,7 +34,7 @@ annotation class FormSubmissionDsl
  *
  * The key is formed by grouping different IDs, separated by the character 'colon' (`:`).
  * The key is built using the following steps (the order is important):
- * - Starting at the top-level of the form, the first ID is the top-level's field ID ([FormField.Shallow.id])
+ * - Starting at the top-level of the form, the first ID is the top-level's field ID ([ShallowFormField.id])
  * - If the field has a [maximum arity][Arity.max] greater than 1, an arbitrary integer
  * (of your choice) is used to represent the index of the element
  * (repeat until the maximum arity is 1).
@@ -101,12 +102,15 @@ annotation class FormSubmissionDsl
  *
  * @constructor Internal constructor to build this object. Use the factory method [Form.createSubmission].
  * @property form The [Form] this submission corresponds to.
+ * @property root Which root of this [form] this submission corresponds to.
+ * `null` means that the submission refers to the [main root][Form.mainFields], otherwise it corresponds to the referenced action's [root][Action.fields].
  * @property data A dictionary of the user's responses to the data requested by the [Form].
  * See [FormSubmission] for the format description.
  */
 @Serializable
 data class FormSubmission(
 	val form: Ref<Form>,
+	val root: Ref<Action>? = null,
 	val data: Map<String, String>,
 ) {
 
@@ -123,6 +127,14 @@ data class FormSubmission(
 		this.form.load(form)
 		println("\nChecking validity of $this…")
 
+		val selectedRoot = when (root) {
+			null -> form.mainFields
+			else -> {
+				root.loadFrom(form.actions, allowNotFound = false)
+				root.obj.fields
+			}
+		}
+
 		val topLevelAnswer = data
 			.mapKeys { (key, _) ->
 				key.split(":")
@@ -130,7 +142,7 @@ data class FormSubmission(
 			.toList()
 			.asAnswer()
 
-		for (field in form.mainFields.fields) {
+		for (field in selectedRoot.fields) {
 			println("• Top-level field ${field.id}, ‘${field.name}’")
 			checkField(field, topLevelAnswer)
 		}
@@ -378,6 +390,7 @@ data class FormSubmission(
 		 * It is expected that the [Form] this is called on has already been [validated][Form.validate].
 		 */
 		fun Form.createSubmission(
+			root: Action? = null,
 			block: MutableAnswer.() -> Unit,
 		): FormSubmission {
 			val form = this
@@ -387,6 +400,7 @@ data class FormSubmission(
 
 			return FormSubmission(
 				form.createRef(),
+				root?.createRef(),
 				data = answer.flatten()
 			).apply {
 				checkValidity(form)
