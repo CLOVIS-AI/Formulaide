@@ -49,8 +49,8 @@ val RecursionEditor: FunctionalComponent<EditableFieldProps> = functionalCompone
 			}
 		}
 
-		if (parent is DataField.Union || parent is DataField.Composite || parent is ShallowFormField.Union) {
-			styledButton("Ajouter un champ") {
+		if (parent is DataField.Union || parent is ShallowFormField.Union) {
+			styledButton("Ajouter une option") {
 				val id = fields.size.toString()
 				val order = fields.size
 				val name = "Nouveau champ"
