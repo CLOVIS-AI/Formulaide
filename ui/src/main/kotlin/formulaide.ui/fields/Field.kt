@@ -55,7 +55,7 @@ private val RenderField = functionalComponent<FieldProps> { props ->
 
 			styledNesting {
 				styledFormField {
-					for (subField in subFields) {
+					for (subField in subFields.sortedBy { it.order }) {
 						styledRadioButton(
 							radioId = props.id,
 							buttonId = "${props.id}-${subField.id}",
