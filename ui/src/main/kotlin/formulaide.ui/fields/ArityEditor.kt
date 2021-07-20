@@ -30,14 +30,14 @@ val ArityEditor = functionalComponent<EditableFieldProps> { props ->
 
 	val minAllowedRange = when (field) {
 		is DataField.Composite -> 0..0 // composite references can never be mandatory (see DataField.Composite)
-		is DeepFormField -> field.obj.arity.min..Int.MAX_VALUE
+		is DeepFormField -> field.dataField.arity.min..Int.MAX_VALUE
 		else -> 0..Int.MAX_VALUE
 	}
 
 	val maxAllowedRange = when (field) {
 		is ShallowFormField.Composite -> 0..Int.MAX_VALUE
 		is DataField, is ShallowFormField -> 1..Int.MAX_VALUE
-		is DeepFormField -> 0..field.obj.arity.max
+		is DeepFormField -> 0..field.dataField.arity.max
 		else -> 0..Int.MAX_VALUE
 	}
 
