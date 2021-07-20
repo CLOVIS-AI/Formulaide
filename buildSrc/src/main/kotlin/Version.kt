@@ -6,12 +6,12 @@ import Version.ktor
 import Version.logback
 
 object Version {
-	const val kotlinVersion = "1.5.20"
+	const val kotlinVersion = "1.5.21"
 
 	const val dokka = "1.4.32"
 
 	const val serialization = "1.2.1"
-	const val coroutines = "1.5.0"
+	const val coroutines = "1.5.1"
 
 	const val jacocoVersion = "0.8.7"
 	const val printCoverage = "2.0.0"
