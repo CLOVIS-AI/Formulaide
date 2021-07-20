@@ -85,7 +85,7 @@ val FieldEditor = functionalComponent<EditableFieldProps> { props ->
 					attrs { inheritFrom(props) }
 				}
 			} else {
-				styledFormField { text("Les sous-champs ne sont pas affichés, parce que cette donnée est interdite.") }
+				styledFormField { text("Les sous-champs ne sont pas affichés, parce que cette donnée est absente.") }
 			}
 		}
 	}

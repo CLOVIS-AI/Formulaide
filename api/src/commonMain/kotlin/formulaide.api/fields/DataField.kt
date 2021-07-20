@@ -3,6 +3,7 @@ package formulaide.api.fields
 import formulaide.api.fields.DataField.Composite
 import formulaide.api.types.Arity
 import formulaide.api.types.Ref
+import formulaide.api.types.expandMin
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import formulaide.api.data.Composite as CompositeData
@@ -91,5 +92,6 @@ sealed class DataField : Field {
 
 	fun copyToSimple(simple: SimpleField) = Simple(id, order, name, simple)
 	fun copyToUnion(options: List<DataField>) = Union(id, order, name, arity, options)
-	fun copyToComposite(composite: Ref<CompositeData>) = Composite(id, order, name,  arity, composite)
+	fun copyToComposite(composite: Ref<CompositeData>) =
+		Composite(id, order, name, arity.expandMin(0), composite)
 }

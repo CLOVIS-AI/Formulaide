@@ -2,14 +2,18 @@ package formulaide.ui.fields
 
 import formulaide.api.fields.*
 import formulaide.api.fields.DeepFormField.Companion.createMatchingFormField
-import formulaide.api.types.Arity
+import formulaide.api.types.*
 import formulaide.api.types.Ref.Companion.loadIfNecessary
+import formulaide.ui.components.styledButton
+import formulaide.ui.components.styledDisabledButton
 import formulaide.ui.components.styledSmallInput
 import formulaide.ui.utils.text
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
 import react.functionalComponent
+import kotlin.math.max
+import kotlin.math.min
 
 val ArityEditor = functionalComponent<EditableFieldProps> { props ->
 	val field = props.field
@@ -22,47 +26,90 @@ val ArityEditor = functionalComponent<EditableFieldProps> { props ->
 		if (simpleOrNull != null) simpleOrNull::class != SimpleField.Message::class
 		else true
 	//endregion
+	//region Allowed range
+
+	val minAllowedRange = when (field) {
+		is DataField.Composite -> 0..0 // composite references can never be mandatory (see DataField.Composite)
+		is DeepFormField -> field.obj.arity.min..Int.MAX_VALUE
+		else -> 0..Int.MAX_VALUE
+	}
+
+	val maxAllowedRange = when (field) {
+		is ShallowFormField.Composite -> 0..Int.MAX_VALUE
+		is DataField, is ShallowFormField -> 1..Int.MAX_VALUE
+		is DeepFormField -> 0..field.obj.arity.max
+		else -> 0..Int.MAX_VALUE
+	}
+
+	//endregion
 
 	if (allowModifications) {
-		text("Nombre de réponses autorisées : de ")
-		if (field !is DataField.Composite) {
+		val modelArities = mapOf(
+			Arity.forbidden() to "Absent",
+			Arity.optional() to "Facultatif",
+			Arity.mandatory() to "Obligatoire",
+		).filterKeys { it.min in minAllowedRange && it.max in maxAllowedRange }
+
+		for ((modelArity, arityName) in modelArities) {
+			if (modelArity == arity) {
+				styledDisabledButton(arityName)
+			} else {
+				styledButton(arityName) {
+					updateSubFieldsOnMaxArityChange(props, modelArity)
+				}
+			}
+		}
+
+		if (arity.max > 1) {
+			text("De ")
+			if (field !is DataField.Composite) {
+				styledSmallInput(InputType.number,
+				                 "item-arity-min-${props.field.id}",
+				                 required = true) {
+					value = arity.min.toString()
+					min = minAllowedRange.first.toString()
+					max = min(arity.max, minAllowedRange.last).toString()
+					onChangeFunction = {
+						val value = (it.target as HTMLInputElement).value.toInt()
+						props.replace(
+							props.field.set(arity = Arity(value, arity.max))
+						)
+					}
+				}
+			} else {
+				text(arity.min.toString())
+			}
+			text(" à ")
 			styledSmallInput(InputType.number,
 			                 "item-arity-min-${props.field.id}",
 			                 required = true) {
-				value = arity.min.toString()
-				min = "0"
-				max = arity.max.toString()
+				value = arity.max.toString()
+				min = max(arity.min, max(maxAllowedRange.first, 2)).toString()
+				max = maxAllowedRange.last.toString()
 				onChangeFunction = {
 					val value = (it.target as HTMLInputElement).value.toInt()
-					props.replace(
-						props.field.set(arity = Arity(value, arity.max))
-					)
+					updateSubFieldsOnMaxArityChange(props, Arity(arity.min, value))
 				}
 			}
-		} else {
-			text(arity.min.toString())
-
-			if (arity.min != 0)
-				props.replace(props.field.set(arity = Arity(0, arity.max)))
-		}
-		text(" à ")
-		styledSmallInput(InputType.number, "item-arity-min-${props.field.id}", required = true) {
-			value = arity.max.toString()
-			min = arity.min.toString()
-			max = "1000"
-			onChangeFunction = {
-				val value = (it.target as HTMLInputElement).value.toInt()
-				updateSubFieldsOnMaxArityChange(props, Arity(arity.min, value))
+			text(" réponses")
+		} else if (maxAllowedRange.last > 1) {
+			styledButton("Plusieurs réponses") {
+				props.replace(props.field.set(
+					arity = Arity.list(0, 5)
+						.expandMin(minAllowedRange.last)
+						.truncateMin(minAllowedRange.first)
+						.expandMax(maxAllowedRange.first)
+						.truncateMax(maxAllowedRange.last)
+				))
 			}
 		}
 	} else {
-		text("Nombre de réponses autorisées : de ${arity.min} à ${arity.max} ")
-	}
-	when (arity) {
-		Arity.mandatory() -> text(" (obligatoire)")
-		Arity.optional() -> text(" (facultatif)")
-		Arity.forbidden() -> text(" (interdit)")
-		else -> text(" (liste)")
+		when (arity) {
+			Arity.mandatory() -> styledDisabledButton("Obligatoire")
+			Arity.optional() -> styledDisabledButton("Facultatif")
+			Arity.forbidden() -> styledDisabledButton("Absent")
+			else -> styledDisabledButton("De ${arity.min} à ${arity.max} réponses")
+		}
 	}
 }
 
