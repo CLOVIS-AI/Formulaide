@@ -7,9 +7,9 @@ import formulaide.ui.components.styledInput
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
-import react.functionalComponent
+import react.fc
 
-val NameEditor = functionalComponent<EditableFieldProps> { props ->
+val NameEditor = fc<EditableFieldProps> { props ->
 	val field = props.field
 	val allowModification = field is DataField || field is ShallowFormField
 

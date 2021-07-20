@@ -7,7 +7,7 @@ import io.ktor.client.features.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import react.functionalComponent
+import react.fc
 import react.useEffect
 import react.useState
 
@@ -17,7 +17,7 @@ external interface ErrorProps : ScreenProps {
 	var hide: () -> Unit
 }
 
-val ErrorCard = functionalComponent<ErrorProps> { props ->
+val ErrorCard = fc<ErrorProps> { props ->
 	val error = props.error
 
 	var title by useState(error.message ?: error.toString())

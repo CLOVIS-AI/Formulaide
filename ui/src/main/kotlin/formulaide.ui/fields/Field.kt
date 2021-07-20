@@ -19,7 +19,7 @@ private external interface FieldProps : RProps {
 	var id: String
 }
 
-private val RenderField = functionalComponent<FieldProps> { props ->
+private val RenderField = fc<FieldProps> { props ->
 	val field = props.field
 	val required = field.arity == Arity.mandatory()
 
@@ -75,7 +75,7 @@ private val RenderField = functionalComponent<FieldProps> { props ->
 	}
 }
 
-private val Field: FunctionalComponent<FieldProps> = functionalComponent { props ->
+private val Field: FunctionComponent<FieldProps> = fc { props ->
 
 	if (props.field.arity.max == 1) {
 		styledField(props.id, props.field.name) {

@@ -15,9 +15,9 @@ import kotlinx.html.id
 import react.child
 import react.dom.attrs
 import react.dom.option
-import react.functionalComponent
+import react.fc
 
-val TypeEditor = functionalComponent<EditableFieldProps> { props ->
+val TypeEditor = fc<EditableFieldProps> { props ->
 	val field = props.field
 
 	val allowTypeModifications = field is DataField || field is ShallowFormField
@@ -137,7 +137,7 @@ private enum class SimpleFieldEnum(val displayName: String, val build: (Arity) -
 	}
 }
 
-private val SimpleOptions = functionalComponent<EditableFieldProps> { props ->
+private val SimpleOptions = fc<EditableFieldProps> { props ->
 	val field = props.field
 
 	val current = ((field as? DataField.Simple)?.simple
@@ -156,7 +156,7 @@ private val SimpleOptions = functionalComponent<EditableFieldProps> { props ->
 	}
 }
 
-private val UnionOptions = functionalComponent<EditableFieldProps> { props ->
+private val UnionOptions = fc<EditableFieldProps> { props ->
 	val field = props.field
 
 	option {
@@ -169,7 +169,7 @@ private val UnionOptions = functionalComponent<EditableFieldProps> { props ->
 	}
 }
 
-private val CompositeOptions = functionalComponent<EditableFieldProps> { props ->
+private val CompositeOptions = fc<EditableFieldProps> { props ->
 	val field = props.field
 
 	val current = (field as? DataField.Composite)?.ref
@@ -187,7 +187,7 @@ private val CompositeOptions = functionalComponent<EditableFieldProps> { props -
 	}
 }
 
-private val RecursiveCompositeOptions = functionalComponent<EditableFieldProps> { props ->
+private val RecursiveCompositeOptions = fc<EditableFieldProps> { props ->
 	val field = props.field
 
 	// Only data can be recursive, forms cannot

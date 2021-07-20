@@ -11,11 +11,11 @@ import formulaide.ui.utils.text
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
-import react.functionalComponent
+import react.fc
 import kotlin.math.max
 import kotlin.math.min
 
-val ArityEditor = functionalComponent<EditableFieldProps> { props ->
+val ArityEditor = fc<EditableFieldProps> { props ->
 	val field = props.field
 	val arity = field.arity
 

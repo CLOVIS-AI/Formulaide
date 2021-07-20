@@ -8,7 +8,7 @@ import formulaide.ui.components.styledFormField
 import formulaide.ui.utils.text
 import react.RProps
 import react.child
-import react.functionalComponent
+import react.fc
 
 external interface EditableFieldProps : RProps {
 	var app: ScreenProps
@@ -64,7 +64,7 @@ internal fun Field.set(name: String? = null, arity: Arity? = null): Field {
 	}
 }
 
-val FieldEditor = functionalComponent<EditableFieldProps> { props ->
+val FieldEditor = fc<EditableFieldProps> { props ->
 	styledFieldEditorShell("item-editor-${props.field.id}", "Champ ${props.field.order}") {
 
 		child(NameEditor) {

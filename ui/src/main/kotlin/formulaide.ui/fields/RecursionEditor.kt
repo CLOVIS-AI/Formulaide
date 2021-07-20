@@ -6,11 +6,11 @@ import formulaide.ui.components.styledButton
 import formulaide.ui.components.styledFormField
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.text
-import react.FunctionalComponent
+import react.FunctionComponent
 import react.child
-import react.functionalComponent
+import react.fc
 
-val RecursionEditor: FunctionalComponent<EditableFieldProps> = functionalComponent { props ->
+val RecursionEditor: FunctionComponent<EditableFieldProps> = fc { props ->
 	val parent = props.field
 	val fields = (parent as? Field.Union<*>)?.options
 		?: (parent as? Field.Container<*>)?.fields

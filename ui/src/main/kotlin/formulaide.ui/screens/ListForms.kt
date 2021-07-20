@@ -6,9 +6,9 @@ import formulaide.ui.ScreenProps
 import formulaide.ui.components.styledButton
 import formulaide.ui.components.styledCard
 import formulaide.ui.components.styledField
-import react.functionalComponent
+import react.fc
 
-val FormList = functionalComponent<ScreenProps> { props ->
+val FormList = fc<ScreenProps> { props ->
 	val forms = props.forms
 
 	styledCard(
