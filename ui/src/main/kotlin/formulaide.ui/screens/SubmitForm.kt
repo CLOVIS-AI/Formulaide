@@ -1,9 +1,11 @@
 package formulaide.ui.screens
 
+import formulaide.api.data.Composite
 import formulaide.api.data.Form
 import formulaide.api.data.FormSubmission
 import formulaide.api.types.Ref
 import formulaide.api.types.Ref.Companion.createRef
+import formulaide.client.routes.compositesReferencedIn
 import formulaide.client.routes.submitForm
 import formulaide.ui.Screen
 import formulaide.ui.ScreenProps
@@ -18,6 +20,7 @@ import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLFormElement
 import org.w3c.xhr.FormData
 import react.functionalComponent
+import react.useEffectOnce
 import react.useState
 
 @Suppress("FunctionName")
@@ -45,9 +48,17 @@ fun SubmitForm(formRef: Ref<Form>) = functionalComponent<ScreenProps> { props ->
 
 	val form = formRef.obj
 	require(form.open) { "Impossible de saisir des données dans un formulaire fermé" }
+	var referencedComposites by useState(emptyList<Composite>())
+
+	useEffectOnce {
+		if (referencedComposites.isEmpty())
+			launchAndReportExceptions(props) {
+				referencedComposites = props.client.compositesReferencedIn(form)
+			}
+	}
 
 	try {
-		form.load(props.composites)
+		form.load(props.composites + referencedComposites)
 	} catch (e: RuntimeException) {
 		console.warn("Cannot load form submission at the moment", e)
 
