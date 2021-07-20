@@ -26,7 +26,7 @@ import react.dom.div
 abstract class Screen(
 	val displayName: String,
 	val requiredRole: Role,
-	val component: FunctionalComponent<ScreenProps>,
+	val component: FunctionComponent<ScreenProps>,
 	val route: String,
 ) {
 
@@ -102,7 +102,7 @@ external interface ScreenProps : ApplicationProps {
 
 }
 
-private val CannotAccessThisPage = functionalComponent<ScreenProps> { props ->
+private val CannotAccessThisPage = fc<ScreenProps> { props ->
 	styledCard(
 		"Vous n'avez pas l'autorisation d'accéder à cette page",
 		null,
@@ -113,7 +113,7 @@ private val CannotAccessThisPage = functionalComponent<ScreenProps> { props ->
 	}
 }
 
-private val Navigation = functionalComponent<ScreenProps> { props ->
+private val Navigation = fc<ScreenProps> { props ->
 	div {
 		for (screen in Screen.availableScreens(props.user)) {
 			if (screen != props.currentScreen)
@@ -130,7 +130,7 @@ private fun getScreenFromWindow(): Screen? =
 		.get("d")
 		?.let { Screen.routeDecoder(it) }
 
-val Window = functionalComponent<ApplicationProps> { props ->
+val Window = fc<ApplicationProps> { props ->
 	var screen by useState(
 		getScreenFromWindow() ?: Screen.Home
 	)

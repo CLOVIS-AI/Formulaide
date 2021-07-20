@@ -59,7 +59,7 @@ suspend fun Database.referencedComposites(form: Form): List<Composite> {
 		.flatMap { field ->
 			when (field) {
 				is ShallowFormField.Composite -> sequenceOf(field.ref.id)
-				is DeepFormField.Composite -> sequenceOf(field.obj.ref.id)
+				is DeepFormField.Composite -> sequenceOf(field.dataField.ref.id)
 				else -> emptySequence()
 			}
 		}

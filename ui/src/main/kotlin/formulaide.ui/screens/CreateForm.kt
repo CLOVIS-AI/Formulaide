@@ -26,19 +26,19 @@ import org.w3c.dom.HTMLSelectElement
 import react.child
 import react.dom.attrs
 import react.dom.option
-import react.functionalComponent
+import react.fc
 import react.useRef
 import react.useState
 
-val CreateForm = functionalComponent<ScreenProps> { props ->
+val CreateForm = fc<ScreenProps> { props ->
 	val client = props.client
 	require(client is Client.Authenticated)
 
 	val formName = useRef<HTMLInputElement>()
 	val public = useRef<HTMLInputElement>()
 
-	val (fields, setFields) = useState<List<ShallowFormField>>(emptyList())
-	val (actions, setActions) = useState<List<Action>>(emptyList())
+	var fields by useState<List<ShallowFormField>>(emptyList())
+	var actions by useState<List<Action>>(emptyList())
 
 	val services = props.services.filter { it.open }
 
@@ -46,22 +46,18 @@ val CreateForm = functionalComponent<ScreenProps> { props ->
 		"Créer un formulaire", null,
 		"Créer ce formulaire",
 		"Ajouter un champ" to {
-			setFields(
-				fields + ShallowFormField.Simple(
-					order = fields.size,
-					id = fields.size.toString(),
-					name = "Nouveau champ",
-					simple = SimpleField.Text(Arity.optional())
-				)
+			fields = fields + ShallowFormField.Simple(
+				order = fields.size,
+				id = fields.size.toString(),
+				name = "Nouveau champ",
+				simple = SimpleField.Text(Arity.optional())
 			)
 		},
 		"Ajouter une étape" to {
-			setActions(
-				actions + Action(
-					id = actions.size.toString(),
-					order = actions.size,
-					services.getOrNull(0)?.createRef() ?: error("Aucun service n'a été trouvé")
-				)
+			actions = actions + Action(
+				id = actions.size.toString(),
+				order = actions.size,
+				services.getOrNull(0)?.createRef() ?: error("Aucun service n'a été trouvé")
 			)
 		},
 		contents = {
@@ -85,7 +81,7 @@ val CreateForm = functionalComponent<ScreenProps> { props ->
 								this.app = props
 								this.field = field
 								this.replace = {
-									setFields(fields.replace(i, it as ShallowFormField))
+									fields = fields.replace(i, it as ShallowFormField)
 								}
 							}
 						}
@@ -117,12 +113,11 @@ val CreateForm = functionalComponent<ScreenProps> { props ->
 										val service = services.find { it.id == serviceId }
 											?: error("Impossible de trouver le service '$serviceId'")
 
-										setActions(
-											actions.replace(
-												i,
-												Action(action.id,
-												       action.order,
-												       service.createRef())))
+										actions = actions.replace(i,
+										                          Action(action.id,
+										                                 action.order,
+										                                 service.createRef())
+										)
 									}
 								}
 							}

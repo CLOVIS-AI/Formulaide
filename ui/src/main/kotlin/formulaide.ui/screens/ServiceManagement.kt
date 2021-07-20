@@ -13,11 +13,11 @@ import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
 import react.dom.div
-import react.functionalComponent
+import react.fc
 import react.useRef
 import react.useState
 
-val ServiceList = functionalComponent<ScreenProps> { props ->
+val ServiceList = fc<ScreenProps> { props ->
 	val client = props.client
 	require(client is Client.Authenticated) { "Seul un employé peut modifier les services" }
 

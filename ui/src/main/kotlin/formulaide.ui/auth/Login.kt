@@ -15,7 +15,7 @@ import kotlinx.html.InputType
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
 import react.child
-import react.functionalComponent
+import react.fc
 import react.useRef
 
 external interface LoginProps : ScreenProps {
@@ -28,7 +28,7 @@ external interface LoginProps : ScreenProps {
  * @see Client
  * @see login
  */
-val Login = functionalComponent<LoginProps> { props ->
+val Login = fc<LoginProps> { props ->
 	val email = useRef<HTMLInputElement>(null)
 	val password = useRef<HTMLInputElement>(null)
 
@@ -69,72 +69,71 @@ val Login = functionalComponent<LoginProps> { props ->
 }
 
 @Suppress("FunctionName")
-fun PasswordModification(user: Email, previousScreen: Screen) =
-	functionalComponent<ScreenProps> { props ->
-		val oldPassword = useRef<HTMLInputElement>()
-		val newPassword1 = useRef<HTMLInputElement>()
-		val newPassword2 = useRef<HTMLInputElement>()
+fun PasswordModification(user: Email, previousScreen: Screen) = fc<ScreenProps> { props ->
+	val oldPassword = useRef<HTMLInputElement>()
+	val newPassword1 = useRef<HTMLInputElement>()
+	val newPassword2 = useRef<HTMLInputElement>()
 
-		styledFormCard(
-			"Modifier le mot de passe du compte ${user.email}",
-			"Par sécurité, modifier le mot de passe va déconnecter tous vos appareils connectés.",
-			"Modifier le mot de passe",
-			contents = {
-				styledField("old-password", "Mot de passe actuel") {
-					styledInput(InputType.password,
-					            "old-password",
-					            ref = oldPassword,
-					            required = !(props.user?.administrator ?: false))
-				}
-
-				styledField("new-password-1", "Nouveau de mot de passe") {
-					styledInput(InputType.password,
-					            "new-password-1",
-					            required = true,
-					            ref = newPassword1)
-				}
-
-				styledField("new-password-2", "Confirmer le nouveau mot de passe") {
-					styledInput(InputType.password,
-					            "new-password-2",
-					            required = true,
-					            ref = newPassword2)
-				}
+	styledFormCard(
+		"Modifier le mot de passe du compte ${user.email}",
+		"Par sécurité, modifier le mot de passe va déconnecter tous vos appareils connectés.",
+		"Modifier le mot de passe",
+		contents = {
+			styledField("old-password", "Mot de passe actuel") {
+				styledInput(InputType.password,
+				            "old-password",
+				            ref = oldPassword,
+				            required = !(props.user?.administrator ?: false))
 			}
-		) {
-			onSubmitFunction = {
-				it.preventDefault()
 
-				reportExceptions(props) {
-					val oldPasswordValue = oldPassword.current?.value
-					val newPassword1Value = newPassword1.current?.value
-					val newPassword2Value = newPassword2.current?.value
+			styledField("new-password-1", "Nouveau de mot de passe") {
+				styledInput(InputType.password,
+				            "new-password-1",
+				            required = true,
+				            ref = newPassword1)
+			}
 
-					requireNotNull(newPassword1Value) { "Le nouveau mot de passe n'a pas été rempli" }
-					require(newPassword1Value == newPassword2Value) { "Le nouveau mot de passe et sa confirmation ne sont pas identiques" }
+			styledField("new-password-2", "Confirmer le nouveau mot de passe") {
+				styledInput(InputType.password,
+				            "new-password-2",
+				            required = true,
+				            ref = newPassword2)
+			}
+		}
+	) {
+		onSubmitFunction = {
+			it.preventDefault()
 
-					val request = PasswordEdit(
-						user,
-						oldPasswordValue,
-						newPassword1Value
-					)
+			reportExceptions(props) {
+				val oldPasswordValue = oldPassword.current?.value
+				val newPassword1Value = newPassword1.current?.value
+				val newPassword2Value = newPassword2.current?.value
 
-					launchAndReportExceptions(props) {
-						val client = props.client
-						require(client is Client.Authenticated) { "Impossible de modifier le mot de passe si on n'est pas connecté" }
+				requireNotNull(newPassword1Value) { "Le nouveau mot de passe n'a pas été rempli" }
+				require(newPassword1Value == newPassword2Value) { "Le nouveau mot de passe et sa confirmation ne sont pas identiques" }
 
-						client.editPassword(request)
+				val request = PasswordEdit(
+					user,
+					oldPasswordValue,
+					newPassword1Value
+				)
 
-						if (user == props.user?.email)
-							props.connect(defaultClient)
-						props.navigateTo(previousScreen)
-					}
+				launchAndReportExceptions(props) {
+					val client = props.client
+					require(client is Client.Authenticated) { "Impossible de modifier le mot de passe si on n'est pas connecté" }
+
+					client.editPassword(request)
+
+					if (user == props.user?.email)
+						props.connect(defaultClient)
+					props.navigateTo(previousScreen)
 				}
 			}
 		}
 	}
+}
 
-val LoginAccess = functionalComponent<ScreenProps> { props ->
+val LoginAccess = fc<ScreenProps> { props ->
 	if (props.user == null) {
 		child(Login) {
 			attrs {

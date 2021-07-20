@@ -11,11 +11,11 @@ import formulaide.ui.utils.text
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
-import react.functionalComponent
+import react.fc
 import kotlin.math.max
 import kotlin.math.min
 
-val ArityEditor = functionalComponent<EditableFieldProps> { props ->
+val ArityEditor = fc<EditableFieldProps> { props ->
 	val field = props.field
 	val arity = field.arity
 
@@ -30,14 +30,14 @@ val ArityEditor = functionalComponent<EditableFieldProps> { props ->
 
 	val minAllowedRange = when (field) {
 		is DataField.Composite -> 0..0 // composite references can never be mandatory (see DataField.Composite)
-		is DeepFormField -> field.obj.arity.min..Int.MAX_VALUE
+		is DeepFormField -> field.dataField.arity.min..Int.MAX_VALUE
 		else -> 0..Int.MAX_VALUE
 	}
 
 	val maxAllowedRange = when (field) {
 		is ShallowFormField.Composite -> 0..Int.MAX_VALUE
 		is DataField, is ShallowFormField -> 1..Int.MAX_VALUE
-		is DeepFormField -> 0..field.obj.arity.max
+		is DeepFormField -> 0..field.dataField.arity.max
 		else -> 0..Int.MAX_VALUE
 	}
 

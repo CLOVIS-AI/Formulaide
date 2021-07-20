@@ -21,12 +21,12 @@ import org.w3c.dom.HTMLInputElement
 import react.dom.attrs
 import react.dom.div
 import react.dom.option
-import react.functionalComponent
+import react.fc
 import react.useEffect
 import react.useRef
 import react.useState
 
-val UserList = functionalComponent<ScreenProps> { props ->
+val UserList = fc<ScreenProps> { props ->
 	styledCard(
 		"Employés",
 		null,
@@ -101,7 +101,7 @@ private fun editUser(
 	}
 }
 
-val CreateUser = functionalComponent<ScreenProps> { props ->
+val CreateUser = fc<ScreenProps> { props ->
 	val email = useRef<HTMLInputElement>()
 	val fullName = useRef<HTMLInputElement>()
 	val (selectedService, setSelectedService) = useState(props.services.firstOrNull())

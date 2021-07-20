@@ -24,10 +24,10 @@ internal val defaultClient
 /**
  * The main app screen.
  */
-val App = functionalComponent<RProps> {
-	val (client, setClient) = useState<Client>(defaultClient)
-	val (user, setUser) = useState<User?>(null)
-	val (scope, _) = useState(MainScope())
+val App = fc<RProps> {
+	var client by useState<Client>(defaultClient)
+	var user by useState<User?>(null)
+	val scope = useMemo { MainScope() }
 
 	val (errors, setErrors) = useState(emptyList<Throwable>())
 	val addError = { error: Throwable -> setErrors(errors + error) }
@@ -35,59 +35,62 @@ val App = functionalComponent<RProps> {
 	//region Refresh the user if necessary
 	useEffect(client) {
 		launchAndReportExceptions(addError, scope) {
-			if (client is Client.Authenticated)
-				setUser(client.getMe())
+			(client as? Client.Authenticated)
+				?.getMe()
+				?.let { user = it }
+
 			console.log("Reloaded user")
 		}
 	}
 	//endregion
 
 	//region Global list of composites
-	val (composites, setComposites) = useState<List<Composite>>(emptyList())
-	val (refreshComposites, setRefreshComposites) = useState(0)
+	var composites by useState<List<Composite>>(emptyList())
+	var refreshComposites by useState(0)
 	useEffect(client, refreshComposites) {
-		if (client is Client.Authenticated) {
-			launchAndReportExceptions(addError, scope) { setComposites(client.listData()) }
-		} else setComposites(emptyList())
+		(client as? Client.Authenticated)
+			?.let { c -> launchAndReportExceptions(addError, scope) { composites = c.listData() } }
+			?: run { composites = emptyList() }
+
 		console.log("Loaded ${composites.size} composites")
 	}
 	//endregion
 
 	//region Global list of forms
-	val (forms, setForms) = useState<List<Form>>(emptyList())
-	val (refreshForms, setRefreshForms) = useState(0)
+	var forms by useState<List<Form>>(emptyList())
+	var refreshForms by useState(0)
 	useEffect(client, user, refreshForms) {
 		scope.launch {
-			setForms(
-				if (client is Client.Authenticated) client.listAllForms()
-				else
-					try {
-						client.listForms()
-					} catch (e: Exception) {
-						console.warn("Couldn't access the list of forms, this client is probably dead. Switching to the test client.")
-						inProduction = false
-						setClient(defaultClient)
-						setUser(null)
-						emptyList()
-					}
-			)
+			forms = (client as? Client.Authenticated)
+				?.listAllForms()
+				?: try {
+					client.listForms()
+				} catch (e: Exception) {
+					console.warn("Couldn't access the list of forms, this client is probably dead. Switching to the test client.")
+					inProduction = false
+					client = defaultClient
+					user = null
+					emptyList()
+				}
+
 			console.log("Loaded ${forms.size} forms")
 		}
 	}
 	//endregion
 
 	//region Global list of services (only if admin)
-	val (services, setServices) = useState(emptyList<Service>())
-	val (refreshServices, setRefreshServices) = useState(0)
+	var services by useState(emptyList<Service>())
+	var refreshServices by useState(0)
 	useEffect(client, user, refreshServices) {
-		if (client is Client.Authenticated && user != null) {
-			launchAndReportExceptions(addError, scope) {
-				setServices(
-					if (user.administrator) client.listAllServices()
-					else client.listServices()
-				)
-			}
-		} else setServices(emptyList())
+		launchAndReportExceptions(addError, scope) {
+			services =
+				(client as? Client.Authenticated)
+					?.let { c ->
+						if (user?.administrator == true) c.listAllServices()
+						else c.listServices()
+					}
+					?: emptyList()
+		}
 		console.log("Loaded ${services.size} services")
 	}
 	//endregion
@@ -97,12 +100,12 @@ val App = functionalComponent<RProps> {
 	// If the client is anonymous, try to see if we currently have a refreshToken in a cookie
 	// If we do, we can bypass the login step
 	useEffect(client) {
-		if (client is Client.Anonymous) {
+		(client as? Client.Anonymous)?.let { c ->
 			launchAndReportExceptions(addError, scope) {
 				val accessToken = client.refreshToken()
 
 				if (accessToken != null) {
-					setClient(client.authenticate(accessToken))
+					client = c.authenticate(accessToken)
 					console.log("Got an access token from the cookie-stored refresh token (page loading)")
 				}
 			}
@@ -113,14 +116,14 @@ val App = functionalComponent<RProps> {
 	useEffect(client) {
 		val job = Job()
 
-		if (client is Client.Authenticated) {
+		(client as? Client.Authenticated)?.let {
 			launchAndReportExceptions(addError, CoroutineScope(job)) {
 				delay(1000L * 60 * 10) // every 10 minutes
 
 				val accessToken = client.refreshToken()
 				checkNotNull(accessToken) { "Le serveur a refusé de rafraichir le token d'accès. Une raison possible est que votre mot de passe a été modifié." }
 
-				setClient(defaultClient.authenticate(accessToken))
+				client = defaultClient.authenticate(accessToken)
 				console.log("Got an access token from the cookie-stored refresh token (expiration time was near)")
 			}
 		}
@@ -134,18 +137,18 @@ val App = functionalComponent<RProps> {
 		attrs {
 			this.client = client
 			this.user = user
-			this.connect = { setClient(it); setUser(null) }
+			this.connect = { client = it; user = null }
 
 			this.scope = scope
 
 			this.composites = composites
-			this.refreshComposites = { setRefreshComposites(refreshComposites + 1) }
+			this.refreshComposites = { refreshComposites++ }
 
 			this.forms = forms
-			this.refreshForms = { setRefreshForms(refreshForms + 1) }
+			this.refreshForms = { refreshForms++ }
 
 			this.services = services
-			this.refreshServices = { setRefreshServices(refreshServices + 1) }
+			this.refreshServices = { refreshServices++ }
 
 			this.reportError = addError
 		}

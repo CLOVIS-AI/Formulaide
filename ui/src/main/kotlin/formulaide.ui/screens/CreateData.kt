@@ -20,11 +20,11 @@ import org.w3c.dom.HTMLInputElement
 import react.child
 import react.dom.li
 import react.dom.ul
-import react.functionalComponent
+import react.fc
 import react.useRef
 import react.useState
 
-val CreateData = functionalComponent<ScreenProps> { props ->
+val CreateData = fc<ScreenProps> { props ->
 	val client = props.client
 	require(client is Client.Authenticated)
 
@@ -41,7 +41,7 @@ val CreateData = functionalComponent<ScreenProps> { props ->
 	}
 
 	val formName = useRef<HTMLInputElement>()
-	val (fields, setFields) = useState<List<DataField>>(emptyList())
+	var fields by useState<List<DataField>>(emptyList())
 
 	styledFormCard(
 		"Créer une donnée",
@@ -50,13 +50,11 @@ val CreateData = functionalComponent<ScreenProps> { props ->
 				"Les données composées sont stockées et unifiées entre les services.",
 		"Créer cette donnée",
 		"Ajouter un champ" to {
-			setFields(
-				fields + DataField.Simple(
-					order = fields.size,
-					id = fields.size.toString(),
-					name = "Nouveau champ",
-					simple = SimpleField.Text(Arity.optional())
-				)
+			fields = fields + DataField.Simple(
+				order = fields.size,
+				id = fields.size.toString(),
+				name = "Nouveau champ",
+				simple = SimpleField.Text(Arity.optional())
 			)
 		},
 		contents = {
@@ -74,7 +72,7 @@ val CreateData = functionalComponent<ScreenProps> { props ->
 								app = props
 								this.field = field
 								replace = {
-									setFields(fields.replace(i, it as DataField))
+									fields = fields.replace(i, it as DataField)
 								}
 							}
 						}

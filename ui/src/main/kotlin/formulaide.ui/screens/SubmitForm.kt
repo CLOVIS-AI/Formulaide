@@ -19,12 +19,12 @@ import kotlinx.html.id
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLFormElement
 import org.w3c.xhr.FormData
-import react.functionalComponent
+import react.fc
 import react.useEffectOnce
 import react.useState
 
 @Suppress("FunctionName")
-fun SubmitForm(formRef: Ref<Form>) = functionalComponent<ScreenProps> { props ->
+fun SubmitForm(formRef: Ref<Form>) = fc<ScreenProps> { props ->
 	val formRefState by useState(formRef)
 
 	if (!formRefState.loaded) {
@@ -43,7 +43,7 @@ fun SubmitForm(formRef: Ref<Form>) = functionalComponent<ScreenProps> { props ->
 			null,
 		) { text("Chargement en cours…") }
 
-		return@functionalComponent
+		return@fc
 	}
 
 	val form = formRef.obj
@@ -67,7 +67,7 @@ fun SubmitForm(formRef: Ref<Form>) = functionalComponent<ScreenProps> { props ->
 			null,
 		) { text("Chargement en cours…") }
 
-		return@functionalComponent
+		return@fc
 	}
 
 	styledFormCard(
