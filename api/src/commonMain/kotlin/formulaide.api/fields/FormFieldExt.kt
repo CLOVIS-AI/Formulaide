@@ -5,13 +5,17 @@ package formulaide.api.fields
  *
  * Use the generated sequence to recursively do some operation on all fields.
  */
-fun FormField.fieldMonad(): Sequence<FormField> = when (this) {
-	is ShallowFormField.Simple -> sequenceOf(this)
-	is ShallowFormField.Union -> options.asSequence().flatMap { it.fieldMonad() } + this
-	is ShallowFormField.Composite -> fields.asSequence().flatMap { it.fieldMonad() } + this
-	is DeepFormField.Simple -> sequenceOf(this)
-	is DeepFormField.Union -> options.asSequence().flatMap { it.fieldMonad() } + this
-	is DeepFormField.Composite -> fields.asSequence().flatMap { it.fieldMonad() } + this
+fun FormField.fieldMonad(): Sequence<FormField> {
+	val self = sequenceOf(this)
+
+	return when (this) {
+		is ShallowFormField.Simple -> self
+		is ShallowFormField.Union -> self + options.asSequence().flatMap { it.fieldMonad() }
+		is ShallowFormField.Composite -> self + fields.asSequence().flatMap { it.fieldMonad() }
+		is DeepFormField.Simple -> self
+		is DeepFormField.Union -> self + options.asSequence().flatMap { it.fieldMonad() }
+		is DeepFormField.Composite -> self + fields.asSequence().flatMap { it.fieldMonad() }
+	}
 }
 
 /**

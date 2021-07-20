@@ -31,7 +31,10 @@ sealed class ShallowFormField : FormField {
 		override val order: Int,
 		override val name: String,
 		override val simple: SimpleField,
-	) : ShallowFormField(), FormField.Simple
+	) : ShallowFormField(), FormField.Simple {
+
+		override fun toString() = "Shallow.Simple($id, $name, order=$order, $simple)"
+	}
 
 	/**
 	 * A field that allows the user to choose between multiple [options].
@@ -52,6 +55,8 @@ sealed class ShallowFormField : FormField {
 			super.validate()
 			options.checkOrderValidity()
 		}
+
+		override fun toString() = "Shallow.Union($id, $name, order=$order, $arity, $options)"
 	}
 
 	/**
@@ -74,13 +79,16 @@ sealed class ShallowFormField : FormField {
 			super.load(composites, allowNotFound, lazy)
 			ref.loadFrom(composites, allowNotFound, lazy)
 
-			fields.forEach { it.loadRef(ref.obj, allowNotFound, lazy) }
+			fields.forEach { it.loadRef(ref.obj.fields, allowNotFound, lazy) }
 		}
 
 		override fun validate() {
 			super.validate()
 			fields.checkOrderValidity()
 		}
+
+		override fun toString() =
+			"Shallow.Composite($id, $name, order=$order, $arity, composite=$ref, $fields)"
 	}
 
 	fun copyToSimple(simple: SimpleField) = Simple(id, order, name, simple)

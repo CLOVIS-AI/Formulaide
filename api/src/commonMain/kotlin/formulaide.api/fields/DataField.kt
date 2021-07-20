@@ -34,7 +34,10 @@ sealed class DataField : Field {
 		override val order: Int,
 		override val name: String,
 		override val simple: SimpleField,
-	) : DataField(), Field.Simple
+	) : DataField(), Field.Simple {
+
+		override fun toString() = "Data.Simple($id, $name, order=$order, $simple)"
+	}
 
 	/**
 	 * A field that allows the user to choose between multiple [options].
@@ -49,13 +52,16 @@ sealed class DataField : Field {
 		override val name: String,
 		override val arity: Arity,
 		override val options: List<DataField>,
-	) : DataField(), Field.Union<DataField>
+	) : DataField(), Field.Union<DataField> {
+
+		override fun toString() = "Data.Union($id, $name, order=$order, $arity, $options)"
+	}
 
 	/**
 	 * A field that represents another composite data structure.
 	 *
 	 * Composite data structures only [reference][ref] other composite data structures, and cannot
-	 * override their settings (unlike [forms][FormField.Shallow.Composite]).
+	 * override their settings (unlike [forms][ShallowFormField.Composite]).
 	 *
 	 * Because there is no recursion here, this class doesn't implement [Field.Container].
 	 *
@@ -79,6 +85,8 @@ sealed class DataField : Field {
 			super.validate()
 			require(ref.loaded) { "La donnée composée $id référence ${ref.id} qui n'a pas été chargée" }
 		}
+
+		override fun toString() = "Data.Composite($id, $name, order=$order, $arity, composite=$ref)"
 	}
 
 	fun copyToSimple(simple: SimpleField) = Simple(id, order, name, simple)

@@ -46,9 +46,9 @@ fun CompositeDsl<DataField>.simple(
 fun CompositeDsl<DataField>.union(
 	name: String,
 	arity: Arity,
-	options: CompositeDsl<DataField.Union>.() -> Unit
+	options: CompositeDsl<DataField>.() -> Unit,
 ) : DataField.Union {
-	val dsl = CompositeDsl<DataField.Union>()
+	val dsl = CompositeDsl<DataField>()
 	dsl.options()
 
 	val (id, order) = nextInfo()
