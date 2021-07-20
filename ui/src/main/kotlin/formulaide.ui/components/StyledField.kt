@@ -8,8 +8,8 @@ import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLSelectElement
 import react.RBuilder
-import react.RRef
 import react.dom.*
+import react.Ref as RRef
 
 private const val commonInputStyle =
 	"rounded bg-gray-200 border-b-2 border-gray-400 focus:border-purple-800 my-1 focus:outline-none"
