@@ -24,8 +24,8 @@ object Version {
 	const val autoprefixer = "10.2.6"
 	const val tailwind = "2.2.4"
 
-	const val ktor = "1.6.0"
-	const val logback = "1.2.3"
+	const val ktor = "1.6.1"
+	const val logback = "1.2.4"
 	const val bcrypt = "0.9.0"
 
 	const val kmongo = "4.2.8"
