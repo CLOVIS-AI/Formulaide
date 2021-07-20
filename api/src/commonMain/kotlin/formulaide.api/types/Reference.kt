@@ -56,7 +56,7 @@ data class Ref<R : Referencable>(
 	 */
 	var obj: R
 		get() = _obj
-			?: error("This reference ('$id') has not been loaded. You should load a reference before accessing it.")
+			?: throw UnloadedReferenceException(this)
 		set(value) {
 			require(value.id == id) { "The object given to this reference must have the same id as this reference; expected '$id' but found '${value.id}'" }
 			_obj = value
@@ -133,4 +133,7 @@ data class Ref<R : Referencable>(
 		 */
 		const val SPECIAL_TOKEN_NEW: ReferenceId = "special:uninitialized"
 	}
+
+	class UnloadedReferenceException(val ref: Ref<*>) :
+		IllegalStateException("Cette référence sur '${ref.id}' n'est pas chargée, il est donc impossible d'accéder à sa valeur")
 }
