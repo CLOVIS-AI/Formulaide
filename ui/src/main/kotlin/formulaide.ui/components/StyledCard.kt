@@ -3,7 +3,6 @@ package formulaide.ui.components
 import kotlinx.html.DIV
 import kotlinx.html.FORM
 import react.RBuilder
-import react.ReactElement
 import react.dom.*
 
 private fun RBuilder.styledCardTitle(title: String, secondary: String?) {
@@ -14,13 +13,13 @@ private fun RBuilder.styledCardTitle(title: String, secondary: String?) {
 private fun RBuilder.styledCardShell(
 	failed: Boolean = false,
 	contents: RDOMBuilder<DIV>.() -> Unit,
-): ReactElement {
+) {
 	var classes = "m-4 p-4 shadow-xl rounded-lg"
 
 	if (failed)
 		classes += " bg-red-200"
 
-	return div(classes) {
+	div(classes) {
 		contents()
 	}
 }
