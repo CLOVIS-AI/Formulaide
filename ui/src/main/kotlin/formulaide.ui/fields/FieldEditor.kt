@@ -3,8 +3,8 @@ package formulaide.ui.fields
 import formulaide.api.fields.*
 import formulaide.api.types.Arity
 import formulaide.ui.ScreenProps
-import formulaide.ui.components.styledFieldEditorShell
 import formulaide.ui.components.styledFormField
+import formulaide.ui.components.styledNesting
 import formulaide.ui.utils.text
 import react.RProps
 import react.child
@@ -65,7 +65,7 @@ internal fun Field.set(name: String? = null, arity: Arity? = null): Field {
 }
 
 val FieldEditor = fc<EditableFieldProps> { props ->
-	styledFieldEditorShell("item-editor-${props.field.id}", "Champ ${props.field.order}") {
+	styledNesting {
 
 		child(NameEditor) {
 			attrs { inheritFrom(props) }
