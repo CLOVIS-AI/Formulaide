@@ -3,8 +3,8 @@ package formulaide.ui.fields
 import formulaide.api.fields.*
 import formulaide.api.types.Arity
 import formulaide.ui.ScreenProps
-import formulaide.ui.components.styledFieldEditorShell
 import formulaide.ui.components.styledFormField
+import formulaide.ui.components.styledNesting
 import formulaide.ui.utils.text
 import react.RProps
 import react.child
@@ -15,12 +15,17 @@ external interface EditableFieldProps : RProps {
 
 	var field: Field
 	var replace: (Field) -> Unit
+
+	var depth: Int
+	var fieldNumber: Int
 }
 
 fun EditableFieldProps.inheritFrom(props: EditableFieldProps) {
 	app = props.app
 	field = props.field
 	replace = props.replace
+	depth = props.depth
+	fieldNumber = props.fieldNumber
 }
 
 @Suppress("NAME_SHADOWING")
@@ -65,7 +70,7 @@ internal fun Field.set(name: String? = null, arity: Arity? = null): Field {
 }
 
 val FieldEditor = fc<EditableFieldProps> { props ->
-	styledFieldEditorShell("item-editor-${props.field.id}", "Champ ${props.field.order}") {
+	styledNesting(props.depth, props.fieldNumber) {
 
 		child(NameEditor) {
 			attrs { inheritFrom(props) }
@@ -85,7 +90,7 @@ val FieldEditor = fc<EditableFieldProps> { props ->
 					attrs { inheritFrom(props) }
 				}
 			} else {
-				styledFormField { text("Les sous-champs ne sont pas affichés, parce que cette donnée est absente.") }
+				styledFormField { text("Les sous-champs ne sont pas affichés, parce que cette donnée est cachée.") }
 			}
 		}
 	}

@@ -74,6 +74,9 @@ val CreateData = fc<ScreenProps> { props ->
 								replace = {
 									fields = fields.replace(i, it as DataField)
 								}
+
+								depth = 0
+								fieldNumber = i
 							}
 						}
 					}

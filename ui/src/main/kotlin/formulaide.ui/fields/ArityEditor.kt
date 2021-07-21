@@ -45,7 +45,7 @@ val ArityEditor = fc<EditableFieldProps> { props ->
 
 	if (allowModifications) {
 		val modelArities = mapOf(
-			Arity.forbidden() to "Absent",
+			Arity.forbidden() to "Caché",
 			Arity.optional() to "Facultatif",
 			Arity.mandatory() to "Obligatoire",
 		).filterKeys { it.min in minAllowedRange && it.max in maxAllowedRange }
@@ -107,7 +107,7 @@ val ArityEditor = fc<EditableFieldProps> { props ->
 		when (arity) {
 			Arity.mandatory() -> styledDisabledButton("Obligatoire")
 			Arity.optional() -> styledDisabledButton("Facultatif")
-			Arity.forbidden() -> styledDisabledButton("Absent")
+			Arity.forbidden() -> styledDisabledButton("Caché")
 			else -> styledDisabledButton("De ${arity.min} à ${arity.max} réponses")
 		}
 	}

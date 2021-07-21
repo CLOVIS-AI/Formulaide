@@ -30,7 +30,7 @@ abstract class Screen(
 	val route: String,
 ) {
 
-	object Home : Screen("Acceuil", Role.ANONYMOUS, LoginAccess, "home")
+	object Home : Screen("Accueil", Role.ANONYMOUS, LoginAccess, "home")
 	object ShowForms : Screen("Formulaires", Role.ANONYMOUS, FormList, "forms")
 	object NewData : Screen("Créer une donnée", Role.ADMINISTRATOR, CreateData, "createData")
 	object NewForm : Screen("Créer un formulaire", Role.ADMINISTRATOR, CreateForm, "createForm")

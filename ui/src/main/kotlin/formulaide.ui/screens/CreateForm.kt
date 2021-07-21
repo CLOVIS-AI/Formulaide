@@ -83,6 +83,9 @@ val CreateForm = fc<ScreenProps> { props ->
 								this.replace = {
 									fields = fields.replace(i, it as ShallowFormField)
 								}
+
+								depth = 0
+								fieldNumber = i
 							}
 						}
 					}
