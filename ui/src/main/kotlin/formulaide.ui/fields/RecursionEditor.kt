@@ -28,6 +28,10 @@ val RecursionEditor: FunctionComponent<EditableFieldProps> = fc { props ->
 				attrs {
 					app = props.app
 					this.field = field
+
+					depth = props.depth + 1
+					fieldNumber = i
+
 					replace = { newField ->
 						val newParent = when (parent) {
 							is DataField.Union -> parent.copy(options = parent.options

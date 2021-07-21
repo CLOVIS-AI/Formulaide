@@ -15,12 +15,17 @@ external interface EditableFieldProps : RProps {
 
 	var field: Field
 	var replace: (Field) -> Unit
+
+	var depth: Int
+	var fieldNumber: Int
 }
 
 fun EditableFieldProps.inheritFrom(props: EditableFieldProps) {
 	app = props.app
 	field = props.field
 	replace = props.replace
+	depth = props.depth
+	fieldNumber = props.fieldNumber
 }
 
 @Suppress("NAME_SHADOWING")
@@ -65,7 +70,7 @@ internal fun Field.set(name: String? = null, arity: Arity? = null): Field {
 }
 
 val FieldEditor = fc<EditableFieldProps> { props ->
-	styledNesting {
+	styledNesting(props.depth, props.fieldNumber) {
 
 		child(NameEditor) {
 			attrs { inheritFrom(props) }
