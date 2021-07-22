@@ -6,7 +6,7 @@ import react.dom.svg
 import react.dom.tag
 
 fun RBuilder.loadingSpinner() {
-	svg("animate-spin h-4 w-4") {
+	svg("animate-spin h-4 w-4 mx-2 inline") {
 		attrs["viewBox"] = "0 0 24 24"
 
 		tag({}, {

@@ -10,8 +10,7 @@ import react.*
 import react.dom.*
 
 private fun RBuilder.styledCardTitle(title: String, secondary: String?, loading: Boolean = false) {
-	styledTitle(title)
-	if (loading) loadingSpinner()
+	styledTitle(title, loading)
 	if (secondary != null) p { styledLightText(secondary) }
 }
 
