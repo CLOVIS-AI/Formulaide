@@ -4,13 +4,14 @@ import formulaide.client.Client
 import formulaide.client.routes.closeService
 import formulaide.client.routes.createService
 import formulaide.client.routes.reopenService
-import formulaide.ui.*
 import formulaide.ui.components.*
-import formulaide.ui.components2.useAsync
+import formulaide.ui.refreshServices
+import formulaide.ui.traceRenders
+import formulaide.ui.useClient
+import formulaide.ui.useServices
 import formulaide.ui.utils.text
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
-import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
 import react.RProps
 import react.dom.div
@@ -29,7 +30,6 @@ val ServiceList = fc<RProps> { _ ->
 	}
 
 	val services by useServices()
-	val scope = useAsync()
 
 	styledCard(
 		"Services",
@@ -53,13 +53,11 @@ val ServiceList = fc<RProps> { _ ->
 				div {
 
 					styledButton(if (service.open) "Désactiver" else "Activer", default = false) {
-						scope.reportExceptions {
-							if (service.open)
-								client.closeService(service)
-							else
-								client.reopenService(service)
-							refreshServices()
-						}
+						if (service.open)
+							client.closeService(service)
+						else
+							client.reopenService(service)
+						refreshServices()
 					}
 
 				}
@@ -72,24 +70,19 @@ val ServiceList = fc<RProps> { _ ->
 	styledFormCard(
 		"Créer un service",
 		null,
-		"Créer",
-		contents = {
-			styledField("service-name", "Nom") {
-				styledInput(InputType.text, "service-name", required = true, ref = newServiceName)
-			}
-		}
-	) {
-		onSubmitFunction = {
-			it.preventDefault()
+		"Créer" to {
+			val serviceName = newServiceName.current?.value
+			requireNotNull(serviceName) { "Le nom d'un service ne peut pas être vide" }
+			require(serviceName.isNotBlank()) { "Le nom d'un service ne peut pas être vide : $serviceName" }
 
-			scope.reportExceptions {
-				val serviceName = newServiceName.current?.value
-				requireNotNull(serviceName) { "Le nom d'un service ne peut pas être vide" }
-				require(serviceName.isNotBlank()) { "Le nom d'un service ne peut pas être vide : $serviceName" }
-
+			launch {
 				client.createService(serviceName)
 				refreshServices()
 			}
+		},
+	) {
+		styledField("service-name", "Nom") {
+			styledInput(InputType.text, "service-name", required = true, ref = newServiceName)
 		}
 	}
 }

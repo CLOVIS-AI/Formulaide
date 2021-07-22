@@ -14,7 +14,6 @@ import formulaide.ui.components.styledInput
 import formulaide.ui.components2.useAsync
 import formulaide.ui.utils.text
 import kotlinx.html.InputType
-import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
 import react.RProps
 import react.child
@@ -33,32 +32,18 @@ val Login = fc<RProps> { _ ->
 	val email = useRef<HTMLInputElement>(null)
 	val password = useRef<HTMLInputElement>(null)
 
-	val scope = useAsync()
 	var client by useClient()
 
 	styledFormCard(
 		"Espace employé",
 		"Connectez-vous pour avoir accès à l'espace réservé aux employés.",
-		"Se connecter",
-		contents = {
-			styledField("login-email", "Email") {
-				styledInput(InputType.email, "login-email", required = true, ref = email)
-			}
+		"Se connecter" to {
+			val credentials = PasswordLogin(
+				email = email.current?.value ?: error("Email manquant"),
+				password = password.current?.value ?: error("Mot de passe manquant")
+			)
 
-			styledField("login-password", "Mot de passe") {
-				styledInput(InputType.password, "login-password", required = true, ref = password)
-			}
-		}
-	) {
-		onSubmitFunction = {
-			it.preventDefault()
-
-			scope.reportExceptions {
-				val credentials = PasswordLogin(
-					email = email.current?.value ?: error("Email manquant"),
-					password = password.current?.value ?: error("Mot de passe manquant")
-				)
-
+			launch {
 				val token = client.login(credentials).token
 
 				client = Client.Authenticated.connect(
@@ -66,6 +51,14 @@ val Login = fc<RProps> { _ ->
 					token
 				)
 			}
+		}
+	) {
+		styledField("login-email", "Email") {
+			styledInput(InputType.email, "login-email", required = true, ref = email)
+		}
+
+		styledField("login-password", "Mot de passe") {
+			styledInput(InputType.password, "login-password", required = true, ref = password)
 		}
 	}
 }
@@ -81,7 +74,6 @@ fun PasswordModification(user: Email, previousScreen: Screen) = fc<RProps> {
 	val (client, connect) = useClient()
 	val (me) = useUser()
 	val (_, navigateTo) = useNavigation()
-	val scope = useAsync()
 
 	if (me == null) {
 		styledCard("Modifier le mot de passe") {
@@ -100,53 +92,48 @@ fun PasswordModification(user: Email, previousScreen: Screen) = fc<RProps> {
 	styledFormCard(
 		"Modifier le mot de passe du compte ${user.email}",
 		"Par sécurité, modifier le mot de passe va déconnecter tous vos appareils connectés.",
-		"Modifier le mot de passe",
-		contents = {
-			styledField("old-password", "Mot de passe actuel") {
-				styledInput(InputType.password,
-				            "old-password",
-				            ref = oldPassword,
-				            required = !me.administrator)
-			}
+		"Modifier le mot de passe" to {
+			val oldPasswordValue = oldPassword.current?.value
+			val newPassword1Value = newPassword1.current?.value
+			val newPassword2Value = newPassword2.current?.value
 
-			styledField("new-password-1", "Nouveau de mot de passe") {
-				styledInput(InputType.password,
-				            "new-password-1",
-				            required = true,
-				            ref = newPassword1)
-			}
+			requireNotNull(newPassword1Value) { "Le nouveau mot de passe n'a pas été rempli" }
+			require(newPassword1Value == newPassword2Value) { "Le nouveau mot de passe et sa confirmation ne sont pas identiques" }
 
-			styledField("new-password-2", "Confirmer le nouveau mot de passe") {
-				styledInput(InputType.password,
-				            "new-password-2",
-				            required = true,
-				            ref = newPassword2)
-			}
-		}
-	) {
-		onSubmitFunction = {
-			it.preventDefault()
+			val request = PasswordEdit(
+				user,
+				oldPasswordValue,
+				newPassword1Value
+			)
 
-			scope.reportExceptions {
-				val oldPasswordValue = oldPassword.current?.value
-				val newPassword1Value = newPassword1.current?.value
-				val newPassword2Value = newPassword2.current?.value
-
-				requireNotNull(newPassword1Value) { "Le nouveau mot de passe n'a pas été rempli" }
-				require(newPassword1Value == newPassword2Value) { "Le nouveau mot de passe et sa confirmation ne sont pas identiques" }
-
-				val request = PasswordEdit(
-					user,
-					oldPasswordValue,
-					newPassword1Value
-				)
-
+			launch {
 				client.editPassword(request)
 
 				if (user == me.email)
 					connect(defaultClient)
 				navigateTo(previousScreen)
 			}
+		}
+	) {
+		styledField("old-password", "Mot de passe actuel") {
+			styledInput(InputType.password,
+			            "old-password",
+			            ref = oldPassword,
+			            required = !me.administrator)
+		}
+
+		styledField("new-password-1", "Nouveau de mot de passe") {
+			styledInput(InputType.password,
+			            "new-password-1",
+			            required = true,
+			            ref = newPassword1)
+		}
+
+		styledField("new-password-2", "Confirmer le nouveau mot de passe") {
+			styledInput(InputType.password,
+			            "new-password-2",
+			            required = true,
+			            ref = newPassword2)
 		}
 	}
 }

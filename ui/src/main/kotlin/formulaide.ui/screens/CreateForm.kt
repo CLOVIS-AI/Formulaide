@@ -12,13 +12,11 @@ import formulaide.client.Client
 import formulaide.client.routes.createForm
 import formulaide.ui.*
 import formulaide.ui.components.*
-import formulaide.ui.components2.useAsync
 import formulaide.ui.fields.FieldEditor
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.text
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
-import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
 import react.*
@@ -35,7 +33,6 @@ val CreateForm = fc<RProps> { _ ->
 		return@fc
 	}
 
-	val scope = useAsync()
 	val services = useServices().value.filter { it.open }
 	val (_, navigateTo) = useNavigation()
 
@@ -47,7 +44,24 @@ val CreateForm = fc<RProps> { _ ->
 
 	styledFormCard(
 		"Créer un formulaire", null,
-		"Créer ce formulaire",
+		"Créer ce formulaire" to {
+			val form = Form(
+				name = formName.current?.value ?: error("Le formulaire n'a pas de nom"),
+				id = Ref.SPECIAL_TOKEN_NEW,
+				public = public.current?.checked
+					?: error("Le formulaire ne précise pas s'il est public ou interne"),
+				open = true,
+				mainFields = FormRoot(fields),
+				actions = actions
+			)
+
+			launch {
+				client.createForm(form)
+
+				refreshForms()
+				navigateTo(Screen.ShowForms)
+			}
+		},
 		"Ajouter un champ" to {
 			fields = fields + ShallowFormField.Simple(
 				order = fields.size,
@@ -62,96 +76,72 @@ val CreateForm = fc<RProps> { _ ->
 				order = actions.size,
 				services.getOrNull(0)?.createRef() ?: error("Aucun service n'a été trouvé")
 			)
-		},
-		contents = {
-			styledField("new-form-name", "Nom") {
-				styledInput(InputType.text, "new-form-name", required = true, ref = formName) {
-					autoFocus = true
-				}
+		}
+	) {
+		styledField("new-form-name", "Nom") {
+			styledInput(InputType.text, "new-form-name", required = true, ref = formName) {
+				autoFocus = true
 			}
+		}
 
-			styledField("new-form-visibility", "Est-il public ?") {
-				styledCheckbox("new-form-visilibity",
-				               "Ce formulaire est visible par les administrés",
-				               ref = public)
-			}
+		styledField("new-form-visibility", "Est-il public ?") {
+			styledCheckbox("new-form-visilibity",
+			               "Ce formulaire est visible par les administrés",
+			               ref = public)
+		}
 
-			styledField("new-form-fields", "Champs") {
-				styledNesting {
-					for ((i, field) in fields.sortedBy { it.order }.withIndex()) {
-						child(FieldEditor) {
-							attrs {
-								this.field = field
-								this.replace = {
-									fields = fields.replace(i, it as ShallowFormField)
-								}
-
-								depth = 0
-								fieldNumber = i
+		styledField("new-form-fields", "Champs") {
+			styledNesting {
+				for ((i, field) in fields.sortedBy { it.order }.withIndex()) {
+					child(FieldEditor) {
+						attrs {
+							this.field = field
+							this.replace = {
+								fields = fields.replace(i, it as ShallowFormField)
 							}
-						}
-					}
-				}
-			}
 
-			styledField("new-form-actions", "Étapes") {
-				styledNesting {
-					for ((i, action) in actions.sortedBy { it.order }.withIndex()) {
-
-						styledField("new-form-action-${action.id}-select",
-						            "Choix du service") {
-							styledSelect {
-								for (service in services) {
-									option {
-										text(service.name)
-
-										attrs {
-											value = service.id
-											selected = action.reviewer.id == service.id
-										}
-									}
-								}
-
-								attrs {
-									onChangeFunction = { event ->
-										val serviceId = (event.target as HTMLSelectElement).value
-										val service = services.find { it.id == serviceId }
-											?: error("Impossible de trouver le service '$serviceId'")
-
-										actions = actions.replace(i,
-										                          Action(action.id,
-										                                 action.order,
-										                                 service.createRef())
-										)
-									}
-								}
-							}
+							depth = 0
+							fieldNumber = i
 						}
 					}
 				}
 			}
 		}
-	) {
-		onSubmitFunction = {
-			it.preventDefault()
 
-			val form = reportExceptions {
-				Form(
-					name = formName.current?.value ?: error("Le formulaire n'a pas de nom"),
-					id = Ref.SPECIAL_TOKEN_NEW,
-					public = public.current?.checked
-						?: error("Le formulaire ne précise pas s'il est public ou interne"),
-					open = true,
-					mainFields = FormRoot(fields),
-					actions = actions
-				)
-			}
+		styledField("new-form-actions", "Étapes") {
+			styledNesting {
+				for ((i, action) in actions.sortedBy { it.order }.withIndex()) {
 
-			scope.reportExceptions {
-				client.createForm(form)
+					styledField("new-form-action-${action.id}-select",
+					            "Choix du service") {
+						styledSelect {
+							for (service in services) {
+								option {
+									text(service.name)
 
-				refreshForms()
-				navigateTo(Screen.ShowForms)
+									attrs {
+										value = service.id
+										selected = action.reviewer.id == service.id
+									}
+								}
+							}
+
+							attrs {
+								onChangeFunction = { event ->
+									val serviceId = (event.target as HTMLSelectElement).value
+									val service = services.find { it.id == serviceId }
+										?: error("Impossible de trouver le service '$serviceId'")
+
+									actions = actions.replace(i,
+									                          Action(action.id,
+									                                 action.order,
+									                                 service.createRef())
+									)
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 	}

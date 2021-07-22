@@ -13,9 +13,6 @@ import formulaide.ui.components.styledFormCard
 import formulaide.ui.components2.useAsync
 import formulaide.ui.fields.field
 import formulaide.ui.utils.text
-import kotlinx.html.id
-import kotlinx.html.js.onSubmitFunction
-import org.w3c.dom.HTMLFormElement
 import org.w3c.xhr.FormData
 import react.RProps
 import react.fc
@@ -80,42 +77,32 @@ fun SubmitForm(formRef: Ref<Form>) = fc<RProps> {
 	styledFormCard(
 		form.name,
 		"Ce formulaire est ${if (form.public) "public" else "interne"}, les champs marqués par une * sont obligatoires.",
-		submit = "Envoyer",
-		contents = {
-			for (field in form.mainFields.fields.sortedBy { it.order }) {
-				field(field)
-			}
-		},
-	) {
-		id = "form-submission"
+		submit = "Envoyer" to { htmlFormElement ->
+			@Suppress("UNUSED_VARIABLE") // used in 'js' function
+			val formData = FormData(htmlFormElement)
 
-		onSubmitFunction = { event ->
-			event.preventDefault()
+			//language=JavaScript
+			val formDataObject = js("""Object.fromEntries(formData.entries())""")
 
-			val submission = reportExceptions {
+			@Suppress("JSUnresolvedVariable") //language=JavaScript
+			val formDataArray = js("""Object.keys(formDataObject)""") as Array<String>
+			val answers = formDataArray.associateWith { (formDataObject[it] as String) }
+				.filterValues { it.isNotBlank() }
 
-				@Suppress("UNUSED_VARIABLE") // used in 'js' function
-				val formData = FormData(event.target as HTMLFormElement)
+			val submission = FormSubmission(
+				form.createRef(),
+				data = answers
+			).also { it.checkValidity(form) }
 
-				//language=JavaScript
-				val formDataObject = js("""Object.fromEntries(formData.entries())""")
-
-				@Suppress("JSUnresolvedVariable") //language=JavaScript
-				val formDataArray = js("""Object.keys(formDataObject)""") as Array<String>
-				val answers = formDataArray.associateWith { (formDataObject[it] as String) }
-					.filterValues { it.isNotBlank() }
-
-				FormSubmission(
-					form.createRef(),
-					data = answers
-				).also { it.checkValidity(form) }
-			}
-
-			scope.reportExceptions {
+			launch {
 				client.submitForm(submission)
 
 				navigateTo(Screen.ShowForms)
 			}
+		},
+	) {
+		for (field in form.mainFields.fields.sortedBy { it.order }) {
+			field(field)
 		}
 	}
 }

@@ -15,7 +15,6 @@ import formulaide.ui.utils.replace
 import formulaide.ui.utils.text
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
-import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
 import react.*
 import react.dom.attrs
@@ -110,7 +109,6 @@ private suspend fun editUser(
 
 val CreateUser = fc<RProps> { _ ->
 	val services by useServices()
-	val scope = useAsync()
 	val (_, navigateTo) = useNavigation()
 
 	val email = useRef<HTMLInputElement>()
@@ -126,81 +124,29 @@ val CreateUser = fc<RProps> { _ ->
 	styledFormCard(
 		"Ajouter un employé",
 		null,
-		"Créer",
-		contents = {
-			styledField("employee-email", "Adresse mail") {
-				styledInput(InputType.email, "employee-email", required = true, ref = email)
-			}
+		"Créer" to {
+			val password1Value = password1.current?.value
+			val password2Value = password2.current?.value
 
-			styledField("employee-name", "Nom affiché") {
-				styledInput(InputType.text, "employee-name", required = true, ref = fullName)
-			}
+			require((password1Value
+				?: Unit) == password2Value) { "Les deux mots de passes ne correspondent pas." }
 
-			styledField("employee-service", "Service") {
-				styledSelect(onSelect = { option ->
-					selectedService = services.find { it.id == option.value }
-				}) {
-					for (service in services) {
-						option {
-							text(service.name)
-							attrs {
-								value = service.id
-							}
-						}
-					}
-				}
-			}
+			val passwordOrFail = (password1Value
+				?: error("Le mot de passe ne peut pas être vide, trouvé $password1"))
 
-			styledField("employee-is-admin", "Droits") {
-				styledCheckbox("employee-is-admin",
-				               "Cet employé est un administrateur",
-				               ref = admin)
-			}
+			val emailOrFail = (email.current?.value
+				?: error("L'adresse mail ne peut pas être vide, trouvé $email"))
 
-			styledField("employee-password-1", "Mot de passe") {
-				styledInput(InputType.password,
-				            "employee-password-1",
-				            required = true,
-				            ref = password1) {
-					minLength = "5"
-				}
-			}
+			val fullNameOrFail = (fullName.current?.value
+				?: error("Le nom ne peut pas être vide, trouvé $fullName"))
 
-			styledField("employee-password-2", "Confirmer le mot de passe") {
-				styledInput(InputType.password,
-				            "employee-password-2",
-				            required = true,
-				            ref = password2) {
-					minLength = "5"
-				}
-			}
-		}
-	) {
-		onSubmitFunction = {
-			it.preventDefault()
+			val serviceOrFail = (selectedService?.id
+				?: error("L'utilisateur doit avoir choisi un service, trouvé $selectedService"))
 
-			scope.reportExceptions {
-				val password1Value = password1.current?.value
-				val password2Value = password2.current?.value
+			val adminOrFail = admin.current?.value
+				?: error("Il faut préciser si l'utilisateur est un administrateur ou non, trouvé $admin")
 
-				require((password1Value
-					?: Unit) == password2Value) { "Les deux mots de passes ne correspondent pas." }
-
-				val passwordOrFail = (password1Value
-					?: error("Le mot de passe ne peut pas être vide, trouvé $password1"))
-
-				val emailOrFail = (email.current?.value
-					?: error("L'adresse mail ne peut pas être vide, trouvé $email"))
-
-				val fullNameOrFail = (fullName.current?.value
-					?: error("Le nom ne peut pas être vide, trouvé $fullName"))
-
-				val serviceOrFail = (selectedService?.id
-					?: error("L'utilisateur doit avoir choisi un service, trouvé $selectedService"))
-
-				val adminOrFail = admin.current?.value
-					?: error("Il faut préciser si l'utilisateur est un administrateur ou non, trouvé $admin")
-
+			launch {
 				client.createUser(NewUser(
 					passwordOrFail,
 					User(
@@ -212,6 +158,56 @@ val CreateUser = fc<RProps> { _ ->
 				))
 
 				navigateTo(Screen.ShowUsers)
+			}
+		}
+	) {
+		styledField("employee-email", "Adresse mail") {
+			styledInput(InputType.email,
+			            "employee-email",
+			            required = true,
+			            ref = email)
+		}
+
+		styledField("employee-name", "Nom affiché") {
+			styledInput(InputType.text, "employee-name", required = true, ref = fullName)
+		}
+
+		styledField("employee-service", "Service") {
+			styledSelect(onSelect = { option ->
+				selectedService = services.find { it.id == option.value }
+			}) {
+				for (service in services) {
+					option {
+						text(service.name)
+						attrs {
+							value = service.id
+						}
+					}
+				}
+			}
+		}
+
+		styledField("employee-is-admin", "Droits") {
+			styledCheckbox("employee-is-admin",
+			               "Cet employé est un administrateur",
+			               ref = admin)
+		}
+
+		styledField("employee-password-1", "Mot de passe") {
+			styledInput(InputType.password,
+			            "employee-password-1",
+			            required = true,
+			            ref = password1) {
+				minLength = "5"
+			}
+		}
+
+		styledField("employee-password-2", "Confirmer le mot de passe") {
+			styledInput(InputType.password,
+			            "employee-password-2",
+			            required = true,
+			            ref = password2) {
+				minLength = "5"
 			}
 		}
 	}

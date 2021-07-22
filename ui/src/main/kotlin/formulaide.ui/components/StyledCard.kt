@@ -1,8 +1,12 @@
 package formulaide.ui.components
 
+import formulaide.ui.components2.useAsync
+import formulaide.ui.reportExceptions
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.html.DIV
-import kotlinx.html.FORM
-import react.RBuilder
+import kotlinx.html.js.onSubmitFunction
+import org.w3c.dom.HTMLFormElement
+import react.*
 import react.dom.*
 
 private fun RBuilder.styledCardTitle(title: String, secondary: String?, loading: Boolean = false) {
@@ -49,29 +53,80 @@ fun RBuilder.styledCard(
 	}
 }
 
-fun RBuilder.styledFormCard(
-	title: String,
-	secondary: String?,
-	submit: String,
-	vararg actions: Pair<String, () -> Unit>,
-	loading: Boolean = false,
-	contents: RBuilder.() -> Unit,
-	handler: FORM.() -> Unit,
-) {
+private external interface FormCardProps : RProps {
+	var title: String
+	var secondary: String?
+	var submit: Pair<String, SubmitAction.(HTMLFormElement) -> Unit>
+	var actions: List<Pair<String, suspend () -> Unit>>
+	var loading: Boolean
+	var contents: (RBuilder) -> Unit
+}
+
+private val FormCard = fc<FormCardProps> { props ->
+	val (submitText, submitAction) = props.submit
+	val scope = useAsync()
+
+	var loading by useState(props.loading)
+
 	styledCardShell {
 		form {
-			styledCardTitle(title, secondary, loading)
+			styledCardTitle(props.title, props.secondary, loading)
 
 			div("py-4") {
-				contents()
+				props.contents(this)
 			}
 
-			styledSubmitButton(submit, default = true)
-			for (action in actions) {
+			if (!loading)
+				styledSubmitButton(submitText, default = true)
+			else
+				loadingSpinner()
+
+			for (action in props.actions) {
 				styledButton(action.first, default = false) { action.second() }
 			}
 
-			attrs(handler)
+			attrs {
+				onSubmitFunction = { event ->
+					event.preventDefault()
+
+					val submitActionDsl = SubmitAction(scope, setLoading = { loading = it })
+					reportExceptions {
+						submitActionDsl.submitAction(event.target as HTMLFormElement)
+					}
+				}
+			}
 		}
 	}
+}
+
+fun RBuilder.styledFormCard(
+	title: String,
+	secondary: String?,
+	submit: Pair<String, SubmitAction.(HTMLFormElement) -> Unit>,
+	vararg actions: Pair<String, suspend () -> Unit>,
+	loading: Boolean = false,
+	contents: RBuilder.() -> Unit,
+) {
+	child(FormCard) {
+		attrs {
+			this.title = title
+			this.secondary = secondary
+			this.submit = submit
+			this.actions = actions.asList()
+			this.loading = loading
+			this.contents = contents
+		}
+	}
+}
+
+class SubmitAction(private val scope: CoroutineScope, private val setLoading: (Boolean) -> Unit) {
+
+	fun launch(block: suspend () -> Unit) {
+		scope.reportExceptions {
+			setLoading(true)
+			block()
+			setLoading(false)
+		}
+	}
+
 }
