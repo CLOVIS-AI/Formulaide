@@ -16,7 +16,6 @@ import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import react.*
 import react.dom.p
 
@@ -53,22 +52,42 @@ private val composites = GlobalState(emptyList<Composite>())
 	.apply { subscribers.add { println("The composites have been updated: ${it.size} are stored") } }
 
 fun RBuilder.useComposites() = useGlobalState(composites)
-private val compositesRefreshCounter = GlobalState(0)
-fun refreshComposites() = compositesRefreshCounter.value++
+
+suspend fun refreshComposites() = (client.value as? Client.Authenticated)
+	?.let { c -> composites.value = c.listData() }
+	?: run { composites.value = emptyList() }
 
 private val forms = GlobalState(emptyList<Form>())
 	.apply { subscribers.add { println("The forms have been updated: ${it.size} are stored") } }
 
 fun RBuilder.useForms() = useGlobalState(forms)
-private val formsRefreshCounter = GlobalState(0)
-fun refreshForms() = formsRefreshCounter.value++
+suspend fun refreshForms() {
+	forms.value = (client.value as? Client.Authenticated)
+		?.listAllForms()
+		?: try {
+			client.value.listForms()
+		} catch (e: Exception) {
+			console.warn("Couldn't access the list of forms, this client is probably dead. Switching to the test client.")
+			inProduction = false
+			client.value = defaultClient
+			user.value = null
+			emptyList()
+		}
+}
 
 private val services = GlobalState(emptyList<Service>())
 	.apply { subscribers.add { println("The services have been updated: ${it.size} are stored") } }
 
 fun RBuilder.useServices() = useGlobalState(services)
-private val servicesRefreshCounter = GlobalState(0)
-fun refreshServices() = servicesRefreshCounter.value++
+suspend fun refreshServices() {
+	services.value = (
+			(client.value as? Client.Authenticated)
+				?.let { c ->
+					if (user.value?.administrator == true) c.listAllServices()
+					else c.listServices()
+				}
+				?: emptyList())
+}
 
 //endregion
 
@@ -94,51 +113,14 @@ val App = fc<RProps> {
 	}
 	//endregion
 
-	//region Global list of composites
-	val (_, setComposites) = useComposites()
-	val refreshComposites by useGlobalState(compositesRefreshCounter)
-	useEffect(client, refreshComposites) {
-		(client as? Client.Authenticated)
-			?.let { c -> scope.reportExceptions { setComposites(c.listData()) } }
-			?: run { setComposites(emptyList()) }
+	useEffect(client) {
+		scope.reportExceptions { refreshComposites() }
 	}
-	//endregion
 
-	//region Global list of forms
-	val (_, setForms) = useForms()
-	val refreshForms by useGlobalState(formsRefreshCounter)
-	useEffect(client, user, refreshForms) {
-		scope.launch {
-			setForms((client as? Client.Authenticated)
-				         ?.listAllForms()
-				         ?: try {
-					         client.listForms()
-				         } catch (e: Exception) {
-					         console.warn("Couldn't access the list of forms, this client is probably dead. Switching to the test client.")
-					         inProduction = false
-					         client = defaultClient
-					         user = null
-					         emptyList()
-				         })
-		}
+	useEffect(client, user) {
+		scope.reportExceptions { refreshForms() }
+		scope.reportExceptions { refreshServices() }
 	}
-	//endregion
-
-	//region Global list of services (only if admin)
-	val (_, setServices) = useServices()
-	val refreshServices by useGlobalState(servicesRefreshCounter)
-	useEffect(client, user, refreshServices) {
-		scope.reportExceptions {
-			setServices(
-				(client as? Client.Authenticated)
-					?.let { c ->
-						if (user?.administrator == true) c.listAllServices()
-						else c.listServices()
-					}
-					?: emptyList())
-		}
-	}
-	//endregion
 
 	//region Refresh token management
 
