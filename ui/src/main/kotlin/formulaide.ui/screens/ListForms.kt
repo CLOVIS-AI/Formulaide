@@ -5,12 +5,15 @@ import formulaide.ui.Screen
 import formulaide.ui.components.styledButton
 import formulaide.ui.components.styledCard
 import formulaide.ui.components.styledField
+import formulaide.ui.traceRenders
 import formulaide.ui.useForms
 import formulaide.ui.useNavigation
 import react.RProps
 import react.fc
 
 val FormList = fc<RProps> { _ ->
+	traceRenders("FormList")
+
 	val forms by useForms()
 	val (_, navigateTo) = useNavigation()
 

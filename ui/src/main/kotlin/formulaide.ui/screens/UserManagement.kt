@@ -24,6 +24,8 @@ import react.dom.div
 import react.dom.option
 
 val UserList = fc<RProps> { _ ->
+	traceRenders("UserList")
+
 	val (_, navigateTo) = useNavigation()
 	val scope = useAsync()
 

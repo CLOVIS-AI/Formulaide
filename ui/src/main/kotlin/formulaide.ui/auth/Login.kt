@@ -28,6 +28,8 @@ import react.useRef
  * @see login
  */
 val Login = fc<RProps> { _ ->
+	traceRenders("Login")
+
 	val email = useRef<HTMLInputElement>(null)
 	val password = useRef<HTMLInputElement>(null)
 
@@ -70,6 +72,8 @@ val Login = fc<RProps> { _ ->
 
 @Suppress("FunctionName")
 fun PasswordModification(user: Email, previousScreen: Screen) = fc<RProps> {
+	traceRenders("PasswordModification")
+
 	val oldPassword = useRef<HTMLInputElement>()
 	val newPassword1 = useRef<HTMLInputElement>()
 	val newPassword2 = useRef<HTMLInputElement>()
@@ -148,6 +152,8 @@ fun PasswordModification(user: Email, previousScreen: Screen) = fc<RProps> {
 }
 
 val LoginAccess = fc<RProps> {
+	traceRenders("LoginAccess")
+
 	val (user) = useUser()
 	val (client, connect) = useClient()
 	val scope = useAsync()

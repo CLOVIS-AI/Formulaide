@@ -4,12 +4,9 @@ import formulaide.client.Client
 import formulaide.client.routes.closeService
 import formulaide.client.routes.createService
 import formulaide.client.routes.reopenService
+import formulaide.ui.*
 import formulaide.ui.components.*
 import formulaide.ui.components2.useAsync
-import formulaide.ui.refreshServices
-import formulaide.ui.reportExceptions
-import formulaide.ui.useClient
-import formulaide.ui.useServices
 import formulaide.ui.utils.text
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
@@ -22,6 +19,8 @@ import react.useRef
 import react.useState
 
 val ServiceList = fc<RProps> { _ ->
+	traceRenders("ServiceList")
+
 	val (client) = useClient()
 	if (client !is Client.Authenticated) {
 		styledCard("Liste des services",

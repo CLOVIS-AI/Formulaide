@@ -20,12 +20,19 @@ import kotlinx.coroutines.launch
 import react.*
 import react.dom.p
 
+//region Production / development environments
 internal var inProduction = true
 internal val defaultClient
 	get() = when (inProduction) {
 		true -> Client.Anonymous.connect(window.location.protocol + "//" + window.location.host)
 		false -> Client.Anonymous.connect("http://localhost:8000")
 	}
+
+fun traceRenders(componentName: String) {
+	if (!inProduction)
+		console.log("Render : $componentName")
+}
+//endregion
 
 //region Global state
 
@@ -69,6 +76,8 @@ fun refreshServices() = servicesRefreshCounter.value++
  * The main app screen.
  */
 val App = fc<RProps> {
+	traceRenders("App")
+
 	var client by useClient()
 	var user by useUser()
 	val scope = useAsync()
@@ -116,19 +125,18 @@ val App = fc<RProps> {
 	//endregion
 
 	//region Global list of services (only if admin)
-	var services by useServices()
+	val (_, setServices) = useServices()
 	val refreshServices by useGlobalState(servicesRefreshCounter)
 	useEffect(client, user, refreshServices) {
 		scope.reportExceptions {
-			services =
+			setServices(
 				(client as? Client.Authenticated)
 					?.let { c ->
 						if (user?.administrator == true) c.listAllServices()
 						else c.listServices()
 					}
-					?: emptyList()
+					?: emptyList())
 		}
-		console.log("Loaded ${services.size} services")
 	}
 	//endregion
 

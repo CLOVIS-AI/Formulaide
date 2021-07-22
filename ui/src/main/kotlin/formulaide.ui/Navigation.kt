@@ -78,6 +78,8 @@ abstract class Screen(
 }
 
 private val CannotAccessThisPage = fc<RProps> {
+	traceRenders("CannotAccessThisPage")
+
 	val (_, navigateTo) = useNavigation()
 
 	styledCard(
@@ -93,6 +95,8 @@ private val CannotAccessThisPage = fc<RProps> {
 private val Navigation = fc<RProps> {
 	val user by useUser()
 	var currentScreen by useNavigation()
+
+	traceRenders("Navigation bar")
 
 	div {
 		for (screen in Screen.availableScreens(user)) {
@@ -113,6 +117,8 @@ private fun getScreenFromWindow(): Screen? =
 val Window = fc<RProps> {
 	var screen by useNavigation()
 	val user by useUser()
+
+	traceRenders("Window, screen ${screen.displayName}")
 
 	useEffectOnce {
 		val handler = { _: Event ->

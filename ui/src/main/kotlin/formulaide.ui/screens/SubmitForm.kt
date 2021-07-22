@@ -24,6 +24,8 @@ import react.useState
 
 @Suppress("FunctionName")
 fun SubmitForm(formRef: Ref<Form>) = fc<RProps> {
+	traceRenders("SubmitForm")
+
 	val forms by useForms()
 	val scope = useAsync()
 	val client by useClient()

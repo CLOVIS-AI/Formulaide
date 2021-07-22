@@ -28,6 +28,8 @@ external interface ErrorProps : RProps {
 }
 
 val ErrorCard = fc<ErrorProps> { props ->
+	traceRenders("ErrorCard")
+
 	var errors by useGlobalState(errors)
 	val error = props.error
 

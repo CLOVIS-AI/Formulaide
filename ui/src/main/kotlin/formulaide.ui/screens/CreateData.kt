@@ -7,13 +7,10 @@ import formulaide.api.types.Arity
 import formulaide.api.types.Ref
 import formulaide.client.Client
 import formulaide.client.routes.createData
+import formulaide.ui.*
 import formulaide.ui.components.*
 import formulaide.ui.components2.useAsync
 import formulaide.ui.fields.FieldEditor
-import formulaide.ui.refreshComposites
-import formulaide.ui.reportExceptions
-import formulaide.ui.useClient
-import formulaide.ui.useComposites
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.text
 import kotlinx.html.InputType
@@ -24,6 +21,8 @@ import react.dom.li
 import react.dom.ul
 
 val CreateData = fc<RProps> { _ ->
+	traceRenders("CreateData")
+
 	val (client) = useClient()
 	require(client is Client.Authenticated)
 

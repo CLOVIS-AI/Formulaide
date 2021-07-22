@@ -26,6 +26,8 @@ import react.dom.attrs
 import react.dom.option
 
 val CreateForm = fc<RProps> { _ ->
+	traceRenders("CreateForm")
+
 	val (client) = useClient()
 	if (client !is Client.Authenticated) {
 		styledCard("Créer un formulaire",

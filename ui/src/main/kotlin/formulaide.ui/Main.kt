@@ -13,6 +13,8 @@ fun main() {
 	require("./styles.css")
 
 	render(document.getElementById("root")) {
-		child(App) {}
+		traceRenders("root")
+
+		child(App)
 	}
 }
