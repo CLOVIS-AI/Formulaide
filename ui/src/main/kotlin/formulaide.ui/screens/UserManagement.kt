@@ -47,7 +47,8 @@ val UserList = fc<RProps> { _ ->
 	styledCard(
 		"Employés",
 		null,
-		"Créer un employé" to { navigateTo(Screen.NewUser) }
+		"Créer un employé" to { navigateTo(Screen.NewUser) },
+		loading = users.isEmpty(),
 	) {
 		styledField("hide-disabled", "Utilisateurs désactivés") {
 			styledCheckbox("hide-disabled", "Afficher les comptes désactivés") {
