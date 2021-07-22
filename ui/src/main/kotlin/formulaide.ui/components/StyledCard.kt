@@ -15,7 +15,7 @@ private fun RBuilder.styledCardShell(
 	failed: Boolean = false,
 	contents: RDOMBuilder<DIV>.() -> Unit,
 ) {
-	var classes = "m-4 p-4 shadow-xl rounded-lg"
+	var classes = "m-4 p-4 shadow-2xl rounded-lg z-10 relative bg-white"
 
 	if (failed)
 		classes += " bg-red-200"
