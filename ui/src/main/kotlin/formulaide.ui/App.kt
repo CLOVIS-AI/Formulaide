@@ -8,9 +8,15 @@ import formulaide.client.Client
 import formulaide.client.refreshToken
 import formulaide.client.routes.*
 import formulaide.ui.components.styledCard
+import formulaide.ui.components2.useAsync
+import formulaide.ui.utils.GlobalState
 import formulaide.ui.utils.text
+import formulaide.ui.utils.useGlobalState
 import kotlinx.browser.window
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import react.*
 import react.dom.p
 
@@ -21,68 +27,99 @@ internal val defaultClient
 		false -> Client.Anonymous.connect("http://localhost:8000")
 	}
 
+//region Global state
+
+private val client = GlobalState<Client>(defaultClient)
+	.apply {
+		subscribers.add { println("The client has been updated") }
+		subscribers.add { user.value = null }
+	}
+
+fun RBuilder.useClient() = useGlobalState(client)
+
+private val user = GlobalState<User?>(null)
+	.apply { subscribers.add { println("The user has been updated: $it") } }
+
+fun RBuilder.useUser() = useGlobalState(user)
+
+private val composites = GlobalState(emptyList<Composite>())
+	.apply { subscribers.add { println("The composites have been updated: ${it.size} are stored") } }
+
+fun RBuilder.useComposites() = useGlobalState(composites)
+private val compositesRefreshCounter = GlobalState(0)
+fun refreshComposites() = compositesRefreshCounter.value++
+
+private val forms = GlobalState(emptyList<Form>())
+	.apply { subscribers.add { println("The forms have been updated: ${it.size} are stored") } }
+
+fun RBuilder.useForms() = useGlobalState(forms)
+private val formsRefreshCounter = GlobalState(0)
+fun refreshForms() = formsRefreshCounter.value++
+
+private val services = GlobalState(emptyList<Service>())
+	.apply { subscribers.add { println("The services have been updated: ${it.size} are stored") } }
+
+fun RBuilder.useServices() = useGlobalState(services)
+private val servicesRefreshCounter = GlobalState(0)
+fun refreshServices() = servicesRefreshCounter.value++
+
+//endregion
+
 /**
  * The main app screen.
  */
 val App = fc<RProps> {
-	var client by useState<Client>(defaultClient)
-	var user by useState<User?>(null)
-	val scope = useMemo { MainScope() }
+	var client by useClient()
+	var user by useUser()
+	val scope = useAsync()
 
-	val (errors, setErrors) = useState(emptyList<Throwable>())
-	val addError = { error: Throwable -> setErrors(errors + error) }
+	val errors = useErrors()
 
 	//region Refresh the user if necessary
 	useEffect(client) {
-		launchAndReportExceptions(addError, scope) {
+		scope.reportExceptions {
 			(client as? Client.Authenticated)
 				?.getMe()
 				?.let { user = it }
-
-			console.log("Reloaded user")
 		}
 	}
 	//endregion
 
 	//region Global list of composites
-	var composites by useState<List<Composite>>(emptyList())
-	var refreshComposites by useState(0)
+	val (_, setComposites) = useComposites()
+	val refreshComposites by useGlobalState(compositesRefreshCounter)
 	useEffect(client, refreshComposites) {
 		(client as? Client.Authenticated)
-			?.let { c -> launchAndReportExceptions(addError, scope) { composites = c.listData() } }
-			?: run { composites = emptyList() }
-
-		console.log("Loaded ${composites.size} composites")
+			?.let { c -> scope.reportExceptions { setComposites(c.listData()) } }
+			?: run { setComposites(emptyList()) }
 	}
 	//endregion
 
 	//region Global list of forms
-	var forms by useState<List<Form>>(emptyList())
-	var refreshForms by useState(0)
+	val (_, setForms) = useForms()
+	val refreshForms by useGlobalState(formsRefreshCounter)
 	useEffect(client, user, refreshForms) {
 		scope.launch {
-			forms = (client as? Client.Authenticated)
-				?.listAllForms()
-				?: try {
-					client.listForms()
-				} catch (e: Exception) {
-					console.warn("Couldn't access the list of forms, this client is probably dead. Switching to the test client.")
-					inProduction = false
-					client = defaultClient
-					user = null
-					emptyList()
-				}
-
-			console.log("Loaded ${forms.size} forms")
+			setForms((client as? Client.Authenticated)
+				         ?.listAllForms()
+				         ?: try {
+					         client.listForms()
+				         } catch (e: Exception) {
+					         console.warn("Couldn't access the list of forms, this client is probably dead. Switching to the test client.")
+					         inProduction = false
+					         client = defaultClient
+					         user = null
+					         emptyList()
+				         })
 		}
 	}
 	//endregion
 
 	//region Global list of services (only if admin)
-	var services by useState(emptyList<Service>())
-	var refreshServices by useState(0)
+	var services by useServices()
+	val refreshServices by useGlobalState(servicesRefreshCounter)
 	useEffect(client, user, refreshServices) {
-		launchAndReportExceptions(addError, scope) {
+		scope.reportExceptions {
 			services =
 				(client as? Client.Authenticated)
 					?.let { c ->
@@ -101,7 +138,7 @@ val App = fc<RProps> {
 	// If we do, we can bypass the login step
 	useEffect(client) {
 		(client as? Client.Anonymous)?.let { c ->
-			launchAndReportExceptions(addError, scope) {
+			scope.reportExceptions {
 				val accessToken = client.refreshToken()
 
 				if (accessToken != null) {
@@ -117,7 +154,7 @@ val App = fc<RProps> {
 		val job = Job()
 
 		(client as? Client.Authenticated)?.let {
-			launchAndReportExceptions(addError, CoroutineScope(job)) {
+			CoroutineScope(job).reportExceptions {
 				delay(1000L * 60 * 10) // every 10 minutes
 
 				val accessToken = client.refreshToken()
@@ -133,35 +170,11 @@ val App = fc<RProps> {
 
 	//endregion
 
-	child(Window) {
-		attrs {
-			this.client = client
-			this.user = user
-			this.connect = { client = it; user = null }
+	child(Window)
 
-			this.scope = scope
-
-			this.composites = composites
-			this.refreshComposites = { refreshComposites++ }
-
-			this.forms = forms
-			this.refreshForms = { refreshForms++ }
-
-			this.services = services
-			this.refreshServices = { refreshServices++ }
-
-			this.reportError = addError
-		}
-	}
-
-	for ((i, error) in errors.withIndex()) {
+	for (error in errors) {
 		child(ErrorCard) {
 			key = error.hashCode().toString()
-			attrs {
-				this.scope = scope
-				this.error = error
-				this.hide = { setErrors(errors.subList(0, i) + errors.subList(i + 1, errors.size)) }
-			}
 		}
 	}
 

@@ -11,26 +11,28 @@ import formulaide.ui.components.styledCard
 import formulaide.ui.components.styledField
 import formulaide.ui.components.styledFormCard
 import formulaide.ui.components.styledInput
+import formulaide.ui.components2.useAsync
+import formulaide.ui.utils.text
 import kotlinx.html.InputType
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
+import react.RProps
 import react.child
 import react.fc
 import react.useRef
 
-external interface LoginProps : ScreenProps {
-	var onLogin: (Client) -> Unit
-}
-
 /**
- * A login widget that requests an email and a password, and then updates the application's [client][LoginProps.client] by connecting to the server.
+ * A login widget that requests an email and a password, and then updates the application's [client][client] by connecting to the server.
  *
  * @see Client
  * @see login
  */
-val Login = fc<LoginProps> { props ->
+val Login = fc<RProps> { _ ->
 	val email = useRef<HTMLInputElement>(null)
 	val password = useRef<HTMLInputElement>(null)
+
+	val scope = useAsync()
+	var client by useClient()
 
 	styledFormCard(
 		"Espace employé",
@@ -49,30 +51,47 @@ val Login = fc<LoginProps> { props ->
 		onSubmitFunction = {
 			it.preventDefault()
 
-			launchAndReportExceptions(props) {
+			scope.reportExceptions {
 				val credentials = PasswordLogin(
 					email = email.current?.value ?: error("Email manquant"),
 					password = password.current?.value ?: error("Mot de passe manquant")
 				)
 
-				val token = props.client.login(credentials).token
+				val token = client.login(credentials).token
 
-				val newClient = Client.Authenticated.connect(
-					props.client.hostUrl,
+				client = Client.Authenticated.connect(
+					client.hostUrl,
 					token
 				)
-
-				props.onLogin(newClient)
 			}
 		}
 	}
 }
 
 @Suppress("FunctionName")
-fun PasswordModification(user: Email, previousScreen: Screen) = fc<ScreenProps> { props ->
+fun PasswordModification(user: Email, previousScreen: Screen) = fc<RProps> {
 	val oldPassword = useRef<HTMLInputElement>()
 	val newPassword1 = useRef<HTMLInputElement>()
 	val newPassword2 = useRef<HTMLInputElement>()
+
+	val (client, connect) = useClient()
+	val (me) = useUser()
+	val (_, navigateTo) = useNavigation()
+	val scope = useAsync()
+
+	if (me == null) {
+		styledCard("Modifier le mot de passe") {
+			text("Chargement de l'utilisateur…")
+		}
+		return@fc
+	}
+
+	if (client !is Client.Authenticated) {
+		styledCard("Modifier le mot de passe", failed = true) {
+			text("Impossible de modifier le mot de passe sans être connecté")
+		}
+		return@fc
+	}
 
 	styledFormCard(
 		"Modifier le mot de passe du compte ${user.email}",
@@ -83,7 +102,7 @@ fun PasswordModification(user: Email, previousScreen: Screen) = fc<ScreenProps> 
 				styledInput(InputType.password,
 				            "old-password",
 				            ref = oldPassword,
-				            required = !(props.user?.administrator ?: false))
+				            required = !me.administrator)
 			}
 
 			styledField("new-password-1", "Nouveau de mot de passe") {
@@ -104,7 +123,7 @@ fun PasswordModification(user: Email, previousScreen: Screen) = fc<ScreenProps> 
 		onSubmitFunction = {
 			it.preventDefault()
 
-			reportExceptions(props) {
+			scope.reportExceptions {
 				val oldPasswordValue = oldPassword.current?.value
 				val newPassword1Value = newPassword1.current?.value
 				val newPassword2Value = newPassword2.current?.value
@@ -118,46 +137,38 @@ fun PasswordModification(user: Email, previousScreen: Screen) = fc<ScreenProps> 
 					newPassword1Value
 				)
 
-				launchAndReportExceptions(props) {
-					val client = props.client
-					require(client is Client.Authenticated) { "Impossible de modifier le mot de passe si on n'est pas connecté" }
+				client.editPassword(request)
 
-					client.editPassword(request)
-
-					if (user == props.user?.email)
-						props.connect(defaultClient)
-					props.navigateTo(previousScreen)
-				}
+				if (user == me.email)
+					connect(defaultClient)
+				navigateTo(previousScreen)
 			}
 		}
 	}
 }
 
-val LoginAccess = fc<ScreenProps> { props ->
-	if (props.user == null) {
-		child(Login) {
-			attrs {
-				client = props.client
-				onLogin = props.connect
-				scope = props.scope
-				reportError = props.reportError
-			}
-		}
+val LoginAccess = fc<RProps> {
+	val (user) = useUser()
+	val (client, connect) = useClient()
+	val scope = useAsync()
+	val (_, navigateTo) = useNavigation()
+
+	if (user == null) {
+		child(Login)
 	} else {
 		styledCard(
 			"Espace employé",
 			null,
 			"Déconnexion" to {
-				launchAndReportExceptions(props) {
-					val client = props.client
+				scope.reportExceptions {
 					if (client is Client.Authenticated) client.logout()
 
-					props.connect(defaultClient)
+					connect(defaultClient)
 				}
 			},
 			"Modifier mon mot de passe" to {
-				props.navigateTo(Screen.EditPassword(props.user!!.email,
-				                                     Screen.Home))
+				navigateTo(Screen.EditPassword(user.email,
+				                               Screen.Home))
 			}
 		) {}
 	}

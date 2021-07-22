@@ -10,6 +10,7 @@ import formulaide.ui.components.styledFormField
 import formulaide.ui.components.styledLightText
 import formulaide.ui.components.styledSelect
 import formulaide.ui.fields.SimpleFieldEnum.Companion.asEnum
+import formulaide.ui.useComposites
 import formulaide.ui.utils.text
 import kotlinx.html.id
 import react.child
@@ -18,6 +19,8 @@ import react.dom.option
 import react.fc
 
 val TypeEditor = fc<EditableFieldProps> { props ->
+	val composites by useComposites()
+
 	val field = props.field
 
 	val allowTypeModifications = field is DataField || field is ShallowFormField
@@ -25,7 +28,7 @@ val TypeEditor = fc<EditableFieldProps> { props ->
 	if (allowTypeModifications) {
 		styledField("item-type-${props.field.id}", "Type") {
 			styledSelect(
-				onSelect = { onSelect(it.value, field, props) }
+				onSelect = { onSelect(it.value, field, props, composites) }
 			) {
 				child(SimpleOptions) {
 					attrs { inheritFrom(props) }
@@ -70,6 +73,7 @@ private fun onSelect(
 	selected: String,
 	field: Field,
 	props: EditableFieldProps,
+	composites: List<Composite>,
 ) {
 	when {
 		selected.startsWith("simple:") -> {
@@ -92,8 +96,7 @@ private fun onSelect(
 			val selectedCompositeId =
 				selected.substringAfter(":", missingDelimiterValue = "")
 			val ref = Ref<Composite>(selectedCompositeId)
-			if (selectedCompositeId != SPECIAL_TOKEN_RECURSION) ref.loadFrom(
-				props.app.composites)
+			if (selectedCompositeId != SPECIAL_TOKEN_RECURSION) ref.loadFrom(composites)
 
 			when (field) {
 				is DataField -> props.replace(field.copyToComposite(ref))
@@ -170,12 +173,14 @@ private val UnionOptions = fc<EditableFieldProps> { props ->
 }
 
 private val CompositeOptions = fc<EditableFieldProps> { props ->
+	val composites by useComposites()
+
 	val field = props.field
 
 	val current = (field as? DataField.Composite)?.ref
 		?: (field as? ShallowFormField.Composite)?.ref
 
-	for (composite in props.app.composites) {
+	for (composite in composites) {
 		option {
 			text(composite.name)
 			attrs {

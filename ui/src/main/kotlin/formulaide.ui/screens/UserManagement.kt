@@ -8,29 +8,38 @@ import formulaide.client.Client
 import formulaide.client.routes.createUser
 import formulaide.client.routes.editUser
 import formulaide.client.routes.listUsers
-import formulaide.ui.Screen
-import formulaide.ui.ScreenProps
+import formulaide.ui.*
 import formulaide.ui.components.*
-import formulaide.ui.launchAndReportExceptions
+import formulaide.ui.components2.useAsync
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.text
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
+import react.*
 import react.dom.attrs
 import react.dom.div
 import react.dom.option
-import react.fc
-import react.useEffect
-import react.useRef
-import react.useState
 
-val UserList = fc<ScreenProps> { props ->
+val UserList = fc<RProps> { _ ->
+	val (_, navigateTo) = useNavigation()
+	val scope = useAsync()
+
+	val (client) = useClient()
+	require(client is Client.Authenticated) { "Seul un administrateur a le droit de voir la liste des utilisateurs" }
+	val (me) = useUser()
+
+	if (me == null) {
+		styledCard("Employés", contents = { text("Récupération de l'utilisateur…") })
+		return@fc
+	}
+
 	styledCard(
 		"Employés",
 		null,
-		"Créer un employé" to { props.navigateTo(Screen.NewUser) }
+		"Créer un employé" to { navigateTo(Screen.NewUser) }
 	) {
 		var listDisabledUsers by useState(false)
 
@@ -41,11 +50,8 @@ val UserList = fc<ScreenProps> { props ->
 		}
 
 		var users by useState(emptyList<User>())
-		useEffect(props.user, props.client, listDisabledUsers) {
-			launchAndReportExceptions(props) {
-				val client = props.client
-				require(client is Client.Authenticated) { "Seul un administrateur a le droit de voir la liste des utilisateurs" }
-
+		useEffect(client, listDisabledUsers) {
+			scope.reportExceptions {
 				users = client.listUsers(listDisabledUsers)
 			}
 		}
@@ -57,25 +63,25 @@ val UserList = fc<ScreenProps> { props ->
 
 				div { // buttons
 
-					if (user != props.user) {
+					if (user != me) {
 						styledButton(if (user.enabled) "Désactiver" else "Activer",
 						             default = false) {
-							editUser(user, props, enabled = !user.enabled) {
+							editUser(user, scope, client, enabled = !user.enabled) {
 								users = users.replace(i, it)
 							}
 						}
 
 						styledButton(if (user.administrator) "Enlever le droit d'administration" else "Donner le droit d'administration",
 						             default = false) {
-							editUser(user, props, administrator = !user.administrator) {
+							editUser(user, scope, client, administrator = !user.administrator) {
 								users = users.replace(i, it)
 							}
 						}
 					}
 
 					styledButton("Modifier le mot de passe") {
-						launchAndReportExceptions(props) {
-							props.navigateTo(Screen.EditPassword(user.email, Screen.ShowUsers))
+						reportExceptions {
+							navigateTo(Screen.EditPassword(user.email, Screen.ShowUsers))
 						}
 					}
 
@@ -87,29 +93,31 @@ val UserList = fc<ScreenProps> { props ->
 
 private fun editUser(
 	user: User,
-	props: ScreenProps,
+	scope: CoroutineScope,
+	client: Client.Authenticated,
 	enabled: Boolean? = null,
 	administrator: Boolean? = null,
 	onChange: (User) -> Unit,
 ) {
-	launchAndReportExceptions(props) {
-		val client = props.client
-		require(client is Client.Authenticated) { "Seul un administrateur peut activer ou désactiver un compte" }
-
+	scope.reportExceptions {
 		val newUser = client.editUser(user, enabled, administrator)
 		onChange(newUser)
 	}
 }
 
-val CreateUser = fc<ScreenProps> { props ->
+val CreateUser = fc<RProps> { _ ->
+	val services by useServices()
+	val scope = useAsync()
+	val (_, navigateTo) = useNavigation()
+
 	val email = useRef<HTMLInputElement>()
 	val fullName = useRef<HTMLInputElement>()
-	val (selectedService, setSelectedService) = useState(props.services.firstOrNull())
+	var selectedService by useState(services.firstOrNull())
 	val admin = useRef<HTMLInputElement>()
 	val password1 = useRef<HTMLInputElement>()
 	val password2 = useRef<HTMLInputElement>()
 
-	val client = props.client
+	val (client) = useClient()
 	require(client is Client.Authenticated) { "Un employé anonyme ne peut pas créer d'utilisateurs" }
 
 	styledFormCard(
@@ -126,8 +134,10 @@ val CreateUser = fc<ScreenProps> { props ->
 			}
 
 			styledField("employee-service", "Service") {
-				styledSelect(onSelect = { option -> setSelectedService(props.services.find { it.id == option.value }) }) {
-					for (service in props.services) {
+				styledSelect(onSelect = { option ->
+					selectedService = services.find { it.id == option.value }
+				}) {
+					for (service in services) {
 						option {
 							text(service.name)
 							attrs {
@@ -166,7 +176,7 @@ val CreateUser = fc<ScreenProps> { props ->
 		onSubmitFunction = {
 			it.preventDefault()
 
-			launchAndReportExceptions(props) {
+			scope.reportExceptions {
 				val password1Value = password1.current?.value
 				val password2Value = password2.current?.value
 
@@ -198,7 +208,7 @@ val CreateUser = fc<ScreenProps> { props ->
 					)
 				))
 
-				props.navigateTo(Screen.ShowUsers)
+				navigateTo(Screen.ShowUsers)
 			}
 		}
 	}

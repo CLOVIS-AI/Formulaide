@@ -7,32 +7,35 @@ import formulaide.api.types.Arity
 import formulaide.api.types.Ref
 import formulaide.client.Client
 import formulaide.client.routes.createData
-import formulaide.ui.ScreenProps
 import formulaide.ui.components.*
+import formulaide.ui.components2.useAsync
 import formulaide.ui.fields.FieldEditor
-import formulaide.ui.launchAndReportExceptions
+import formulaide.ui.refreshComposites
 import formulaide.ui.reportExceptions
+import formulaide.ui.useClient
+import formulaide.ui.useComposites
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.text
 import kotlinx.html.InputType
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
-import react.child
+import react.*
 import react.dom.li
 import react.dom.ul
-import react.fc
-import react.useRef
-import react.useState
 
-val CreateData = fc<ScreenProps> { props ->
-	val client = props.client
+val CreateData = fc<RProps> { _ ->
+	val (client) = useClient()
 	require(client is Client.Authenticated)
+
+	val composites by useComposites()
+
+	val scope = useAsync()
 
 	styledCard(
 		"Données existantes"
 	) {
 		ul {
-			for (data in props.composites) {
+			for (data in composites) {
 				li {
 					text(data.name)
 				}
@@ -69,7 +72,6 @@ val CreateData = fc<ScreenProps> { props ->
 					for ((i, field) in fields.sortedBy { it.order }.withIndex()) {
 						child(FieldEditor) {
 							attrs {
-								app = props
 								this.field = field
 								replace = {
 									fields = fields.replace(i, it as DataField)
@@ -87,7 +89,7 @@ val CreateData = fc<ScreenProps> { props ->
 		onSubmitFunction = {
 			it.preventDefault()
 
-			val data = reportExceptions(props) {
+			val data = reportExceptions {
 				Composite(
 					id = Ref.SPECIAL_TOKEN_NEW,
 					name = formName.current?.value ?: error("Cette donnée n'a pas de nom"),
@@ -95,9 +97,9 @@ val CreateData = fc<ScreenProps> { props ->
 				)
 			}
 
-			launchAndReportExceptions(props) {
+			scope.reportExceptions {
 				client.createData(data)
-				props.refreshComposites()
+				refreshComposites()
 			}
 		}
 	}

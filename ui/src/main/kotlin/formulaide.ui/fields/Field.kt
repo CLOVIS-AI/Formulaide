@@ -4,7 +4,6 @@ import formulaide.api.fields.Field
 import formulaide.api.fields.FormField
 import formulaide.api.fields.SimpleField
 import formulaide.api.types.Arity
-import formulaide.ui.ScreenProps
 import formulaide.ui.components.*
 import kotlinx.html.INPUT
 import kotlinx.html.InputType
@@ -13,9 +12,7 @@ import react.dom.attrs
 import react.dom.div
 
 private external interface FieldProps : RProps {
-	var app: ScreenProps
 	var field: FormField
-
 	var id: String
 }
 
@@ -45,7 +42,7 @@ private val RenderField = fc<FieldProps> { props ->
 
 			styledNesting {
 				for (subField in subFields) {
-					field(props.app, subField, "${props.id}:${subField.id}")
+					field(subField, "${props.id}:${subField.id}")
 				}
 			}
 		}
@@ -68,7 +65,7 @@ private val RenderField = fc<FieldProps> { props ->
 				}
 
 				if (selected !is Field.Simple || selected.simple != SimpleField.Message) {
-					field(props.app, selected, "${props.id}:${selected.id}")
+					field(selected, "${props.id}:${selected.id}")
 				}
 			}
 		}
@@ -81,7 +78,6 @@ private val Field: FunctionComponent<FieldProps> = fc { props ->
 		styledField(props.id, props.field.name) {
 			child(RenderField) {
 				attrs {
-					this.app = props.app
 					this.field = props.field
 					this.id = props.id
 				}
@@ -95,7 +91,6 @@ private val Field: FunctionComponent<FieldProps> = fc { props ->
 				div {
 					child(RenderField) {
 						attrs {
-							this.app = props.app
 							this.field = props.field
 							this.id = "${props.id}:$fieldId"
 						}
@@ -124,12 +119,10 @@ private val Field: FunctionComponent<FieldProps> = fc { props ->
 }
 
 fun RBuilder.field(
-	app: ScreenProps,
 	field: FormField,
 	id: String? = null,
 ) = child(Field) {
 	attrs {
-		this.app = app
 		this.field = field
 		this.id = id ?: field.id
 	}

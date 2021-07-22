@@ -2,7 +2,6 @@ package formulaide.ui.fields
 
 import formulaide.api.fields.*
 import formulaide.api.types.Arity
-import formulaide.ui.ScreenProps
 import formulaide.ui.components.styledFormField
 import formulaide.ui.components.styledNesting
 import formulaide.ui.utils.text
@@ -11,8 +10,6 @@ import react.child
 import react.fc
 
 external interface EditableFieldProps : RProps {
-	var app: ScreenProps
-
 	var field: Field
 	var replace: (Field) -> Unit
 
@@ -21,7 +18,6 @@ external interface EditableFieldProps : RProps {
 }
 
 fun EditableFieldProps.inheritFrom(props: EditableFieldProps) {
-	app = props.app
 	field = props.field
 	replace = props.replace
 	depth = props.depth

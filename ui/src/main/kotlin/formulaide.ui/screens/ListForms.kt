@@ -2,14 +2,17 @@ package formulaide.ui.screens
 
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.ui.Screen
-import formulaide.ui.ScreenProps
 import formulaide.ui.components.styledButton
 import formulaide.ui.components.styledCard
 import formulaide.ui.components.styledField
+import formulaide.ui.useForms
+import formulaide.ui.useNavigation
+import react.RProps
 import react.fc
 
-val FormList = fc<ScreenProps> { props ->
-	val forms = props.forms
+val FormList = fc<RProps> { _ ->
+	val forms by useForms()
+	val (_, navigateTo) = useNavigation()
 
 	styledCard(
 		"Formulaires",
@@ -17,7 +20,7 @@ val FormList = fc<ScreenProps> { props ->
 		contents = {
 			for (form in forms) {
 				styledField("form-${form.id}", form.name) {
-					styledButton("Remplir") { props.navigateTo(Screen.SubmitForm(form.createRef())) }
+					styledButton("Remplir") { navigateTo(Screen.SubmitForm(form.createRef())) }
 				}
 			}
 		}

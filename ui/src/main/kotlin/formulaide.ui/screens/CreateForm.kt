@@ -10,12 +10,10 @@ import formulaide.api.types.Ref
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.client.Client
 import formulaide.client.routes.createForm
-import formulaide.ui.Screen
-import formulaide.ui.ScreenProps
+import formulaide.ui.*
 import formulaide.ui.components.*
+import formulaide.ui.components2.useAsync
 import formulaide.ui.fields.FieldEditor
-import formulaide.ui.launchAndReportExceptions
-import formulaide.ui.reportExceptions
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.text
 import kotlinx.html.InputType
@@ -23,24 +21,27 @@ import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
-import react.child
+import react.*
 import react.dom.attrs
 import react.dom.option
-import react.fc
-import react.useRef
-import react.useState
 
-val CreateForm = fc<ScreenProps> { props ->
-	val client = props.client
-	require(client is Client.Authenticated)
+val CreateForm = fc<RProps> { _ ->
+	val (client) = useClient()
+	if (client !is Client.Authenticated) {
+		styledCard("Créer un formulaire",
+		           failed = true) { text("Cette page n'est accessible que pour les utilisateurs connectés") }
+		return@fc
+	}
+
+	val scope = useAsync()
+	val services = useServices().value.filter { it.open }
+	val (_, navigateTo) = useNavigation()
 
 	val formName = useRef<HTMLInputElement>()
 	val public = useRef<HTMLInputElement>()
 
-	var fields by useState<List<ShallowFormField>>(emptyList())
-	var actions by useState<List<Action>>(emptyList())
-
-	val services = props.services.filter { it.open }
+	var fields by useState(emptyList<ShallowFormField>())
+	var actions by useState(emptyList<Action>())
 
 	styledFormCard(
 		"Créer un formulaire", null,
@@ -78,7 +79,6 @@ val CreateForm = fc<ScreenProps> { props ->
 					for ((i, field) in fields.sortedBy { it.order }.withIndex()) {
 						child(FieldEditor) {
 							attrs {
-								this.app = props
 								this.field = field
 								this.replace = {
 									fields = fields.replace(i, it as ShallowFormField)
@@ -133,7 +133,7 @@ val CreateForm = fc<ScreenProps> { props ->
 		onSubmitFunction = {
 			it.preventDefault()
 
-			val form = reportExceptions(props) {
+			val form = reportExceptions {
 				Form(
 					name = formName.current?.value ?: error("Le formulaire n'a pas de nom"),
 					id = Ref.SPECIAL_TOKEN_NEW,
@@ -145,11 +145,11 @@ val CreateForm = fc<ScreenProps> { props ->
 				)
 			}
 
-			launchAndReportExceptions(props) {
+			scope.reportExceptions {
 				client.createForm(form)
 
-				props.refreshForms()
-				props.navigateTo(Screen.ShowForms)
+				refreshForms()
+				navigateTo(Screen.ShowForms)
 			}
 		}
 	}
