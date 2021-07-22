@@ -5,8 +5,9 @@ import kotlinx.html.FORM
 import react.RBuilder
 import react.dom.*
 
-private fun RBuilder.styledCardTitle(title: String, secondary: String?) {
+private fun RBuilder.styledCardTitle(title: String, secondary: String?, loading: Boolean = false) {
 	styledTitle(title)
+	if (loading) loadingSpinner()
 	if (secondary != null) p { styledLightText(secondary) }
 }
 
@@ -29,10 +30,11 @@ fun RBuilder.styledCard(
 	secondary: String? = null,
 	vararg actions: Pair<String, suspend () -> Unit>,
 	failed: Boolean = false,
+	loading: Boolean = false,
 	contents: RBuilder.() -> Unit,
 ) {
 	styledCardShell(failed) {
-		styledCardTitle(title, secondary)
+		styledCardTitle(title, secondary, loading)
 
 		div("pt-4") {
 			contents()
@@ -52,12 +54,13 @@ fun RBuilder.styledFormCard(
 	secondary: String?,
 	submit: String,
 	vararg actions: Pair<String, () -> Unit>,
+	loading: Boolean = false,
 	contents: RBuilder.() -> Unit,
 	handler: FORM.() -> Unit,
 ) {
 	styledCardShell {
 		form {
-			styledCardTitle(title, secondary)
+			styledCardTitle(title, secondary, loading)
 
 			div("py-4") {
 				contents()
