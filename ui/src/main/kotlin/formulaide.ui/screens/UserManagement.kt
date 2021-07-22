@@ -13,7 +13,6 @@ import formulaide.ui.components.*
 import formulaide.ui.components2.useAsync
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.text
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onSubmitFunction
@@ -38,23 +37,22 @@ val UserList = fc<RProps> { _ ->
 		return@fc
 	}
 
+	var listDisabledUsers by useState(false)
+	var users by useState(emptyList<User>())
+	useEffect(client, listDisabledUsers) {
+		scope.reportExceptions {
+			users = client.listUsers(listDisabledUsers)
+		}
+	}
+
 	styledCard(
 		"Employés",
 		null,
 		"Créer un employé" to { navigateTo(Screen.NewUser) }
 	) {
-		var listDisabledUsers by useState(false)
-
 		styledField("hide-disabled", "Utilisateurs désactivés") {
 			styledCheckbox("hide-disabled", "Afficher les comptes désactivés") {
 				onChangeFunction = { listDisabledUsers = (it.target as HTMLInputElement).checked }
-			}
-		}
-
-		var users by useState(emptyList<User>())
-		useEffect(client, listDisabledUsers) {
-			scope.reportExceptions {
-				users = client.listUsers(listDisabledUsers)
 			}
 		}
 
@@ -66,19 +64,25 @@ val UserList = fc<RProps> { _ ->
 				div { // buttons
 
 					if (user != me) {
-						styledButton(if (user.enabled) "Désactiver" else "Activer",
-						             default = false) {
-							editUser(user, scope, client, enabled = !user.enabled) {
-								users = users.replace(i, it)
+						styledButton(
+							if (user.enabled) "Désactiver" else "Activer",
+							default = false,
+							action = {
+								editUser(user, client, enabled = !user.enabled) {
+									users = users.replace(i, it)
+								}
 							}
-						}
+						)
 
-						styledButton(if (user.administrator) "Enlever le droit d'administration" else "Donner le droit d'administration",
-						             default = false) {
-							editUser(user, scope, client, administrator = !user.administrator) {
-								users = users.replace(i, it)
+						styledButton(
+							if (user.administrator) "Enlever le droit d'administration" else "Donner le droit d'administration",
+							default = false,
+							action = {
+								editUser(user, client, administrator = !user.administrator) {
+									users = users.replace(i, it)
+								}
 							}
-						}
+						)
 					}
 
 					styledButton("Modifier le mot de passe") {
@@ -93,18 +97,15 @@ val UserList = fc<RProps> { _ ->
 	}
 }
 
-private fun editUser(
+private suspend fun editUser(
 	user: User,
-	scope: CoroutineScope,
 	client: Client.Authenticated,
 	enabled: Boolean? = null,
 	administrator: Boolean? = null,
 	onChange: (User) -> Unit,
 ) {
-	scope.reportExceptions {
-		val newUser = client.editUser(user, enabled, administrator)
-		onChange(newUser)
-	}
+	val newUser = client.editUser(user, enabled, administrator)
+	onChange(newUser)
 }
 
 val CreateUser = fc<RProps> { _ ->
