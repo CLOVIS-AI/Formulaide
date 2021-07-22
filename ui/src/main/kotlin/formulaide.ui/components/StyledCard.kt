@@ -27,7 +27,7 @@ private fun RBuilder.styledCardShell(
 fun RBuilder.styledCard(
 	title: String,
 	secondary: String? = null,
-	vararg actions: Pair<String, () -> Unit>,
+	vararg actions: Pair<String, suspend () -> Unit>,
 	failed: Boolean = false,
 	contents: RBuilder.() -> Unit,
 ) {
@@ -63,7 +63,7 @@ fun RBuilder.styledFormCard(
 				contents()
 			}
 
-			styledSubmit(submit, default = true)
+			styledSubmitButton(submit, default = true)
 			for (action in actions) {
 				styledButton(action.first, default = false) { action.second() }
 			}
