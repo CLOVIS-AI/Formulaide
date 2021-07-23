@@ -214,6 +214,7 @@ qodana:
   artifacts:
     paths:
       - qodana
+  allow_failure: true
 
 # *** Deploy *** #
 

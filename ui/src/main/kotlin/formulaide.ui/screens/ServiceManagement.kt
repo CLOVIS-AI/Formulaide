@@ -4,22 +4,32 @@ import formulaide.client.Client
 import formulaide.client.routes.closeService
 import formulaide.client.routes.createService
 import formulaide.client.routes.reopenService
-import formulaide.ui.ScreenProps
 import formulaide.ui.components.*
-import formulaide.ui.launchAndReportExceptions
+import formulaide.ui.refreshServices
+import formulaide.ui.traceRenders
+import formulaide.ui.useClient
+import formulaide.ui.useServices
 import formulaide.ui.utils.text
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
-import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
+import react.RProps
 import react.dom.div
 import react.fc
 import react.useRef
 import react.useState
 
-val ServiceList = fc<ScreenProps> { props ->
-	val client = props.client
-	require(client is Client.Authenticated) { "Seul un employé peut modifier les services" }
+val ServiceList = fc<RProps> { _ ->
+	traceRenders("ServiceList")
+
+	val (client) = useClient()
+	if (client !is Client.Authenticated) {
+		styledCard("Liste des services",
+		           failed = true) { text("Seul un employé peut modifier les services") }
+		return@fc
+	}
+
+	val services by useServices()
 
 	styledCard(
 		"Services",
@@ -33,7 +43,7 @@ val ServiceList = fc<ScreenProps> { props ->
 			}
 		}
 
-		for (service in props.services.filter { it.open || listClosedServices }) {
+		for (service in services.filter { it.open || listClosedServices }) {
 			styledFormField {
 				text(service.name)
 
@@ -43,13 +53,11 @@ val ServiceList = fc<ScreenProps> { props ->
 				div {
 
 					styledButton(if (service.open) "Désactiver" else "Activer", default = false) {
-						launchAndReportExceptions(props) {
-							if (service.open)
-								client.closeService(service)
-							else
-								client.reopenService(service)
-							props.refreshServices()
-						}
+						if (service.open)
+							client.closeService(service)
+						else
+							client.reopenService(service)
+						refreshServices()
 					}
 
 				}
@@ -62,24 +70,19 @@ val ServiceList = fc<ScreenProps> { props ->
 	styledFormCard(
 		"Créer un service",
 		null,
-		"Créer",
-		contents = {
-			styledField("service-name", "Nom") {
-				styledInput(InputType.text, "service-name", required = true, ref = newServiceName)
-			}
-		}
-	) {
-		onSubmitFunction = {
-			it.preventDefault()
+		"Créer" to {
+			val serviceName = newServiceName.current?.value
+			requireNotNull(serviceName) { "Le nom d'un service ne peut pas être vide" }
+			require(serviceName.isNotBlank()) { "Le nom d'un service ne peut pas être vide : $serviceName" }
 
-			launchAndReportExceptions(props) {
-				val serviceName = newServiceName.current?.value
-				requireNotNull(serviceName) { "Le nom d'un service ne peut pas être vide" }
-				require(serviceName.isNotBlank()) { "Le nom d'un service ne peut pas être vide : $serviceName" }
-
+			launch {
 				client.createService(serviceName)
-				props.refreshServices()
+				refreshServices()
 			}
+		},
+	) {
+		styledField("service-name", "Nom") {
+			styledInput(InputType.text, "service-name", required = true, ref = newServiceName)
 		}
 	}
 }

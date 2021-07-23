@@ -8,45 +8,50 @@ import formulaide.client.Client
 import formulaide.client.routes.createUser
 import formulaide.client.routes.editUser
 import formulaide.client.routes.listUsers
-import formulaide.ui.Screen
-import formulaide.ui.ScreenProps
+import formulaide.ui.*
 import formulaide.ui.components.*
-import formulaide.ui.launchAndReportExceptions
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.text
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
-import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
+import react.*
 import react.dom.attrs
 import react.dom.div
 import react.dom.option
-import react.fc
-import react.useEffect
-import react.useRef
-import react.useState
 
-val UserList = fc<ScreenProps> { props ->
+val UserList = fc<RProps> { _ ->
+	traceRenders("UserList")
+
+	val (_, navigateTo) = useNavigation()
+	val scope = useAsync()
+
+	val (client) = useClient()
+	require(client is Client.Authenticated) { "Seul un administrateur a le droit de voir la liste des utilisateurs" }
+	val (me) = useUser()
+
+	if (me == null) {
+		styledCard("Employés", contents = { text("Récupération de l'utilisateur…") })
+		return@fc
+	}
+
+	var listDisabledUsers by useState(false)
+	var users by useState(emptyList<User>())
+	useEffect(client, listDisabledUsers) {
+		scope.reportExceptions {
+			users = client.listUsers(listDisabledUsers)
+		}
+	}
+
 	styledCard(
 		"Employés",
 		null,
-		"Créer un employé" to { props.navigateTo(Screen.NewUser) }
+		"Créer un employé" to { navigateTo(Screen.NewUser) },
+		loading = users.isEmpty(),
 	) {
-		var listDisabledUsers by useState(false)
-
 		styledField("hide-disabled", "Utilisateurs désactivés") {
 			styledCheckbox("hide-disabled", "Afficher les comptes désactivés") {
 				onChangeFunction = { listDisabledUsers = (it.target as HTMLInputElement).checked }
-			}
-		}
-
-		var users by useState(emptyList<User>())
-		useEffect(props.user, props.client, listDisabledUsers) {
-			launchAndReportExceptions(props) {
-				val client = props.client
-				require(client is Client.Authenticated) { "Seul un administrateur a le droit de voir la liste des utilisateurs" }
-
-				users = client.listUsers(listDisabledUsers)
 			}
 		}
 
@@ -57,25 +62,31 @@ val UserList = fc<ScreenProps> { props ->
 
 				div { // buttons
 
-					if (user != props.user) {
-						styledButton(if (user.enabled) "Désactiver" else "Activer",
-						             default = false) {
-							editUser(user, props, enabled = !user.enabled) {
-								users = users.replace(i, it)
+					if (user != me) {
+						styledButton(
+							if (user.enabled) "Désactiver" else "Activer",
+							default = false,
+							action = {
+								editUser(user, client, enabled = !user.enabled) {
+									users = users.replace(i, it)
+								}
 							}
-						}
+						)
 
-						styledButton(if (user.administrator) "Enlever le droit d'administration" else "Donner le droit d'administration",
-						             default = false) {
-							editUser(user, props, administrator = !user.administrator) {
-								users = users.replace(i, it)
+						styledButton(
+							if (user.administrator) "Enlever le droit d'administration" else "Donner le droit d'administration",
+							default = false,
+							action = {
+								editUser(user, client, administrator = !user.administrator) {
+									users = users.replace(i, it)
+								}
 							}
-						}
+						)
 					}
 
 					styledButton("Modifier le mot de passe") {
-						launchAndReportExceptions(props) {
-							props.navigateTo(Screen.EditPassword(user.email, Screen.ShowUsers))
+						reportExceptions {
+							navigateTo(Screen.EditPassword(user.email, Screen.ShowUsers))
 						}
 					}
 
@@ -85,109 +96,57 @@ val UserList = fc<ScreenProps> { props ->
 	}
 }
 
-private fun editUser(
+private suspend fun editUser(
 	user: User,
-	props: ScreenProps,
+	client: Client.Authenticated,
 	enabled: Boolean? = null,
 	administrator: Boolean? = null,
 	onChange: (User) -> Unit,
 ) {
-	launchAndReportExceptions(props) {
-		val client = props.client
-		require(client is Client.Authenticated) { "Seul un administrateur peut activer ou désactiver un compte" }
-
-		val newUser = client.editUser(user, enabled, administrator)
-		onChange(newUser)
-	}
+	val newUser = client.editUser(user, enabled, administrator)
+	onChange(newUser)
 }
 
-val CreateUser = fc<ScreenProps> { props ->
+val CreateUser = fc<RProps> { _ ->
+	val services by useServices()
+	val (_, navigateTo) = useNavigation()
+
 	val email = useRef<HTMLInputElement>()
 	val fullName = useRef<HTMLInputElement>()
-	val (selectedService, setSelectedService) = useState(props.services.firstOrNull())
+	var selectedService by useState(services.firstOrNull())
 	val admin = useRef<HTMLInputElement>()
 	val password1 = useRef<HTMLInputElement>()
 	val password2 = useRef<HTMLInputElement>()
 
-	val client = props.client
+	val (client) = useClient()
 	require(client is Client.Authenticated) { "Un employé anonyme ne peut pas créer d'utilisateurs" }
 
 	styledFormCard(
 		"Ajouter un employé",
 		null,
-		"Créer",
-		contents = {
-			styledField("employee-email", "Adresse mail") {
-				styledInput(InputType.email, "employee-email", required = true, ref = email)
-			}
+		"Créer" to {
+			val password1Value = password1.current?.value
+			val password2Value = password2.current?.value
 
-			styledField("employee-name", "Nom affiché") {
-				styledInput(InputType.text, "employee-name", required = true, ref = fullName)
-			}
+			require((password1Value
+				?: Unit) == password2Value) { "Les deux mots de passes ne correspondent pas." }
 
-			styledField("employee-service", "Service") {
-				styledSelect(onSelect = { option -> setSelectedService(props.services.find { it.id == option.value }) }) {
-					for (service in props.services) {
-						option {
-							text(service.name)
-							attrs {
-								value = service.id
-							}
-						}
-					}
-				}
-			}
+			val passwordOrFail = (password1Value
+				?: error("Le mot de passe ne peut pas être vide, trouvé $password1"))
 
-			styledField("employee-is-admin", "Droits") {
-				styledCheckbox("employee-is-admin",
-				               "Cet employé est un administrateur",
-				               ref = admin)
-			}
+			val emailOrFail = (email.current?.value
+				?: error("L'adresse mail ne peut pas être vide, trouvé $email"))
 
-			styledField("employee-password-1", "Mot de passe") {
-				styledInput(InputType.password,
-				            "employee-password-1",
-				            required = true,
-				            ref = password1) {
-					minLength = "5"
-				}
-			}
+			val fullNameOrFail = (fullName.current?.value
+				?: error("Le nom ne peut pas être vide, trouvé $fullName"))
 
-			styledField("employee-password-2", "Confirmer le mot de passe") {
-				styledInput(InputType.password,
-				            "employee-password-2",
-				            required = true,
-				            ref = password2) {
-					minLength = "5"
-				}
-			}
-		}
-	) {
-		onSubmitFunction = {
-			it.preventDefault()
+			val serviceOrFail = (selectedService?.id
+				?: error("L'utilisateur doit avoir choisi un service, trouvé $selectedService"))
 
-			launchAndReportExceptions(props) {
-				val password1Value = password1.current?.value
-				val password2Value = password2.current?.value
+			val adminOrFail = admin.current?.value
+				?: error("Il faut préciser si l'utilisateur est un administrateur ou non, trouvé $admin")
 
-				require((password1Value
-					?: Unit) == password2Value) { "Les deux mots de passes ne correspondent pas." }
-
-				val passwordOrFail = (password1Value
-					?: error("Le mot de passe ne peut pas être vide, trouvé $password1"))
-
-				val emailOrFail = (email.current?.value
-					?: error("L'adresse mail ne peut pas être vide, trouvé $email"))
-
-				val fullNameOrFail = (fullName.current?.value
-					?: error("Le nom ne peut pas être vide, trouvé $fullName"))
-
-				val serviceOrFail = (selectedService?.id
-					?: error("L'utilisateur doit avoir choisi un service, trouvé $selectedService"))
-
-				val adminOrFail = admin.current?.value
-					?: error("Il faut préciser si l'utilisateur est un administrateur ou non, trouvé $admin")
-
+			launch {
 				client.createUser(NewUser(
 					passwordOrFail,
 					User(
@@ -198,7 +157,57 @@ val CreateUser = fc<ScreenProps> { props ->
 					)
 				))
 
-				props.navigateTo(Screen.ShowUsers)
+				navigateTo(Screen.ShowUsers)
+			}
+		}
+	) {
+		styledField("employee-email", "Adresse mail") {
+			styledInput(InputType.email,
+			            "employee-email",
+			            required = true,
+			            ref = email)
+		}
+
+		styledField("employee-name", "Nom affiché") {
+			styledInput(InputType.text, "employee-name", required = true, ref = fullName)
+		}
+
+		styledField("employee-service", "Service") {
+			styledSelect(onSelect = { option ->
+				selectedService = services.find { it.id == option.value }
+			}) {
+				for (service in services) {
+					option {
+						text(service.name)
+						attrs {
+							value = service.id
+						}
+					}
+				}
+			}
+		}
+
+		styledField("employee-is-admin", "Droits") {
+			styledCheckbox("employee-is-admin",
+			               "Cet employé est un administrateur",
+			               ref = admin)
+		}
+
+		styledField("employee-password-1", "Mot de passe") {
+			styledInput(InputType.password,
+			            "employee-password-1",
+			            required = true,
+			            ref = password1) {
+				minLength = "5"
+			}
+		}
+
+		styledField("employee-password-2", "Confirmer le mot de passe") {
+			styledInput(InputType.password,
+			            "employee-password-2",
+			            required = true,
+			            ref = password2) {
+				minLength = "5"
 			}
 		}
 	}
