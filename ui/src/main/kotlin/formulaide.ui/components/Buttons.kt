@@ -12,8 +12,8 @@ import react.dom.span
 
 private const val buttonShapeClasses = "rounded-full py-1 px-3"
 private const val buttonClasses = "$buttonShapeClasses hover:bg-purple-500"
-private const val buttonDefaultClasses = "$buttonClasses bg-purple-800 text-white"
-private const val buttonNonDefaultClasses =
+internal const val buttonDefaultClasses = "$buttonClasses bg-purple-800 text-white"
+internal const val buttonNonDefaultClasses =
 	"$buttonClasses text-purple-800 border-1 border-purple-800 hover:text-white"
 
 internal external interface ButtonProps : RProps {

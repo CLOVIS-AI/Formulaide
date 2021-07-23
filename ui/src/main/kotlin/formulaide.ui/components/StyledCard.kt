@@ -77,7 +77,7 @@ private val FormCard = fc<FormCardProps> { props ->
 			if (!loading)
 				styledSubmitButton(submitText, default = true)
 			else
-				loadingSpinner()
+				span(classes = buttonNonDefaultClasses) { loadingSpinner() }
 
 			for (action in props.actions) {
 				styledButton(action.first, default = false) { action.second() }

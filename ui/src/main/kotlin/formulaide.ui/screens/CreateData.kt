@@ -35,13 +35,11 @@ val CreateData = fc<RProps> { _ ->
 		"Grouper des données utilisées dans plusieurs formulaires permet de mieux gérer les mises à jours. " +
 				"Les données composées sont stockées et unifiées entre les services.",
 		"Créer ce groupe" to {
-			val data = reportExceptions {
-				Composite(
-					id = Ref.SPECIAL_TOKEN_NEW,
-					name = formName.current?.value ?: error("Ce groupe n'a pas de nom"),
-					fields = fields
-				)
-			}
+			val data = Composite(
+				id = Ref.SPECIAL_TOKEN_NEW,
+				name = formName.current?.value ?: error("Ce groupe n'a pas de nom"),
+				fields = fields
+			)
 
 			launch {
 				client.createData(data)
