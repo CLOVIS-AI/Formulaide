@@ -10,7 +10,7 @@ import formulaide.client.routes.submitForm
 import formulaide.ui.*
 import formulaide.ui.components.styledCard
 import formulaide.ui.components.styledFormCard
-import formulaide.ui.components2.useAsync
+import formulaide.ui.components.useAsync
 import formulaide.ui.fields.field
 import formulaide.ui.utils.text
 import org.w3c.xhr.FormData

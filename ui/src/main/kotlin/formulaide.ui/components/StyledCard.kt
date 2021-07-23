@@ -1,6 +1,5 @@
 package formulaide.ui.components
 
-import formulaide.ui.components2.useAsync
 import formulaide.ui.reportExceptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.html.DIV

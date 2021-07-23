@@ -1,7 +1,7 @@
 package formulaide.ui
 
 import formulaide.ui.components.styledCard
-import formulaide.ui.components2.useAsync
+import formulaide.ui.components.useAsync
 import formulaide.ui.utils.GlobalState
 import formulaide.ui.utils.text
 import formulaide.ui.utils.useGlobalState

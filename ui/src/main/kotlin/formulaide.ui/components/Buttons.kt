@@ -1,6 +1,5 @@
 package formulaide.ui.components
 
-import formulaide.ui.components2.useAsync
 import formulaide.ui.reportExceptions
 import formulaide.ui.utils.text
 import kotlinx.html.InputType

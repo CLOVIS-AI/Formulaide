@@ -1,4 +1,4 @@
-package formulaide.ui.components2
+package formulaide.ui.components
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
