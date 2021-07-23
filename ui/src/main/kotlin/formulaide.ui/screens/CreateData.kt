@@ -15,42 +15,30 @@ import formulaide.ui.utils.text
 import kotlinx.html.InputType
 import org.w3c.dom.HTMLInputElement
 import react.*
-import react.dom.li
-import react.dom.ul
 
 val CreateData = fc<RProps> { _ ->
 	traceRenders("CreateData")
 
 	val (client) = useClient()
-	require(client is Client.Authenticated)
-
-	val composites by useComposites()
-
-	styledCard(
-		"Données existantes"
-	) {
-		ul {
-			for (data in composites) {
-				li {
-					text(data.name)
-				}
-			}
-		}
+	if (client !is Client.Authenticated) {
+		styledCard("Créer un groupe",
+		           failed = true) { text("Seuls les administrateurs peuvent créer un groupe.") }
+		return@fc
 	}
 
 	val formName = useRef<HTMLInputElement>()
 	var fields by useState<List<DataField>>(emptyList())
+	val (_, navigateTo) = useNavigation()
 
 	styledFormCard(
-		"Créer une donnée",
-		"Une donnée composée permet de combiner plusieurs données possédant un lien " +
-				"(par exemple, le numéro de téléphone et l'adresse mail). " +
+		"Créer un groupe",
+		"Grouper des données utilisées dans plusieurs formulaires permet de mieux gérer les mises à jours. " +
 				"Les données composées sont stockées et unifiées entre les services.",
-		"Créer cette donnée" to {
+		"Créer ce groupe" to {
 			val data = reportExceptions {
 				Composite(
 					id = Ref.SPECIAL_TOKEN_NEW,
-					name = formName.current?.value ?: error("Cette donnée n'a pas de nom"),
+					name = formName.current?.value ?: error("Ce groupe n'a pas de nom"),
 					fields = fields
 				)
 			}
@@ -58,6 +46,7 @@ val CreateData = fc<RProps> { _ ->
 			launch {
 				client.createData(data)
 				refreshComposites()
+				navigateTo(Screen.ShowData)
 			}
 		},
 		"Ajouter un champ" to {

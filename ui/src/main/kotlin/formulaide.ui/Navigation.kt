@@ -34,8 +34,9 @@ abstract class Screen(
 ) {
 
 	object Home : Screen("Accueil", Role.ANONYMOUS, { LoginAccess }, "home")
+	object ShowData : Screen("Groupes", Role.EMPLOYEE, { DataList }, "data")
 	object ShowForms : Screen("Formulaires", Role.ANONYMOUS, { FormList }, "forms")
-	object NewData : Screen("Créer une donnée", Role.ADMINISTRATOR, { CreateData }, "createData")
+	object NewData : Screen("Créer un groupe", Role.ADMINISTRATOR, { CreateData }, "createData")
 	object NewForm : Screen("Créer un formulaire", Role.ADMINISTRATOR, { CreateForm }, "createForm")
 	object ShowUsers : Screen("Employés", Role.ADMINISTRATOR, { UserList }, "employees")
 	object NewUser :
@@ -56,7 +57,9 @@ abstract class Screen(
 		       "submit-${form.id}")
 
 	companion object {
-		val regularScreens = sequenceOf(Home, ShowForms, NewData, NewForm, ShowServices, ShowUsers)
+		val regularScreens =
+			sequenceOf(Home, ShowData, NewData, ShowForms, NewForm, ShowServices, ShowUsers)
+
 		fun availableScreens(user: User?) = regularScreens
 			.filter { it.requiredRole <= user.role }
 
