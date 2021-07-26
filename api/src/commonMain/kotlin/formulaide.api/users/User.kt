@@ -2,6 +2,8 @@ package formulaide.api.users
 
 import formulaide.api.types.Email
 import formulaide.api.types.Ref
+import formulaide.api.types.Referencable
+import formulaide.api.types.ReferenceId
 import kotlinx.serialization.Serializable
 
 /**
@@ -18,4 +20,8 @@ data class User(
 	val service: Ref<Service>,
 	val administrator: Boolean,
 	val enabled: Boolean = true,
-)
+) : Referencable {
+
+	override val id: ReferenceId
+		get() = email.email
+}
