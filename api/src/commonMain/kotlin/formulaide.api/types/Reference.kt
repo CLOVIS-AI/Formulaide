@@ -83,7 +83,7 @@ data class Ref<R : Referencable>(
 	 *
 	 * When [lazy] is set to `true`, the function will only attempt to find one of the [objs] if the referenced is unloaded.
 	 *
-	 * @see loadIfNecessary
+	 * @see load
 	 */
 	fun loadFrom(objs: Iterable<R>, allowNotFound: Boolean = false, lazy: Boolean = false) {
 		if (lazy && loaded)
@@ -105,9 +105,9 @@ data class Ref<R : Referencable>(
 		 * Loads this reference by executing [loader], only if it has not been loaded yet.
 		 */
 		// inline to allow suspend lambdas
-		inline fun <R : Referencable> Ref<R>.loadIfNecessary(
+		inline fun <R : Referencable> Ref<R>.load(
 			lazy: Boolean = true,
-			crossinline loader: (ReferenceId) -> R,
+			loader: (ReferenceId) -> R,
 		) {
 			if (!lazy || !loaded)
 				load(loader(id))
