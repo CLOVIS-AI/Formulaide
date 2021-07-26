@@ -18,6 +18,7 @@
           <option value="test" />
           <option value="jsBrowserTest" />
           <option value="browserTest" />
+          <option value="jvmTest" />
         </list>
       </option>
       <option name="vmOptions" value="" />
