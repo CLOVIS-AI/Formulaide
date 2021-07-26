@@ -19,7 +19,12 @@ data class Record(
 	val state: RecordState,
 	val submissions: List<Ref<FormSubmission>>,
 	val history: List<RecordStateTransition>,
-)
+) {
+
+	companion object {
+		const val MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION = 100
+	}
+}
 
 /**
  * The current state of a [Record].
@@ -74,3 +79,9 @@ data class RecordStateTransition(
 			requireNotNull(assignee) { "Les utilisateurs anonymes ne peuvent pas changer l'état d'un enregistrement" }
 	}
 }
+
+@Serializable
+data class RecordsToReviewRequest(
+	val form: Ref<Form>,
+	val state: RecordState,
+)
