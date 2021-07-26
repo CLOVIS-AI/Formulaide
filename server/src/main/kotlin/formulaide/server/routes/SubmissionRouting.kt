@@ -25,6 +25,14 @@ fun Routing.submissionRoutes() {
 		}
 
 		authenticate(Auth.Employee) {
+
+			post("/get") {
+				call.requireEmployee(database)
+				val body = call.receive<String>().removeSurrounding("\"")
+				call.respond(database.findSubmissionById(body)?.toApi()
+					             ?: error("La saisie '$body' est introuvable"))
+			}
+
 			get("/formsToReview") {
 				val user = call.requireEmployee(database)
 				val forms = database.findFormsAssignedTo(user)
