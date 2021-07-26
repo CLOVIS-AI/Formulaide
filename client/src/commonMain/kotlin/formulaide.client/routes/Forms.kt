@@ -13,8 +13,8 @@ import formulaide.client.Client
  * The forms are always [open][Form.open].
  * @see Form.open
  */
-suspend fun Client.listForms() =
-	get<List<Form>>("/forms/list")
+suspend fun Client.listForms(): List<Form> =
+	get("/forms/list")
 
 /**
  * List of public and internal [forms][Form].
@@ -25,8 +25,8 @@ suspend fun Client.listForms() =
  *
  * The forms are always [open][Form.open].
  */
-suspend fun Client.Authenticated.listAllForms() =
-	get<List<Form>>("/forms/listPublicInternal")
+suspend fun Client.Authenticated.listAllForms(): List<Form> =
+	get("/forms/listPublicInternal")
 
 /**
  * List of closed [forms][Form].
@@ -35,8 +35,8 @@ suspend fun Client.Authenticated.listAllForms() =
  * - Requires 'administrator' authentication
  * - Response: list of [Form]
  */
-suspend fun Client.Authenticated.listClosedForms() =
-	get<List<Form>>("/forms/listClosed")
+suspend fun Client.Authenticated.listClosedForms(): List<Form> =
+	get("/forms/listClosed")
 
 /**
  * Creates a [form].
@@ -46,8 +46,8 @@ suspend fun Client.Authenticated.listClosedForms() =
  * - Body: [Form]
  * - Response: [Form]
  */
-suspend fun Client.Authenticated.createForm(form: Form) =
-	post<Form>("/forms/create", body = form)
+suspend fun Client.Authenticated.createForm(form: Form): Form =
+	post("/forms/create", body = form)
 
 /**
  * Fetches all the composites that are referenced in a [form].
@@ -56,5 +56,5 @@ suspend fun Client.Authenticated.createForm(form: Form) =
  * - Body: [Form.id]
  * - Response: list of [Composite]
  */
-suspend fun Client.compositesReferencedIn(form: Form) =
-	post<List<Composite>>("/forms/references", body = form.id)
+suspend fun Client.compositesReferencedIn(form: Form): List<Composite> =
+	post("/forms/references", body = form.id)

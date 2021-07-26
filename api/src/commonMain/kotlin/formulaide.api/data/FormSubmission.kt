@@ -8,8 +8,11 @@ import formulaide.api.fields.ShallowFormField
 import formulaide.api.fields.SimpleField.Message
 import formulaide.api.types.Arity
 import formulaide.api.types.Ref
+import formulaide.api.types.Ref.Companion.SPECIAL_TOKEN_NEW
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.types.Ref.Companion.ids
+import formulaide.api.types.Referencable
+import formulaide.api.types.ReferenceId
 import kotlinx.serialization.Serializable
 
 @DslMarker
@@ -109,10 +112,11 @@ annotation class FormSubmissionDsl
  */
 @Serializable
 data class FormSubmission(
+	override val id: ReferenceId,
 	val form: Ref<Form>,
 	val root: Ref<Action>? = null,
 	val data: Map<String, String>,
-) {
+) : Referencable {
 
 	//region Check validity
 
@@ -399,6 +403,7 @@ data class FormSubmission(
 			answer.block()
 
 			return FormSubmission(
+				SPECIAL_TOKEN_NEW,
 				form.createRef(),
 				root?.createRef(),
 				data = answer.flatten()

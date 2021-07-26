@@ -12,8 +12,8 @@ import formulaide.client.Client
  * - Requires 'employee' authentication
  * - Response: list of [services][Service]
  */
-suspend fun Client.Authenticated.listServices() =
-	get<List<Service>>("/services/list")
+suspend fun Client.Authenticated.listServices(): List<Service> =
+	get("/services/list")
 
 /**
  * Finds the list of all services, including those are that closed.
@@ -22,8 +22,8 @@ suspend fun Client.Authenticated.listServices() =
  * - Requires 'administrator' authentication
  * - Response: list of [services][Service]
  */
-suspend fun Client.Authenticated.listAllServices() =
-	get<List<Service>>("/services/fullList")
+suspend fun Client.Authenticated.listAllServices(): List<Service> =
+	get("/services/fullList")
 
 /**
  * Creates a new service with the given [name].
@@ -32,8 +32,8 @@ suspend fun Client.Authenticated.listAllServices() =
  * - Requires 'administrator' authentication
  * - Response: [Service]
  */
-suspend fun Client.Authenticated.createService(name: String) =
-	post<Service>("/services/create", body = name)
+suspend fun Client.Authenticated.createService(name: String): Service =
+	post("/services/create", body = name)
 
 /**
  * Closes a [service].
@@ -43,8 +43,8 @@ suspend fun Client.Authenticated.createService(name: String) =
  * - Body: [ServiceModification]
  * - Response: [Service]
  */
-suspend fun Client.Authenticated.closeService(service: Service) =
-	post<Service>("/services/close", body = ServiceModification(service.createRef(), false))
+suspend fun Client.Authenticated.closeService(service: Service): Service =
+	post("/services/close", body = ServiceModification(service.createRef(), false))
 
 /**
  * Opens a [service].
@@ -54,5 +54,5 @@ suspend fun Client.Authenticated.closeService(service: Service) =
  * - Body: [ServiceModification]
  * - Response: [Service]
  */
-suspend fun Client.Authenticated.reopenService(service: Service) =
-	post<Service>("/services/close", body = ServiceModification(service.createRef(), true))
+suspend fun Client.Authenticated.reopenService(service: Service): Service =
+	post("/services/close", body = ServiceModification(service.createRef(), true))

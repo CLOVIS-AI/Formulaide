@@ -7,6 +7,7 @@ import formulaide.api.data.FormSubmission.Companion.createSubmission
 import formulaide.api.fields.*
 import formulaide.api.fields.SimpleField.Text
 import formulaide.api.types.Arity
+import formulaide.api.types.Ref.Companion.SPECIAL_TOKEN_NEW
 import formulaide.api.types.Ref.Companion.createRef
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -135,6 +136,7 @@ class FormSubmissionTest {
 		form.validate()
 
 		val submission1 = FormSubmission(
+			SPECIAL_TOKEN_NEW,
 			form.createRef(),
 			data = mapOf(
 				"7:2" to "Mon Nom de Famille",
@@ -151,6 +153,7 @@ class FormSubmissionTest {
 		submission1.checkValidity(form)
 
 		val submission2 = FormSubmission(
+			SPECIAL_TOKEN_NEW,
 			form.createRef(),
 			data = mapOf(
 				"7:2" to "Mon Nom de Famille",
@@ -168,6 +171,7 @@ class FormSubmissionTest {
 		submission2.checkValidity(form)
 
 		val submission3 = FormSubmission(
+			SPECIAL_TOKEN_NEW,
 			form.createRef(),
 			data = mapOf(
 				"7:2" to "Mon Nom de Famille",
@@ -302,6 +306,7 @@ class FormSubmissionTest {
 			union(union, unionChoice1) { /* it's a MESSAGE, nothing to provide */ }
 		}
 		val expected = FormSubmission(
+			SPECIAL_TOKEN_NEW,
 			form = form.createRef(),
 			data = mapOf(
 				"7:2" to "Mon nom de famille",

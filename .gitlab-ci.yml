@@ -136,6 +136,24 @@ client-js-test:
     reports:
       junit: client/build/test-results/jsBrowserTest/**/TEST-*.xml
 
+client-jvm-test:
+  image: $JDK_IMAGE
+  stage: test
+  extends: [ .gradle, .with-database ]
+  needs: [ server-bin ]
+  dependencies: [ server-bin ]
+  before_script:
+    - *prepare_gradle
+    - mv server/build/distributions/server*.tar server.tar
+    - tar -xf server.tar
+  script:
+    - "formulaide_allow_init=true formulaide_allow_unsafe_cookie=true ./server-*/bin/server --init &"
+    - sleep 5
+    - "./gradlew :client:jvmTest"
+  artifacts:
+    reports:
+      junit: client/build/test-results/jvmTest/**/TEST-*.xml
+
 ui-test:
   image: $JS_CHROME_IMAGE
   stage: test

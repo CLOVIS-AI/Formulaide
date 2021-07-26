@@ -1,5 +1,7 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="All Tests" type="GradleRunConfiguration" factoryName="Gradle">
+  <configuration default="false" name="Server » Run with frontend" type="GradleRunConfiguration" factoryName="Gradle">
+    <output_file path="$PROJECT_DIR$/server/build/server.logs" is_save="true" />
+    <log_file alias="logs" path="$PROJECT_DIR$/server/build/server.logs" />
     <ExternalSystemSettings>
       <option name="env">
         <map>
@@ -7,21 +9,16 @@
         </map>
       </option>
       <option name="executionName" />
-      <option name="externalProjectPath" value="$PROJECT_DIR$" />
+      <option name="externalProjectPath" value="$PROJECT_DIR$/server" />
       <option name="externalSystemIdString" value="GRADLE" />
-      <option name="scriptParameters" value="" />
+      <option name="scriptParameters" value="run" />
       <option name="taskDescriptions">
         <list />
       </option>
       <option name="taskNames">
-        <list>
-          <option value="test" />
-          <option value="jsBrowserTest" />
-          <option value="browserTest" />
-          <option value="jvmTest" />
-        </list>
+        <list />
       </option>
-      <option name="vmOptions" value="" />
+      <option name="vmOptions" />
     </ExternalSystemSettings>
     <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
     <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>

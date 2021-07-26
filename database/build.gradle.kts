@@ -20,6 +20,8 @@ dependencies {
 	implementation(kmongo("kmongo-coroutine-serialization"))
 
 	implementation(kotlinxSerialization("json"))
+
+	implementation(logback("classic"))
 }
 
 tasks.jacocoTestReport {

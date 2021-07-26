@@ -18,6 +18,7 @@ kotlin {
 			}
 		}
 	}
+	jvm()
 
 	@kotlin.Suppress("UNUSED_VARIABLE")
 	sourceSets {
@@ -37,10 +38,23 @@ kotlin {
 			}
 		}
 
+		val jvmMain by getting {
+			dependencies {
+				implementation(ktorClient("apache"))
+				implementation(logback("classic"))
+			}
+		}
+
 		val commonTest by getting {
 			dependencies {
 				implementation(kotlin("test-common"))
 				implementation(kotlin("test-annotations-common"))
+			}
+		}
+
+		val jvmTest by getting {
+			dependencies {
+				implementation(kotlin("test-junit"))
 			}
 		}
 
