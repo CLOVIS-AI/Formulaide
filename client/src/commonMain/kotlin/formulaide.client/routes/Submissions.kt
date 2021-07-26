@@ -16,5 +16,5 @@ import formulaide.client.Client
  * @see FormSubmission
  * @see createSubmission
  */
-suspend fun Client.submitForm(submission: FormSubmission) =
-	post<String>("/submissions/create", body = submission)
+suspend fun Client.submitForm(submission: FormSubmission): String =
+	post("/submissions/create", body = submission)

@@ -10,8 +10,8 @@ import formulaide.client.Client
  * - Body: [PasswordLogin]
  * - Response: [TokenResponse]
  */
-suspend fun Client.login(passwordLogin: PasswordLogin) =
-	post<TokenResponse>("/users/login", body = passwordLogin)
+suspend fun Client.login(passwordLogin: PasswordLogin): TokenResponse =
+	post("/users/login", body = passwordLogin)
 
 /**
  * Creates a new user.
@@ -21,8 +21,8 @@ suspend fun Client.login(passwordLogin: PasswordLogin) =
  * - Body: [NewUser]
  * - Response: [TokenResponse]
  */
-suspend fun Client.Authenticated.createUser(newUser: NewUser) =
-	post<TokenResponse>("/users/create", body = newUser)
+suspend fun Client.Authenticated.createUser(newUser: NewUser): TokenResponse =
+	post("/users/create", body = newUser)
 
 /**
  * Gets the current user's data.
@@ -31,8 +31,8 @@ suspend fun Client.Authenticated.createUser(newUser: NewUser) =
  * - Requires authentication
  * - Response: [User]
  */
-suspend fun Client.Authenticated.getMe() =
-	get<User>("/users/me")
+suspend fun Client.Authenticated.getMe(): User =
+	get("/users/me")
 
 /**
  * Edits a [user]'s information.
@@ -48,8 +48,8 @@ suspend fun Client.Authenticated.editUser(
 	user: User,
 	enabled: Boolean? = null,
 	administrator: Boolean? = null,
-) =
-	post<User>("/users/edit", body = UserEdits(user.email, enabled, administrator))
+): User =
+	post("/users/edit", body = UserEdits(user.email, enabled, administrator))
 
 /**
  * Edits a user's password.
@@ -59,8 +59,8 @@ suspend fun Client.Authenticated.editUser(
  * - Body: [PasswordEdit]
  * - Response: a success message
  */
-suspend fun Client.Authenticated.editPassword(edit: PasswordEdit) =
-	post<String>("/users/password", body = edit)
+suspend fun Client.Authenticated.editPassword(edit: PasswordEdit): String =
+	post("/users/password", body = edit)
 
 /**
  * Gets the list of [users][User].
@@ -71,5 +71,5 @@ suspend fun Client.Authenticated.editPassword(edit: PasswordEdit) =
  *
  * @param evenDisabled If `true`, users that are disabled are queried as well.
  */
-suspend fun Client.Authenticated.listUsers(evenDisabled: Boolean = false) =
-	get<List<User>>(if (!evenDisabled) "/users/listEnabled" else "/users/listAll")
+suspend fun Client.Authenticated.listUsers(evenDisabled: Boolean = false): List<User> =
+	get(if (!evenDisabled) "/users/listEnabled" else "/users/listAll")

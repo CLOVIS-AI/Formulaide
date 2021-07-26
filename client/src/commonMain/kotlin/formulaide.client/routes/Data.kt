@@ -10,8 +10,8 @@ import formulaide.client.Client
  * - Requires 'employee' authentication
  * - Response: list of [Composite]
  */
-suspend fun Client.Authenticated.listData() =
-	get<List<Composite>>("/data/list")
+suspend fun Client.Authenticated.listData(): List<Composite> =
+	get("/data/list")
 
 /**
  * Creates a new [Composite].
@@ -21,5 +21,5 @@ suspend fun Client.Authenticated.listData() =
  * - Body: [Composite]
  * - Response: [Composite]
  */
-suspend fun Client.Authenticated.createData(newData: Composite) =
-	post<Composite>("/data/create", body = newData)
+suspend fun Client.Authenticated.createData(newData: Composite): Composite =
+	post("/data/create", body = newData)
