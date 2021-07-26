@@ -41,6 +41,7 @@ kotlin {
 		val jvmMain by getting {
 			dependencies {
 				implementation(ktorClient("apache"))
+				implementation(logback("classic"))
 			}
 		}
 
