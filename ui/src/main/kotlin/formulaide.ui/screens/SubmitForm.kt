@@ -90,6 +90,7 @@ fun SubmitForm(formRef: Ref<Form>) = fc<RProps> {
 				.filterValues { it.isNotBlank() }
 
 			val submission = FormSubmission(
+				Ref.SPECIAL_TOKEN_NEW,
 				form.createRef(),
 				data = answers
 			).also { it.checkValidity(form) }
