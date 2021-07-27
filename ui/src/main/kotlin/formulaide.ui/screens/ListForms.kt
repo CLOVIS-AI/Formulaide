@@ -95,6 +95,7 @@ internal val ActionDescription = fc<ActionDescriptionProps> { props ->
 	val (client) = useClient()
 	val user by useUser()
 	val scope = useAsync()
+	val (_, navigateTo) = useNavigation()
 
 	var records by useState(emptyList<Record>())
 	useEffect(client, user) {
@@ -105,10 +106,10 @@ internal val ActionDescription = fc<ActionDescriptionProps> { props ->
 	}
 
 	val stateName = when (state) {
-		//TODO: replace by the action's name after #109
-		is RecordState.Action -> state.current.obj.id.takeIf { user?.service?.id == state.current.obj.reviewer.id }
-		is RecordState.Done -> "Acceptés"
-		is RecordState.Refused -> "Refusés"
+		is RecordState.Action -> state.displayName()
+			.takeIf { user?.service?.id == state.current.obj.reviewer.id }
+		is RecordState.Done -> state.displayName()
+		is RecordState.Refused -> state.displayName()
 	}
 	if (stateName != null) {
 		val title = stateName +
@@ -119,6 +120,6 @@ internal val ActionDescription = fc<ActionDescriptionProps> { props ->
 					else -> ""
 				}
 
-		styledButton(title, action = {})
+		styledButton(title, action = { navigateTo(Screen.Review(form, state, records)) })
 	}
 }
