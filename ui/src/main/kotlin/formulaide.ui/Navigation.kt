@@ -1,12 +1,12 @@
 package formulaide.ui
 
 import formulaide.api.data.Form
+import formulaide.api.data.Record
+import formulaide.api.data.RecordState
 import formulaide.api.types.Email
 import formulaide.api.types.Ref
 import formulaide.api.users.User
 import formulaide.ui.Role.Companion.role
-import formulaide.ui.auth.LoginAccess
-import formulaide.ui.auth.PasswordModification
 import formulaide.ui.components.styledButton
 import formulaide.ui.components.styledCard
 import formulaide.ui.components.styledDisabledButton
@@ -24,6 +24,7 @@ import react.dom.div
 private val currentScreen = GlobalState(getScreenFromWindow() ?: Screen.Home)
 	.apply { subscribers.add { window.history.pushState(null, it.displayName, "?d=${it.route}") } }
 	.apply { subscribers.add { document.title = "${it.displayName} • Formulaide" } }
+
 fun RBuilder.useNavigation() = useGlobalState(currentScreen)
 
 abstract class Screen(
@@ -55,6 +56,12 @@ abstract class Screen(
 		       Role.ANONYMOUS,
 		       { formulaide.ui.screens.SubmitForm(form) },
 		       "submit-${form.id}")
+
+	class Review(form: Form, state: RecordState, records: List<Record>) :
+		Screen("Vérification",
+		       Role.EMPLOYEE,
+		       { formulaide.ui.screens.Review(form, state, records) },
+		       "review")
 
 	companion object {
 		val regularScreens =
