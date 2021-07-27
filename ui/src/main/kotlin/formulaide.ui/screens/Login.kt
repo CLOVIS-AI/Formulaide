@@ -1,20 +1,20 @@
 package formulaide.ui.screens
 
+import formulaide.api.data.Form
 import formulaide.api.types.Email
 import formulaide.api.users.PasswordEdit
 import formulaide.api.users.PasswordLogin
 import formulaide.client.Client
 import formulaide.client.routes.editPassword
 import formulaide.client.routes.login
+import formulaide.client.routes.todoList
 import formulaide.ui.*
 import formulaide.ui.components.*
 import formulaide.ui.utils.text
 import kotlinx.html.InputType
 import org.w3c.dom.HTMLInputElement
-import react.RProps
-import react.child
-import react.fc
-import react.useRef
+import react.*
+import react.dom.p
 
 /**
  * A login widget that requests an email and a password, and then updates the application's [client][client] by connecting to the server.
@@ -159,6 +159,38 @@ val LoginAccess = fc<RProps> {
 				navigateTo(Screen.EditPassword(user.email,
 				                               Screen.Home))
 			}
-		) {}
+		) {
+			child(FormsToReview)
+		}
+	}
+}
+
+val FormsToReview = fc<RProps> {
+	val scope = useAsync()
+
+	val (client) = useClient()
+	if (client !is Client.Authenticated) {
+		p { text("Seuls les utilisateurs connectés peuvent voir la liste des formulaires qui les attendent") }
+		return@fc
+	}
+
+	var forms by useState(emptyList<Form>())
+	var loadingMessage by useState("Chargement des formulaires en cours…")
+	if (forms.isEmpty())
+		p { text(loadingMessage) }
+
+	useEffect(client) {
+		scope.reportExceptions {
+			forms = client.todoList()
+			loadingMessage = "Vous n'avez aucun formulaire à vérifier"
+		}
+	}
+
+	for (form in forms) {
+		child(FormDescription) {
+			attrs {
+				this.form = form
+			}
+		}
 	}
 }
