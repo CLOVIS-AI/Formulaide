@@ -1,4 +1,4 @@
-package formulaide.ui.auth
+package formulaide.ui.screens
 
 import formulaide.api.types.Email
 import formulaide.api.users.PasswordEdit
