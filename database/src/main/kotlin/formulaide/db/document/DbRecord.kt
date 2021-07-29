@@ -7,6 +7,7 @@ import formulaide.api.types.Ref.Companion.load
 import formulaide.db.Database
 import org.litote.kmongo.div
 import org.litote.kmongo.eq
+import org.litote.kmongo.newId
 import java.time.Instant
 
 suspend fun Database.createRecord(submission: FormSubmission) {
@@ -17,6 +18,7 @@ suspend fun Database.createRecord(submission: FormSubmission) {
 		form.actions.firstOrNull()?.let { RecordState.Action(it.createRef()) } ?: RecordState.Done
 
 	val record = Record(
+		newId<Record>().toString(),
 		form.createRef(),
 		state,
 		submissions = listOf(submission.createRef()),

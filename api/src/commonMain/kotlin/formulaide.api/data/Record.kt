@@ -1,6 +1,8 @@
 package formulaide.api.data
 
 import formulaide.api.types.Ref
+import formulaide.api.types.Referencable
+import formulaide.api.types.ReferenceId
 import formulaide.api.users.User
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -15,11 +17,12 @@ import formulaide.api.data.Action as FormAction
  */
 @Serializable
 data class Record(
+	override val id: ReferenceId,
 	val form: Ref<Form>,
 	val state: RecordState,
 	val submissions: List<Ref<FormSubmission>>,
 	val history: List<RecordStateTransition>,
-) {
+) : Referencable {
 
 	companion object {
 		const val MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION = 100
