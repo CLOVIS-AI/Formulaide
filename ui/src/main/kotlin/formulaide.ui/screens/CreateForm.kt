@@ -8,6 +8,7 @@ import formulaide.api.fields.SimpleField
 import formulaide.api.types.Arity
 import formulaide.api.types.Ref
 import formulaide.api.types.Ref.Companion.createRef
+import formulaide.api.users.Service
 import formulaide.client.Client
 import formulaide.client.routes.createForm
 import formulaide.ui.*
@@ -103,35 +104,10 @@ val CreateForm = fc<RProps> { _ ->
 		styledField("new-form-actions", "Étapes") {
 			for ((i, action) in actions.sortedBy { it.order }.withIndex()) {
 				styledNesting(depth = 0, fieldNumber = i) {
-					styledField("new-form-action-${action.id}-select",
-					            "Choix du service") {
-						styledSelect {
-							for (service in services.filter { it.open }) {
-								option {
-									text(service.name)
+					actionReviewerSelection(action, services,
+					                        replace = { actions = actions.replace(i, it) })
 
-									attrs {
-										value = service.id
-										selected = action.reviewer.id == service.id
-									}
-								}
-							}
-
-							attrs {
-								onChangeFunction = { event ->
-									val serviceId = (event.target as HTMLSelectElement).value
-									val service = services.find { it.id == serviceId }
-										?: error("Impossible de trouver le service '$serviceId'")
-
-									actions = actions.replace(i,
-									                          Action(action.id,
-									                                 action.order,
-									                                 service.createRef())
-									)
-								}
-							}
-						}
-					}
+					actionFields(action, replace = { actions = actions.replace(i, it) })
 				}
 			}
 			styledButton("Ajouter une étape", action = {
@@ -142,5 +118,76 @@ val CreateForm = fc<RProps> { _ ->
 				)
 			})
 		}
+	}
+}
+
+private fun RBuilder.actionReviewerSelection(
+	action: Action,
+	services: List<Service>,
+	replace: (Action) -> Unit,
+) {
+	styledField("new-form-action-${action.id}-select",
+	            "Choix du service") {
+		styledSelect {
+			for (service in services.filter { it.open }) {
+				option {
+					text(service.name)
+
+					attrs {
+						value = service.id
+						selected = action.reviewer.id == service.id
+					}
+				}
+			}
+
+			attrs {
+				onChangeFunction = { event ->
+					val serviceId = (event.target as HTMLSelectElement).value
+					val service = services.find { it.id == serviceId }
+						?: error("Impossible de trouver le service '$serviceId'")
+
+					replace(Action(
+						action.id,
+						action.order,
+						service.createRef())
+					)
+				}
+			}
+		}
+	}
+}
+
+private fun RBuilder.actionFields(
+	action: Action,
+	replace: (Action) -> Unit,
+) {
+	val root = action.fields ?: FormRoot(emptyList())
+
+	styledField("new-form-action-${action.id}-fields", "Champs réservés à l'administration") {
+		for ((i, field) in root.fields.withIndex()) {
+			child(FieldEditor) {
+				attrs {
+					this.field = field
+					this.replace = {
+						val newFields = root.fields.replace(i, it as ShallowFormField)
+						replace(action.copy(fields = FormRoot(newFields)))
+					}
+
+					depth = 1
+					fieldNumber = i
+				}
+			}
+		}
+
+		styledButton("Ajouter un champ", action = {
+			val newFields = root.fields + ShallowFormField.Simple(
+				root.fields.size.toString(),
+				root.fields.size,
+				"Nouveau champ",
+				SimpleField.Text(Arity.mandatory()),
+			)
+
+			replace(action.copy(fields = FormRoot(newFields)))
+		})
 	}
 }
