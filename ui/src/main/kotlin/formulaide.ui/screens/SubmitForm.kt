@@ -93,7 +93,7 @@ fun SubmitForm(formRef: Ref<Form>) = fc<RProps> {
 				Ref.SPECIAL_TOKEN_NEW,
 				form.createRef(),
 				data = answers
-			).also { it.checkValidity(form) }
+			).also { it.parse(form) }
 
 			launch {
 				client.submitForm(submission)

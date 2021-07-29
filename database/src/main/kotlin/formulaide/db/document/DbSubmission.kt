@@ -24,7 +24,7 @@ suspend fun Database.saveSubmission(submission: FormSubmission): DbSubmission {
 
 	form.load(composites)
 	form.validate()
-	submission.checkValidity(form)
+	submission.parse(form)
 
 	return DbSubmission(
 		form = form.id,
