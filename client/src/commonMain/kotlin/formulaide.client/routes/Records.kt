@@ -1,9 +1,6 @@
 package formulaide.client.routes
 
-import formulaide.api.data.Form
-import formulaide.api.data.Record
-import formulaide.api.data.RecordState
-import formulaide.api.data.RecordsToReviewRequest
+import formulaide.api.data.*
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.client.Client
 
@@ -27,3 +24,14 @@ suspend fun Client.Authenticated.todoList(): List<Form> =
  */
 suspend fun Client.Authenticated.todoListFor(form: Form, state: RecordState): List<Record> =
 	post("/submissions/recordsToReview", body = RecordsToReviewRequest(form.createRef(), state))
+
+/**
+ * Edits a [Record] (for example to edit its [state][Record.state]).
+ *
+ * - POST /submissions/review
+ * - Requires 'employee' authentication
+ * - Body: [ReviewRequest]
+ * - Response: `"Success"`
+ */
+suspend fun Client.Authenticated.review(review: ReviewRequest): String =
+	post("/submissions/review", body = review)

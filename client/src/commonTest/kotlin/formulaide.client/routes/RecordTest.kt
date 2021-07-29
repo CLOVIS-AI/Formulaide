@@ -3,6 +3,8 @@ package formulaide.client.routes
 import formulaide.api.data.Action
 import formulaide.api.data.FormSubmission.Companion.createSubmission
 import formulaide.api.data.RecordState
+import formulaide.api.data.RecordStateTransition
+import formulaide.api.data.ReviewRequest
 import formulaide.api.dsl.form
 import formulaide.api.dsl.formRoot
 import formulaide.api.dsl.simple
@@ -39,6 +41,8 @@ class RecordTest {
 		lateinit var favoriteAnimal: ShallowFormField.Union
 		lateinit var cat: ShallowFormField.Simple
 		lateinit var dog: ShallowFormField.Simple
+		lateinit var action0: Action
+		lateinit var reviewText: ShallowFormField.Simple
 		val assignedForm = admin.createForm(form(
 			"Test de suivi, assigné à l'utilisateur de test",
 			public = false,
@@ -51,7 +55,14 @@ class RecordTest {
 					dog = simple("Chien", Message)
 				}
 			},
-			Action("0", 0, me.service),
+			Action(
+				"0",
+				0,
+				me.service,
+				formRoot {
+					reviewText = simple("Un texte normal", Text(Arity.mandatory()))
+				}
+			).also { action0 = it },
 			Action("1", 1, otherService.createRef()),
 			Action("2", 2, me.service),
 		))
@@ -110,6 +121,39 @@ class RecordTest {
 		assertEquals(betaSubmission.form, betaSubmissionActual.form)
 		assertEquals(betaSubmission.root, betaSubmissionActual.root)
 		assertEquals(betaSubmission.data, betaSubmissionActual.data)
+
+		client.review(ReviewRequest(
+			alphaSubmissionActualList.first().createRef(),
+			RecordStateTransition(
+				timestamp = Long.MAX_VALUE,
+				previousState = RecordState.Action(Ref("0")),
+				nextState = RecordState.Action(Ref("1")),
+				assignee = me.createRef(),
+				reason = null,
+			),
+			fields = assignedForm.createSubmission(action0) {
+				text(reviewText, "J'accepte le passage à l'étape suivante")
+			}
+		))
+
+		client.review(ReviewRequest(
+			betaSubmissionActualList.first().createRef(),
+			RecordStateTransition(
+				timestamp = Long.MAX_VALUE,
+				previousState = RecordState.Action(Ref("0")),
+				nextState = RecordState.Refused,
+				assignee = me.createRef(),
+				reason = "Je n'aime pas cette réponse",
+			),
+			fields = null,
+		))
+
+		assertEquals(1,
+		             client.todoListFor(assignedForm, RecordState.Action(Ref("1")))
+			             .also { println("Étape 1 : $it") }.size)
+		assertEquals(1,
+		             client.todoListFor(assignedForm, RecordState.Refused)
+			             .also { println("Refusés : $it") }.size)
 
 		// Cleanup…
 		admin.closeService(otherService)

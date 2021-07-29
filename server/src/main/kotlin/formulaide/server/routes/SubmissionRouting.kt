@@ -2,6 +2,7 @@ package formulaide.server.routes
 
 import formulaide.api.data.FormSubmission
 import formulaide.api.data.RecordsToReviewRequest
+import formulaide.api.data.ReviewRequest
 import formulaide.db.document.*
 import formulaide.server.Auth
 import formulaide.server.Auth.Companion.requireEmployee
@@ -18,6 +19,8 @@ fun Routing.submissionRoutes() {
 		post("/create") {
 			val submission = call.receive<FormSubmission>()
 
+			require(submission.root == null) { "L'endpoint /submissions/create ne peut être utilisé que pour les saisies originelles, pas pour la vérification." }
+
 			val dbSubmission = database.saveSubmission(submission)
 			database.createRecord(dbSubmission.toApi())
 
@@ -25,6 +28,15 @@ fun Routing.submissionRoutes() {
 		}
 
 		authenticate(Auth.Employee) {
+
+			post("/review") {
+				val employee = call.requireEmployee(database)
+				val review = call.receive<ReviewRequest>()
+
+				database.reviewRecord(review, employee)
+
+				call.respond("Success")
+			}
 
 			post("/get") {
 				call.requireEmployee(database)

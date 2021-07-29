@@ -83,8 +83,19 @@ data class RecordStateTransition(
 	}
 }
 
+//region API request objects
+
 @Serializable
 data class RecordsToReviewRequest(
 	val form: Ref<Form>,
 	val state: RecordState,
 )
+
+@Serializable
+data class ReviewRequest(
+	val record: Ref<Record>,
+	val transition: RecordStateTransition,
+	val fields: FormSubmission?,
+)
+
+//endregion

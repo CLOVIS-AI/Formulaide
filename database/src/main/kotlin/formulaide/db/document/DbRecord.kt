@@ -2,6 +2,7 @@ package formulaide.db.document
 
 import formulaide.api.data.*
 import formulaide.api.types.Ref
+import formulaide.api.types.Ref.Companion.SPECIAL_TOKEN_NEW
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.types.Ref.Companion.load
 import formulaide.db.Database
@@ -32,6 +33,54 @@ suspend fun Database.createRecord(submission: FormSubmission) {
 	)
 
 	records.insertOne(record)
+}
+
+suspend fun Database.reviewRecord(review: ReviewRequest, employee: DbUser) {
+	val record = records.findOne(Record::id eq review.record.id)
+		?: error("Impossible de trouver le dossier ${review.record.id}")
+	record.form.load {
+		findForm(it) ?: error("Impossible de trouver le formulaire ${record.form.id}")
+	}
+
+	require(record.state == review.transition.previousState) { "Il n'est pas possible de transférer le dossier depuis l'étape ${review.transition.previousState} alors qu'il est actuellement dans l'état ${record.state}" }
+	require(employee.email == review.transition.assignee?.id) { "Il est interdit d'attribuer la modification à quelqu'un d'autre que soit-même" }
+	require(review.transition.timestamp > record.history.maxOf { it.timestamp }) { "Une modification doit être plus récente que toutes les modifications déjà appliquées" }
+
+	val submissionToCreate: DbSubmission?
+	val previous = review.transition.previousState
+	val next = review.transition.nextState
+	when {
+		next is RecordState.Refused -> {
+			require(review.fields == null) { "Une transition depuis l'état ${RecordState.Refused} ne peut pas contenir de champs" }
+
+			submissionToCreate = null
+		}
+		previous is RecordState.Action -> {
+			previous.current.loadFrom(record.form.obj.actions, lazy = false, allowNotFound = false)
+
+			val submission = review.fields
+				?: FormSubmission(SPECIAL_TOKEN_NEW,
+				                  record.form,
+				                  previous.current,
+				                  emptyMap())
+			submissionToCreate = saveSubmission(submission)
+		}
+		else -> {
+			require(review.fields == null) { "Une transition depuis l'état ${RecordState.Done} ou ${RecordState.Refused} ne peut pas contenir de champs" }
+
+			submissionToCreate = null
+		}
+	}
+
+	val newRecord = record.copy(
+		state = review.transition.nextState,
+		submissions = record.submissions +
+				(if (submissionToCreate != null) listOf(submissionToCreate.toApi().createRef())
+				else emptyList()),
+		history = record.history + review.transition
+	)
+
+	records.updateOne(Record::id eq record.id, newRecord)
 }
 
 suspend fun Database.findFormsAssignedTo(user: DbUser): List<Form> {
