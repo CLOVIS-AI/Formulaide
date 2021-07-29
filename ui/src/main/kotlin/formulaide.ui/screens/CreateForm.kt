@@ -106,7 +106,7 @@ val CreateForm = fc<RProps> { _ ->
 					styledField("new-form-action-${action.id}-select",
 					            "Choix du service") {
 						styledSelect {
-							for (service in services) {
+							for (service in services.filter { it.open }) {
 								option {
 									text(service.name)
 
