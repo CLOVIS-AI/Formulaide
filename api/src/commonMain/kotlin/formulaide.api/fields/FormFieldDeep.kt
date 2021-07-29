@@ -89,7 +89,7 @@ sealed class DeepFormField : FormField, Field.Reference<DataField> {
 			dataField.simple.validateCompatibility(simple)
 		}
 
-		override fun toString() = "Deep.Simple($ref, $simple)"
+		override fun toString() = "Deep.Simple($ref, $simple)" + super.toString()
 	}
 
 	/**
@@ -134,7 +134,7 @@ sealed class DeepFormField : FormField, Field.Reference<DataField> {
 			require(dataField.options.ids() == options.ids()) { "Ce champ est de type UNION, et référence un champ ayant comme options ${dataField.options} mais n'autorise que les options $options" }
 		}
 
-		override fun toString() = "Deep.Union($ref, $arity, $options)"
+		override fun toString() = "Deep.Union($ref, $arity, $options)" + super.toString()
 	}
 
 	/**
@@ -180,8 +180,10 @@ sealed class DeepFormField : FormField, Field.Reference<DataField> {
 			require(dataField is DataField.Composite) { "Ce champ est de type COMPOSITE, mais il référence un champ de type ${dataField::class}" }
 		}
 
-		override fun toString() = "Deep.Composite($ref, $arity, $fields)"
+		override fun toString() = "Deep.Composite($ref, $arity, $fields)" + super.toString()
 	}
+
+	override fun toString(): String = if (ref.loaded) " -> $dataField" else ""
 
 	companion object {
 
