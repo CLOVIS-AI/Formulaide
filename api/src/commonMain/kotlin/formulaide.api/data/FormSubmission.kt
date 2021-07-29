@@ -2,6 +2,7 @@ package formulaide.api.data
 
 import formulaide.api.data.FormSubmission.Companion.createSubmission
 import formulaide.api.data.FormSubmission.ReadOnlyAnswer.Companion.asAnswer
+import formulaide.api.dsl.formRoot
 import formulaide.api.fields.Field
 import formulaide.api.fields.FormField
 import formulaide.api.fields.ShallowFormField
@@ -135,7 +136,7 @@ data class FormSubmission(
 			null -> form.mainFields
 			else -> {
 				root.loadFrom(form.actions, allowNotFound = false)
-				root.obj.fields
+				root.obj.fields ?: formRoot {}
 			}
 		}
 

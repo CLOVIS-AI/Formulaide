@@ -17,7 +17,5 @@ data class Action(
 	override val id: ReferenceId,
 	override val order: Int,
 	val reviewer: Ref<Service>,
-) : OrderedListElement, Referencable {
-
-	val fields: FormRoot get() = TODO("Will be implemented in #102")
-}
+	val fields: FormRoot? = null,
+) : OrderedListElement, Referencable
