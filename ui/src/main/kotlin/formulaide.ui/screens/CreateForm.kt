@@ -62,21 +62,6 @@ val CreateForm = fc<RProps> { _ ->
 				navigateTo(Screen.ShowForms)
 			}
 		},
-		"Ajouter un champ" to {
-			fields = fields + ShallowFormField.Simple(
-				order = fields.size,
-				id = fields.size.toString(),
-				name = "Nouveau champ",
-				simple = SimpleField.Text(Arity.optional())
-			)
-		},
-		"Ajouter une étape" to {
-			actions = actions + Action(
-				id = actions.size.toString(),
-				order = actions.size,
-				services.getOrNull(0)?.createRef() ?: error("Aucun service n'a été trouvé")
-			)
-		}
 	) {
 		styledField("new-form-name", "Nom") {
 			styledInput(InputType.text, "new-form-name", required = true, ref = formName) {
@@ -91,27 +76,33 @@ val CreateForm = fc<RProps> { _ ->
 		}
 
 		styledField("new-form-fields", "Champs") {
-			styledNesting {
-				for ((i, field) in fields.sortedBy { it.order }.withIndex()) {
-					child(FieldEditor) {
-						attrs {
-							this.field = field
-							this.replace = {
-								fields = fields.replace(i, it as ShallowFormField)
-							}
-
-							depth = 0
-							fieldNumber = i
+			for ((i, field) in fields.sortedBy { it.order }.withIndex()) {
+				child(FieldEditor) {
+					attrs {
+						this.field = field
+						this.replace = {
+							fields = fields.replace(i, it as ShallowFormField)
 						}
+
+						depth = 0
+						fieldNumber = i
 					}
 				}
 			}
+
+			styledButton("Ajouter un champ", action = {
+				fields = fields + ShallowFormField.Simple(
+					order = fields.size,
+					id = fields.size.toString(),
+					name = "Nouveau champ",
+					simple = SimpleField.Text(Arity.optional())
+				)
+			})
 		}
 
 		styledField("new-form-actions", "Étapes") {
-			styledNesting {
-				for ((i, action) in actions.sortedBy { it.order }.withIndex()) {
-
+			for ((i, action) in actions.sortedBy { it.order }.withIndex()) {
+				styledNesting(depth = 0, fieldNumber = i) {
 					styledField("new-form-action-${action.id}-select",
 					            "Choix du service") {
 						styledSelect {
@@ -143,6 +134,13 @@ val CreateForm = fc<RProps> { _ ->
 					}
 				}
 			}
+			styledButton("Ajouter une étape", action = {
+				actions = actions + Action(
+					id = actions.size.toString(),
+					order = actions.size,
+					services.getOrNull(0)?.createRef() ?: error("Aucun service n'a été trouvé")
+				)
+			})
 		}
 	}
 }

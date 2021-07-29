@@ -47,14 +47,6 @@ val CreateData = fc<RProps> { _ ->
 				navigateTo(Screen.ShowData)
 			}
 		},
-		"Ajouter un champ" to {
-			fields = fields + DataField.Simple(
-				order = fields.size,
-				id = fields.size.toString(),
-				name = "Nouveau champ",
-				simple = SimpleField.Text(Arity.optional())
-			)
-		},
 	) {
 		styledField("new-data-name", "Nom") {
 			styledInput(InputType.text, "new-data-name", required = true, ref = formName) {
@@ -63,21 +55,28 @@ val CreateData = fc<RProps> { _ ->
 		}
 
 		styledField("data-fields", "Champs") {
-			styledNesting {
-				for ((i, field) in fields.sortedBy { it.order }.withIndex()) {
-					child(FieldEditor) {
-						attrs {
-							this.field = field
-							replace = {
-								fields = fields.replace(i, it as DataField)
-							}
-
-							depth = 0
-							fieldNumber = i
+			for ((i, field) in fields.sortedBy { it.order }.withIndex()) {
+				child(FieldEditor) {
+					attrs {
+						this.field = field
+						replace = {
+							fields = fields.replace(i, it as DataField)
 						}
+
+						depth = 0
+						fieldNumber = i
 					}
 				}
 			}
+
+			styledButton("Ajouter un champ", action = {
+				fields = fields + DataField.Simple(
+					order = fields.size,
+					id = fields.size.toString(),
+					name = "Nouveau champ",
+					simple = SimpleField.Text(Arity.optional())
+				)
+			})
 		}
 	}
 }
