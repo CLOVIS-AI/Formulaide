@@ -2,6 +2,7 @@ package formulaide.api.data
 
 import formulaide.api.data.FormSubmission.Companion.createSubmission
 import formulaide.api.data.FormSubmission.ReadOnlyAnswer.Companion.asAnswer
+import formulaide.api.dsl.formRoot
 import formulaide.api.fields.Field
 import formulaide.api.fields.FormField
 import formulaide.api.fields.ShallowFormField
@@ -10,7 +11,6 @@ import formulaide.api.types.Arity
 import formulaide.api.types.Ref
 import formulaide.api.types.Ref.Companion.SPECIAL_TOKEN_NEW
 import formulaide.api.types.Ref.Companion.createRef
-import formulaide.api.types.Ref.Companion.ids
 import formulaide.api.types.Referencable
 import formulaide.api.types.ReferenceId
 import kotlinx.serialization.Serializable
@@ -118,24 +118,17 @@ data class FormSubmission(
 	val data: Map<String, String>,
 ) : Referencable {
 
-	//region Check validity
+	//region Parsing
 
-	/**
-	 * Checks the validity of this [FormSubmission].
-	 *
-	 * It is expected that the form is validated and loaded (see [Form.validate]).
-	 *
-	 * @throws IllegalStateException if the submission is invalid.
-	 */
-	fun checkValidity(form: Form) {
+	fun parse(form: Form): ParsedSubmission {
 		this.form.load(form)
-		println("\nChecking validity of $this…")
+		println("\nParsing $this…")
 
 		val selectedRoot = when (root) {
 			null -> form.mainFields
 			else -> {
 				root.loadFrom(form.actions, allowNotFound = false)
-				root.obj.fields
+				root.obj.fields ?: formRoot {}
 			}
 		}
 
@@ -146,109 +139,122 @@ data class FormSubmission(
 			.toList()
 			.asAnswer()
 
-		for (field in selectedRoot.fields) {
-			println("• Top-level field ${field.id}, ‘${field.name}’")
-			checkField(field, topLevelAnswer)
-		}
+		return selectedRoot.fields.mapNotNull { field ->
+			parseFieldWithArity(emptyList(), field, topLevelAnswer.components[field.id])
+		}.let { ParsedSubmission(it) }
 	}
 
-	/**
-	 * Checks that a specific [field] validates all its constraints.
-	 */
-	private fun checkField(
-		field: FormField,
-		answer: ReadOnlyAnswer,
-	) {
-		// Checking field.id
-		val childAnswerOrNull = answer.components[field.id]
-
-		// Checking field.arity
-		val childrenAnswers = checkArity(field, childAnswerOrNull)
-
-		// Checking field type for each answer
-		for (childAnswer in childrenAnswers) {
-			@Suppress("UNUSED_VARIABLE") // force exhaustive when
-			val e = when (field) {
-				is FormField.Simple -> checkSimple(field, childAnswer)
-				is FormField.Union<*> -> checkUnion(field, childAnswer)
-				is FormField.Composite -> checkComposite(field, childAnswer)
-			}
-		}
-	}
-
-	/**
-	 * Checks that an [answer] corresponds to [field]'s [arity][Field.arity].
-	 */
-	private fun checkArity(
-		field: FormField,
+	private fun <F : FormField> parseFieldWithArity(
+		parent: List<String>,
+		field: F,
 		answer: ReadOnlyAnswer?,
-	): List<ReadOnlyAnswer> {
+	): ParsedField<F>? {
 		val fieldArity =
 			if (field is Field.Simple && field.simple == Message) Arity.forbidden()
 			else field.arity
 
-		val answers = when {
-			answer == null -> emptyList()
-			fieldArity.max > 1 -> answer.components.map { (_, value) -> value }
-			else -> listOf(answer)
-		}
-		require(answers.size in fieldArity.range) { "${fieldErrorMessage(field)} a une arité de ${fieldArity}, mais ${answers.size} valeurs ont été données : $answer" }
-		return answers
-	}
+		return when {
+			fieldArity.max > 1 -> {
+				val answers = answer
+					?.components
+					?.map { (_, value) -> value }
+					?: emptyList()
+				println("$parent ${field.id} -> list of ${answers.size} elements ; the keys of the children will be incorrect in the logs")
 
-	private fun checkComposite(
-		field: FormField.Composite,
-		answer: ReadOnlyAnswer,
-	) {
-		for (compositeField in field.fields) {
-			println("• Field ${compositeField.id}, ’${compositeField.name}’")
+				require(answers.size in fieldArity.range) { "${fieldErrorMessage(field)} a une arité de ${fieldArity}, mais ${answers.size} valeurs ont été données : $answer" }
 
-			// Finding the FormField that corresponds to this CompoundDataField
-			val formField = field.fields.find { it.id == compositeField.id }
-			requireNotNull(formField) { "La donnée '${field.name}' ('${field.id}') a un champ ${compositeField.id}, mais le formulaire donné n'a pas de champ équivalent : ${field.fields.ids()}" }
-
-			checkField(formField, answer)
-		}
-	}
-
-	private fun checkUnion(
-		field: FormField.Union<*>,
-		answer: ReadOnlyAnswer,
-	) {
-		val selectedId = answer.value
-			?: error("${fieldErrorMessage(field)} est une union, elle doit avoir une unique valeur ; trouvé le choix ${answer.value}")
-		val selectedField = field.options.find { it.id == selectedId }
-			?: error("${fieldErrorMessage(field)} est une union, mais le choix donné ne correspond à aucun des choix disponibles : $selectedId")
-
-		val selectedChildren = checkArity(
-			selectedField,
-			answer.takeIf { it.components.isNotEmpty() }
-				?.copy(value = null)
-		)
-		require(selectedChildren.size <= 1) { "${fieldErrorMessage(field)} est une union, elle ne peut pas avoir plus d'une valeur ; trouvé les clefs ${answer.components.map { it.key }}" }
-		val selectedChild =
-			selectedChildren.firstOrNull() // we can't lose data because the max size is 1
-
-		if (selectedChild != null) {
-			@Suppress("UNUSED_VARIABLE") // The variable is there to force the 'when' to be exhaustive
-			val e = when (val formField: FormField = selectedField) {
-				is FormField.Composite -> checkComposite(formField, selectedChild)
-				is FormField.Union<*> -> checkUnion(formField, selectedChild)
-				is FormField.Simple -> checkSimple(formField, selectedChild)
+				val parsedAnswers = answers.mapNotNull { parseField(parent + field.id, field, it) }
+				ParsedList(field, parsedAnswers)
+					.apply {
+						parsedAnswers.forEachIndexed { index, it ->
+							it.parent = this; it.key = index.toString()
+						}
+					}
+			}
+			else -> {
+				parseField(parent, field, answer)
 			}
 		}
 	}
 
-	/**
-	 * Checks that an [answer] corresponds to a given [field].
-	 */
-	private fun checkSimple(
-		field: FormField.Simple,
-		answer: ReadOnlyAnswer,
-	) {
-		field.simple.validate(answer.value)
+	private fun <F : FormField> parseField(
+		parent: List<String>,
+		field: F,
+		answer: ReadOnlyAnswer?,
+	): ParsedField<F>? {
+		return when (field) {
+			is FormField.Simple -> parseSimple(parent, field, answer)
+			is FormField.Union<*> -> parseUnion(parent, field, answer)
+			is FormField.Composite -> parseComposite(parent, field, answer)
+			else -> error("Trouvé un champ de type impossible : $field")
+		}
+	}
 
-		require(answer.components.isEmpty()) { "${fieldErrorMessage(field)} est de type SIMPLE, il ne peut pas avoir des sous-réponses ; trouvé ${answer.components}" }
+	private fun <C : FormField.Composite> parseComposite(
+		parent: List<String>,
+		field: C,
+		answer: ReadOnlyAnswer?,
+	): ParsedComposite<C> {
+		println("$parent ${field.id} -> composite $field")
+
+		val children = field.fields.mapNotNull { formField ->
+			parseFieldWithArity(parent + field.id, formField, answer?.components?.get(formField.id))
+		}
+
+		return ParsedComposite(field, children)
+			.apply { children.forEach { it.parent = this } }
+	}
+
+	private fun <U : FormField.Union<C>, C : FormField> parseUnion(
+		parent: List<String>,
+		field: U,
+		answer: ReadOnlyAnswer?,
+	): ParsedUnion<U, C>? {
+		println("$parent ${field.id} -> union $field")
+
+		val selectedId = answer?.value
+		if (field.arity.min == 0 && selectedId == null) return null
+		requireNotNull("${fieldErrorMessage(field)} est une union, elle doit avoir une unique valeur ; trouvé le choix ${answer?.value}")
+
+		val selectedField = field.options.find { it.id == selectedId }
+			?: error("${fieldErrorMessage(field)} est une union, mais le choix donné ne correspond à aucun des choix disponibles : $selectedId")
+
+		val child = answer?.components?.get(selectedId)
+		val parsedChild = parseFieldWithArity(parent + field.id, selectedField, child)
+
+		return when {
+			selectedField is FormField.Simple && selectedField.simple is Message -> {
+				require(parsedChild == null) { "${fieldErrorMessage(field)} est une union, l'utilisateur a choisi un champ de type $Message, il ne peut donc pas fournir une donnée : $child" }
+				ParsedUnion(field, selectedField, emptyList())
+			}
+			parsedChild == null -> null
+			else -> ParsedUnion(field, selectedField, listOf(parsedChild))
+				.apply { parsedChild.parent = this }
+		}
+	}
+
+	private fun <S : FormField.Simple> parseSimple(
+		parent: List<String>,
+		field: S,
+		answer: ReadOnlyAnswer?,
+	): ParsedSimple<S>? = when {
+		field.arity.min == 0 && answer == null -> {
+			println("$parent ${field.id} -> simple, was not filled in")
+			null
+		}
+		field.simple is Message -> {
+			require(answer == null) { "${fieldErrorMessage(field)} est un champ de type $Message, il ne peut donc pas avoir de valeur : $answer" }
+			println("$parent ${field.id} -> simple $Message")
+			null
+		}
+		else -> {
+			requireNotNull(answer) { "${fieldErrorMessage(field)} est un champ obligatoire (${field.arity}), mais aucune réponse n'a été trouvée" }
+			field.simple.validate(answer.value)
+			require(answer.components.isEmpty()) { "${fieldErrorMessage(field)} est de type SIMPLE, il ne peut pas avoir des sous-réponses ; trouvé ${answer.components}" }
+
+			println("$parent ${field.id} -> simple ${answer.value}")
+			ParsedSimple(field, answer.value)
+		}
 	}
 
 	private fun fieldErrorMessage(field: FormField) =
@@ -408,7 +414,7 @@ data class FormSubmission(
 				root?.createRef(),
 				data = answer.flatten()
 			).apply {
-				checkValidity(form)
+				parse(form)
 			}
 		}
 

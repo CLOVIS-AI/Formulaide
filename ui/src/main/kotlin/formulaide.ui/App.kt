@@ -165,6 +165,9 @@ val App = fc<RProps> {
 	for (error in errors) {
 		child(ErrorCard) {
 			key = error.hashCode().toString()
+			attrs {
+				this.error = error
+			}
 		}
 	}
 

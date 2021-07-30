@@ -1,6 +1,8 @@
 package formulaide.api.data
 
 import formulaide.api.types.Ref
+import formulaide.api.types.Referencable
+import formulaide.api.types.ReferenceId
 import formulaide.api.users.User
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -15,11 +17,12 @@ import formulaide.api.data.Action as FormAction
  */
 @Serializable
 data class Record(
+	override val id: ReferenceId,
 	val form: Ref<Form>,
 	val state: RecordState,
 	val submissions: List<Ref<FormSubmission>>,
 	val history: List<RecordStateTransition>,
-) {
+) : Referencable {
 
 	companion object {
 		const val MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION = 100
@@ -44,7 +47,10 @@ sealed class RecordState {
 	 */
 	@SerialName("DONE")
 	@Serializable
-	object Done : RecordState()
+	object Done : RecordState() {
+
+		override fun toString() = "formulaide.api.data.RecordState\$Done"
+	}
 
 	/**
 	 * One of the review steps failed.
@@ -53,7 +59,10 @@ sealed class RecordState {
 	 */
 	@SerialName("FAILED")
 	@Serializable
-	object Refused : RecordState()
+	object Refused : RecordState() {
+
+		override fun toString() = "formulaide.api.data.RecordState\$Refused"
+	}
 }
 
 /**
@@ -80,8 +89,19 @@ data class RecordStateTransition(
 	}
 }
 
+//region API request objects
+
 @Serializable
 data class RecordsToReviewRequest(
 	val form: Ref<Form>,
 	val state: RecordState,
 )
+
+@Serializable
+data class ReviewRequest(
+	val record: Ref<Record>,
+	val transition: RecordStateTransition,
+	val fields: FormSubmission?,
+)
+
+//endregion

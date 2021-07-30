@@ -88,7 +88,25 @@ class FormSubmissionTest {
 							DeepFormField.Composite(
 								family,
 								arity = Arity.list(0, 10),
-								emptyList()
+								listOf(
+									DeepFormField.Simple(
+										lastName,
+										Text(Arity.mandatory()),
+									),
+									DeepFormField.Simple(
+										firstName,
+										Text(Arity.mandatory()),
+									),
+									DeepFormField.Simple(
+										phoneNumber,
+										Text(Arity.optional())
+									),
+									DeepFormField.Composite(
+										family,
+										arity = Arity.forbidden(),
+										emptyList()
+									)
+								)
 							)
 						)
 					),
@@ -150,7 +168,10 @@ class FormSubmissionTest {
 				"9" to "10",
 			)
 		)
-		submission1.checkValidity(form)
+		val submission1Text = submission1.data.toList()
+			.joinToString(separator = "\n") { (key, value) -> "$key -> $value" }
+		val p1 = submission1.parse(form)
+		assertEquals(submission1Text, p1.toDeepString())
 
 		val submission2 = FormSubmission(
 			SPECIAL_TOKEN_NEW,
@@ -168,7 +189,11 @@ class FormSubmissionTest {
 				"9" to "11",
 			)
 		)
-		submission2.checkValidity(form)
+		val submission2Text = submission2.data.toList()
+			.sortedBy { it.first.split(":")[0].toInt() }
+			.joinToString(separator = "\n") { (key, value) -> "$key -> $value" }
+		val p2 = submission2.parse(form)
+		assertEquals(submission2Text, p2.toDeepString())
 
 		val submission3 = FormSubmission(
 			SPECIAL_TOKEN_NEW,
@@ -183,7 +208,7 @@ class FormSubmissionTest {
 			)
 		)
 		assertFails {
-			submission3.checkValidity(form)
+			submission3.parse(form).also { println(it.toDeepString()) }
 		}
 	}
 
