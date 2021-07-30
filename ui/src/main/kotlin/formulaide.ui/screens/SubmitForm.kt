@@ -2,9 +2,7 @@ package formulaide.ui.screens
 
 import formulaide.api.data.Composite
 import formulaide.api.data.Form
-import formulaide.api.data.FormSubmission
 import formulaide.api.types.Ref
-import formulaide.api.types.Ref.Companion.createRef
 import formulaide.client.routes.compositesReferencedIn
 import formulaide.client.routes.submitForm
 import formulaide.ui.*
@@ -12,8 +10,8 @@ import formulaide.ui.components.styledCard
 import formulaide.ui.components.styledFormCard
 import formulaide.ui.components.useAsync
 import formulaide.ui.fields.field
+import formulaide.ui.utils.parseHtmlForm
 import formulaide.ui.utils.text
-import org.w3c.xhr.FormData
 import react.RProps
 import react.fc
 import react.useEffectOnce
@@ -78,22 +76,11 @@ fun SubmitForm(formRef: Ref<Form>) = fc<RProps> {
 		form.name,
 		"Ce formulaire est ${if (form.public) "public" else "interne"}, les champs marqués par une * sont obligatoires.",
 		submit = "Envoyer" to { htmlFormElement ->
-			@Suppress("UNUSED_VARIABLE") // used in 'js' function
-			val formData = FormData(htmlFormElement)
-
-			//language=JavaScript
-			val formDataObject = js("""Object.fromEntries(formData.entries())""")
-
-			@Suppress("JSUnresolvedVariable") //language=JavaScript
-			val formDataArray = js("""Object.keys(formDataObject)""") as Array<String>
-			val answers = formDataArray.associateWith { (formDataObject[it] as String) }
-				.filterValues { it.isNotBlank() }
-
-			val submission = FormSubmission(
-				Ref.SPECIAL_TOKEN_NEW,
-				form.createRef(),
-				data = answers
-			).also { it.parse(form) }
+			val submission = parseHtmlForm(
+				htmlFormElement,
+				form = form,
+				root = null,
+			)
 
 			launch {
 				client.submitForm(submission)
