@@ -47,7 +47,10 @@ sealed class RecordState {
 	 */
 	@SerialName("DONE")
 	@Serializable
-	object Done : RecordState()
+	object Done : RecordState() {
+
+		override fun toString() = "formulaide.api.data.RecordState\$Done"
+	}
 
 	/**
 	 * One of the review steps failed.
@@ -56,7 +59,10 @@ sealed class RecordState {
 	 */
 	@SerialName("FAILED")
 	@Serializable
-	object Refused : RecordState()
+	object Refused : RecordState() {
+
+		override fun toString() = "formulaide.api.data.RecordState\$Refused"
+	}
 }
 
 /**
