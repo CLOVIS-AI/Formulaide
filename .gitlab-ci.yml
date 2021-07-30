@@ -273,7 +273,7 @@ pages:
     - mv build/dokka/htmlMultiModule/* public/documentation/
     - mv server/build/distributions/server*.tar public/bin/server.tar
     - mv server/build/distributions/server*.zip public/bin/server.zip
-    - mv qodana/ public/qodana
+    - mv qodana/ public/qodana || true  # qodana is not stable currently, fail silently if it didn't work
   artifacts:
     paths:
       - public
