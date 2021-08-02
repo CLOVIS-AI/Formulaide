@@ -111,7 +111,14 @@ fun RBuilder.styledCheckbox(
 	ref: RRef? = null,
 	handler: INPUT.() -> Unit = {},
 ) {
-	styledSmallInput(InputType.checkBox, id, required, ref, handler)
+	input(InputType.hidden, name = id) {
+		attrs { value = "false" }
+	}
+
+	styledSmallInput(InputType.checkBox, id, required, ref) {
+		value = "true"
+		handler()
+	}
 	label {
 		text(message)
 		attrs["htmlFor"] = id

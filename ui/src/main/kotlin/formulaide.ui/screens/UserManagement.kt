@@ -153,7 +153,7 @@ val CreateUser = fc<RProps> { _ ->
 						email = Email(emailOrFail),
 						fullName = fullNameOrFail,
 						service = Ref(serviceOrFail),
-						administrator = adminOrFail == "on"
+						administrator = adminOrFail.toBoolean()
 					)
 				))
 
