@@ -4,11 +4,13 @@ import formulaide.api.data.*
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.types.Ref.Companion.load
 import formulaide.client.Client
+import formulaide.client.routes.compositesReferencedIn
 import formulaide.client.routes.findSubmission
 import formulaide.client.routes.review
 import formulaide.client.routes.todoListFor
 import formulaide.ui.components.*
 import formulaide.ui.fields.field
+import formulaide.ui.fields.immutableFields
 import formulaide.ui.reportExceptions
 import formulaide.ui.traceRenders
 import formulaide.ui.useClient
@@ -109,13 +111,22 @@ private val ReviewRecord = fc<ReviewRecordProps> { props ->
 	record.form.load(form)
 	require(client is Client.Authenticated) { "Seuls les employés peuvent accéder à cette page" }
 
-	val (_, setRefreshSubmission) = useState(0)
+	var parsedSubmissions by useState(emptyMap<FormSubmission, ParsedSubmission>())
 	useEffect(record) {
 		for (submission in record.submissions)
 			scope.reportExceptions {
 				submission.load { client.findSubmission(it) }
-				setRefreshSubmission.invoke { it + 1 }
+				parsedSubmissions =
+					parsedSubmissions.plus(submission.obj to submission.obj.parse(form))
 			}
+	}
+
+	var formLoaded by useState(false)
+	useEffect(form) {
+		scope.reportExceptions {
+			form.load(client.compositesReferencedIn(form))
+			formLoaded = true
+		}
 	}
 
 	val state = record.state
@@ -183,8 +194,8 @@ private val ReviewRecord = fc<ReviewRecordProps> { props ->
 
 		for (submission in record.submissions) {
 			styledNesting(depth = 0, fieldNumber = i) {
-				if (submission.loaded) {
-					p { text(submission.obj.data.toString()) }
+				if (submission.loaded && parsedSubmissions[submission.obj] != null && formLoaded) {
+					immutableFields(parsedSubmissions[submission.obj]!!)
 				} else {
 					p { text("Chargement…"); loadingSpinner() }
 				}
