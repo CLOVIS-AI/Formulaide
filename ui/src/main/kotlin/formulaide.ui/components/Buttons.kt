@@ -45,14 +45,12 @@ private val CustomButton = fc<ButtonProps> { props ->
 			onClickFunction = {
 				it.preventDefault()
 
-				scope.reportExceptions {
-					try {
-						loading = true
+				scope.reportExceptions(onFailure = { loading = false }) {
+					loading = true
 
-						props.action()
-					} finally {
-						loading = false
-					}
+					props.action()
+
+					loading = false
 				}
 			}
 		}

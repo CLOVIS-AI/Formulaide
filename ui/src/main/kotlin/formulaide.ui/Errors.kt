@@ -69,23 +69,27 @@ val ErrorCard = fc<ErrorProps> { props ->
 	) { body?.let { text(it) } }
 }
 
-inline fun <R> reportExceptions(block: () -> R): R = try {
+inline fun <R> reportExceptions(finally: (e: Exception) -> Unit = {}, block: () -> R): R = try {
 	block()
 } catch (e: Exception) {
-	if (e !is CancellationException) {
+	if (e is CancellationException) {
 		// don't report jobs being cancelled, that's normal
-
-		console.error(e)
-		reportError(e)
+		console.info("Job was cancelled", e)
+		throw e
 	}
+
+	console.error(e)
+	reportError(e)
+	finally(e)
 	throw RuntimeException("Impossible de continuer", cause = e)
 }
 
 inline fun CoroutineScope.reportExceptions(
+	crossinline onFailure: (e: Exception) -> Unit = {},
 	crossinline block: suspend () -> Unit,
 ) =
 	launch {
-		formulaide.ui.reportExceptions {
+		formulaide.ui.reportExceptions(onFailure) {
 			block()
 		}
 	}

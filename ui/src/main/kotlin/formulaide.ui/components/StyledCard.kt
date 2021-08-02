@@ -120,7 +120,7 @@ fun RBuilder.styledFormCard(
 class SubmitAction(private val scope: CoroutineScope, private val setLoading: (Boolean) -> Unit) {
 
 	fun launch(block: suspend () -> Unit) {
-		scope.reportExceptions {
+		scope.reportExceptions(onFailure = { setLoading(false) }) {
 			setLoading(true)
 			block()
 			setLoading(false)
