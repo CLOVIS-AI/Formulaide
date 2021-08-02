@@ -20,7 +20,7 @@ import react.dom.p
 import kotlin.js.Date
 
 internal fun RecordState.displayName() = when (this) {
-	is RecordState.Action -> this.current.obj.id //TODO: replace by the name after #109
+	is RecordState.Action -> this.current.obj.name
 	is RecordState.Done -> "Acceptés"
 	is RecordState.Refused -> "Refusés"
 }

@@ -29,7 +29,8 @@ class FormsTest {
 			Action(
 				id = "1",
 				order = 1,
-				me.service
+				me.service,
+				name = "Vérification de l'identité"
 			),
 		)
 

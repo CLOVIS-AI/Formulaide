@@ -17,5 +17,6 @@ data class Action(
 	override val id: ReferenceId,
 	override val order: Int,
 	val reviewer: Ref<Service>,
+	val name: String,
 	val fields: FormRoot? = null,
 ) : OrderedListElement, Referencable
