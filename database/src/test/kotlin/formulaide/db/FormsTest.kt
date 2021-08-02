@@ -36,7 +36,8 @@ class FormsTest {
 			Action(
 				id = "1",
 				order = 1,
-				Ref("1")
+				Ref("1"),
+				name = "Étape 1"
 			)
 		))
 		Unit

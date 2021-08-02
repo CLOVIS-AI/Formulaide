@@ -59,12 +59,13 @@ class RecordTest {
 				"0",
 				0,
 				me.service,
+				"Vérification de l'identité",
 				formRoot {
 					reviewText = simple("Un texte normal", Text(Arity.mandatory()))
 				}
 			).also { action0 = it },
-			Action("1", 1, otherService.createRef()),
-			Action("2", 2, me.service),
+			Action("1", 1, otherService.createRef(), "Étape 2"),
+			Action("2", 2, me.service, "Étape 3"),
 		))
 
 		val notAssignedForm = admin.createForm(form(
@@ -73,7 +74,7 @@ class RecordTest {
 			mainFields = formRoot {
 				simple("Un champ", Text(Arity.mandatory()))
 			},
-			Action("0", 0, otherService.createRef()),
+			Action("0", 0, otherService.createRef(), "Étape 1"),
 		))
 
 		val assignedTodoList = client.todoList()

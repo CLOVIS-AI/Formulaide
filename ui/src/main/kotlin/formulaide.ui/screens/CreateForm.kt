@@ -104,6 +104,8 @@ val CreateForm = fc<RProps> { _ ->
 		styledField("new-form-actions", "Étapes") {
 			for ((i, action) in actions.sortedBy { it.order }.withIndex()) {
 				styledNesting(depth = 0, fieldNumber = i) {
+					actionName(action, replace = { actions = actions.replace(i, it) })
+
 					actionReviewerSelection(action, services,
 					                        replace = { actions = actions.replace(i, it) })
 
@@ -114,9 +116,24 @@ val CreateForm = fc<RProps> { _ ->
 				actions = actions + Action(
 					id = actions.size.toString(),
 					order = actions.size,
-					services.getOrNull(0)?.createRef() ?: error("Aucun service n'a été trouvé")
+					services.getOrNull(0)?.createRef() ?: error("Aucun service n'a été trouvé"),
+					name = "Nom de l'étape",
 				)
 			})
+		}
+	}
+}
+
+private fun RBuilder.actionName(
+	action: Action,
+	replace: (Action) -> Unit,
+) {
+	styledField("new-form-action-${action.id}-name", "Nom de l'étape") {
+		styledInput(InputType.text, "new-form-action-${action.id}-name", required = true) {
+			onChangeFunction = { event ->
+				val target = event.target as HTMLInputElement
+				replace(action.copy(name = target.value))
+			}
 		}
 	}
 }
@@ -146,11 +163,7 @@ private fun RBuilder.actionReviewerSelection(
 					val service = services.find { it.id == serviceId }
 						?: error("Impossible de trouver le service '$serviceId'")
 
-					replace(Action(
-						action.id,
-						action.order,
-						service.createRef())
-					)
+					replace(action.copy(reviewer = service.createRef()))
 				}
 			}
 		}
