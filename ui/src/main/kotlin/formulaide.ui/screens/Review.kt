@@ -14,6 +14,7 @@ import formulaide.ui.traceRenders
 import formulaide.ui.useClient
 import formulaide.ui.useUser
 import formulaide.ui.utils.parseHtmlForm
+import formulaide.ui.utils.replace
 import formulaide.ui.utils.text
 import react.*
 import react.dom.p
@@ -25,20 +26,27 @@ internal fun RecordState.displayName() = when (this) {
 	is RecordState.Refused -> "Refusés"
 }
 
+private data class ReviewSearch(
+	val action: Action?,
+	val enabled: Boolean,
+	val adaptedForm: Form?,
+	val searchQuery: FormSubmission?,
+)
+
 @Suppress("FunctionName")
 internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>) = fc<RProps> {
 	traceRenders("Review ${form.name}")
 
 	val (client) = useClient()
+	require(client is Client.Authenticated) { "Seuls les employés peuvent accéder à cette page." }
 
 	var records by useState(initialRecords)
-
-	if (client !is Client.Authenticated) {
-		styledCard("Vérification des dossiers", failed = true) {
-			text("Seuls les employés peuvent accéder à cette page.")
-		}
-		return@fc
-	}
+	var searches by useState(
+		listOf(ReviewSearch(null, false, null, null)) +
+				form.actions
+					.filter { it.fields != null }
+					.map { ReviewSearch(it, false, null, null) }
+	)
 
 	val refresh: suspend () -> Unit = { records = client.todoListFor(form, state) }
 
@@ -48,6 +56,27 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 		"Actualiser" to refresh,
 	) {
 		p { text("${records.size} dossiers sont chargés. Pour des raisons de performance, il n'est pas possible de charger plus de ${Record.MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION} dossiers à la fois.") }
+
+		for ((i, search) in searches.withIndex()) {
+			styledNesting(depth = 0, fieldNumber = i) {
+				if (search.enabled) {
+					text("Recherche en cours…")
+
+					styledButton("Annuler la recherche",
+					             action = {
+						             searches = searches.replace(i, search.copy(enabled = false))
+					             })
+				} else {
+					val message = "Recherche : " +
+							(if (search.action == null) "champs originaux" else "étape ${search.action.id}") //TODO replace with action name
+
+					styledButton(
+						message,
+						action = { searches = searches.replace(i, search.copy(enabled = true)) }
+					)
+				}
+			}
+		}
 	}
 
 	for (record in records) {
