@@ -111,10 +111,10 @@ private fun onSelect(
 
 private enum class SimpleFieldEnum(val displayName: String, val build: (Arity) -> SimpleField) {
 	TEXT("Texte", { SimpleField.Text(it) }),
+	MESSAGE("Texte non modifiable", { SimpleField.Message }),
 	INTEGER("Nombre entier", { SimpleField.Integer(it) }),
 	DECIMAL("Nombre à virgule", { SimpleField.Decimal(it) }),
 	BOOLEAN("Bouton à cocher", { SimpleField.Boolean(it) }),
-	MESSAGE("Message", { SimpleField.Message }),
 	EMAIL("Adresse mail", { SimpleField.Email(it) }),
 	DATE("Date", { SimpleField.Date(it) }),
 	TIME("Heure", { SimpleField.Time(it) }),
