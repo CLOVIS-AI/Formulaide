@@ -51,8 +51,8 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 	val refresh: suspend () -> Unit = { records = client.todoListFor(form, state) }
 
 	styledCard(
-		"Liste des dossiers",
-		"${form.name}, dossiers ${state.displayName()}",
+		"Dossiers ${state.displayName()}",
+		form.name,
 		"Actualiser" to refresh,
 	) {
 		p { text("${records.size} dossiers sont chargés. Pour des raisons de performance, il n'est pas possible de charger plus de ${Record.MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION} dossiers à la fois.") }
