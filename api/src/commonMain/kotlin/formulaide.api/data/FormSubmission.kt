@@ -321,13 +321,23 @@ data class FormSubmission(
 	data class MutableAnswer internal constructor(
 		override val value: String?,
 		override val components: MutableMap<String, MutableAnswer> = HashMap(),
+		private var listIndex: Int? = null,
 	) : Answer() {
 
 		//region Data DSL
 
+		private fun add(id: String, value: MutableAnswer) {
+			if (listIndex == null)
+				components += id to value
+			else {
+				components += (listIndex!!).toString() to value
+				listIndex = listIndex!! + 1
+			}
+		}
+
 		private fun simpleValue(field: FormField.Simple, value: String?) {
 			field.simple.validate(value)
-			components += field.id to MutableAnswer(value)
+			add(field.id, MutableAnswer(value))
 		}
 
 		fun text(field: FormField.Simple, value: String) = simpleValue(field, value)
@@ -348,13 +358,13 @@ data class FormSubmission(
 		) {
 			val list = MutableAnswer(headValue)
 			list.block()
-			components += field.id to list
+			add(field.id, list)
 		}
 
-		fun item(id: Int, block: MutableAnswer.() -> Unit) {
-			val list = MutableAnswer(null)
+		fun list(field: FormField, block: MutableAnswer.() -> Unit) {
+			val list = MutableAnswer(null, listIndex = 0)
 			list.block()
-			components += id.toString() to list
+			add(field.id, list)
 		}
 
 		fun <F : FormField> union(
