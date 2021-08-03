@@ -316,13 +316,13 @@ class FormSubmissionTest {
 				text(firstNameField, "Mon prénom")
 				text(lastNameField, "Mon nom de famille")
 				text(phoneNumberField, "+33 1 23 45 67 89")
-				composite(identityRecursionField) {
-					item(50) {
+				list(identityRecursionField) {
+					composite(identityRecursionField) {
 						text(lastNameField, "Le nom de famille de mon frère")
 						text(firstNameField, "Le prénom de mon frère")
 						text(phoneNumberRecursionField, "Le numéro de téléphone de mon frère")
 					}
-					item(100) {
+					composite(identityRecursionField) {
 						text(lastNameField, "Le nom de famille de ma sœur")
 						text(firstNameField, "Le prénom de ma sœur")
 					}
@@ -337,11 +337,11 @@ class FormSubmissionTest {
 				"7:2" to "Mon nom de famille",
 				"7:3" to "Mon prénom",
 				"7:4" to "+33 1 23 45 67 89",
-				"7:5:50:2" to "Le nom de famille de mon frère",
-				"7:5:50:3" to "Le prénom de mon frère",
-				"7:5:50:4" to "Le numéro de téléphone de mon frère",
-				"7:5:100:2" to "Le nom de famille de ma sœur",
-				"7:5:100:3" to "Le prénom de ma sœur",
+				"7:5:0:2" to "Le nom de famille de mon frère",
+				"7:5:0:3" to "Le prénom de mon frère",
+				"7:5:0:4" to "Le numéro de téléphone de mon frère",
+				"7:5:1:2" to "Le nom de famille de ma sœur",
+				"7:5:1:3" to "Le prénom de ma sœur",
 				"12" to "1",
 			)
 		)
@@ -353,13 +353,13 @@ class FormSubmissionTest {
 				text(firstNameField, "Mon prénom")
 				text(lastNameField, "Mon nom de famille")
 				text(phoneNumberField, "+33 1 23 45 67 89")
-				composite(identityRecursionField) {
-					item(50) {
+				list(identityRecursionField) {
+					composite(identityRecursionField) {
 						text(lastNameField, "Le nom de famille de mon frère")
 						text(firstNameField, "Le prénom de mon frère")
 						text(phoneNumberRecursionField, "Le numéro de téléphone de mon frère")
 					}
-					item(100) {
+					composite(identityRecursionField) {
 						text(lastNameField, "Le nom de famille de ma sœur")
 						text(firstNameField, "Le prénom de ma sœur")
 					}
