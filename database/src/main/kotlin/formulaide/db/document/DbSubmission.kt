@@ -1,6 +1,7 @@
 package formulaide.db.document
 
 import formulaide.api.data.*
+import formulaide.api.search.SearchCriterion
 import formulaide.api.types.Ref
 import formulaide.api.types.ReferenceId
 import formulaide.db.Database
@@ -8,8 +9,12 @@ import formulaide.db.document.DbSubmissionData.Companion.rootId
 import formulaide.db.document.DbSubmissionData.Companion.toApi
 import formulaide.db.document.DbSubmissionData.Companion.toDbSubmissionData
 import kotlinx.serialization.Serializable
-import org.litote.kmongo.eq
-import org.litote.kmongo.newId
+import org.bson.conversions.Bson
+import org.litote.kmongo.*
+import java.util.regex.Pattern
+import kotlin.collections.component1
+import kotlin.collections.component2
+import kotlin.collections.set
 
 //region Submission data
 
@@ -141,4 +146,42 @@ suspend fun Database.findSubmission(form: ReferenceId): List<DbSubmission> =
 suspend fun Database.findSubmissionById(id: ReferenceId): DbSubmission? =
 	submissions.findOne(DbSubmission::apiId eq id)
 
-fun DbSubmission.toApi() = FormSubmission(apiId, Ref(form), root?.let { Ref(it) }, data)
+fun DbSubmission.toApi() = FormSubmission(apiId, Ref(form), root?.let { Ref(it) }, data.toApi())
+
+suspend fun Database.searchSubmission(
+	form: Form,
+	root: Action?,
+	criteria: List<SearchCriterion<*>>,
+): List<DbSubmission> {
+	val filter = ArrayList<Bson>()
+	filter += DbSubmission::form eq form.id
+	filter += DbSubmission::root eq root?.id
+
+	for (criterion in criteria) {
+		val ids = criterion.fieldKey
+			.split(":")
+
+		var node = DbSubmission::data / DbSubmissionData::children
+		for ((i, id) in ids.withIndex()) {
+			filter += node / DbSubmissionData::key eq id
+
+			if (i != ids.lastIndex)
+				node /= DbSubmissionData::children
+		}
+
+		@Suppress("UNUSED_VARIABLE") // to force exhaustive when
+		val e = when (criterion) {
+			is SearchCriterion.TextContains -> {
+				filter += (node / DbSubmissionData::value).regex(".*${Pattern.quote(criterion.text)}.*",
+				                                                 options = "i")
+			}
+			is SearchCriterion.TextEquals -> filter += node / DbSubmissionData::value eq criterion.text
+			is SearchCriterion.OrderAfter -> filter += node / DbSubmissionData::value gte criterion.min
+			is SearchCriterion.OrderBefore -> filter += node / DbSubmissionData::value lte criterion.max
+			is SearchCriterion.Exists -> {
+			} // Nothing to do, the previous loop is enough
+		}
+	}
+
+	return submissions.find(*filter.toTypedArray()).toList()
+}

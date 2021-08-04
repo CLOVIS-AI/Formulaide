@@ -4,11 +4,14 @@ import formulaide.api.data.FormSubmission.Companion.createSubmission
 import formulaide.api.dsl.*
 import formulaide.api.fields.*
 import formulaide.api.fields.SimpleField.Text
+import formulaide.api.search.SearchCriterion
 import formulaide.api.types.Arity
 import formulaide.db.document.DbSubmissionData.Companion.toApi
 import formulaide.db.document.DbSubmissionData.Companion.toDbSubmissionData
+import formulaide.db.document.createComposite
 import formulaide.db.document.createForm
 import formulaide.db.document.saveSubmission
+import formulaide.db.document.searchSubmission
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -47,14 +50,16 @@ class SubmissionsTest {
 	}
 
 	@Test
-	fun dbSubmissions() {
+	fun dbSubmissions() = runBlocking<Unit> {
+		val database = testDatabase()
+
 		lateinit var familyName: DataField.Simple
 		lateinit var firstName: DataField.Simple
 
 		val composite = composite("Une donnée composée") {
 			simple("Nom de famille", Text(Arity.mandatory())).also { familyName = it }
 			simple("Prénom", Text(Arity.optional())).also { firstName = it }
-		}
+		}.let { database.createComposite(it) }
 
 		lateinit var phoneNumber: ShallowFormField.Simple
 		lateinit var genre: ShallowFormField.Union
@@ -85,43 +90,49 @@ class SubmissionsTest {
 					simple(firstName, Text(Arity.optional())).also { firstName2 = it }
 				}.also { identity = it }
 			}
-		).also { it.validate() }
+		).let { database.createForm(it) }
 
-		val submissions = listOf(
-			form.createSubmission {
-				text(phoneNumber, "01 23 45 67 89")
-				union(genre, male) {}
-				composite(identity) {
-					text(familyName2, "F1")
-					text(firstName2, "F2")
-				}
-			},
-			form.createSubmission {
-				text(phoneNumber, "01 23 45 67 89")
-				union(genre, female) {}
-				list(list) {
-					text(list, "Entry 1")
-					text(list, "Entry 2")
-				}
-				composite(identity) {
-					text(familyName2, "G1")
-				}
-			},
-			form.createSubmission {
-				text(phoneNumber, "01 23 45 67 89")
-				union(genre, other) {
-					text(other, "Unspecified")
-				}
-				list(list) {
-					text(list, "Entry")
-				}
-				composite(identity) {
-					text(familyName2, "H1")
-				}
+		val submission1 = form.createSubmission {
+			text(phoneNumber, "01 23 45 67 89")
+			union(genre, male) {}
+			composite(identity) {
+				text(familyName2, "F1")
+				text(firstName2, "F2")
 			}
+		}
+		val submission2 = form.createSubmission {
+			text(phoneNumber, "01 23 45 67 89")
+			union(genre, female) {}
+			list(list) {
+				text(list, "Entry 1")
+				text(list, "Entry 2")
+			}
+			composite(identity) {
+				text(familyName2, "G1")
+			}
+		}
+		val submission3 = form.createSubmission {
+			text(phoneNumber, "01 23 45 67 89")
+			union(genre, other) {
+				text(other, "Unspecified")
+			}
+			list(list) {
+				text(list, "Entry")
+			}
+			composite(identity) {
+				text(familyName2, "H1")
+				text(firstName2, "H2")
+			}
+		}
+		val submissions = listOf(
+			submission1,
+			submission2,
+			submission3
 		)
 
 		for (submission in submissions) {
+			database.saveSubmission(submission)
+
 			println("\nSubmission: ${submission.data}")
 
 			val parsed = submission.parse(form)
@@ -130,10 +141,32 @@ class SubmissionsTest {
 			val dbSubmission = parsed.toDbSubmissionData()
 			println("Db submission: $dbSubmission")
 
-			val submission2 = dbSubmission.toApi()
-			println("Back to submission: $submission2")
+			val submissionReparsed = dbSubmission.toApi()
+			println("Back to submission: $submissionReparsed")
 
-			assertEquals(submission.data, submission2)
+			assertEquals(submission.data, submissionReparsed)
 		}
+
+		suspend fun query(vararg queries: SearchCriterion<*>) =
+			database.searchSubmission(form, null, queries.asList())
+
+		val allResults = query(SearchCriterion.TextContains("0", "1"))
+		val maleResults = query(SearchCriterion.TextEquals("1", "0"))
+		val femaleResults = query(SearchCriterion.TextEquals("1", "1"))
+		val otherResults = query(SearchCriterion.TextEquals("1", "2"))
+		val resultsThatRepliedToList = query(SearchCriterion.Exists("2"))
+		val resultsThatGaveTheFirstName = query(SearchCriterion.Exists("3:1"))
+
+		assertEquals(3, allResults.size, "Found: $allResults")
+		assertEquals(1, maleResults.size, "Found: $maleResults")
+		assertEquals(1, femaleResults.size, "Found: $femaleResults")
+		assertEquals(1, otherResults.size, "Found: $otherResults")
+		assertEquals(2, resultsThatRepliedToList.size, "Found: $resultsThatRepliedToList")
+		assertEquals(2, resultsThatGaveTheFirstName.size, "Found: $resultsThatGaveTheFirstName")
+
+		val malesThatGaveTheFirstName =
+			query(SearchCriterion.Exists("3:1"), SearchCriterion.TextEquals("1", "0"))
+		assertEquals(1, malesThatGaveTheFirstName.size, "Found: $malesThatGaveTheFirstName")
+		println(malesThatGaveTheFirstName)
 	}
 }
