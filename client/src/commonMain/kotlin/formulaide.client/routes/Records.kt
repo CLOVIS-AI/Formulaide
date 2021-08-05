@@ -1,6 +1,7 @@
 package formulaide.client.routes
 
 import formulaide.api.data.*
+import formulaide.api.search.SearchCriterion
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.client.Client
 
@@ -22,8 +23,13 @@ suspend fun Client.Authenticated.todoList(): List<Form> =
  * - Body: [RecordsToReviewRequest]
  * - Response: list of [Record]
  */
-suspend fun Client.Authenticated.todoListFor(form: Form, state: RecordState): List<Record> =
-	post("/submissions/recordsToReview", body = RecordsToReviewRequest(form.createRef(), state))
+suspend fun Client.Authenticated.todoListFor(
+	form: Form,
+	state: RecordState,
+	criteria: List<SearchCriterion<*>>,
+): List<Record> =
+	post("/submissions/recordsToReview",
+	     body = RecordsToReviewRequest(form.createRef(), state, criteria))
 
 /**
  * Edits a [Record] (for example to edit its [state][Record.state]).
