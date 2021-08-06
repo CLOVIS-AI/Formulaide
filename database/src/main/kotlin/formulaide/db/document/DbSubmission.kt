@@ -8,6 +8,7 @@ import formulaide.db.Database
 import formulaide.db.document.DbSubmissionData.Companion.rootId
 import formulaide.db.document.DbSubmissionData.Companion.toApi
 import formulaide.db.document.DbSubmissionData.Companion.toDbSubmissionData
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.bson.conversions.Bson
 import org.litote.kmongo.*
@@ -32,10 +33,10 @@ import kotlin.collections.set
  */
 @Serializable
 data class DbSubmissionData(
-	val key: String,
-	val value: String? = null,
-	val children: List<DbSubmissionData> = emptyList(),
-	val isList: Boolean = false,
+	@SerialName("k") val key: String,
+	@SerialName("v") val value: String? = null,
+	@SerialName("c") val children: List<DbSubmissionData> = emptyList(),
+	@SerialName("l") val isList: Boolean = false,
 ) {
 
 	override fun toString() = "DbSub($key" +
