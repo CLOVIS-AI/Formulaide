@@ -11,6 +11,7 @@ import formulaide.api.users.PasswordLogin
 import formulaide.db.Database
 import formulaide.db.document.DbUser
 import formulaide.db.document.createUser
+import formulaide.db.document.editUser
 import formulaide.db.document.findUser
 import io.ktor.application.*
 import io.ktor.auth.*
@@ -49,6 +50,8 @@ class Auth(private val database: Database) {
 		.withIssuer("formulaide")
 		.build()
 
+	private var serverWideBlock: Long = 0
+
 	/**
 	 * Creates a new account.
 	 * @return A pair of a JWT token and the created user.
@@ -77,15 +80,29 @@ class Auth(private val database: Database) {
 	 * @return A triple of an access token, a refresh token, and their matching user.
 	 */
 	suspend fun login(login: PasswordLogin): Triple<String, String, DbUser> {
+		val current = Instant.now().epochSecond
+		check(serverWideBlock <= current) { "Toutes les connexions du serveur sont actuellement bloquées (pendant ${current - serverWideBlock} secondes)" }
+
 		val user = database.findUser(login.email)
 		checkNotNull(user) { "Aucun utilisateur n'a été trouvé avec cette adresse mail" }
 		check(user.enabled == true) { "Cet utilisateur n'est pas activé" }
+
+		check(user.blockedUntil <= current) { "Cet utilisateur est actuellement bloqué (trop de connexions récentes, pendant ${current - user.blockedUntil} secondes)" }
 
 		val passwordIsVerified = checkHash(
 			login.password,
 			user.hashedPassword
 		)
-		check(passwordIsVerified) { "Le mot de passe donné ne correspond pas à celui stocké" }
+		if (!passwordIsVerified) {
+			if (user.blockedUntil <= current + maxBlockedTimeSeconds) {
+				database.editUser(user,
+				                  newBlockedUntil = user.blockedUntil + blockedForAfterFailedPasswordSeconds)
+			}
+			if (serverWideBlock <= current + maxServerBlockedTimeSeconds) {
+				serverWideBlock = current + serverBlockedAfterFailedPasswordSeconds
+			}
+			error("Le mot de passe donné ne correspond pas à celui stocké")
+		}
 
 		return Triple(
 			signAccessToken(Email(user.email), user.isAdministrator),
@@ -206,6 +223,12 @@ class Auth(private val database: Database) {
 
 		val accessTokenExpiration: Duration = Duration.ofMinutes(30)
 		val refreshTokenExpiration: Duration = Duration.ofDays(7)
+
+		val maxBlockedTimeSeconds = 60
+		val blockedForAfterFailedPasswordSeconds = 3
+
+		val maxServerBlockedTimeSeconds = 60 * 5
+		val serverBlockedAfterFailedPasswordSeconds = 1
 
 		internal fun hash(clearText: String): String {
 			return BCrypt.withDefaults()
