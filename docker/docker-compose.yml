@@ -15,11 +15,18 @@ services:
     depends_on: [ mongo ]
     networks: [ database, internal-proxy ]
     environment:
+      # Coordonnées de la base de données
       formulaide_host: "mongo"
       formulaide_port: 27017
       formulaide_database: "formulaide"
       formulaide_username: "root"
       formulaide_password: "development-password"
+
+      # Secret utilisé pour la gestion des mots de passe.
+      # Ce secret est la partie la plus importante de toute la sécurité du logiciel. Il n'est jamais nécessaire de le taper, ni même de s'en souvenir. Il ne devrait JAMAIS être transmis à quiconque.
+      # Un attaquant connaissant ce mot de passe peut se connecter en tant que n'importe quel compte, de manière complètement invisible.
+      # Changer ce mot de passe déconnecte de force *tous* les utilisateurs. Cela peut être utilisé en dernier recours pour bloquer une attaque.
+      # Si plusieurs répliques du serveur existent, elles peuvent avoir un secret différent (à condition que le load balancer soit stable : un client connecté auprès d'une réplique sera refusé par les autres).
       formulaide_jwt_secret: "some basic secret"
 
 volumes:
