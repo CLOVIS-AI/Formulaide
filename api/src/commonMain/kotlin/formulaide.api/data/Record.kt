@@ -1,5 +1,6 @@
 package formulaide.api.data
 
+import formulaide.api.search.SearchCriterion
 import formulaide.api.types.Ref
 import formulaide.api.types.Referencable
 import formulaide.api.types.ReferenceId
@@ -95,6 +96,7 @@ data class RecordStateTransition(
 data class RecordsToReviewRequest(
 	val form: Ref<Form>,
 	val state: RecordState,
+	val query: List<SearchCriterion<*>>,
 )
 
 @Serializable

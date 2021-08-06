@@ -61,7 +61,15 @@ fun Routing.submissionRoutes() {
 
 				val records = database.findRecords(form, request.state)
 
-				call.respond(records)
+				if (request.query.isNotEmpty()) {
+					val submissions = database.searchSubmission(form, records, request.query)
+						.map { it.apiId }
+						.toSortedSet()
+
+					call.respond(records.filter { record -> record.submissions.any { it.id in submissions } })
+				} else {
+					call.respond(records)
+				}
 			}
 		}
 	}

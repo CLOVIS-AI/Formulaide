@@ -1,20 +1,29 @@
 package formulaide.ui.screens
 
 import formulaide.api.data.*
+import formulaide.api.search.SearchCriterion
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.types.Ref.Companion.load
 import formulaide.client.Client
+import formulaide.client.routes.compositesReferencedIn
 import formulaide.client.routes.findSubmission
 import formulaide.client.routes.review
 import formulaide.client.routes.todoListFor
 import formulaide.ui.components.*
 import formulaide.ui.fields.field
+import formulaide.ui.fields.immutableFields
+import formulaide.ui.fields.searchFields
 import formulaide.ui.reportExceptions
 import formulaide.ui.traceRenders
 import formulaide.ui.useClient
 import formulaide.ui.useUser
 import formulaide.ui.utils.parseHtmlForm
+import formulaide.ui.utils.replace
 import formulaide.ui.utils.text
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import react.*
 import react.dom.p
 import kotlin.js.Date
@@ -25,29 +34,101 @@ internal fun RecordState.displayName() = when (this) {
 	is RecordState.Refused -> "Refusés"
 }
 
+private data class ReviewSearch(
+	val action: Action?,
+	val enabled: Boolean,
+	val criteria: List<SearchCriterion<*>>,
+)
+
 @Suppress("FunctionName")
 internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>) = fc<RProps> {
 	traceRenders("Review ${form.name}")
 
 	val (client) = useClient()
+	require(client is Client.Authenticated) { "Seuls les employés peuvent accéder à cette page." }
 
 	var records by useState(initialRecords)
+	var searches by useState(
+		listOf(ReviewSearch(null, false, emptyList())) +
+				form.actions
+					.filter { it.fields != null }
+					.map { ReviewSearch(it, false, emptyList()) }
+	)
+	var loading by useState(false)
 
-	if (client !is Client.Authenticated) {
-		styledCard("Vérification des dossiers", failed = true) {
-			text("Seuls les employés peuvent accéder à cette page.")
-		}
-		return@fc
+	val allCriteria = searches.flatMap { it.criteria }
+	val refresh: suspend () -> Unit = {
+		loading = true
+		val newRecords = client.todoListFor(form, state, allCriteria)
+
+		val retained = records.filter { it in newRecords }
+		records = retained + newRecords.filter { record -> record.id !in retained.map { it.id } }
+		loading = false
 	}
 
-	val refresh: suspend () -> Unit = { records = client.todoListFor(form, state) }
+	useEffect(searches) {
+		val job = Job()
+
+		CoroutineScope(job).launch {
+			reportExceptions {
+				delay(300)
+
+				refresh()
+			}
+		}
+
+		cleanup {
+			job.cancel()
+		}
+	}
 
 	styledCard(
-		"Liste des dossiers",
-		"${form.name}, dossiers ${state.displayName()}",
+		"Dossiers ${state.displayName()}",
+		form.name,
 		"Actualiser" to refresh,
+		loading = loading,
 	) {
 		p { text("${records.size} dossiers sont chargés. Pour des raisons de performance, il n'est pas possible de charger plus de ${Record.MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION} dossiers à la fois.") }
+
+		for ((i, search) in searches.withIndex()) {
+			fun updateSearch(
+				enabled: Boolean = search.enabled,
+				criteria: List<SearchCriterion<*>> = search.criteria,
+			) {
+				searches = searches.replace(i, search.copy(enabled = enabled, criteria = criteria))
+			}
+
+			styledNesting(depth = 0, fieldNumber = i) {
+				if (search.enabled) {
+					searchFields(
+						search.action?.fields ?: form.mainFields,
+						criteria = search.criteria,
+						update = { previous, next ->
+							if (previous == null) {
+								updateSearch(criteria = search.criteria + next!!)
+							} else if (next == null) {
+								updateSearch(criteria = search.criteria - previous)
+							} else {
+								updateSearch(criteria = search.criteria.replace(i, next))
+							}
+						}
+					)
+
+					styledButton("Annuler la recherche",
+					             action = {
+						             searches = searches.replace(i, search.copy(enabled = false))
+					             })
+				} else {
+					val message = "Recherche : " +
+							(if (search.action == null) "champs originaux" else "étape ${search.action.id}") //TODO replace with action name
+
+					styledButton(
+						message,
+						action = { updateSearch(enabled = true) }
+					)
+				}
+			}
+		}
 	}
 
 	for (record in records) {
@@ -57,6 +138,8 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 				this.record = record
 
 				this.refresh = refresh
+
+				key = record.id
 			}
 		}
 	}
@@ -80,13 +163,22 @@ private val ReviewRecord = fc<ReviewRecordProps> { props ->
 	record.form.load(form)
 	require(client is Client.Authenticated) { "Seuls les employés peuvent accéder à cette page" }
 
-	val (_, setRefreshSubmission) = useState(0)
+	var parsedSubmissions by useState(emptyMap<FormSubmission, ParsedSubmission>())
 	useEffect(record) {
 		for (submission in record.submissions)
 			scope.reportExceptions {
 				submission.load { client.findSubmission(it) }
-				setRefreshSubmission.invoke { it + 1 }
+				parsedSubmissions =
+					parsedSubmissions.plus(submission.obj to submission.obj.parse(form))
 			}
+	}
+
+	var formLoaded by useState(false)
+	useEffect(form) {
+		scope.reportExceptions {
+			form.load(client.compositesReferencedIn(form))
+			formLoaded = true
+		}
 	}
 
 	val state = record.state
@@ -154,8 +246,8 @@ private val ReviewRecord = fc<ReviewRecordProps> { props ->
 
 		for (submission in record.submissions) {
 			styledNesting(depth = 0, fieldNumber = i) {
-				if (submission.loaded) {
-					p { text(submission.obj.data.toString()) }
+				if (submission.loaded && parsedSubmissions[submission.obj] != null && formLoaded) {
+					immutableFields(parsedSubmissions[submission.obj]!!)
 				} else {
 					p { text("Chargement…"); loadingSpinner() }
 				}
