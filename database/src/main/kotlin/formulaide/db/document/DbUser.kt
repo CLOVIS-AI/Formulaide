@@ -25,6 +25,7 @@ data class DbUser(
 	val isAdministrator: Boolean,
 	val enabled: Boolean? = true,
 	val tokenVersion: ULong = 0u,
+	val blockedUntil: Long = 0,
 )
 
 /**
@@ -75,6 +76,7 @@ suspend fun Database.editUser(
 	user: DbUser,
 	newEnabled: Boolean? = null,
 	newIsAdministrator: Boolean? = null,
+	newBlockedUntil: Long? = null,
 ): DbUser {
 	var newUser = user
 
@@ -83,6 +85,9 @@ suspend fun Database.editUser(
 
 	if (newIsAdministrator != null)
 		newUser = newUser.copy(isAdministrator = newIsAdministrator)
+
+	if (newBlockedUntil != null)
+		newUser = newUser.copy(blockedUntil = newBlockedUntil)
 
 	require(user != newUser) { "La demande de modification de l'utilisateur ${user.email} n'apporte aucune modification" }
 
