@@ -46,7 +46,7 @@ fun Routing.userRoutes(auth: Auth) {
 				call.respond(TokenResponse(accessToken))
 			} catch (e: Exception) {
 				e.printStackTrace()
-				call.respondText("Les informations de connexion sont incorrectes.",
+				call.respondText("Les informations de connexion sont incorrectes. Veuillez attendre quelques secondes avant de réessayer.",
 				                 status = HttpStatusCode.Forbidden)
 			}
 		}
