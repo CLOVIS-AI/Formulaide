@@ -249,7 +249,7 @@ data class FormSubmission(
 		}
 		else -> {
 			requireNotNull(answer) { "${fieldErrorMessage(field)} est un champ obligatoire (${field.arity}), mais aucune réponse n'a été trouvée" }
-			field.simple.validate(answer.value)
+			field.simple.parse(answer.value)
 			require(answer.components.isEmpty()) { "${fieldErrorMessage(field)} est de type SIMPLE, il ne peut pas avoir des sous-réponses ; trouvé ${answer.components}" }
 
 			println("$parent ${field.id} -> simple ${answer.value}")
@@ -336,7 +336,7 @@ data class FormSubmission(
 		}
 
 		private fun simpleValue(field: FormField.Simple, value: String?) {
-			field.simple.validate(value)
+			field.simple.parse(value)
 			add(field.id, MutableAnswer(value))
 		}
 

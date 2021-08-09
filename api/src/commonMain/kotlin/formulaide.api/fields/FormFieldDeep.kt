@@ -77,11 +77,14 @@ sealed class DeepFormField : FormField, Field.Reference<DataField> {
 		override val simple: SimpleField,
 	) : DeepFormField(), FormField.Simple {
 
-		constructor(ref: DataField.Simple, simple: SimpleField) : this(ref.createRef(), simple)
+		constructor(ref: DataField.Simple, simple: SimpleField) : this(ref.createRef(),
+		                                                               simple)
 
-		override val dataField
-			get() = ref.obj as? DataField.Simple
-				?: error("Ce champ est de type SIMPLE, mais il référence un champ de type ${ref.obj::class}")
+		override val dataField: DataField.Simple
+			get() {
+				return ref.obj as? DataField.Simple
+					?: error("Ce champ est de type SIMPLE, mais il référence un champ de type ${ref.obj::class}")
+			}
 
 		override fun validate() {
 			super.validate()
@@ -90,6 +93,10 @@ sealed class DeepFormField : FormField, Field.Reference<DataField> {
 		}
 
 		override fun toString() = "Deep.Simple($ref, $simple)" + super.toString()
+		override fun requestCopy(name: String?, arity: Arity?) =
+			copy(simple = simple.requestCopy(arity))
+
+		override fun requestCopy(simple: SimpleField) = copy(simple = simple)
 	}
 
 	/**
@@ -135,6 +142,7 @@ sealed class DeepFormField : FormField, Field.Reference<DataField> {
 		}
 
 		override fun toString() = "Deep.Union($ref, $arity, $options)" + super.toString()
+		override fun requestCopy(name: String?, arity: Arity?) = copy(arity = arity ?: this.arity)
 	}
 
 	/**
@@ -181,6 +189,7 @@ sealed class DeepFormField : FormField, Field.Reference<DataField> {
 		}
 
 		override fun toString() = "Deep.Composite($ref, $arity, $fields)" + super.toString()
+		override fun requestCopy(name: String?, arity: Arity?) = copy(arity = arity ?: this.arity)
 	}
 
 	override fun toString(): String = if (ref.loaded) " -> $dataField" else ""
@@ -189,7 +198,7 @@ sealed class DeepFormField : FormField, Field.Reference<DataField> {
 
 		fun DataField.createMatchingFormField(composites: List<CompositeData>): DeepFormField =
 			when (this) {
-				is DataField.Simple -> Simple(this, simple)
+				is DataField.Simple -> Simple(this.createRef(), simple)
 				is DataField.Union -> Union(
 					this,
 					arity,

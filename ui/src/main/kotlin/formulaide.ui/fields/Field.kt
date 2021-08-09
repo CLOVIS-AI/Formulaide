@@ -7,6 +7,8 @@ import formulaide.api.types.Arity
 import formulaide.ui.components.*
 import kotlinx.html.INPUT
 import kotlinx.html.InputType
+import kotlinx.html.js.onChangeFunction
+import org.w3c.dom.HTMLInputElement
 import react.*
 import react.dom.attrs
 import react.dom.div
@@ -20,22 +22,35 @@ private val RenderField = fc<FieldProps> { props ->
 	val field = props.field
 	val required = field.arity == Arity.mandatory()
 
+	var simpleInputState by useState<String>()
 	val simpleInput = { type: InputType, _required: Boolean, handler: INPUT.() -> Unit ->
-		styledInput(type, props.id, required = _required, handler = handler)
+		styledInput(type, props.id, required = _required) {
+			onChangeFunction = { simpleInputState = (it.target as HTMLInputElement).value }
+			handler()
+		}
 	}
 
 	when (field) {
-		is FormField.Simple -> when (field.simple) { //TODO: check validity of value
-			is SimpleField.Text -> simpleInput(InputType.text, required) {}
-			is SimpleField.Integer -> simpleInput(InputType.number, required) {}
-			is SimpleField.Decimal -> simpleInput(InputType.number, required) {
-				step = "any"
+		is FormField.Simple -> {
+			when (field.simple) {
+				is SimpleField.Text -> simpleInput(InputType.text, required) {}
+				is SimpleField.Integer -> simpleInput(InputType.number, required) {}
+				is SimpleField.Decimal -> simpleInput(InputType.number, required) {
+					step = "any"
+				}
+				is SimpleField.Boolean -> styledCheckbox(props.id, "", required = false)
+				is SimpleField.Message -> Unit // The message has already been displayed
+				is SimpleField.Email -> simpleInput(InputType.email, required) {}
+				is SimpleField.Date -> simpleInput(InputType.date, required) {}
+				is SimpleField.Time -> simpleInput(InputType.time, required) {}
 			}
-			is SimpleField.Boolean -> styledCheckbox(props.id, "", required = false)
-			is SimpleField.Message -> Unit // The message has already been displayed
-			is SimpleField.Email -> simpleInput(InputType.email, required) {}
-			is SimpleField.Date -> simpleInput(InputType.date, required) {}
-			is SimpleField.Time -> simpleInput(InputType.time, required) {}
+
+			if (!simpleInputState.isNullOrBlank())
+				try {
+					field.simple.parse(simpleInputState)
+				} catch (e: Exception) {
+					styledErrorText(" ${e.message}")
+				}
 		}
 		is FormField.Composite -> {
 			val subFields = field.fields

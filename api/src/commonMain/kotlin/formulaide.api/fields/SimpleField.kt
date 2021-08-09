@@ -4,6 +4,9 @@ import formulaide.api.fields.SimpleField.Message.arity
 import formulaide.api.types.Arity
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import formulaide.api.types.Date as ApiDate
+import formulaide.api.types.Email as ApiEmail
+import formulaide.api.types.Time as ApiTime
 
 /**
  * A field that represents some specific data.
@@ -19,7 +22,7 @@ sealed class SimpleField {
 	/**
 	 * Checks that a [value] provided by the user is compatible with this type.
 	 */
-	abstract fun validate(value: String?)
+	abstract fun parse(value: String?): Any?
 
 	/**
 	 * Checks that [newer] is compatible with the current [SimpleField].
@@ -32,6 +35,8 @@ sealed class SimpleField {
 		require(newer.arity.min >= arity.min) { "Une donnée ne peut qu'augmenter l'arité minimale : la valeur d'origine ($arity) autorise un espace moins large que la nouvelle valeur (${newer.arity})" }
 		require(newer.arity.max <= arity.max) { "Une donnée ne peut que diminuer l'arité maximale : la valeur d'origine ($arity) autorise un espace moins large que la nouvelle valeur (${newer.arity})" }
 	}
+
+	abstract fun requestCopy(arity: Arity? = null): SimpleField
 
 	/**
 	 * The user should input some text.
@@ -46,11 +51,13 @@ sealed class SimpleField {
 
 		val effectiveMaxLength get() = maxLength ?: Int.MAX_VALUE
 
-		override fun validate(value: String?) {
+		override fun parse(value: String?): String {
 			requireNotNull(value) { "Un champ de texte doit être rempli : trouvé '$value'" }
 			require(value.isNotBlank()) { "Un champ de texte ne peut pas être vide ou contenir uniquement des espaces : trouvé '$value'" }
 
 			require(value.length <= effectiveMaxLength) { "La longueur maximale autorisée est de $maxLength caractères, mais ${value.length} ont été donnés" }
+
+			return value
 		}
 
 		override fun validateCompatibility(newer: SimpleField) {
@@ -59,6 +66,8 @@ sealed class SimpleField {
 
 			require(newer.effectiveMaxLength <= effectiveMaxLength) { "La longueur maximale ne peut être que diminuée : la valeur d'origine est $effectiveMaxLength, la nouvelle valeur est ${newer.effectiveMaxLength}" }
 		}
+
+		override fun requestCopy(arity: Arity?) = copy(arity = arity ?: this.arity)
 	}
 
 	/**
@@ -77,12 +86,15 @@ sealed class SimpleField {
 		val effectiveMin get() = min ?: Long.MIN_VALUE
 		val effectiveMax get() = max ?: Long.MAX_VALUE
 
-		override fun validate(value: String?) {
+		override fun parse(value: String?): Long {
 			requireNotNull(value) { "Un entier ne peut pas être vide : trouvé $value" }
-			val intVal = requireNotNull(value.toLongOrNull()) { "Cette donnée n'est pas un entier : $value" }
+			val intVal =
+				requireNotNull(value.toLongOrNull()) { "Cette donnée n'est pas un entier : $value" }
 
 			require(intVal >= effectiveMin) { "La valeur minimale autorisée est $min, $intVal est trop petit" }
 			require(intVal <= effectiveMax) { "La valeur maximale autorisée est $max, $intVal est trop grand" }
+
+			return intVal
 		}
 
 		override fun validateCompatibility(newer: SimpleField) {
@@ -92,6 +104,8 @@ sealed class SimpleField {
 			require(effectiveMin <= newer.effectiveMin) { "La valeur minimale ne peut pas être diminuée : la valeur d'origine est $effectiveMin, la nouvelle valeur est ${newer.effectiveMin}" }
 			require(effectiveMax >= newer.effectiveMax) { "La valeur maximale ne peut pas être augmentée : la valeur d'origine est $effectiveMax, la nouvelle valeur est ${newer.effectiveMax}" }
 		}
+
+		override fun requestCopy(arity: Arity?) = copy(arity = arity ?: this.arity)
 	}
 
 	/**
@@ -103,10 +117,13 @@ sealed class SimpleField {
 		override val arity: Arity,
 	) : SimpleField() {
 
-		override fun validate(value: String?) {
+		override fun parse(value: String?): Double {
 			requireNotNull(value) { "Un réel ne peut pas être vide : trouvé $value" }
-			requireNotNull(value.toDoubleOrNull()) { "Cette donnée n'est pas un réel : $value" }
+
+			return requireNotNull(value.toDoubleOrNull()) { "Cette donnée n'est pas un réel : $value" }
 		}
+
+		override fun requestCopy(arity: Arity?) = copy(arity = arity ?: this.arity)
 	}
 
 	/**
@@ -118,10 +135,12 @@ sealed class SimpleField {
 		override val arity: Arity,
 	) : SimpleField() {
 
-		override fun validate(value: String?) {
+		override fun parse(value: String?): kotlin.Boolean {
 			requireNotNull(value) { "Un booléen ne peut pas être vide : trouvé $value" }
-			requireNotNull(value.toBooleanStrictOrNull()) { "Cette donnée n'est pas un booléen : $value" }
+			return requireNotNull(value.toBooleanStrictOrNull()) { "Cette donnée n'est pas un booléen : $value" }
 		}
+
+		override fun requestCopy(arity: Arity?) = copy(arity = arity ?: this.arity)
 	}
 
 	@Serializable
@@ -130,27 +149,21 @@ sealed class SimpleField {
 		override val arity: Arity,
 	) : SimpleField() {
 
-		override fun validate(value: String?) {
+		override fun parse(value: String?): ApiEmail {
 			requireNotNull(value) { "Un email ne peut pas être vide : trouvé $value" }
-			require('@' in value) { "Un email doit contenir une arobase : $value" }
-			require(' ' !in value) { "Un email ne peut pas contenir d'espaces : $value" }
+			return ApiEmail(value)
 		}
+
+		override fun requestCopy(arity: Arity?) = copy(arity = arity ?: this.arity)
 	}
 
-	/**
-	 * A date, represented in the format `yyyy-mm-dd`.
-	 *
-	 * - year: `0..3000`
-	 * - month: `1..12`
-	 * - day: `1..31`
-	 */
 	@Serializable
 	@SerialName("DATE")
 	data class Date(
 		override val arity: Arity,
 	) : SimpleField() {
 
-		override fun validate(value: String?) {
+		override fun parse(value: String?): ApiDate {
 			requireNotNull(value) { "Une date ne peut pas être vide : trouvé $value" }
 
 			val parts = value.split('-')
@@ -161,25 +174,19 @@ sealed class SimpleField {
 			requireNotNull(month) { "Le mois devrait être un entier : $month" }
 			requireNotNull(day) { "Le jour devrait être un entier : $day" }
 
-			require(year in 0..3_000) { "L'année est invalide : $year" }
-			require(month in 1..12) { "Le mois est invalide : $month" }
-			require(day in 1..31) { "Le jour est invalide : $day" }
+			return ApiDate(year, month, day)
 		}
+
+		override fun requestCopy(arity: Arity?) = copy(arity = arity ?: this.arity)
 	}
 
-	/**
-	 * A time, represented in `hh:mm`.
-	 *
-	 * - hour: `0..23`
-	 * - minutes: `0..59`
-	 */
 	@Serializable
 	@SerialName("TIME")
 	data class Time(
 		override val arity: Arity,
 	) : SimpleField() {
 
-		override fun validate(value: String?) {
+		override fun parse(value: String?): ApiTime {
 			requireNotNull(value) { "Une heure ne peut pas être vide : trouvé $value" }
 
 			val parts = value.split(':')
@@ -189,9 +196,10 @@ sealed class SimpleField {
 			requireNotNull(hour) { "L'heure devrait être un entier : $hour" }
 			requireNotNull(minutes) { "Les minutes devraient être un entier : $minutes" }
 
-			require(hour in 0..23) { "L'heure est invalide : $hour" }
-			require(minutes in 0..59) { "Les minutes sont invalides : $minutes" }
+			return ApiTime(hour, minutes)
 		}
+
+		override fun requestCopy(arity: Arity?) = copy(arity = arity ?: this.arity)
 	}
 
 	/**
@@ -202,9 +210,10 @@ sealed class SimpleField {
 	@SerialName("MESSAGE")
 	object Message : SimpleField() {
 		override val arity get() = Arity.mandatory()
-		override fun validate(value: String?) {} // whatever is always valid
+		override fun parse(value: String?): Nothing? = null // whatever is always valid
 
 		override fun toString() = "Message"
+		override fun requestCopy(arity: Arity?) = this // there's no arity here
 	}
 
 }
