@@ -95,6 +95,8 @@ sealed class DeepFormField : FormField, Field.Reference<DataField> {
 		override fun toString() = "Deep.Simple($ref, $simple)" + super.toString()
 		override fun requestCopy(name: String?, arity: Arity?) =
 			copy(simple = simple.requestCopy(arity))
+
+		override fun requestCopy(simple: SimpleField) = copy(simple = simple)
 	}
 
 	/**

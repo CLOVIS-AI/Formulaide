@@ -1,5 +1,6 @@
 package formulaide.ui.fields
 
+import formulaide.api.fields.DataField
 import formulaide.api.fields.Field
 import formulaide.api.types.Arity
 import formulaide.ui.components.styledFormField
@@ -7,6 +8,7 @@ import formulaide.ui.components.styledNesting
 import formulaide.ui.utils.text
 import react.RProps
 import react.child
+import react.dom.p
 import react.fc
 
 external interface EditableFieldProps : RProps {
@@ -32,6 +34,10 @@ val FieldEditor = fc<EditableFieldProps> { props ->
 		}
 
 		child(TypeEditor) {
+			attrs { inheritFrom(props) }
+		}
+
+		child(MetadataEditor) {
 			attrs { inheritFrom(props) }
 		}
 

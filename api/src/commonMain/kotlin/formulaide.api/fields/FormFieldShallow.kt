@@ -36,6 +36,8 @@ sealed class ShallowFormField : FormField {
 		override fun toString() = "Shallow.Simple($id, $name, order=$order, $simple)"
 		override fun requestCopy(name: String?, arity: Arity?) =
 			copy(name = name ?: this.name, simple = simple.requestCopy(arity))
+
+		override fun requestCopy(simple: SimpleField) = copy(simple = simple)
 	}
 
 	/**

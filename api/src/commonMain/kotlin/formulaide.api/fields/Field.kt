@@ -64,6 +64,8 @@ interface Field : Referencable, OrderedListElement {
 		 * @see SimpleField.arity
 		 */
 		override val arity get() = simple.arity
+
+		fun requestCopy(simple: SimpleField): Simple
 	}
 
 	/**
