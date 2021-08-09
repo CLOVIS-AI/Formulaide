@@ -15,3 +15,7 @@ fun RBuilder.styledTitle(text: String, loading: Boolean = false) {
 fun RBuilder.styledLightText(text: String) {
 	span("text-gray-600") { text(text) }
 }
+
+fun RBuilder.styledErrorText(text: String) {
+	span("text-red-600") { text(text) }
+}
