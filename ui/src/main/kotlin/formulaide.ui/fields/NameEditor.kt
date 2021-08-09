@@ -19,7 +19,7 @@ val NameEditor = fc<EditableFieldProps> { props ->
 				placeholder = "Nom du champ"
 				onChangeFunction = {
 					props.replace(
-						props.field.set(name = (it.target as HTMLInputElement).value))
+						props.field.requestCopy(name = (it.target as HTMLInputElement).value))
 				}
 			}
 		}

@@ -34,6 +34,8 @@ sealed class ShallowFormField : FormField {
 	) : ShallowFormField(), FormField.Simple {
 
 		override fun toString() = "Shallow.Simple($id, $name, order=$order, $simple)"
+		override fun requestCopy(name: String?, arity: Arity?) =
+			copy(name = name ?: this.name, simple = simple.requestCopy(arity))
 	}
 
 	/**
@@ -57,6 +59,8 @@ sealed class ShallowFormField : FormField {
 		}
 
 		override fun toString() = "Shallow.Union($id, $name, order=$order, $arity, $options)"
+		override fun requestCopy(name: String?, arity: Arity?) =
+			copy(name = name ?: this.name, arity = arity ?: this.arity)
 	}
 
 	/**
@@ -89,9 +93,12 @@ sealed class ShallowFormField : FormField {
 
 		override fun toString() =
 			"Shallow.Composite($id, $name, order=$order, $arity, composite=$ref, $fields)"
+
+		override fun requestCopy(name: String?, arity: Arity?) =
+			copy(name = name ?: this.name, arity = arity ?: this.arity)
 	}
 
-	fun copyToSimple(simple: SimpleField) = Simple(id, order, name, simple)
+	fun copyToSimple(simple: SimpleField): Simple = Simple(id, order, name, simple)
 	fun copyToUnion(options: List<ShallowFormField>) = Union(id, order, name, arity, options)
 	fun copyToComposite(
 		composite: Ref<CompositeData>,

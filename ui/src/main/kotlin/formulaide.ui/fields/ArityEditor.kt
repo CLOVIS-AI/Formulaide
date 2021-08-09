@@ -76,7 +76,7 @@ val ArityEditor = fc<EditableFieldProps> { props ->
 					onChangeFunction = {
 						val value = (it.target as HTMLInputElement).value.toInt()
 						props.replace(
-							props.field.set(arity = Arity(value, arity.max))
+							props.field.requestCopy(arity = Arity(value, arity.max))
 						)
 					}
 				}
@@ -98,7 +98,7 @@ val ArityEditor = fc<EditableFieldProps> { props ->
 			text(" réponses")
 		} else if (maxAllowedRange.last > 1) {
 			styledButton("Plusieurs réponses") {
-				props.replace(props.field.set(
+				props.replace(props.field.requestCopy(
 					arity = Arity.list(0, 5)
 						.expandMin(minAllowedRange.last)
 						.truncateMin(minAllowedRange.first)
@@ -122,7 +122,7 @@ private fun updateSubFieldsOnMaxArityChange(
 	newArity: Arity,
 	composites: List<Composite>,
 ) {
-	val newField = props.field.set(arity = newArity)
+	val newField = props.field.requestCopy(arity = newArity)
 
 	if (newField !is FormField.Composite) {
 		props.replace(newField)

@@ -1,6 +1,6 @@
 package formulaide.ui.fields
 
-import formulaide.api.fields.*
+import formulaide.api.fields.Field
 import formulaide.api.types.Arity
 import formulaide.ui.components.styledFormField
 import formulaide.ui.components.styledNesting
@@ -22,47 +22,6 @@ fun EditableFieldProps.inheritFrom(props: EditableFieldProps) {
 	replace = props.replace
 	depth = props.depth
 	fieldNumber = props.fieldNumber
-}
-
-@Suppress("NAME_SHADOWING")
-internal fun SimpleField.set(arity: Arity? = null): SimpleField {
-	val arity = arity ?: this.arity
-
-	return when (this) {
-		is SimpleField.Text -> copy(arity = arity)
-		is SimpleField.Integer -> copy(arity = arity)
-		is SimpleField.Decimal -> copy(arity = arity)
-		is SimpleField.Boolean -> copy(arity = arity)
-		is SimpleField.Email -> copy(arity = arity)
-		is SimpleField.Date -> copy(arity = arity)
-		is SimpleField.Time -> copy(arity = arity)
-		SimpleField.Message -> this
-	}
-}
-
-@Suppress("NAME_SHADOWING")
-internal fun Field.set(name: String? = null, arity: Arity? = null): Field {
-	val name = name ?: this.name
-	val arity = arity ?: this.arity
-
-	return when (this) {
-		// Data fields
-		is DataField.Simple -> copy(name = name, simple = simple.set(arity = arity))
-		is DataField.Union -> copy(name = name, arity = arity)
-		is DataField.Composite -> copy(name = name, arity = arity)
-
-		// Shallow form fields
-		is ShallowFormField.Simple -> copy(name = name, simple = simple.set(arity = arity))
-		is ShallowFormField.Union -> copy(name = name, arity = arity)
-		is ShallowFormField.Composite -> copy(name = name, arity = arity)
-
-		// Deep form fields: the name cannot be changed
-		is DeepFormField.Simple -> copy(simple = simple.set(arity = arity))
-		is DeepFormField.Union -> copy(arity = arity)
-		is DeepFormField.Composite -> copy(arity = arity)
-
-		else -> error("Le type de ce champ n'est pas géré : ${this::class}, $this")
-	}
 }
 
 val FieldEditor = fc<EditableFieldProps> { props ->

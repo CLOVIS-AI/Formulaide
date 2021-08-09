@@ -36,7 +36,7 @@ fun composite(
 
 fun CompositeDsl<DataField>.simple(
 	name: String,
-	field: SimpleField
+	field: SimpleField,
 ): DataField.Simple {
 	val (id, order) = nextInfo()
 

@@ -103,7 +103,7 @@ data class ParsedSimple<out Simple : FormField.Simple> internal constructor(
 	override val rawValue: String?,
 ) : ParsedField<Simple>(constraint.id) {
 	init {
-		constraint.simple.validate(rawValue)
+		constraint.simple.parse(rawValue)
 	}
 
 	override val value: Any? get() = rawValue

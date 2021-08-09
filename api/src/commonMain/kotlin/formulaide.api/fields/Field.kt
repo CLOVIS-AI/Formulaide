@@ -36,6 +36,17 @@ interface Field : Referencable, OrderedListElement {
 	val arity: Arity
 
 	/**
+	 * Requests a copy of the field.
+	 *
+	 * For some fields, it is not allowed to edit the [name] or the [arity].
+	 * These fields will silently ignore the parameters that are not relevant to them.
+	 *
+	 * @param name The new [Field.name]. If `null`, no changes are applied.
+	 * @param arity The new [Field.arity]. If `null`, no changes are applied.
+	 */
+	fun requestCopy(name: String? = null, arity: Arity? = null): Field
+
+	/**
 	 * A field that represents a single data entry.
 	 *
 	 * Simple fields:

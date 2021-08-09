@@ -50,7 +50,7 @@ class SubmissionsTest {
 	}
 
 	@Test
-	fun dbSubmissions() = runBlocking<Unit> {
+	fun dbSubmissions() = runBlocking {
 		val database = testDatabase()
 
 		lateinit var familyName: DataField.Simple
