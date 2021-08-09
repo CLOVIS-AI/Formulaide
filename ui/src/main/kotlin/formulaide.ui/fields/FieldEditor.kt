@@ -53,6 +53,11 @@ val FieldEditor = fc<EditableFieldProps> { props ->
 			} else {
 				styledFormField { text("Les sous-champs ne sont pas affichés, parce que cette donnée est cachée.") }
 			}
+		} else if (props.field is DataField.Composite) {
+			styledFormField {
+				p { text("Les sous-champs ne sont modifiables que pendant la création d'un formulaire.") }
+				p { text("Un groupe à l'intérieur d'un autre groupe ne peut pas être obligatoire.") }
+			}
 		}
 	}
 }
