@@ -16,19 +16,20 @@ suspend fun Database.createRecord(submission: FormSubmission) {
 	val form = submission.form.obj
 
 	val state =
-		form.actions.firstOrNull()?.let { RecordState.Action(it.createRef()) } ?: RecordState.Done
+		form.actions.firstOrNull()?.let { RecordState.Action(it.createRef()) }
+			?: error("Le formulaire ${form.id} n'a pas d'étapes, il n'est pas possible de créer une saisie")
 
 	val record = Record(
 		newId<Record>().toString(),
 		form.createRef(),
 		state,
-		submissions = listOf(submission.createRef()),
 		history = listOf(RecordStateTransition(
 			Instant.now().epochSecond,
 			previousState = null,
 			nextState = state,
 			assignee = null,
 			reason = "Saisie originelle",
+			fields = submission.createRef(),
 		))
 	)
 
@@ -66,7 +67,7 @@ suspend fun Database.reviewRecord(review: ReviewRequest, employee: DbUser) {
 			submissionToCreate = saveSubmission(submission)
 		}
 		else -> {
-			require(review.fields == null) { "Une transition depuis l'état ${RecordState.Done} ou ${RecordState.Refused} ne peut pas contenir de champs" }
+			require(review.fields == null) { "Une transition depuis l'état ${RecordState.Refused} ne peut pas contenir de champs" }
 
 			submissionToCreate = null
 		}
@@ -74,10 +75,11 @@ suspend fun Database.reviewRecord(review: ReviewRequest, employee: DbUser) {
 
 	val newRecord = record.copy(
 		state = review.transition.nextState,
-		submissions = record.submissions +
-				(if (submissionToCreate != null) listOf(submissionToCreate.toApi().createRef())
-				else emptyList()),
-		history = record.history + review.transition
+		history = record.history +
+				(if (submissionToCreate != null)
+					review.transition.copy(fields = Ref(submissionToCreate.apiId))
+				else
+					review.transition)
 	)
 
 	records.updateOne(Record::id eq record.id, newRecord)

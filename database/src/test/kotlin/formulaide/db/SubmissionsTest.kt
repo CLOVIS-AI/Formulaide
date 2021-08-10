@@ -1,11 +1,13 @@
 package formulaide.db
 
+import formulaide.api.data.Action
 import formulaide.api.data.FormSubmission.Companion.createSubmission
 import formulaide.api.dsl.*
 import formulaide.api.fields.*
 import formulaide.api.fields.SimpleField.Text
 import formulaide.api.search.SearchCriterion
 import formulaide.api.types.Arity
+import formulaide.api.types.Ref
 import formulaide.db.document.DbSubmissionData.Companion.toApi
 import formulaide.db.document.DbSubmissionData.Companion.toDbSubmissionData
 import formulaide.db.document.createComposite
@@ -31,7 +33,8 @@ class SubmissionsTest {
 			mainFields = formRoot {
 				lastName = simple("Nom", Text(Arity.mandatory()))
 				firstName = simple("Prénom", Text(Arity.optional()))
-			}
+			},
+			Action("0", order = 0, reviewer = Ref("0"), name = "Validés")
 		))
 
 		val submission1 = form.createSubmission {
@@ -89,7 +92,8 @@ class SubmissionsTest {
 					simple(familyName, Text(Arity.mandatory())).also { familyName2 = it }
 					simple(firstName, Text(Arity.optional())).also { firstName2 = it }
 				}.also { identity = it }
-			}
+			},
+			Action("0", order = 0, reviewer = Ref("0"), name = "Validés"),
 		).let { database.createForm(it) }
 
 		val submission1 = form.createSubmission {

@@ -69,13 +69,6 @@ internal val FormDescription = fc<FormDescriptionProps> { props ->
 			child(ActionDescription) {
 				attrs {
 					this.form = form
-					this.state = RecordState.Done
-				}
-			}
-
-			child(ActionDescription) {
-				attrs {
-					this.form = form
 					this.state = RecordState.Refused
 				}
 			}
@@ -108,7 +101,6 @@ internal val ActionDescription = fc<ActionDescriptionProps> { props ->
 	val stateName = when (state) {
 		is RecordState.Action -> state.displayName()
 			.takeIf { user?.service?.id == state.current.obj.reviewer.id }
-		is RecordState.Done -> state.displayName()
 		is RecordState.Refused -> state.displayName()
 	}
 	if (stateName != null) {

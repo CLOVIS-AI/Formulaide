@@ -74,7 +74,7 @@ fun RBuilder.styledButton(
 fun RBuilder.styledDisabledButton(
 	text: String,
 ) {
-	span(buttonShapeClasses) {
+	span("$buttonShapeClasses font-bold") {
 		text(text)
 	}
 }

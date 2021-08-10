@@ -40,6 +40,8 @@ data class Form(
 	init {
 		mainFields.fields.checkOrderValidity()
 		require(name.isNotBlank()) { "Le nom d'un formulaire ne peut pas être vide : '$name'" }
+
+		require(actions.isNotEmpty()) { "Un formulaire doit contenir au moins une action." }
 	}
 
 	/**

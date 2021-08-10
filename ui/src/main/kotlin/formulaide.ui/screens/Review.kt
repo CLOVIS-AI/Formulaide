@@ -24,14 +24,18 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.html.InputType
+import kotlinx.html.js.onChangeFunction
+import org.w3c.dom.HTMLInputElement
 import react.*
+import react.dom.br
+import react.dom.div
 import react.dom.p
 import kotlin.js.Date
 
 internal fun RecordState.displayName() = when (this) {
 	is RecordState.Action -> this.current.obj.name
-	is RecordState.Done -> "Acceptés"
-	is RecordState.Refused -> "Refusés"
+	is RecordState.Refused -> "Dossiers refusés"
 }
 
 private data class ReviewSearch(
@@ -44,6 +48,7 @@ private data class ReviewSearch(
 internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>) = fc<RProps> {
 	traceRenders("Review ${form.name}")
 
+	val scope = useAsync()
 	val (client) = useClient()
 	require(client is Client.Authenticated) { "Seuls les employés peuvent accéder à cette page." }
 
@@ -57,13 +62,28 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 	var loading by useState(false)
 
 	val allCriteria = searches.flatMap { it.criteria }
-	val refresh: suspend () -> Unit = {
+	val refresh: suspend (Boolean) -> Unit = { forceUpdate ->
 		loading = true
 		val newRecords = client.todoListFor(form, state, allCriteria)
 
-		val retained = records.filter { it in newRecords }
-		records = retained + newRecords.filter { record -> record.id !in retained.map { it.id } }
+		records = if (forceUpdate) {
+			traceRenders("Search Force Update")
+			newRecords
+		} else {
+			traceRenders("Search Nice Update")
+			val retained = records.filter { it in newRecords }
+			retained +
+					newRecords.filter { record -> record.id !in retained.map { it.id } }
+		}
 		loading = false
+	}
+
+	var formLoaded by useState(false)
+	useEffect(form) {
+		scope.reportExceptions {
+			form.load(client.compositesReferencedIn(form))
+			formLoaded = true
+		}
 	}
 
 	useEffect(searches) {
@@ -73,7 +93,7 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 			reportExceptions {
 				delay(300)
 
-				refresh()
+				refresh(false)
 			}
 		}
 
@@ -83,9 +103,9 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 	}
 
 	styledCard(
-		"Dossiers ${state.displayName()}",
+		state.displayName(),
 		form.name,
-		"Actualiser" to refresh,
+		"Actualiser" to { refresh(true) },
 		loading = loading,
 	) {
 		p { text("${records.size} dossiers sont chargés. Pour des raisons de performance, il n'est pas possible de charger plus de ${Record.MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION} dossiers à la fois.") }
@@ -120,7 +140,7 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 					             })
 				} else {
 					val message = "Recherche : " +
-							(if (search.action == null) "champs originaux" else "étape ${search.action.id}") //TODO replace with action name
+							(if (search.action == null) "champs originaux" else search.action.name)
 
 					styledButton(
 						message,
@@ -135,6 +155,7 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 		child(ReviewRecord) {
 			attrs {
 				this.form = form
+				this.formLoaded = formLoaded
 				this.record = record
 
 				this.refresh = refresh
@@ -150,10 +171,18 @@ private external interface ReviewRecordProps : RProps {
 	var form: Form
 	var record: Record
 
-	var refresh: suspend () -> Unit
+	var formLoaded: Boolean
+
+	var refresh: suspend (Boolean) -> Unit
 }
 
+private data class ParsedTransition(
+	val transition: RecordStateTransition,
+	val submission: ParsedSubmission?,
+)
+
 private val ReviewRecord = fc<ReviewRecordProps> { props ->
+	traceRenders("ReviewRecord ${props.record.id}")
 	val form = props.form
 	val record = props.record
 	val scope = useAsync()
@@ -161,23 +190,36 @@ private val ReviewRecord = fc<ReviewRecordProps> { props ->
 	val (user) = useUser()
 
 	record.form.load(form)
+	record.load()
 	require(client is Client.Authenticated) { "Seuls les employés peuvent accéder à cette page" }
 
-	var parsedSubmissions by useState(emptyMap<FormSubmission, ParsedSubmission>())
+	var showFullHistory by useState(false)
+	fun getHistory() = record.history.map { ParsedTransition(it, null) }
+	val (fullHistory, setFullHistory) = useState(getHistory())
+	val history =
+		if (showFullHistory) fullHistory
+			.sortedBy { it.transition.timestamp }
+		else fullHistory.groupBy { it.transition.previousState }
+			.mapNotNull { (_, v) -> v.maxByOrNull { it.transition.timestamp } }
+			.sortedBy { it.transition.timestamp }
+
 	useEffect(record) {
-		for (submission in record.submissions)
-			scope.reportExceptions {
-				submission.load { client.findSubmission(it) }
-				parsedSubmissions =
-					parsedSubmissions.plus(submission.obj to submission.obj.parse(form))
-			}
+		val newHistory = getHistory()
+		if (newHistory.map { it.transition } != fullHistory.map { it.transition }) {
+			setFullHistory(newHistory)
+		}
 	}
 
-	var formLoaded by useState(false)
-	useEffect(form) {
-		scope.reportExceptions {
-			form.load(client.compositesReferencedIn(form))
-			formLoaded = true
+	useEffect(fullHistory, showFullHistory) {
+		for ((i, parsed) in history.withIndex()) {
+			val fields = parsed.transition.fields
+			if (fields != null && parsed.submission == null) {
+				scope.launch {
+					fields.load { client.findSubmission(it) }
+					val newParsed = parsed.copy(submission = fields.obj.parse(form))
+					setFullHistory { full -> full.replace(i, newParsed) }
+				}
+			}
 		}
 	}
 
@@ -187,21 +229,41 @@ private val ReviewRecord = fc<ReviewRecordProps> { props ->
 		.takeUnless { it == -1 }
 		?.let { form.actions.getOrNull(it + 1) }
 		?.let { RecordState.Action(it.createRef()) }
-		?: RecordState.Done
-
-	val submitButtonText =
-		if (state == RecordState.Done || state == RecordState.Refused) "Enregistrer"
-		else "Accepter"
+	var selectedNextState by useState(nextState ?: state)
 
 	if (user == null) {
 		styledCard("Dossier", loading = true) { text("Chargement de l'utilisateur…") }
 		return@fc
 	}
 
+	var reason by useState<String>()
+	var warnMandatoryReason by useState(false)
+
+	suspend fun review(
+		fields: FormSubmission?,
+		nextState: RecordState?,
+		reason: String?,
+		sendFields: Boolean = true,
+	) {
+		client.review(ReviewRequest(
+			record.createRef(),
+			RecordStateTransition(
+				(Date.now() / 1000).toLong(),
+				state,
+				nextState ?: state,
+				assignee = user.createRef(),
+				reason = reason,
+			),
+			fields.takeIf { sendFields },
+		))
+
+		props.refresh(true)
+	}
+
 	styledFormCard(
 		"Dossier",
 		null,
-		submit = submitButtonText to { htmlForm ->
+		submit = "Enregistrer" to { htmlForm ->
 			val submission = if (state is RecordState.Action)
 				parseHtmlForm(
 					htmlForm,
@@ -211,63 +273,117 @@ private val ReviewRecord = fc<ReviewRecordProps> { props ->
 			else null
 
 			launch {
-				client.review(ReviewRequest(
-					record.createRef(),
-					RecordStateTransition(
-						(Date.now() / 1000).toLong(),
-						state,
-						nextState,
-						assignee = user.createRef(),
-						reason = null,
-					),
+				review(
 					submission,
-				))
-
-				props.refresh()
+					nextState = selectedNextState,
+					reason = reason,
+					sendFields = true,
+				)
 			}
 		},
 		"Refuser" to {
-			client.review(ReviewRequest(
-				record.createRef(),
-				RecordStateTransition(
-					(Date.now() / 1000).toLong(),
-					state,
-					RecordState.Refused,
-					assignee = user.createRef(),
-					reason = "NOT YET IMPLEMENTED", //TODO add a reason to the review process
-				),
-				fields = null
-			))
-
-			props.refresh()
+			if (reason.isNullOrBlank()) {
+				warnMandatoryReason = true
+			} else {
+				review(
+					fields = null,
+					nextState = RecordState.Refused,
+					reason = reason,
+					sendFields = false,
+				)
+			}
 		},
+		(if (showFullHistory) "Afficher uniquement les valeurs les plus récentes" else "Historique complet") to {
+			showFullHistory = !showFullHistory
+		}
 	) {
 		var i = 0
 
-		for (submission in record.submissions) {
+		for (parsed in history) {
 			styledNesting(depth = 0, fieldNumber = i) {
-				if (submission.loaded && parsedSubmissions[submission.obj] != null && formLoaded) {
-					immutableFields(parsedSubmissions[submission.obj]!!)
+				val transition = parsed.transition
+				val title = transition.previousState?.displayName() ?: "Saisie originelle"
+				if (showFullHistory) {
+					styledTitle("$title → ${transition.nextState.displayName()}")
 				} else {
-					p { text("Chargement…"); loadingSpinner() }
+					styledTitle(title)
+				}
+				val timestamp = Date(transition.timestamp * 1000)
+				if (transition.previousState != null) {
+					p {
+						text("Par ${transition.assignee?.id}")
+						if (transition.reason != null)
+							text(" parce que \"${transition.reason}\"")
+						text(", le ${timestamp.toLocaleString()}.")
+					}
+				} else {
+					p { text("Le ${timestamp.toLocaleString()}.") }
+				}
+
+				if (transition.fields != null) {
+					if (parsed.submission == null || !props.formLoaded) {
+						p { text("Chargement des saisies…"); loadingSpinner() }
+					} else {
+						br {}
+						immutableFields(parsed.submission)
+					}
 				}
 			}
 			i++
 		}
 
 		if (state is RecordState.Action) {
-			styledNesting(depth = 0, fieldNumber = i) {
-				state.current.loadFrom(form.actions, lazy = true)
-				val action = state.current.obj
+			state.current.loadFrom(form.actions, lazy = true)
+			val action = state.current.obj
 
-				val root = action.fields
-				if (root != null) {
+			val root = action.fields
+			if (root != null) {
+				styledNesting(depth = 0, fieldNumber = i) {
 					for (field in root.fields) {
 						field(field)
 					}
+					i++
 				}
-				i++
 			}
+		}
+
+		div {
+			text("Envoyer ce dossier à :")
+
+			for (candidateNextState in form.actions.map { RecordState.Action(it.createRef()) }) {
+				if (selectedNextState != candidateNextState) {
+					styledButton(
+						candidateNextState.current.obj.name,
+						action = { selectedNextState = candidateNextState },
+					)
+				} else {
+					styledDisabledButton(candidateNextState.current.obj.name)
+				}
+
+				if (candidateNextState == nextState)
+					break
+			}
+
+			if (state == RecordState.Refused) {
+				if (selectedNextState != RecordState.Refused) {
+					styledButton(RecordState.Refused.displayName(),
+					             action = { selectedNextState = RecordState.Refused })
+				} else {
+					styledDisabledButton(RecordState.Refused.displayName())
+				}
+			}
+		}
+
+		styledField("record-${record.id}-reason", "Pourquoi ce choix ?") {
+			styledInput(InputType.text, "record-${record.id}-reason") {
+				value = reason ?: ""
+				onChangeFunction = {
+					reason = (it.target as HTMLInputElement).value
+				}
+			}
+
+			if (warnMandatoryReason)
+				styledErrorText("Ce champ est obligatoire pour un refus.")
 		}
 	}
 }

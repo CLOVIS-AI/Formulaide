@@ -21,9 +21,22 @@ data class Record(
 	override val id: ReferenceId,
 	val form: Ref<Form>,
 	val state: RecordState,
-	val submissions: List<Ref<FormSubmission>>,
 	val history: List<RecordStateTransition>,
 ) : Referencable {
+
+	// Left for backward compatibility
+	val submissions: List<Ref<FormSubmission>>
+		get() = history.mapNotNull { it.fields }
+
+	fun load() {
+		history.asSequence()
+			.flatMap { sequenceOf(it.previousState, it.nextState) }
+			.plus(state)
+			.forEach {
+				if (it is RecordState.Action) it.current.loadFrom(form.obj.actions,
+				                                                  lazy = true)
+			}
+	}
 
 	companion object {
 		const val MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION = 100
@@ -42,16 +55,6 @@ sealed class RecordState {
 	@SerialName("ACTION")
 	@Serializable
 	data class Action(val current: Ref<FormAction>) : RecordState()
-
-	/**
-	 * All review steps have been successfully validated.
-	 */
-	@SerialName("DONE")
-	@Serializable
-	object Done : RecordState() {
-
-		override fun toString() = "formulaide.api.data.RecordState\$Done"
-	}
 
 	/**
 	 * One of the review steps failed.
@@ -79,10 +82,11 @@ data class RecordStateTransition(
 	val nextState: RecordState,
 	val assignee: Ref<User>?,
 	val reason: String?,
+	val fields: Ref<FormSubmission>? = null,
 ) {
 
 	init {
-		if (nextState is RecordState.Refused)
+		if (nextState is RecordState.Refused && previousState !is RecordState.Refused)
 			requireNotNull(reason) { "Il est obligatoire de donner une raison pour fermer un dossier" }
 
 		if (previousState != null)
