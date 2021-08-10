@@ -86,7 +86,7 @@ data class RecordStateTransition(
 ) {
 
 	init {
-		if (nextState is RecordState.Refused)
+		if (nextState is RecordState.Refused && previousState !is RecordState.Refused)
 			requireNotNull(reason) { "Il est obligatoire de donner une raison pour fermer un dossier" }
 
 		if (previousState != null)
