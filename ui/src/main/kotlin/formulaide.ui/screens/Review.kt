@@ -25,12 +25,13 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import react.*
+import react.dom.br
 import react.dom.p
 import kotlin.js.Date
 
 internal fun RecordState.displayName() = when (this) {
 	is RecordState.Action -> this.current.obj.name
-	is RecordState.Refused -> "Refusés"
+	is RecordState.Refused -> "Dossiers refusés"
 }
 
 private data class ReviewSearch(
@@ -82,7 +83,7 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 	}
 
 	styledCard(
-		"Dossiers ${state.displayName()}",
+		state.displayName(),
 		form.name,
 		"Actualiser" to refresh,
 		loading = loading,
@@ -152,7 +153,13 @@ private external interface ReviewRecordProps : RProps {
 	var refresh: suspend () -> Unit
 }
 
+private data class ParsedTransition(
+	val transition: RecordStateTransition,
+	val submission: ParsedSubmission?,
+)
+
 private val ReviewRecord = fc<ReviewRecordProps> { props ->
+	traceRenders("ReviewRecord ${props.record.id}")
 	val form = props.form
 	val record = props.record
 	val scope = useAsync()
@@ -160,16 +167,27 @@ private val ReviewRecord = fc<ReviewRecordProps> { props ->
 	val (user) = useUser()
 
 	record.form.load(form)
+	record.load()
 	require(client is Client.Authenticated) { "Seuls les employés peuvent accéder à cette page" }
 
-	var parsedSubmissions by useState(emptyMap<FormSubmission, ParsedSubmission>())
-	useEffect(record) {
-		for (submission in record.submissions)
-			scope.reportExceptions {
-				submission.load { client.findSubmission(it) }
-				parsedSubmissions =
-					parsedSubmissions.plus(submission.obj to submission.obj.parse(form))
+	var showFullHistory by useState(false)
+	val (fullHistory, setFullHistory) = useState(record.history.map { ParsedTransition(it, null) })
+	val history =
+		if (showFullHistory) fullHistory
+		else fullHistory.groupBy { it.transition.previousState }
+			.mapNotNull { (_, v) -> v.maxByOrNull { it.transition.timestamp } }
+
+	useEffect(fullHistory, showFullHistory) {
+		for ((i, parsed) in history.withIndex()) {
+			val fields = parsed.transition.fields
+			if (fields != null && parsed.submission == null) {
+				scope.launch {
+					fields.load { client.findSubmission(it) }
+					val newParsed = parsed.copy(submission = fields.obj.parse(form))
+					setFullHistory { full -> full.replace(i, newParsed) }
+				}
 			}
+		}
 	}
 
 	var formLoaded by useState(false)
@@ -239,15 +257,34 @@ private val ReviewRecord = fc<ReviewRecordProps> { props ->
 
 			props.refresh()
 		},
+		(if (showFullHistory) "Valeurs les plus récentes" else "Historique complet") to {
+			showFullHistory = !showFullHistory
+		}
 	) {
+		traceRenders("ReviewRecord card")
 		var i = 0
 
-		for (submission in record.submissions) {
+		for (parsed in history) {
 			styledNesting(depth = 0, fieldNumber = i) {
-				if (submission.loaded && parsedSubmissions[submission.obj] != null && formLoaded) {
-					immutableFields(parsedSubmissions[submission.obj]!!)
-				} else {
-					p { text("Chargement…"); loadingSpinner() }
+				val transition = parsed.transition
+				styledTitle(transition.previousState?.displayName() ?: "Saisie originelle")
+				p { text("Déplacé vers ${transition.nextState.displayName()} à ${transition.timestamp}.") }
+				if (transition.previousState != null) {
+					p {
+						text("Déplacé par ${transition.assignee?.id}")
+						if (transition.reason != null)
+							text(" parce que \"${transition.reason}\"")
+						text(".")
+					}
+				}
+
+				if (transition.fields != null) {
+					br {}
+					if (parsed.submission == null || !formLoaded) {
+						p { text("Chargement des saisies…"); loadingSpinner() }
+					} else {
+						immutableFields(parsed.submission)
+					}
 				}
 			}
 			i++

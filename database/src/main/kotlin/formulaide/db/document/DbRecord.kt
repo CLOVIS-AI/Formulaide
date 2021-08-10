@@ -23,13 +23,13 @@ suspend fun Database.createRecord(submission: FormSubmission) {
 		newId<Record>().toString(),
 		form.createRef(),
 		state,
-		submissions = listOf(submission.createRef()),
 		history = listOf(RecordStateTransition(
 			Instant.now().epochSecond,
 			previousState = null,
 			nextState = state,
 			assignee = null,
 			reason = "Saisie originelle",
+			fields = submission.createRef(),
 		))
 	)
 
@@ -75,10 +75,11 @@ suspend fun Database.reviewRecord(review: ReviewRequest, employee: DbUser) {
 
 	val newRecord = record.copy(
 		state = review.transition.nextState,
-		submissions = record.submissions +
-				(if (submissionToCreate != null) listOf(submissionToCreate.toApi().createRef())
-				else emptyList()),
-		history = record.history + review.transition
+		history = record.history +
+				(if (submissionToCreate != null)
+					review.transition.copy(fields = Ref(submissionToCreate.apiId))
+				else
+					review.transition)
 	)
 
 	records.updateOne(Record::id eq record.id, newRecord)

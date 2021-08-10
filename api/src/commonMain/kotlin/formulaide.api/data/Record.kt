@@ -21,9 +21,22 @@ data class Record(
 	override val id: ReferenceId,
 	val form: Ref<Form>,
 	val state: RecordState,
-	val submissions: List<Ref<FormSubmission>>,
 	val history: List<RecordStateTransition>,
 ) : Referencable {
+
+	// Left for backward compatibility
+	val submissions: List<Ref<FormSubmission>>
+		get() = history.mapNotNull { it.fields }
+
+	fun load() {
+		history.asSequence()
+			.flatMap { sequenceOf(it.previousState, it.nextState) }
+			.plus(state)
+			.forEach {
+				if (it is RecordState.Action) it.current.loadFrom(form.obj.actions,
+				                                                  lazy = true)
+			}
+	}
 
 	companion object {
 		const val MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION = 100
@@ -69,6 +82,7 @@ data class RecordStateTransition(
 	val nextState: RecordState,
 	val assignee: Ref<User>?,
 	val reason: String?,
+	val fields: Ref<FormSubmission>? = null,
 ) {
 
 	init {
