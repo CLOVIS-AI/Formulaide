@@ -57,6 +57,7 @@ val CreateForm = fc<RProps> { _ ->
 			)
 
 			launch {
+				form.validate()
 				client.createForm(form)
 
 				refreshForms()
