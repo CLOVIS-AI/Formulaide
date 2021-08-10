@@ -6,6 +6,7 @@ import formulaide.api.fields.DataField
 import formulaide.api.fields.SimpleField.Message
 import formulaide.api.fields.SimpleField.Text
 import formulaide.api.types.Arity
+import formulaide.api.types.Ref
 import formulaide.client.*
 import kotlinx.serialization.encodeToString
 import kotlin.test.Test
@@ -112,6 +113,7 @@ class FormsTest {
 					}
 				}
 			},
+			Action("0", order = 0, reviewer = Ref("0"), name = "Validés"),
 		).let { admin.createForm(it) }
 
 		println(form)

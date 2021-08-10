@@ -1,5 +1,6 @@
 package formulaire.api.data
 
+import formulaide.api.data.Action
 import formulaide.api.data.Composite
 import formulaide.api.data.Form
 import formulaide.api.data.FormSubmission
@@ -7,6 +8,7 @@ import formulaide.api.data.FormSubmission.Companion.createSubmission
 import formulaide.api.fields.*
 import formulaide.api.fields.SimpleField.Text
 import formulaide.api.types.Arity
+import formulaide.api.types.Ref
 import formulaide.api.types.Ref.Companion.SPECIAL_TOKEN_NEW
 import formulaide.api.types.Ref.Companion.createRef
 import kotlinx.serialization.encodeToString
@@ -144,7 +146,9 @@ class FormSubmissionTest {
 					)
 				)
 			),
-			actions = emptyList()
+			actions = listOf(
+				Action("0", order = 0, reviewer = Ref("0"), name = "Validés")
+			)
 		)
 
 		println("Identity: " + Json.encodeToString(identity))
@@ -306,7 +310,9 @@ class FormSubmissionTest {
 					union
 				),
 			),
-			actions = emptyList()
+			actions = listOf(
+				Action("0", order = 0, reviewer = Ref("0"), name = "Validés")
+			)
 		)
 		form.load(listOf(identity))
 		form.validate()

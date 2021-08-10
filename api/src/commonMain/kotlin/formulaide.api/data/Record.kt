@@ -44,16 +44,6 @@ sealed class RecordState {
 	data class Action(val current: Ref<FormAction>) : RecordState()
 
 	/**
-	 * All review steps have been successfully validated.
-	 */
-	@SerialName("DONE")
-	@Serializable
-	object Done : RecordState() {
-
-		override fun toString() = "formulaide.api.data.RecordState\$Done"
-	}
-
-	/**
 	 * One of the review steps failed.
 	 *
 	 * To understand why, see [Record.history].

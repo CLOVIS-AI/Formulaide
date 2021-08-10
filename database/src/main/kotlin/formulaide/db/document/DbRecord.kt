@@ -16,7 +16,8 @@ suspend fun Database.createRecord(submission: FormSubmission) {
 	val form = submission.form.obj
 
 	val state =
-		form.actions.firstOrNull()?.let { RecordState.Action(it.createRef()) } ?: RecordState.Done
+		form.actions.firstOrNull()?.let { RecordState.Action(it.createRef()) }
+			?: error("Le formulaire ${form.id} n'a pas d'étapes, il n'est pas possible de créer une saisie")
 
 	val record = Record(
 		newId<Record>().toString(),
@@ -66,7 +67,7 @@ suspend fun Database.reviewRecord(review: ReviewRequest, employee: DbUser) {
 			submissionToCreate = saveSubmission(submission)
 		}
 		else -> {
-			require(review.fields == null) { "Une transition depuis l'état ${RecordState.Done} ou ${RecordState.Refused} ne peut pas contenir de champs" }
+			require(review.fields == null) { "Une transition depuis l'état ${RecordState.Refused} ne peut pas contenir de champs" }
 
 			submissionToCreate = null
 		}

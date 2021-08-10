@@ -30,7 +30,6 @@ import kotlin.js.Date
 
 internal fun RecordState.displayName() = when (this) {
 	is RecordState.Action -> this.current.obj.name
-	is RecordState.Done -> "Acceptés"
 	is RecordState.Refused -> "Refusés"
 }
 
@@ -187,10 +186,9 @@ private val ReviewRecord = fc<ReviewRecordProps> { props ->
 		.takeUnless { it == -1 }
 		?.let { form.actions.getOrNull(it + 1) }
 		?.let { RecordState.Action(it.createRef()) }
-		?: RecordState.Done
 
 	val submitButtonText =
-		if (state == RecordState.Done || state == RecordState.Refused) "Enregistrer"
+		if (state == RecordState.Refused) "Enregistrer"
 		else "Accepter"
 
 	if (user == null) {
@@ -216,7 +214,7 @@ private val ReviewRecord = fc<ReviewRecordProps> { props ->
 					RecordStateTransition(
 						(Date.now() / 1000).toLong(),
 						state,
-						nextState,
+						nextState ?: state,
 						assignee = user.createRef(),
 						reason = null,
 					),
