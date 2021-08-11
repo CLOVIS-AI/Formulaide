@@ -59,12 +59,7 @@ suspend fun Database.reviewRecord(review: ReviewRequest, employee: DbUser) {
 		previous is RecordState.Action -> {
 			previous.current.loadFrom(record.form.obj.actions, lazy = false, allowNotFound = false)
 
-			val submission = review.fields
-				?: FormSubmission(SPECIAL_TOKEN_NEW,
-				                  record.form,
-				                  previous.current,
-				                  emptyMap())
-			submissionToCreate = saveSubmission(submission)
+			submissionToCreate = review.fields?.let { saveSubmission(it) }
 		}
 		else -> {
 			require(review.fields == null) { "Une transition depuis l'état ${RecordState.Refused} ne peut pas contenir de champs" }
