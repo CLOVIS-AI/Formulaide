@@ -2,13 +2,10 @@ package formulaide.db.document
 
 import formulaide.api.data.*
 import formulaide.api.types.Ref
-import formulaide.api.types.Ref.Companion.SPECIAL_TOKEN_NEW
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.types.Ref.Companion.load
 import formulaide.db.Database
-import org.litote.kmongo.div
-import org.litote.kmongo.eq
-import org.litote.kmongo.newId
+import org.litote.kmongo.*
 import java.time.Instant
 
 suspend fun Database.createRecord(submission: FormSubmission) {
@@ -88,7 +85,17 @@ suspend fun Database.findFormsAssignedTo(user: DbUser): List<Form> {
 		.toList()
 }
 
-suspend fun Database.findRecords(form: Form, state: RecordState): List<Record> =
-	records.find(Record::form / Ref<*>::id eq form.id, Record::state eq state)
+suspend fun Database.findRecords(
+	form: Form,
+	state: RecordState,
+	submissions: List<DbSubmission>? = null,
+): List<Record> {
+	val submissionsFilter = submissions
+		?.map { it.apiId }
+		?.let { (Record::history / RecordStateTransition::fields / Ref<*>::id).`in`(it) }
+
+	return records
+		.find(Record::form / Ref<*>::id eq form.id, Record::state eq state, submissionsFilter)
 		.limit(Record.MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION)
 		.toList()
+}

@@ -59,17 +59,23 @@ fun Routing.submissionRoutes() {
 
 				//TODO audit: refuse access to the records based on some rights?
 
-				val records = database.findRecords(form, request.state)
+				val submissions =
+					if (request.query.isNotEmpty()) request.query
+						.map { (actionIdOrNull, query) -> actionIdOrNull?.let { actionId -> form.actions.find { it.id == actionId } } to query }
+						.filter { (_, query) -> query.isNotEmpty() }
+						.takeIf { it.isNotEmpty() } // If there are no criteria, ignore the request
+						?.flatMap { (actionId, query) ->
+							database.searchSubmission(
+								form,
+								actionId,
+								query
+							)
+						}
+					else null
 
-				if (request.query.isNotEmpty()) {
-					val submissions = database.searchSubmission(form, records, request.query)
-						.map { it.apiId }
-						.toSortedSet()
+				val records = database.findRecords(form, request.state, submissions)
 
-					call.respond(records.filter { record -> record.submissions.any { it.id in submissions } })
-				} else {
-					call.respond(records)
-				}
+				call.respond(records)
 			}
 		}
 	}

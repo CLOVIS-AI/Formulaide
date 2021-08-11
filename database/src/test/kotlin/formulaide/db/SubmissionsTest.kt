@@ -152,7 +152,7 @@ class SubmissionsTest {
 		}
 
 		suspend fun query(vararg queries: SearchCriterion<*>) =
-			database.searchSubmission(form, emptyList(), queries.asList())
+			database.searchSubmission(form, null, queries.asList())
 
 		val allResults = query(SearchCriterion.TextContains("0", "0"))
 		val maleResults = query(SearchCriterion.TextEquals("1", "0"))

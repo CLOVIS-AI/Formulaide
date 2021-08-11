@@ -151,18 +151,12 @@ fun DbSubmission.toApi() = FormSubmission(apiId, Ref(form), root?.let { Ref(it) 
 
 suspend fun Database.searchSubmission(
 	form: Form,
-	records: List<Record>,
+	root: Action?,
 	criteria: List<SearchCriterion<*>>,
 ): List<DbSubmission> {
 	val filter = ArrayList<Bson>()
 	filter += DbSubmission::form eq form.id
-
-	val allowedSubmissions = records.flatMap { it.submissions }.map { it.id }
-	val allowedSubmissionsFilter = ArrayList<Bson>()
-	for (allowedSubmission in allowedSubmissions) {
-		allowedSubmissionsFilter += DbSubmission::apiId eq allowedSubmission
-	}
-	filter += or(allowedSubmissionsFilter)
+	filter += DbSubmission::root eq root?.id
 
 	for (criterion in criteria) {
 		val ids = criterion.fieldKey
