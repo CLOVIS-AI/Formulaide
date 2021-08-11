@@ -264,13 +264,14 @@ private val ReviewRecord = fc<ReviewRecordProps> { props ->
 		"Dossier",
 		null,
 		submit = "Enregistrer" to { htmlForm ->
-			val submission = if (state is RecordState.Action)
-				parseHtmlForm(
-					htmlForm,
-					form,
-					state.current.obj,
-				)
-			else null
+			val submission =
+				if (state is RecordState.Action && state.current.obj.fields?.fields?.isNotEmpty() == true)
+					parseHtmlForm(
+						htmlForm,
+						form,
+						state.current.obj,
+					)
+				else null
 
 			launch {
 				review(
