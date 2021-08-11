@@ -26,10 +26,12 @@ suspend fun Client.Authenticated.todoList(): List<Form> =
 suspend fun Client.Authenticated.todoListFor(
 	form: Form,
 	state: RecordState,
-	criteria: List<SearchCriterion<*>>,
+	criteria: Map<Action?, List<SearchCriterion<*>>> = emptyMap(),
 ): List<Record> =
 	post("/submissions/recordsToReview",
-	     body = RecordsToReviewRequest(form.createRef(), state, criteria))
+	     body = RecordsToReviewRequest(form.createRef(),
+	                                   state,
+	                                   criteria.mapKeys { (k, _) -> k?.id }))
 
 /**
  * Edits a [Record] (for example to edit its [state][Record.state]).

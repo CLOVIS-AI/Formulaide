@@ -61,7 +61,8 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 	)
 	var loading by useState(false)
 
-	val allCriteria = searches.flatMap { it.criteria }
+	val allCriteria = searches.groupBy { it.action }
+		.mapValues { (_, v) -> v.flatMap { it.criteria } }
 	val refresh: suspend (Boolean) -> Unit = { forceUpdate ->
 		loading = true
 		val newRecords = client.todoListFor(form, state, allCriteria)
@@ -129,7 +130,9 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 							} else if (next == null) {
 								updateSearch(criteria = search.criteria - previous)
 							} else {
-								updateSearch(criteria = search.criteria.replace(i, next))
+								updateSearch(criteria = search.criteria.replace(
+									search.criteria.indexOf(previous),
+									next))
 							}
 						}
 					)
@@ -264,13 +267,14 @@ private val ReviewRecord = fc<ReviewRecordProps> { props ->
 		"Dossier",
 		null,
 		submit = "Enregistrer" to { htmlForm ->
-			val submission = if (state is RecordState.Action)
-				parseHtmlForm(
-					htmlForm,
-					form,
-					state.current.obj,
-				)
-			else null
+			val submission =
+				if (state is RecordState.Action && state.current.obj.fields?.fields?.isNotEmpty() == true)
+					parseHtmlForm(
+						htmlForm,
+						form,
+						state.current.obj,
+					)
+				else null
 
 			launch {
 				review(

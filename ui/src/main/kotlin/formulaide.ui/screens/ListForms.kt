@@ -94,7 +94,7 @@ internal val ActionDescription = fc<ActionDescriptionProps> { props ->
 	useEffect(client, user) {
 		if (user != null && client is Client.Authenticated)
 			scope.reportExceptions {
-				records = client.todoListFor(form, state, emptyList())
+				records = client.todoListFor(form, state)
 			}
 	}
 

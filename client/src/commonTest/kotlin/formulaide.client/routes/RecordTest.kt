@@ -83,7 +83,7 @@ class RecordTest {
 		assertTrue(assignedTodoList.any { it.id == assignedForm.id })
 		assertFalse(assignedTodoList.any { it.id == notAssignedForm.id })
 
-		assertTrue(client.todoListFor(assignedForm, RecordState.Action(Ref("0")), emptyList())
+		assertTrue(client.todoListFor(assignedForm, RecordState.Action(Ref("0")))
 			           .isEmpty())
 
 		val alphaSubmission = assignedForm.createSubmission(null) {
@@ -98,7 +98,7 @@ class RecordTest {
 			union(favoriteAnimal, dog) {}
 		}.also { client.submitForm(it) }
 
-		val records = client.todoListFor(assignedForm, RecordState.Action(Ref("0")), emptyList())
+		val records = client.todoListFor(assignedForm, RecordState.Action(Ref("0")))
 			.onEach { println("Saisie pour l'étape 0 du formulaire ${assignedForm.id} : $it") }
 		assertEquals(2, records.size)
 		for (record in records) {
@@ -151,10 +151,10 @@ class RecordTest {
 		))
 
 		assertEquals(1,
-		             client.todoListFor(assignedForm, RecordState.Action(Ref("1")), emptyList())
+		             client.todoListFor(assignedForm, RecordState.Action(Ref("1")))
 			             .also { println("Étape 1 : $it") }.size)
 		assertEquals(1,
-		             client.todoListFor(assignedForm, RecordState.Refused, emptyList())
+		             client.todoListFor(assignedForm, RecordState.Refused)
 			             .also { println("Refusés : $it") }.size)
 
 		// Cleanup…

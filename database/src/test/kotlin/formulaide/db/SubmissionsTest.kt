@@ -152,9 +152,9 @@ class SubmissionsTest {
 		}
 
 		suspend fun query(vararg queries: SearchCriterion<*>) =
-			database.searchSubmission(form, emptyList(), queries.asList())
+			database.searchSubmission(form, null, queries.asList())
 
-		val allResults = query(SearchCriterion.TextContains("0", "1"))
+		val allResults = query(SearchCriterion.TextContains("0", "0"))
 		val maleResults = query(SearchCriterion.TextEquals("1", "0"))
 		val femaleResults = query(SearchCriterion.TextEquals("1", "1"))
 		val otherResults = query(SearchCriterion.TextEquals("1", "2"))
@@ -171,6 +171,10 @@ class SubmissionsTest {
 		val malesThatGaveTheFirstName =
 			query(SearchCriterion.Exists("3:1"), SearchCriterion.TextEquals("1", "0"))
 		assertEquals(1, malesThatGaveTheFirstName.size, "Found: $malesThatGaveTheFirstName")
-		println(malesThatGaveTheFirstName)
+
+		// Whether the query finds neighbor replies (it shouldn't)
+		// All first names are either empty or ends with a 2. There shouldn't be any first name with a 1.
+		val falsePositives = query(SearchCriterion.TextContains("3:1", "1"))
+		assertEquals(0, falsePositives.size, "Found: $falsePositives")
 	}
 }
