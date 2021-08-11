@@ -167,26 +167,33 @@ suspend fun Database.searchSubmission(
 	for (criterion in criteria) {
 		val ids = criterion.fieldKey
 			.split(":")
+		require(ids.isNotEmpty()) { "Un critère de recherche doit obligatoirement préciser la clef d'un champ, trouvé: '${criterion.fieldKey}'" }
 
-		var node = DbSubmission::data / DbSubmissionData::children
-		for ((i, id) in ids.withIndex()) {
-			filter += node / DbSubmissionData::key eq id
-
-			if (i != ids.lastIndex)
-				node /= DbSubmissionData::children
+		val value = DbSubmissionData::value
+		val valueFilter = when (criterion) {
+			is SearchCriterion.TextContains -> value
+				.regex(".*${Pattern.quote(criterion.text)}.*", options = "i")
+			is SearchCriterion.TextEquals -> value eq criterion.text
+			is SearchCriterion.OrderAfter -> value gte criterion.min
+			is SearchCriterion.OrderBefore -> value lte criterion.max
+			is SearchCriterion.Exists -> null // Nothing to do, the previous loop is enough
 		}
 
-		@Suppress("UNUSED_VARIABLE") // to force exhaustive when
-		val e = when (criterion) {
-			is SearchCriterion.TextContains -> {
-				filter += (node / DbSubmissionData::value).regex(".*${Pattern.quote(criterion.text)}.*",
-				                                                 options = "i")
-			}
-			is SearchCriterion.TextEquals -> filter += node / DbSubmissionData::value eq criterion.text
-			is SearchCriterion.OrderAfter -> filter += node / DbSubmissionData::value gte criterion.min
-			is SearchCriterion.OrderBefore -> filter += node / DbSubmissionData::value lte criterion.max
-			is SearchCriterion.Exists -> Unit // Nothing to do, the previous loop is enough
+		lateinit var nodeFilter: Bson // The list 'ids' can't be empty, so this variable will always be initialized
+		for (i in ids.indices.reversed()) {
+			// DbSubmissionData::children is not the root of the object, so we need to have a special case for the root
+			val children =
+				if (i == 0) DbSubmission::data / DbSubmissionData::children
+				else DbSubmissionData::children
+
+			val keyFilter = DbSubmissionData::key eq ids[i]
+
+			// The last id matches for the value, other ids match for the previous child
+			nodeFilter =
+				if (i == ids.lastIndex) children.elemMatch(and(keyFilter, valueFilter))
+				else children.elemMatch(and(keyFilter, nodeFilter))
 		}
+		filter += nodeFilter
 	}
 
 	return submissions.find(and(filter)).toList()
