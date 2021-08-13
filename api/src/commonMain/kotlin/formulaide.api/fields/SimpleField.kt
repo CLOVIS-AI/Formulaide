@@ -2,11 +2,13 @@ package formulaide.api.fields
 
 import formulaide.api.fields.SimpleField.Message.arity
 import formulaide.api.types.Arity
+import formulaide.api.types.Ref
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import formulaide.api.types.Date as ApiDate
 import formulaide.api.types.Email as ApiEmail
 import formulaide.api.types.Time as ApiTime
+import formulaide.api.types.Upload as ApiUpload
 
 /**
  * A field that represents some specific data.
@@ -214,6 +216,42 @@ sealed class SimpleField {
 
 		override fun toString() = "Message"
 		override fun requestCopy(arity: Arity?) = this // there's no arity here
+	}
+
+	/**
+	 * A file uploaded by the user.
+	 *
+	 * @property allowsImages Whether images (PNG, JPEG) are allowed for this field
+	 * @property allowsDocuments Whether documents (PDF) are allowed for this field
+	 * @property maxSizeMB The maximal size of files, in MB (1..16)
+	 * @property expiresAfterDays The time before the file is removed (to comply with RGPD, in days)
+	 * @see ApiUpload
+	 */
+	@Serializable
+	@SerialName("FILE_UPLOAD")
+	data class Upload(
+		override val arity: Arity,
+		val allowsImages: kotlin.Boolean = false,
+		val allowsDocuments: kotlin.Boolean = false,
+		val maxSizeMB: Int?,
+		val expiresAfterDays: Int?,
+	) : SimpleField() {
+		init {
+			require(allowsImages || allowsDocuments) { "Cette pièce jointe n'autorise aucun type de fichier" }
+			require(effectiveMaxSizeMB in 1..16) { "Une pièce jointe doit avoir une taille comprise entre 1 et 16 Mo : trouvé $effectiveMaxSizeMB Mo" }
+			require(effectiveExpiresAfterDays in 1..500) { "Une pièce jointe ne peut pas avoir une date d'expiration de tant de temps : trouvé $effectiveExpiresAfterDays jours" }
+		}
+
+		val effectiveMaxSizeMB get() = maxSizeMB ?: 16
+		val effectiveExpiresAfterDays get() = expiresAfterDays ?: (30 * 12)
+
+		override fun parse(value: String?): Ref<ApiUpload> {
+			requireNotNull(value) { "Un fichier doit avoir des coordonnées : trouvé $value" }
+
+			return Ref(value)
+		}
+
+		override fun requestCopy(arity: Arity?): SimpleField = copy(arity = arity ?: this.arity)
 	}
 
 }
