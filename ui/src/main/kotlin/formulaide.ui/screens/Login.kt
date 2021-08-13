@@ -11,6 +11,7 @@ import formulaide.client.routes.todoList
 import formulaide.ui.*
 import formulaide.ui.components.*
 import formulaide.ui.utils.text
+import kotlinx.browser.window
 import kotlinx.html.InputType
 import org.w3c.dom.HTMLInputElement
 import react.*
@@ -158,6 +159,9 @@ val LoginAccess = fc<RProps> {
 			"Modifier mon mot de passe" to {
 				navigateTo(Screen.EditPassword(user.email,
 				                               Screen.Home))
+			},
+			"Aide" to {
+				window.open("https://arcachon-ville.gitlab.io/formulaide/docs/user-guide.pdf")
 			}
 		) {
 			child(FormsToReview)

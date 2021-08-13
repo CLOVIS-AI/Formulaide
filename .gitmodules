@@ -1,0 +1,3 @@
+[submodule "docs/latex-templates"]
+	path = docs/latex-templates
+	url = https://gitlab.com/clovis-ai/latex-template.git

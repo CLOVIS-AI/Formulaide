@@ -74,7 +74,7 @@ dokka:
   image: $JDK_IMAGE
   stage: build
   extends: [ .gradle ]
-  needs: []
+  needs: [ ]
   before_script:
     - *prepare_gradle
   script:
@@ -84,11 +84,30 @@ dokka:
     paths:
       - build/dokka/htmlMultiModule/
 
+latex:
+  image: clovisai/latex:latest
+  stage: build
+  needs: [ ]
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
+  before_script:
+    - export TERM=xterm
+    - mkdir -p public/docs
+  script:
+    - cd docs
+    - ln -s latex-templates/clovisai.sty
+    - ln -s latex-templates/clovisai-constructs.sty
+    - ./latex-templates/build PDF *.tex
+    - mv *.pdf ../public/docs/
+  artifacts:
+    paths:
+      - public/docs/
+
 server-bin:
   image: $JDK_IMAGE
   extends: [ .gradle ]
   stage: build
-  needs: []
+  needs: [ ]
   before_script:
     - *prepare_gradle
   script:
@@ -266,8 +285,8 @@ server-bin-docker-tag:
 pages:
   image: alpine:latest
   stage: deploy
-  dependencies: [ dokka, server-bin, qodana ]
-  needs: [ dokka, server-bin, qodana ]
+  dependencies: [ dokka, server-bin, qodana, latex ]
+  needs: [ dokka, server-bin, qodana, latex ]
   script:
     - mkdir -p public/documentation public/bin public/qodana
     - mv build/dokka/htmlMultiModule/* public/documentation/

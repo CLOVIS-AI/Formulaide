@@ -1,0 +1,51 @@
+%! Author = Ivan Canet
+%! Date = 30/07/2021
+
+% Preamble
+\documentclass[11pt,french]{memoir}
+
+% Packages
+\usepackage{amsmath}
+\usepackage{babel}
+\usepackage{clovisai}
+
+% Arrow inspired by https://tex.stackexchange.com/a/144567/167084
+%\newcommand{\linkarrow}{\mathrel{\text{\rotatebox[origin=c]{\numexpr45}{$\vrule height 3\fontdimen22\textfont2 width 0pt\rightarrow$}}}}
+\newcommand{\hrefs}[1]{\href{#1}{\texttt{#1}}}
+
+% Document
+\begin{document}
+	\renewcommand{\chaptername}{Partie}
+
+	\frontmatter
+	\title{Formulaide --- Manuel utilisateur}
+	\author{Ivan Canet}
+	\maketitle
+
+	\tableofcontents
+
+	\mainmatter
+
+
+	\chapter{Navigation}\label{ch:navbar}
+
+
+	\chapter{Employé}\label{ch:employee}
+
+
+	\chapter{Administrateur}\label{ch:admin}
+
+
+	\chapter{Installation et maintenance}\label{ch:maintenance}
+
+	\appendix
+	\renewcommand{\bibname}{Références}
+	\begin{thebibliography}{9}
+
+		\bibitem{gitlab}
+		Code source du projet:
+		\hrefs{https://gitlab.com/arcachon-ville/formulaide}
+
+	\end{thebibliography}
+
+\end{document}
