@@ -50,6 +50,10 @@ fun main(args: Array<String>) {
 	io.ktor.server.netty.EngineMain.main(args)
 }
 
+val serializer = Json(DefaultJson) {
+	useArrayPolymorphism = false
+}
+
 @Suppress("unused") // see application.conf
 fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = false) {
 	val auth = Auth(database)
@@ -60,9 +64,7 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 		System.err.println("WARNING. The server has been allowed to create non-safe HTTP cookies. Remove the environment variable 'formulaide_allow_unsafe_cookie' for production use.")
 
 	install(ContentNegotiation) {
-		json(Json(DefaultJson) {
-			useArrayPolymorphism = false
-		})
+		json(serializer)
 	}
 
 	install(CORS) { //TODO: audit
