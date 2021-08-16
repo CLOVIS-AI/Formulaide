@@ -30,6 +30,8 @@ dependencies {
 
 	implementation(kotlinxCoroutines("core"))
 	testImplementation(kotlinxCoroutines("test"))
+
+	implementation(apacheTika("core"))
 }
 
 application {
