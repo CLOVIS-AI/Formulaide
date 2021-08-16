@@ -95,6 +95,7 @@ fun Routing.userRoutes(auth: Auth) {
 						e.printStackTrace()
 						call.respondText("Les informations de connexion sont incorrectes.",
 						                 status = HttpStatusCode.Forbidden)
+						return@post
 					}
 				} else {
 					require(me.isAdministrator) { "Seul un administrateur peut modifier un mot de passe sans fournir sa valeur précédente" }
