@@ -1,6 +1,7 @@
 package formulaide.api.fields
 
 import formulaide.api.fields.SimpleField.Message.arity
+import formulaide.api.fields.SimpleField.Upload.Format
 import formulaide.api.types.Arity
 import formulaide.api.types.Ref
 import kotlinx.serialization.SerialName
@@ -221,9 +222,8 @@ sealed class SimpleField {
 	/**
 	 * A file uploaded by the user.
 	 *
-	 * @property allowsImages Whether images (PNG, JPEG) are allowed for this field
-	 * @property allowsDocuments Whether documents (PDF) are allowed for this field
-	 * @property maxSizeMB The maximal size of files, in MB (1..16)
+	 * @property allowedFormats List of allowed [formats][Format]
+	 * @property maxSizeMB The maximal size of files, in MB (1..10)
 	 * @property expiresAfterDays The time before the file is removed (to comply with RGPD, in days)
 	 * @see ApiUpload
 	 */
@@ -231,18 +231,17 @@ sealed class SimpleField {
 	@SerialName("FILE_UPLOAD")
 	data class Upload(
 		override val arity: Arity,
-		val allowsImages: kotlin.Boolean = false,
-		val allowsDocuments: kotlin.Boolean = false,
-		val maxSizeMB: Int?,
-		val expiresAfterDays: Int?,
+		val allowedFormats: List<Format>,
+		val maxSizeMB: Int? = null,
+		val expiresAfterDays: Int? = null,
 	) : SimpleField() {
 		init {
-			require(allowsImages || allowsDocuments) { "Cette pièce jointe n'autorise aucun type de fichier" }
-			require(effectiveMaxSizeMB in 1..16) { "Une pièce jointe doit avoir une taille comprise entre 1 et 16 Mo : trouvé $effectiveMaxSizeMB Mo" }
+			require(allowedFormats.isNotEmpty()) { "Cette pièce jointe n'autorise aucun type de fichier" }
+			require(effectiveMaxSizeMB in 1..10) { "Une pièce jointe doit avoir une taille comprise entre 1 et 10 Mo : trouvé $effectiveMaxSizeMB Mo" }
 			require(effectiveExpiresAfterDays in 1..500) { "Une pièce jointe ne peut pas avoir une date d'expiration de tant de temps : trouvé $effectiveExpiresAfterDays jours" }
 		}
 
-		val effectiveMaxSizeMB get() = maxSizeMB ?: 16
+		val effectiveMaxSizeMB get() = maxSizeMB ?: 10
 		val effectiveExpiresAfterDays get() = expiresAfterDays ?: (30 * 12)
 
 		override fun parse(value: String?): Ref<ApiUpload> {
@@ -252,6 +251,63 @@ sealed class SimpleField {
 		}
 
 		override fun requestCopy(arity: Arity?): SimpleField = copy(arity = arity ?: this.arity)
+
+		// These formats were selected because they are often used, and the employees likely already have everything needed to open them.
+		@Serializable
+		enum class Format(vararg formats: Pair<List<String>, String>) {
+			IMAGE(
+				listOf("JPEG", "JPG") to "image/jpeg",
+				listOf("PNG") to "image/png",
+				listOf("BMP") to "image/bmp",
+				listOf("TIF", "TIFF") to "image/tiff",
+				listOf("WEBP") to "image/webp",
+			),
+			DOCUMENT(
+				listOf("PDF") to "application/pdf",
+				listOf("TXT") to "text/plain",
+				listOf("RTF") to "application/rtf",
+			),
+			ARCHIVE(
+				listOf("ZIP") to "application/zip",
+			),
+			AUDIO(
+				listOf("MP3") to "audio/mpeg",
+				listOf("OGG") to "audio/ogg",
+				listOf("WAV") to "audio/wav",
+				listOf("WEBA") to "audio/webm",
+			),
+			VIDEO(
+				listOf("AVI") to "video/x-msvideo",
+				listOf("MP4") to "video/mp4",
+				listOf("OGV") to "video/ogg",
+				listOf("WEBM") to "video/webm",
+			),
+			TABULAR(
+				listOf("CSV") to "text/csv",
+			),
+			EVENT(
+				listOf("ICS") to "text/calendar",
+			),
+			;
+
+			val formats = formats.toMap()
+			val extensions get() = formats.keys.flatten()
+			val mimeTypes get() = formats.values
+
+			companion object {
+				/**
+				 * Checks whether the given [mime] type corresponds to one of the provided [formats][Format].
+				 */
+				fun List<Format>.allowsContentType(mime: String) =
+					any { mime in it.mimeTypes }
+
+				/**
+				 * Checks whether the given [file]'s extension is allowed by one of the provided [formats][Format].
+				 */
+				fun List<Format>.allowsFilename(file: String) =
+					any { format -> format.extensions.any { file.endsWith(it, ignoreCase = true) } }
+			}
+		}
 	}
 
 }

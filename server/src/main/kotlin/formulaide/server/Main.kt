@@ -100,5 +100,6 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 		dataRoutes()
 		formRoutes()
 		submissionRoutes()
+		fileRoutes()
 	}
 }

@@ -3,6 +3,7 @@ package formulaide.db
 import formulaide.api.data.Composite
 import formulaide.api.data.Form
 import formulaide.api.data.Record
+import formulaide.db.document.DbFile
 import formulaide.db.document.DbService
 import formulaide.db.document.DbSubmission
 import formulaide.db.document.DbUser
@@ -39,6 +40,7 @@ class Database(
 	internal val forms = database.getCollection<Form>("forms")
 	internal val submissions = database.getCollection<DbSubmission>("submissions")
 	internal val records = database.getCollection<Record>("records")
+	internal val uploads = database.getCollection<DbFile>("uploads")
 
 	private fun getParam(environmentVariable: String, defaultValue: String?): String =
 		System.getenv(environmentVariable)
