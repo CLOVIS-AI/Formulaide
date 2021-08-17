@@ -236,9 +236,8 @@ sealed class SimpleField {
 		val expiresAfterDays: Int? = null,
 	) : SimpleField() {
 		init {
-			require(allowedFormats.isNotEmpty()) { "Cette pièce jointe n'autorise aucun type de fichier" }
 			require(effectiveMaxSizeMB in 1..10) { "Une pièce jointe doit avoir une taille comprise entre 1 et 10 Mo : trouvé $effectiveMaxSizeMB Mo" }
-			require(effectiveExpiresAfterDays in 1..500) { "Une pièce jointe ne peut pas avoir une date d'expiration de tant de temps : trouvé $effectiveExpiresAfterDays jours" }
+			require(effectiveExpiresAfterDays in 1..5000) { "Une pièce jointe ne peut pas avoir une date d'expiration de tant de temps : trouvé $effectiveExpiresAfterDays jours" }
 		}
 
 		val effectiveMaxSizeMB get() = maxSizeMB ?: 10
