@@ -34,7 +34,8 @@ private val ImmutableField: FunctionComponent<ImmutableFieldProps> = fc { props 
 	div {
 		when (val answer = props.answer) {
 			is ParsedSimple<*> -> {
-				if (answer.value !is SimpleField.Message) {
+				val field = answer.constraint
+				if (field.simple !is SimpleField.Message) {
 					text("${answer.constraint.name} : ${answer.value}")
 				} // else: don't display messages here
 			}
