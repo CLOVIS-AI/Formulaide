@@ -3,10 +3,12 @@ package formulaide.db.document
 import formulaide.api.fields.SimpleField
 import formulaide.api.types.Upload
 import formulaide.db.Database
+import kotlinx.coroutines.delay
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.bson.types.Binary
 import org.litote.kmongo.eq
+import org.litote.kmongo.lt
 import org.litote.kmongo.newId
 import java.time.Instant
 import java.time.Period
@@ -47,3 +49,11 @@ suspend fun Database.downloadFile(id: String): DbFile? =
 
 fun DbFile.toApi() =
 	Upload(id, contents.data, uploadTimestamp, expirationTimestamp, mime)
+
+internal suspend fun Database.autoExpireFiles() {
+	while (true) {
+		uploads.deleteMany(DbFile::expirationTimestamp lt Instant.now().epochSecond)
+
+		delay(100_000) // ~1 day
+	}
+}

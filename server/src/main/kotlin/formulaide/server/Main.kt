@@ -16,10 +16,12 @@ import io.ktor.http.*
 import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.serialization.*
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 
-val database = Database("localhost", 27017, "formulaide", "root", "development-password")
+// New job: the server never dies cleanly, it can only be killed. No need for structure concurrency.
+val database = Database("localhost", 27017, "formulaide", "root", "development-password", Job())
 val allowUnsafeCookie = System.getenv("formulaide_allow_unsafe_cookie").toBoolean()
 
 fun main(args: Array<String>) {

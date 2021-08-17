@@ -1,6 +1,7 @@
 package formulaide.db
 
 import formulaide.db.document.createService
+import kotlinx.coroutines.Job
 
 /**
  * Connects to the test database.
@@ -10,7 +11,8 @@ fun testDatabase() = Database(
 	27017,
 	"formulaide-test",
 	"root",
-	"development-password"
+	"development-password",
+	Job()
 )
 
 /**
