@@ -89,7 +89,7 @@ fun Routing.fileRoutes() {
 
 			@Suppress("BlockingMethodInNonBlockingContext")
 			val bytes = withContext(Dispatchers.IO) {
-				file.streamProvider().use {
+				file.streamProvider().buffered().use {
 					mime = getFileType(it, file.originalFileName, mime)
 					require(simple.allowedFormats.allowsContentType(mime)) { "L'analyse du fichier a donné comme type '$mime', qui ne correspond à aucun type autorisé pour ce champ : ${simple.allowedFormats.flatMap { it.mimeTypes }}" }
 
@@ -116,5 +116,5 @@ private fun getFileType(file: InputStream, fileName: String?, advertisedMime: St
 		fileName?.let { set(TikaMetadata.CONTENT_DISPOSITION, it) }
 	}
 
-	return tika.detector.detect(file.buffered(), metadata).toString()
+	return tika.detector.detect(file, metadata).toString()
 }
