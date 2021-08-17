@@ -52,7 +52,7 @@ val copyPostcssConfig = tasks.register<Copy>("copyPostcssConfig") {
 	dependsOn(":kotlinNpmInstall")
 }
 
-tasks.named("processResources") {
+tasks.named("compileKotlinJs") {
 	dependsOn(copyTailwindConfig)
 	dependsOn(copyPostcssConfig)
 }
