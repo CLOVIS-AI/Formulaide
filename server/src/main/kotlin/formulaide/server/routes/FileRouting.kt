@@ -3,7 +3,6 @@ package formulaide.server.routes
 import formulaide.api.fields.FormField
 import formulaide.api.fields.SimpleField
 import formulaide.api.fields.SimpleField.Upload.Format.Companion.allowsContentType
-import formulaide.api.fields.SimpleField.Upload.Format.Companion.allowsFilename
 import formulaide.api.types.Ref
 import formulaide.api.types.Upload
 import formulaide.api.types.UploadRequest
@@ -81,9 +80,6 @@ fun Routing.fileRoutes() {
 
 			val mime = file.contentType
 			require(simple.allowedFormats.allowsContentType(mime.toString())) { "Le type de fichier '$mime' ne correspond à aucun type autorisé pour ce champ : ${simple.allowedFormats.flatMap { it.mimeTypes }}" }
-
-			require(simple.allowedFormats.allowsFilename(file.originalFileName
-				                                             ?: "")) { "Le nom de fichier '${file.originalFileName}' ne possède aucune des extensions autorisées : ${simple.allowedFormats.flatMap { it.extensions }}" }
 
 			@Suppress("BlockingMethodInNonBlockingContext")
 			val bytes = withContext(Dispatchers.IO) {

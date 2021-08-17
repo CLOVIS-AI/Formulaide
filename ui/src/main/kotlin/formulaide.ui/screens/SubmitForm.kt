@@ -90,7 +90,7 @@ fun SubmitForm(formRef: Ref<Form>) = fc<RProps> {
 		},
 	) {
 		for (field in form.mainFields.fields.sortedBy { it.order }) {
-			field(field)
+			field(form, null, field)
 		}
 	}
 }
