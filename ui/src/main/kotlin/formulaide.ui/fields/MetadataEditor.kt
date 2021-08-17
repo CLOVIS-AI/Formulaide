@@ -2,7 +2,10 @@ package formulaide.ui.fields
 
 import formulaide.api.fields.Field
 import formulaide.api.fields.SimpleField
+import formulaide.api.fields.SimpleField.Upload.Format
+import formulaide.api.fields.SimpleField.Upload.Format.*
 import formulaide.ui.components.styledButton
+import formulaide.ui.components.styledCheckbox
 import formulaide.ui.components.styledField
 import formulaide.ui.components.styledInput
 import kotlinx.html.INPUT
@@ -10,6 +13,7 @@ import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
 import react.RBuilder
+import react.dom.div
 import react.fc
 
 val MetadataEditor = fc<EditableFieldProps> { props ->
@@ -25,7 +29,7 @@ val MetadataEditor = fc<EditableFieldProps> { props ->
 						           props,
 						           field,
 						           update = {
-							           it.toIntOrNull()?.let { simple.copy(maxLength = it) }
+							           it.value.toIntOrNull()?.let { simple.copy(maxLength = it) }
 						           })
 						min = "0"
 					}
@@ -42,7 +46,9 @@ val MetadataEditor = fc<EditableFieldProps> { props ->
 						setHandler(simple.min,
 						           props,
 						           field,
-						           update = { it.toLongOrNull()?.let { simple.copy(min = it) } })
+						           update = {
+							           it.value.toLongOrNull()?.let { simple.copy(min = it) }
+						           })
 					}
 					cancelButton(simple.min, props, field, update = { simple.copy(min = 0) })
 				}
@@ -53,9 +59,40 @@ val MetadataEditor = fc<EditableFieldProps> { props ->
 						setHandler(simple.max,
 						           props,
 						           field,
-						           update = { it.toLongOrNull()?.let { simple.copy(max = it) } })
+						           update = {
+							           it.value.toLongOrNull()?.let { simple.copy(max = it) }
+						           })
 					}
 					cancelButton(simple.max, props, field, update = { simple.copy(max = 0) })
+				}
+			}
+			is SimpleField.Upload -> {
+				val id = idOf(field, "files")
+				styledField(id, "Formats autorisés") {
+					for (format in Format.values()) {
+						val name = format.displayName()
+						val idFormat = idOf(field, name)
+						div {
+							styledCheckbox(
+								idFormat,
+								"$name (${format.extensions.joinToString(separator = ", ")})",
+							) {
+								checked = simple.allowedFormats.any { it == format }
+
+								setHandler(
+									simple.allowedFormats.find { it == format },
+									props,
+									field,
+									update = {
+										if (it.checked)
+											simple.copy(allowedFormats = simple.allowedFormats + format)
+										else
+											simple.copy(allowedFormats = simple.allowedFormats - format)
+									}
+								)
+							}
+						}
+					}
 				}
 			}
 		}
@@ -79,13 +116,23 @@ private fun INPUT.setHandler(
 	value: Any?,
 	props: EditableFieldProps,
 	field: Field.Simple,
-	update: (String) -> SimpleField?,
+	update: (HTMLInputElement) -> SimpleField?,
 ) {
 	this.value = value?.toString() ?: ""
 	this.onChangeFunction = {
 		val target = it.target as HTMLInputElement
-		val updated = update(target.value)
+		val updated = update(target)
 		if (updated != null)
 			props.replace(field.requestCopy(updated))
 	}
+}
+
+private fun Format.displayName() = when (this) {
+	IMAGE -> "Images"
+	DOCUMENT -> "Documents"
+	ARCHIVE -> "Archives"
+	AUDIO -> "Audio"
+	VIDEO -> "Vidéo"
+	TABULAR -> "Tableurs"
+	EVENT -> "Événements"
 }
