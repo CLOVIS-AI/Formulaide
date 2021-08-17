@@ -50,7 +50,7 @@ val MetadataEditor = fc<EditableFieldProps> { props ->
 							           it.value.toLongOrNull()?.let { simple.copy(min = it) }
 						           })
 					}
-					cancelButton(simple.min, props, field, update = { simple.copy(min = 0) })
+					cancelButton(simple.min, props, field, update = { simple.copy(min = null) })
 				}
 
 				val id2 = idOf(field, "max")
@@ -63,7 +63,7 @@ val MetadataEditor = fc<EditableFieldProps> { props ->
 							           it.value.toLongOrNull()?.let { simple.copy(max = it) }
 						           })
 					}
-					cancelButton(simple.max, props, field, update = { simple.copy(max = 0) })
+					cancelButton(simple.max, props, field, update = { simple.copy(max = null) })
 				}
 			}
 			is SimpleField.Upload -> {
@@ -93,6 +93,43 @@ val MetadataEditor = fc<EditableFieldProps> { props ->
 							}
 						}
 					}
+				}
+
+				val idSize = idOf(field, "size")
+				styledField(idSize, "Taille maximale (Mo)") {
+					styledInput(InputType.number, idSize) {
+						min = "1"
+						max = "10"
+						setHandler(simple.maxSizeMB,
+						           props,
+						           field,
+						           update = {
+							           it.value.toIntOrNull()?.let { simple.copy(maxSizeMB = it) }
+						           })
+					}
+					cancelButton(simple.maxSizeMB,
+					             props,
+					             field,
+					             update = { simple.copy(maxSizeMB = null) })
+				}
+
+				val idExpiration = idOf(field, "expiration")
+				styledField(idExpiration, "Durée de vie avant suppression (jours)") {
+					styledInput(InputType.number, idExpiration) {
+						min = "1"
+						max = "5000"
+						setHandler(simple.expiresAfterDays,
+						           props,
+						           field,
+						           update = {
+							           it.value.toIntOrNull()
+								           ?.let { simple.copy(expiresAfterDays = it) }
+						           })
+					}
+					cancelButton(simple.expiresAfterDays,
+					             props,
+					             field,
+					             update = { simple.copy(expiresAfterDays = null) })
 				}
 			}
 		}
