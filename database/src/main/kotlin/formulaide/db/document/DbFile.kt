@@ -46,4 +46,4 @@ suspend fun Database.downloadFile(id: String): DbFile? =
 	uploads.findOne(DbFile::id eq id)
 
 fun DbFile.toApi() =
-	Upload(id, String(contents.data, Charsets.UTF_8), uploadTimestamp, expirationTimestamp, mime)
+	Upload(id, contents.data, uploadTimestamp, expirationTimestamp, mime)
