@@ -91,7 +91,7 @@ fun Routing.fileRoutes() {
 				}
 			}
 
-			require(bytes.size * 1024 * 1024 < simple.effectiveMaxSizeMB) { "Le fichier ne peut pas plus gros que ${simple.effectiveMaxSizeMB} Mo, mais il fait ${bytes.size / (1024 * 1024)}" }
+			require(bytes.size < simple.effectiveMaxSizeMB * 1024 * 1024) { "Le fichier ne peut pas plus gros que ${simple.effectiveMaxSizeMB} Mo, mais il fait ${bytes.size / (1024 * 1024)}" }
 
 			parts.forEach { it.dispose() }
 
