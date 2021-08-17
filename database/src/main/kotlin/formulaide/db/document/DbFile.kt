@@ -1,10 +1,12 @@
 package formulaide.db.document
 
 import formulaide.api.fields.SimpleField
+import formulaide.api.types.Upload
 import formulaide.db.Database
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.bson.types.Binary
+import org.litote.kmongo.eq
 import org.litote.kmongo.newId
 import java.time.Instant
 import java.time.Period
@@ -39,3 +41,9 @@ suspend fun Database.uploadFile(
 
 	return file.id
 }
+
+suspend fun Database.downloadFile(id: String): DbFile? =
+	uploads.findOne(DbFile::id eq id)
+
+fun DbFile.toApi() =
+	Upload(id, String(contents.data, Charsets.UTF_8), uploadTimestamp, expirationTimestamp, mime)

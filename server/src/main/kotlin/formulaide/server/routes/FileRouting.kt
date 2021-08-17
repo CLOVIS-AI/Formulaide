@@ -3,10 +3,13 @@ package formulaide.server.routes
 import formulaide.api.fields.FormField
 import formulaide.api.fields.SimpleField
 import formulaide.api.fields.SimpleField.Upload.Format.Companion.allowsContentType
+import formulaide.api.types.DownloadRequest
 import formulaide.api.types.Ref
 import formulaide.api.types.Upload
 import formulaide.api.types.UploadRequest
+import formulaide.db.document.downloadFile
 import formulaide.db.document.findForm
+import formulaide.db.document.toApi
 import formulaide.db.document.uploadFile
 import formulaide.server.Auth
 import formulaide.server.database
@@ -28,8 +31,11 @@ fun Routing.fileRoutes() {
 	route("/uploads") {
 
 		authenticate(Auth.Employee) {
-			get("/get") {
-				//TODO get file from DB
+			post("/get") {
+				val body = call.receive<DownloadRequest>()
+				val file = database.downloadFile(body.id)
+					?: error("Le fichier ${body.id} est introuvable.")
+				call.respond(file.toApi())
 			}
 		}
 
