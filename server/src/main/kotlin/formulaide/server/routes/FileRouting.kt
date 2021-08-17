@@ -78,14 +78,14 @@ fun Routing.fileRoutes() {
 			val simple = field.simple
 			require(simple is SimpleField.Upload) { "Il n'est autorisé de publier un fichier que si le champ déclaré est de type ${SimpleField.Upload::class}, trouvé ${field.simple::class}" }
 
-			val mime = file.contentType
-			require(simple.allowedFormats.allowsContentType(mime.toString())) { "Le type de fichier '$mime' ne correspond à aucun type autorisé pour ce champ : ${simple.allowedFormats.flatMap { it.mimeTypes }}" }
+			var mime = file.contentType.toString()
+			require(simple.allowedFormats.allowsContentType(mime)) { "Le type de fichier '$mime' ne correspond à aucun type autorisé pour ce champ : ${simple.allowedFormats.flatMap { it.mimeTypes }}" }
 
 			@Suppress("BlockingMethodInNonBlockingContext")
 			val bytes = withContext(Dispatchers.IO) {
 				file.streamProvider().use {
-					val guessedMime = getFileType(it, file.originalFileName, mime?.toString())
-					require(simple.allowedFormats.allowsContentType(guessedMime)) { "L'analyse du fichier a donné comme type '$mime', qui ne correspond à aucun type autorisé pour ce champ : ${simple.allowedFormats.flatMap { it.mimeTypes }}" }
+					mime = getFileType(it, file.originalFileName, mime)
+					require(simple.allowedFormats.allowsContentType(mime)) { "L'analyse du fichier a donné comme type '$mime', qui ne correspond à aucun type autorisé pour ce champ : ${simple.allowedFormats.flatMap { it.mimeTypes }}" }
 
 					it.readAllBytes()
 				}
@@ -95,7 +95,7 @@ fun Routing.fileRoutes() {
 
 			parts.forEach { it.dispose() }
 
-			val id = database.uploadFile(bytes, simple)
+			val id = database.uploadFile(bytes, mime, simple)
 			call.respond(Ref<Upload>(id))
 		}
 

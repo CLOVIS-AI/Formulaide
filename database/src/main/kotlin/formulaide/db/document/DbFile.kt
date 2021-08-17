@@ -15,6 +15,7 @@ data class DbFile(
 	@Contextual val contents: Binary,
 	val uploadTimestamp: Long,
 	val expirationTimestamp: Long,
+	val mime: String,
 )
 
 /**
@@ -22,6 +23,7 @@ data class DbFile(
  */
 suspend fun Database.uploadFile(
 	contents: ByteArray,
+	mime: String,
 	uploadField: SimpleField.Upload,
 ): String {
 	val file = DbFile(
@@ -30,6 +32,7 @@ suspend fun Database.uploadFile(
 		uploadTimestamp = Instant.now().epochSecond,
 		expirationTimestamp = Instant.now()
 			.plus(Period.ofDays(uploadField.effectiveExpiresAfterDays)).epochSecond,
+		mime = mime,
 	)
 
 	uploads.insertOne(file)
