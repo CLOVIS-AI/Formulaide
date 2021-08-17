@@ -56,3 +56,9 @@ tasks.named("processResources") {
 	dependsOn(copyTailwindConfig)
 	dependsOn(copyPostcssConfig)
 }
+
+// Fix for https://youtrack.jetbrains.com/issue/KT-48273
+rootProject.plugins.withType<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootPlugin> {
+	rootProject.the<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootExtension>().versions.webpackDevServer.version =
+		"4.0.0-rc.0"
+}
