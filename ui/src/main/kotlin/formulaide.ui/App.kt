@@ -118,7 +118,7 @@ val App = fc<RProps> {
 		val job = Job()
 		(client as? Client.Authenticated)?.let {
 			CoroutineScope(job).reportExceptions {
-				delay(1000L * 60 * 10) // every 10 minutes
+				delay(1000L * 60 * 25) // every 25 minutes
 
 				val accessToken = client.refreshToken()
 				checkNotNull(accessToken) { "Le serveur a refusé de rafraichir le token d'accès. Une raison possible est que votre mot de passe a été modifié." }
