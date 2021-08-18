@@ -1,8 +1,10 @@
 package formulaide.client
 
+import formulaide.api.users.User
 import formulaide.client.Client.Anonymous
 import formulaide.client.Client.Authenticated
 import formulaide.client.files.MultipartUpload
+import formulaide.client.routes.getMe
 import io.ktor.client.*
 import io.ktor.client.features.auth.*
 import io.ktor.client.features.auth.providers.*
@@ -102,10 +104,16 @@ sealed class Client(
 			fun connect(hostUrl: String) = Anonymous(createClient(), hostUrl)
 		}
 
-		fun authenticate(token: String) = Authenticated.connect(hostUrl, token)
+		suspend fun authenticate(token: String) = Authenticated.connect(hostUrl, token)
 	}
 
 	class Authenticated private constructor(client: HttpClient, hostUrl: String) : Client(hostUrl, client) {
+
+		/**
+		 * The profile of the user we are connected as.
+		 */
+		lateinit var me: User
+			private set
 
 		/**
 		 * Disconnects this client.
@@ -115,8 +123,10 @@ sealed class Client(
 		suspend fun logout() = post<String>("/users/logout")
 
 		companion object {
-			fun connect(hostUrl: String, token: String) =
-				Authenticated(createClient(token), hostUrl)
+			suspend fun connect(hostUrl: String, token: String) =
+				Authenticated(createClient(token), hostUrl).apply {
+					me = getMe()
+				}
 		}
 	}
 }
