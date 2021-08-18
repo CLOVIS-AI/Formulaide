@@ -43,6 +43,10 @@ val CreateForm = fc<RProps> { _ ->
 	var fields by useState(emptyList<ShallowFormField>())
 	var actions by useState(emptyList<Action>())
 
+	var maxFieldId by useState(0)
+	var maxActionId by useState(0)
+	val maxActionFieldId = useState(0)
+
 	styledFormCard(
 		"Créer un formulaire", null,
 		"Créer ce formulaire" to {
@@ -95,7 +99,7 @@ val CreateForm = fc<RProps> { _ ->
 			styledButton("Ajouter un champ", action = {
 				fields = fields + ShallowFormField.Simple(
 					order = fields.size,
-					id = fields.size.toString(),
+					id = (maxFieldId++).toString(),
 					name = "Nouveau champ",
 					simple = SimpleField.Text(Arity.optional())
 				)
@@ -110,12 +114,14 @@ val CreateForm = fc<RProps> { _ ->
 					actionReviewerSelection(action, services,
 					                        replace = { actions = actions.replace(i, it) })
 
-					actionFields(action, replace = { actions = actions.replace(i, it) })
+					actionFields(action,
+					             replace = { actions = actions.replace(i, it) },
+					             maxActionFieldId)
 				}
 			}
 			styledButton("Ajouter une étape", action = {
 				actions = actions + Action(
-					id = actions.size.toString(),
+					id = (maxActionId++).toString(),
 					order = actions.size,
 					services.getOrNull(0)?.createRef() ?: error("Aucun service n'a été trouvé"),
 					name = "Nom de l'étape",
@@ -174,7 +180,9 @@ private fun RBuilder.actionReviewerSelection(
 private fun RBuilder.actionFields(
 	action: Action,
 	replace: (Action) -> Unit,
+	_maxFieldId: StateInstance<Int>,
 ) {
+	var maxFieldId by _maxFieldId
 	val root = action.fields ?: FormRoot(emptyList())
 
 	styledField("new-form-action-${action.id}-fields", "Champs réservés à l'administration") {
@@ -195,7 +203,7 @@ private fun RBuilder.actionFields(
 
 		styledButton("Ajouter un champ", action = {
 			val newFields = root.fields + ShallowFormField.Simple(
-				root.fields.size.toString(),
+				(maxFieldId++).toString(),
 				root.fields.size,
 				"Nouveau champ",
 				SimpleField.Text(Arity.mandatory()),

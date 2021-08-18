@@ -29,6 +29,7 @@ val CreateData = fc<RProps> { _ ->
 	val formName = useRef<HTMLInputElement>()
 	var fields by useState<List<DataField>>(emptyList())
 	val (_, navigateTo) = useNavigation()
+	var maxId by useState(0)
 
 	styledFormCard(
 		"Créer un groupe",
@@ -72,7 +73,7 @@ val CreateData = fc<RProps> { _ ->
 			styledButton("Ajouter un champ", action = {
 				fields = fields + DataField.Simple(
 					order = fields.size,
-					id = fields.size.toString(),
+					id = (maxId++).toString(),
 					name = "Nouveau champ",
 					simple = SimpleField.Text(Arity.optional())
 				)
