@@ -4,16 +4,20 @@ import formulaide.api.fields.*
 import formulaide.api.types.Arity
 import formulaide.ui.components.styledButton
 import formulaide.ui.components.styledFormField
+import formulaide.ui.utils.remove
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.text
 import react.FunctionComponent
 import react.child
 import react.fc
+import react.useState
 
 val RecursionEditor: FunctionComponent<EditableFieldProps> = fc { props ->
 	val parent = props.field
 	val fields = (parent as? Field.Union<*>)?.options
 		?: (parent as? Field.Container<*>)?.fields
+
+	var maxId by useState(0)
 
 	if (fields != null) {
 		styledFormField {
@@ -27,6 +31,7 @@ val RecursionEditor: FunctionComponent<EditableFieldProps> = fc { props ->
 			child(FieldEditor) {
 				attrs {
 					this.field = field
+					key = field.id
 
 					depth = props.depth + 1
 					fieldNumber = i
@@ -48,13 +53,31 @@ val RecursionEditor: FunctionComponent<EditableFieldProps> = fc { props ->
 
 						props.replace(newParent)
 					}
+
+					remove = {
+						val newParent = when (parent) {
+							is DataField.Union ->
+								parent.copy(options = parent.options.remove(i))
+							is ShallowFormField.Union ->
+								parent.copy(options = parent.options.remove(i))
+							is DeepFormField.Union ->
+								parent.copy(options = parent.options.remove(i))
+							is ShallowFormField.Composite ->
+								parent.copy(fields = parent.fields.remove(i))
+							is DeepFormField.Composite ->
+								parent.copy(fields = parent.fields.remove(i))
+							else -> error("Impossible de modifier les sous-champs de $parent")
+						}
+
+						props.replace(newParent)
+					}
 				}
 			}
 		}
 
 		if (parent is DataField.Union || parent is ShallowFormField.Union) {
 			styledButton("Ajouter une option") {
-				val id = fields.size.toString()
+				val id = (maxId++).toString()
 				val order = fields.size
 				val name = "Nouveau champ"
 				val simple = SimpleField.Text(Arity.optional())

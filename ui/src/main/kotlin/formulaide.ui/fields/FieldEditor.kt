@@ -14,6 +14,7 @@ import react.fc
 external interface EditableFieldProps : RProps {
 	var field: Field
 	var replace: (Field) -> Unit
+	var remove: () -> Unit
 
 	var depth: Int
 	var fieldNumber: Int
@@ -22,12 +23,15 @@ external interface EditableFieldProps : RProps {
 fun EditableFieldProps.inheritFrom(props: EditableFieldProps) {
 	field = props.field
 	replace = props.replace
+	remove = props.remove
 	depth = props.depth
 	fieldNumber = props.fieldNumber
 }
 
 val FieldEditor = fc<EditableFieldProps> { props ->
-	styledNesting(props.depth, props.fieldNumber) {
+	styledNesting(props.depth, props.fieldNumber,
+	              onDeletion = { props.remove() }
+	) {
 
 		child(NameEditor) {
 			attrs { inheritFrom(props) }

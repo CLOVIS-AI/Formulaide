@@ -10,6 +10,7 @@ import formulaide.client.routes.createData
 import formulaide.ui.*
 import formulaide.ui.components.*
 import formulaide.ui.fields.FieldEditor
+import formulaide.ui.utils.remove
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.text
 import kotlinx.html.InputType
@@ -29,6 +30,7 @@ val CreateData = fc<RProps> { _ ->
 	val formName = useRef<HTMLInputElement>()
 	var fields by useState<List<DataField>>(emptyList())
 	val (_, navigateTo) = useNavigation()
+	var maxId by useState(0)
 
 	styledFormCard(
 		"Créer un groupe",
@@ -59,8 +61,12 @@ val CreateData = fc<RProps> { _ ->
 				child(FieldEditor) {
 					attrs {
 						this.field = field
+						key = field.id
 						replace = {
 							fields = fields.replace(i, it as DataField)
+						}
+						remove = {
+							fields = fields.remove(i)
 						}
 
 						depth = 0
@@ -72,7 +78,7 @@ val CreateData = fc<RProps> { _ ->
 			styledButton("Ajouter un champ", action = {
 				fields = fields + DataField.Simple(
 					order = fields.size,
-					id = fields.size.toString(),
+					id = (maxId++).toString(),
 					name = "Nouveau champ",
 					simple = SimpleField.Text(Arity.optional())
 				)
