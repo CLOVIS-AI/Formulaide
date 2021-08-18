@@ -115,15 +115,23 @@ val CreateForm = fc<RProps> { _ ->
 
 		styledField("new-form-actions", "Étapes") {
 			for ((i, action) in actions.sortedBy { it.order }.withIndex()) {
-				styledNesting(depth = 0, fieldNumber = i) {
-					actionName(action, replace = { actions = actions.replace(i, it) })
+				div {
+					attrs {
+						key = action.id
+					}
+					styledNesting(
+						depth = 0, fieldNumber = i,
+						onDeletion = { actions = actions.remove(i) },
+					) {
+						actionName(action, replace = { actions = actions.replace(i, it) })
 
-					actionReviewerSelection(action, services,
-					                        replace = { actions = actions.replace(i, it) })
+						actionReviewerSelection(action, services,
+						                        replace = { actions = actions.replace(i, it) })
 
-					actionFields(action,
-					             replace = { actions = actions.replace(i, it) },
-					             maxActionFieldId)
+						actionFields(action,
+						             replace = { actions = actions.replace(i, it) },
+						             maxActionFieldId)
+					}
 				}
 			}
 			styledButton("Ajouter une étape", action = {
@@ -134,6 +142,8 @@ val CreateForm = fc<RProps> { _ ->
 					name = "Nom de l'étape",
 				)
 			})
+			if (actions.isEmpty())
+				p { styledErrorText("Un formulaire doit avoir au moins une étape.") }
 		}
 	}
 }
