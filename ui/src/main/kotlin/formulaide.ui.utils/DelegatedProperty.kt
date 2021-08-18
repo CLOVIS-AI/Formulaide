@@ -2,6 +2,34 @@ package formulaide.ui.utils
 
 import kotlin.reflect.KProperty
 
+interface DelegatedProperty<out T> {
+	val value: T
+	operator fun component1(): T
+	operator fun getValue(thisRef: Nothing?, property: KProperty<*>): T
+
+	@Suppress("FunctionName") // Factories that look like constructors
+	companion object {
+		fun <T> DelegatedProperty(get: () -> T) = ReadDelegatedProperty(get)
+		fun <T> DelegatedProperty(get: () -> T, set: (T) -> Unit) = WriteDelegatedProperty(get, set)
+	}
+}
+
+class ReadDelegatedProperty<out T>(val get: () -> T) : DelegatedProperty<T> {
+
+	// Normal access
+	override val value get() = get()
+
+	// Destructuration
+	override operator fun component1() = value
+
+	// Delegation
+	override operator fun getValue(
+		thisRef: Nothing?,
+		property: KProperty<*>,
+	) = get()
+
+}
+
 /**
  * Enables Kotlin property syntax sugar for a custom property with no backing field.
  *
@@ -33,21 +61,24 @@ import kotlin.reflect.KProperty
  * v = 5            // write
  * ```
  */
-class DelegatedProperty<T>(val get: () -> T, val set: (T) -> Unit) {
+class WriteDelegatedProperty<T>(
+	private val reader: ReadDelegatedProperty<T>,
+	val set: (T) -> Unit,
+) : DelegatedProperty<T> by reader {
+
+	constructor(get: () -> T, set: (T) -> Unit) : this(ReadDelegatedProperty(get), set)
 
 	// Normal access
-	val value get() = get()
+	override var value: T
+		get() = reader.value
+		set(value) {
+			set(value)
+		}
 
 	// Destructuration
-	operator fun component1() = value
 	operator fun component2() = set
 
 	// Delegation
-	operator fun getValue(
-		thisRef: Nothing?,
-		property: KProperty<*>,
-	) = get()
-
 	operator fun setValue(
 		thisRef: Nothing?,
 		property: KProperty<*>,
@@ -55,3 +86,16 @@ class DelegatedProperty<T>(val get: () -> T, val set: (T) -> Unit) {
 	) = set(value)
 
 }
+
+//region Extensions
+
+fun <I : Any, O : Any?> DelegatedProperty<I?>.map(transform: (I) -> O) =
+	ReadDelegatedProperty { value?.let(transform) }
+
+fun <I> DelegatedProperty<I>.filter(predicate: (I) -> Boolean) =
+	ReadDelegatedProperty { value.takeIf(predicate) }
+
+inline fun <reified I> DelegatedProperty<*>.filterIs() =
+	map { it as? I }
+
+//endregion
