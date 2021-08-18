@@ -13,9 +13,16 @@ private val colorPerDepth = listOf(
 	listOf("bg-yellow-100", "bg-yellow-200"),
 )
 
+private const val spacing = "p-2 px-4 my-1"
+private const val shape = "rounded-md"
+private const val hover = "hover:shadow hover:mb-2"
+private const val layout = "relative"
+private const val nestingStyle = "$spacing $shape $hover $layout"
+
 fun RBuilder.styledNesting(
 	depth: Int? = null,
 	fieldNumber: Int? = null,
+	onDeletion: (suspend () -> Unit)? = null,
 	block: RDOMBuilder<DIV>.() -> Unit,
 ) {
 	val selectedBackground = if (depth != null && fieldNumber != null) {
@@ -23,7 +30,12 @@ fun RBuilder.styledNesting(
 		backgroundColors[fieldNumber % backgroundColors.size]
 	} else ""
 
-	div("p-2 px-4 my-1 rounded-md hover:shadow hover:mb-2 $selectedBackground") {
+	div("$nestingStyle $selectedBackground") {
 		block()
+
+		div("m-2 absolute top-0 right-0") {
+			if (onDeletion != null)
+				styledButton("×", action = onDeletion)
+		}
 	}
 }
