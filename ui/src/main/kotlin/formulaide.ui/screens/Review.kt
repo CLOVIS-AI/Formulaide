@@ -344,7 +344,7 @@ private val ReviewRecord = fc<ReviewRecordProps> { props ->
 			if (root != null) {
 				styledNesting(depth = 0, fieldNumber = i) {
 					for (field in root.fields) {
-						field(field)
+						field(form, action, field)
 					}
 					i++
 				}

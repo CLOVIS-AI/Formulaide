@@ -3,8 +3,16 @@ package formulaide.ui.fields
 import formulaide.api.data.*
 import formulaide.api.fields.FormField
 import formulaide.api.fields.SimpleField
+import formulaide.client.Client
+import formulaide.client.routes.downloadFile
+import formulaide.ui.components.styledButton
 import formulaide.ui.traceRenders
+import formulaide.ui.useClient
 import formulaide.ui.utils.text
+import kotlinx.browser.window
+import org.w3c.dom.url.URL
+import org.w3c.files.Blob
+import org.w3c.files.BlobPropertyBag
 import react.*
 import react.dom.div
 
@@ -31,11 +39,30 @@ private const val miniNesting = "px-4"
 private val ImmutableField: FunctionComponent<ImmutableFieldProps> = fc { props ->
 	traceRenders(props.answer.toString())
 
+	val (client) = useClient()
+
+	require(client is Client.Authenticated) { "Cette page est uniquement accessible par les employés." }
+
 	div {
 		when (val answer = props.answer) {
 			is ParsedSimple<*> -> {
-				if (answer.value !is SimpleField.Message) {
+				val field = answer.constraint
+				if (field.simple !is SimpleField.Message) {
 					text("${answer.constraint.name} : ${answer.value}")
+
+					if (field.simple is SimpleField.Upload) {
+						styledButton("Ouvrir", action = {
+							val fileId = answer.value ?: error("Ce fichier n'a pas d'identifiants")
+							val file = client.downloadFile(fileId)
+
+							val blob = Blob(arrayOf(file.data), BlobPropertyBag(
+								type = file.mime
+							))
+
+							val url = URL.createObjectURL(blob)
+							window.open(url, target = "_blank", features = "noopener,noreferrer")
+						})
+					}
 				} // else: don't display messages here
 			}
 			is ParsedUnion<*, *> -> {

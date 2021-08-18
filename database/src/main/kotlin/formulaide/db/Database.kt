@@ -3,9 +3,11 @@ package formulaide.db
 import formulaide.api.data.Composite
 import formulaide.api.data.Form
 import formulaide.api.data.Record
-import formulaide.db.document.DbService
-import formulaide.db.document.DbSubmission
-import formulaide.db.document.DbUser
+import formulaide.db.document.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import org.litote.kmongo.coroutine.coroutine
 import org.litote.kmongo.reactivestreams.KMongo
 
@@ -21,6 +23,7 @@ class Database(
 	databaseName: String? = null,
 	username: String? = null,
 	password: String? = null,
+	job: Job,
 ) {
 
 	private val host = getParam("formulaide_host", host)
@@ -39,6 +42,11 @@ class Database(
 	internal val forms = database.getCollection<Form>("forms")
 	internal val submissions = database.getCollection<DbSubmission>("submissions")
 	internal val records = database.getCollection<Record>("records")
+	internal val uploads = database.getCollection<DbFile>("uploads")
+
+	init {
+		CoroutineScope(job + Dispatchers.IO).launch { autoExpireFiles() }
+	}
 
 	private fun getParam(environmentVariable: String, defaultValue: String?): String =
 		System.getenv(environmentVariable)

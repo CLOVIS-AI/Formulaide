@@ -1,5 +1,6 @@
 @file:Suppress("MemberVisibilityCanBePrivate")
 
+import Version.apacheTika
 import Version.bcrypt
 import Version.kmongo
 import Version.ktor
@@ -29,6 +30,8 @@ object Version {
 	const val bcrypt = "0.9.0"
 
 	const val kmongo = "4.2.8"
+
+	const val apacheTika = "2.0.0"
 }
 
 fun kotlinxSerialization(name: String) =
@@ -55,3 +58,6 @@ fun bcrypt() =
 
 fun kmongo(name: String) =
 	"org.litote.kmongo:$name:$kmongo"
+
+fun apacheTika(name: String) =
+	"org.apache.tika:tika-$name:$apacheTika"

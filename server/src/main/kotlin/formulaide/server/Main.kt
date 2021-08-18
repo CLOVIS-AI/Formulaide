@@ -16,10 +16,12 @@ import io.ktor.http.*
 import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.serialization.*
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 
-val database = Database("localhost", 27017, "formulaide", "root", "development-password")
+// New job: the server never dies cleanly, it can only be killed. No need for structure concurrency.
+val database = Database("localhost", 27017, "formulaide", "root", "development-password", Job())
 val allowUnsafeCookie = System.getenv("formulaide_allow_unsafe_cookie").toBoolean()
 
 fun main(args: Array<String>) {
@@ -50,6 +52,10 @@ fun main(args: Array<String>) {
 	io.ktor.server.netty.EngineMain.main(args)
 }
 
+val serializer = Json(DefaultJson) {
+	useArrayPolymorphism = false
+}
+
 @Suppress("unused") // see application.conf
 fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = false) {
 	val auth = Auth(database)
@@ -60,9 +66,7 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 		System.err.println("WARNING. The server has been allowed to create non-safe HTTP cookies. Remove the environment variable 'formulaide_allow_unsafe_cookie' for production use.")
 
 	install(ContentNegotiation) {
-		json(Json(DefaultJson) {
-			useArrayPolymorphism = false
-		})
+		json(serializer)
 	}
 
 	install(CORS) { //TODO: audit
@@ -98,5 +102,6 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 		dataRoutes()
 		formRoutes()
 		submissionRoutes()
+		fileRoutes()
 	}
 }

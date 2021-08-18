@@ -2,6 +2,7 @@ package formulaide.client
 
 import formulaide.client.Client.Anonymous
 import formulaide.client.Client.Authenticated
+import formulaide.client.files.MultipartUpload
 import io.ktor.client.*
 import io.ktor.client.features.auth.*
 import io.ktor.client.features.auth.providers.*
@@ -9,6 +10,7 @@ import io.ktor.client.features.json.*
 import io.ktor.client.features.json.serializer.*
 import io.ktor.client.features.json.serializer.KotlinxSerializer.Companion.DefaultJson
 import io.ktor.client.request.*
+import io.ktor.client.request.forms.*
 import io.ktor.http.*
 
 /**
@@ -43,14 +45,32 @@ sealed class Client(
 	internal suspend inline fun <reified Out> post(
 		url: String,
 		body: Any? = null,
-		block: HttpRequestBuilder.() -> Unit = {}
+		block: HttpRequestBuilder.() -> Unit = {},
 	) = request<Out>(HttpMethod.Post, url, body, block)
 
 	internal suspend inline fun <reified Out> get(
 		url: String,
 		body: Any? = null,
-		block: HttpRequestBuilder.() -> Unit = {}
+		block: HttpRequestBuilder.() -> Unit = {},
 	) = request<Out>(HttpMethod.Get, url, body, block)
+
+	internal suspend inline fun <reified Out> postMultipart(
+		url: String,
+		vararg parts: MultipartUpload,
+		block: HttpRequestBuilder.() -> Unit = {},
+	): Out {
+		parts.forEach { it.load() }
+
+		return post(url) {
+			body = MultiPartFormDataContent(
+				formData {
+					for (part in parts)
+						part.applyTo(this)
+				}
+			)
+			block()
+		}
+	}
 
 	companion object {
 
