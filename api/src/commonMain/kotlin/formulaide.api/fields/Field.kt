@@ -44,7 +44,7 @@ interface Field : Referencable, OrderedListElement {
 	 * @param name The new [Field.name]. If `null`, no changes are applied.
 	 * @param arity The new [Field.arity]. If `null`, no changes are applied.
 	 */
-	fun requestCopy(name: String? = null, arity: Arity? = null): Field
+	fun requestCopy(name: String? = null, arity: Arity? = null, order: Int? = null): Field
 
 	/**
 	 * A field that represents a single data entry.

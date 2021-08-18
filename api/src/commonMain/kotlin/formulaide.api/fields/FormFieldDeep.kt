@@ -93,7 +93,7 @@ sealed class DeepFormField : FormField, Field.Reference<DataField> {
 		}
 
 		override fun toString() = "Deep.Simple($ref, $simple)" + super.toString()
-		override fun requestCopy(name: String?, arity: Arity?) =
+		override fun requestCopy(name: String?, arity: Arity?, order: Int?) =
 			copy(simple = simple.requestCopy(arity))
 
 		override fun requestCopy(simple: SimpleField) = copy(simple = simple)
@@ -142,7 +142,8 @@ sealed class DeepFormField : FormField, Field.Reference<DataField> {
 		}
 
 		override fun toString() = "Deep.Union($ref, $arity, $options)" + super.toString()
-		override fun requestCopy(name: String?, arity: Arity?) = copy(arity = arity ?: this.arity)
+		override fun requestCopy(name: String?, arity: Arity?, order: Int?) =
+			copy(arity = arity ?: this.arity)
 	}
 
 	/**
@@ -189,10 +190,13 @@ sealed class DeepFormField : FormField, Field.Reference<DataField> {
 		}
 
 		override fun toString() = "Deep.Composite($ref, $arity, $fields)" + super.toString()
-		override fun requestCopy(name: String?, arity: Arity?) = copy(arity = arity ?: this.arity)
+		override fun requestCopy(name: String?, arity: Arity?, order: Int?) =
+			copy(arity = arity ?: this.arity)
 	}
 
 	override fun toString(): String = if (ref.loaded) " -> $dataField" else ""
+
+	abstract override fun requestCopy(name: String?, arity: Arity?, order: Int?): DeepFormField
 
 	companion object {
 
