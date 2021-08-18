@@ -71,13 +71,10 @@ val ErrorCard = fc<ErrorProps> { props ->
 
 inline fun <R> reportExceptions(finally: (e: Exception) -> Unit = {}, block: () -> R): R = try {
 	block()
+} catch (e: CancellationException) {
+	console.info("Job was cancelled", e)
+	throw e
 } catch (e: Exception) {
-	if (e is CancellationException) {
-		// don't report jobs being cancelled, that's normal
-		console.info("Job was cancelled", e)
-		throw e
-	}
-
 	console.error(e)
 	reportError(e)
 	finally(e)
