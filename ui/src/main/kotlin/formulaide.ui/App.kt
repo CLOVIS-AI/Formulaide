@@ -3,15 +3,12 @@ package formulaide.ui
 import formulaide.api.data.Composite
 import formulaide.api.data.Form
 import formulaide.api.users.Service
-import formulaide.api.users.User
 import formulaide.client.Client
 import formulaide.client.refreshToken
 import formulaide.client.routes.*
 import formulaide.ui.components.styledCard
 import formulaide.ui.components.useAsync
-import formulaide.ui.utils.GlobalState
-import formulaide.ui.utils.text
-import formulaide.ui.utils.useGlobalState
+import formulaide.ui.utils.*
 import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -38,15 +35,13 @@ fun traceRenders(componentName: String) {
 private val client = GlobalState<Client>(defaultClient)
 	.apply {
 		subscribers.add { println("The client has been updated") }
-		subscribers.add { user.value = null }
 	}
 
 fun RBuilder.useClient() = useGlobalState(client)
 
-private val user = GlobalState<User?>(null)
-	.apply { subscribers.add { println("The user has been updated: $it") } }
-
-fun RBuilder.useUser() = useGlobalState(user)
+fun RBuilder.useUser() = useGlobalState(client)
+	.filterIs<Client.Authenticated>()
+	.map { it.me }
 
 private val composites = GlobalState(emptyList<Composite>())
 	.apply { subscribers.add { println("The composites have been updated: ${it.size} are stored") } }
@@ -70,7 +65,6 @@ suspend fun refreshForms() {
 			console.warn("Couldn't access the list of forms, this client is probably dead. Switching to the test client.")
 			inProduction = false
 			client.value = defaultClient
-			user.value = null
 			emptyList()
 		}
 }
@@ -83,7 +77,7 @@ suspend fun refreshServices() {
 	services.value = (
 			(client.value as? Client.Authenticated)
 				?.let { c ->
-					if (user.value?.administrator == true) c.listAllServices()
+					if (c.me.administrator) c.listAllServices()
 					else c.listServices()
 				}
 				?: emptyList())
@@ -98,35 +92,17 @@ val App = fc<RProps> {
 	traceRenders("App")
 
 	var client by useClient()
-	var user by useUser()
 	val scope = useAsync()
 
 	val errors = useErrors()
 
-	//region Refresh the user if necessary
-	useEffect(client) {
-		scope.reportExceptions {
-			(client as? Client.Authenticated)
-				?.getMe()
-				?.let { user = it }
-		}
-	}
-	//endregion
-
 	useEffect(client) {
 		scope.reportExceptions { refreshComposites() }
-	}
-
-	useEffect(client, user) {
 		scope.reportExceptions { refreshForms() }
 		scope.reportExceptions { refreshServices() }
-	}
 
-	//region Refresh token management
-
-	// If the client is anonymous, try to see if we currently have a refreshToken in a cookie
-	// If we do, we can bypass the login step
-	useEffect(client) {
+		// If the client is anonymous, try to see if we currently have a refreshToken in a cookie
+		// If we do, we can bypass the login step
 		(client as? Client.Anonymous)?.let { c ->
 			scope.reportExceptions {
 				val accessToken = client.refreshToken()
@@ -137,12 +113,9 @@ val App = fc<RProps> {
 				}
 			}
 		}
-	}
 
-	// If the client is connected, wait a few minutes and refresh the access token, to ensure it never gets out of date
-	useEffect(client) {
+		// If the client is connected, wait a few minutes and refresh the access token, to ensure it never gets out of date
 		val job = Job()
-
 		(client as? Client.Authenticated)?.let {
 			CoroutineScope(job).reportExceptions {
 				delay(1000L * 60 * 10) // every 10 minutes
@@ -154,11 +127,8 @@ val App = fc<RProps> {
 				console.log("Got an access token from the cookie-stored refresh token (expiration time was near)")
 			}
 		}
-
 		cleanup { job.cancel() }
 	}
-
-	//endregion
 
 	child(Window)
 
