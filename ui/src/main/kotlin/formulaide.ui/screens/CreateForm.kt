@@ -23,7 +23,9 @@ import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
 import react.*
 import react.dom.attrs
+import react.dom.div
 import react.dom.option
+import react.dom.p
 
 val CreateForm = fc<RProps> { _ ->
 	traceRenders("CreateForm")
@@ -87,6 +89,7 @@ val CreateForm = fc<RProps> { _ ->
 				child(FieldEditor) {
 					attrs {
 						this.field = field
+						key = field.id
 						this.replace = {
 							fields = fields.replace(i, it as ShallowFormField)
 						}
@@ -194,6 +197,7 @@ private fun RBuilder.actionFields(
 			child(FieldEditor) {
 				attrs {
 					this.field = field
+					key = field.id
 					this.replace = {
 						val newFields = root.fields.replace(i, it as ShallowFormField)
 						replace(action.copy(fields = FormRoot(newFields)))

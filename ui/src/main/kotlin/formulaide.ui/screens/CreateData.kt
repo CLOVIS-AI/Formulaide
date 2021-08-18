@@ -61,6 +61,7 @@ val CreateData = fc<RProps> { _ ->
 				child(FieldEditor) {
 					attrs {
 						this.field = field
+						key = field.id
 						replace = {
 							fields = fields.replace(i, it as DataField)
 						}
