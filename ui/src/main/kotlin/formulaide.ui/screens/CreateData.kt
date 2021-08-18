@@ -10,6 +10,7 @@ import formulaide.client.routes.createData
 import formulaide.ui.*
 import formulaide.ui.components.*
 import formulaide.ui.fields.FieldEditor
+import formulaide.ui.utils.remove
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.text
 import kotlinx.html.InputType
@@ -62,6 +63,9 @@ val CreateData = fc<RProps> { _ ->
 						this.field = field
 						replace = {
 							fields = fields.replace(i, it as DataField)
+						}
+						remove = {
+							fields = fields.remove(i)
 						}
 
 						depth = 0

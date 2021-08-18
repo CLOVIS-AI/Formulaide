@@ -14,6 +14,7 @@ import formulaide.client.routes.createForm
 import formulaide.ui.*
 import formulaide.ui.components.*
 import formulaide.ui.fields.FieldEditor
+import formulaide.ui.utils.remove
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.text
 import kotlinx.html.InputType
@@ -88,6 +89,9 @@ val CreateForm = fc<RProps> { _ ->
 						this.field = field
 						this.replace = {
 							fields = fields.replace(i, it as ShallowFormField)
+						}
+						this.remove = {
+							fields = fields.remove(i)
 						}
 
 						depth = 0
@@ -192,6 +196,10 @@ private fun RBuilder.actionFields(
 					this.field = field
 					this.replace = {
 						val newFields = root.fields.replace(i, it as ShallowFormField)
+						replace(action.copy(fields = FormRoot(newFields)))
+					}
+					this.remove = {
+						val newFields = root.fields.remove(i)
 						replace(action.copy(fields = FormRoot(newFields)))
 					}
 

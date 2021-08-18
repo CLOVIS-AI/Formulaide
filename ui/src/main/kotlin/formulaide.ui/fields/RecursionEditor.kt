@@ -4,6 +4,7 @@ import formulaide.api.fields.*
 import formulaide.api.types.Arity
 import formulaide.ui.components.styledButton
 import formulaide.ui.components.styledFormField
+import formulaide.ui.utils.remove
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.text
 import react.FunctionComponent
@@ -46,6 +47,24 @@ val RecursionEditor: FunctionComponent<EditableFieldProps> = fc { props ->
 								.replace(i, newField as DeepFormField))
 							is DeepFormField.Composite -> parent.copy(fields = parent.fields
 								.replace(i, newField as DeepFormField))
+							else -> error("Impossible de modifier les sous-champs de $parent")
+						}
+
+						props.replace(newParent)
+					}
+
+					remove = {
+						val newParent = when (parent) {
+							is DataField.Union ->
+								parent.copy(options = parent.options.remove(i))
+							is ShallowFormField.Union ->
+								parent.copy(options = parent.options.remove(i))
+							is DeepFormField.Union ->
+								parent.copy(options = parent.options.remove(i))
+							is ShallowFormField.Composite ->
+								parent.copy(fields = parent.fields.remove(i))
+							is DeepFormField.Composite ->
+								parent.copy(fields = parent.fields.remove(i))
 							else -> error("Impossible de modifier les sous-champs de $parent")
 						}
 
