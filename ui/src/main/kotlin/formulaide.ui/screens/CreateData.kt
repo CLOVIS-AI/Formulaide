@@ -2,6 +2,7 @@ package formulaide.ui.screens
 
 import formulaide.api.data.Composite
 import formulaide.api.fields.DataField
+import formulaide.api.fields.Field
 import formulaide.api.fields.SimpleField
 import formulaide.api.types.Arity
 import formulaide.api.types.Ref
@@ -10,6 +11,7 @@ import formulaide.client.routes.createData
 import formulaide.ui.*
 import formulaide.ui.components.*
 import formulaide.ui.fields.FieldEditor
+import formulaide.ui.fields.SwitchDirection
 import formulaide.ui.utils.remove
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.text
@@ -28,9 +30,11 @@ val CreateData = fc<RProps> { _ ->
 	}
 
 	val formName = useRef<HTMLInputElement>()
-	var fields by useState<List<DataField>>(emptyList())
+	val (fields, setFields) = useState<List<DataField>>(emptyList())
 	val (_, navigateTo) = useNavigation()
 	var maxId by useState(0)
+
+	val lambdas = useLambdas()
 
 	styledFormCard(
 		"Créer un groupe",
@@ -57,17 +61,30 @@ val CreateData = fc<RProps> { _ ->
 		}
 
 		styledField("data-fields", "Champs") {
-			for ((i, field) in fields.sortedBy { it.order }.withIndex()) {
+			for ((i, field) in fields.withIndex()) {
 				child(FieldEditor) {
 					attrs {
 						this.field = field
 						key = field.id
-						replace = {
-							fields = fields.replace(i, it as DataField)
-						}
+						replace = { it: Field ->
+							setFields { fields -> fields.replace(i, it as DataField) }
+						}.memoIn(lambdas, "replace-${field.id}", i)
 						remove = {
-							fields = fields.remove(i)
-						}
+							setFields { fields -> fields.remove(i) }
+						}.memoIn(lambdas, "remove-${field.id}", i)
+						switch = { direction: SwitchDirection ->
+							setFields { fields ->
+								val otherIndex = i + direction.offset
+								val other = fields.getOrNull(otherIndex)
+
+								if (other != null) {
+									fields
+										.replace(i, field.requestCopy(order = other.order))
+										.replace(otherIndex, other.requestCopy(order = field.order))
+										.sortedBy { it.order }
+								} else fields
+							}
+						}.memoIn(lambdas, "switch-${field.id}", i)
 
 						depth = 0
 						fieldNumber = i
@@ -76,12 +93,14 @@ val CreateData = fc<RProps> { _ ->
 			}
 
 			styledButton("Ajouter un champ", action = {
-				fields = fields + DataField.Simple(
-					order = fields.size,
-					id = (maxId++).toString(),
-					name = "Nouveau champ",
-					simple = SimpleField.Text(Arity.optional())
-				)
+				setFields { fields ->
+					fields + DataField.Simple(
+						order = fields.size,
+						id = (maxId++).toString(),
+						name = "Nouveau champ",
+						simple = SimpleField.Text(Arity.optional())
+					)
+				}
 			})
 		}
 	}
