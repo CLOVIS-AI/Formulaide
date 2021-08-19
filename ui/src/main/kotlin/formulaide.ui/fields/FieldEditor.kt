@@ -1,6 +1,7 @@
 package formulaide.ui.fields
 
 import formulaide.api.fields.DataField
+import formulaide.api.fields.DeepFormField
 import formulaide.api.fields.Field
 import formulaide.api.types.Arity
 import formulaide.ui.components.styledFormField
@@ -37,11 +38,17 @@ fun EditableFieldProps.inheritFrom(props: EditableFieldProps) {
 }
 
 val FieldEditor = memo(fc<EditableFieldProps> { props ->
+	val onDeletion = suspend { props.remove() }.takeIf { props.field !is DeepFormField }
+	val onMoveUp =
+		suspend { props.switch(SwitchDirection.UP) }.takeIf { props.field !is DeepFormField }
+	val onMoveDown =
+		suspend { props.switch(SwitchDirection.DOWN) }.takeIf { props.field !is DeepFormField }
+
 	styledNesting(
 		props.depth, props.fieldNumber,
-		onDeletion = { props.remove() },
-		onMoveUp = { props.switch(SwitchDirection.UP) },
-		onMoveDown = { props.switch(SwitchDirection.DOWN) },
+		onDeletion = onDeletion,
+		onMoveUp = onMoveUp,
+		onMoveDown = onMoveDown,
 	) {
 
 		child(NameEditor) {

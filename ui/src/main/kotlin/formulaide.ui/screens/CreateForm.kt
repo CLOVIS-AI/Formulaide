@@ -25,10 +25,7 @@ import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
 import react.*
-import react.dom.attrs
-import react.dom.div
-import react.dom.option
-import react.dom.p
+import react.dom.*
 
 val CreateForm = fc<RProps> { _ ->
 	traceRenders("CreateForm")
