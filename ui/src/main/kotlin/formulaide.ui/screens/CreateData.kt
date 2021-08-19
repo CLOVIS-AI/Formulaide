@@ -14,6 +14,7 @@ import formulaide.ui.fields.FieldEditor
 import formulaide.ui.fields.SwitchDirection
 import formulaide.ui.utils.remove
 import formulaide.ui.utils.replace
+import formulaide.ui.utils.switchOrder
 import formulaide.ui.utils.text
 import kotlinx.html.InputType
 import org.w3c.dom.HTMLInputElement
@@ -74,15 +75,7 @@ val CreateData = fc<RProps> { _ ->
 						}.memoIn(lambdas, "remove-${field.id}", i)
 						switch = { direction: SwitchDirection ->
 							setFields { fields ->
-								val otherIndex = i + direction.offset
-								val other = fields.getOrNull(otherIndex)
-
-								if (other != null) {
-									fields
-										.replace(i, field.requestCopy(order = other.order))
-										.replace(otherIndex, other.requestCopy(order = field.order))
-										.sortedBy { it.order }
-								} else fields
+								fields.switchOrder(i, direction)
 							}
 						}.memoIn(lambdas, "switch-${field.id}", i)
 

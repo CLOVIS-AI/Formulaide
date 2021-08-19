@@ -2,6 +2,7 @@ package formulaide.ui.screens
 
 import formulaide.api.data.Action
 import formulaide.api.data.Form
+import formulaide.api.fields.Field
 import formulaide.api.fields.FormRoot
 import formulaide.api.fields.ShallowFormField
 import formulaide.api.fields.SimpleField
@@ -14,8 +15,10 @@ import formulaide.client.routes.createForm
 import formulaide.ui.*
 import formulaide.ui.components.*
 import formulaide.ui.fields.FieldEditor
+import formulaide.ui.fields.SwitchDirection
 import formulaide.ui.utils.remove
 import formulaide.ui.utils.replace
+import formulaide.ui.utils.switchOrder
 import formulaide.ui.utils.text
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
@@ -43,12 +46,14 @@ val CreateForm = fc<RProps> { _ ->
 	val formName = useRef<HTMLInputElement>()
 	val public = useRef<HTMLInputElement>()
 
-	var fields by useState(emptyList<ShallowFormField>())
+	val (fields, setFields) = useState(emptyList<ShallowFormField>())
 	var actions by useState(emptyList<Action>())
 
 	var maxFieldId by useState(0)
 	var maxActionId by useState(0)
 	val maxActionFieldId = useState(0)
+
+	val lambdas = useLambdas()
 
 	styledFormCard(
 		"Créer un formulaire", null,
@@ -85,17 +90,22 @@ val CreateForm = fc<RProps> { _ ->
 		}
 
 		styledField("new-form-fields", "Champs") {
-			for ((i, field) in fields.sortedBy { it.order }.withIndex()) {
+			for ((i, field) in fields.withIndex()) {
 				child(FieldEditor) {
 					attrs {
 						this.field = field
 						key = field.id
-						this.replace = {
-							fields = fields.replace(i, it as ShallowFormField)
-						}
+						this.replace = { it: Field ->
+							setFields { fields -> fields.replace(i, it as ShallowFormField) }
+						}.memoIn(lambdas, "replace-${field.id}", i)
 						this.remove = {
-							fields = fields.remove(i)
-						}
+							setFields { fields -> fields.remove(i) }
+						}.memoIn(lambdas, "remove-${field.id}", i)
+						switch = { direction: SwitchDirection ->
+							setFields { fields ->
+								fields.switchOrder(i, direction)
+							}
+						}.memoIn(lambdas, "switch-${field.id}", i)
 
 						depth = 0
 						fieldNumber = i
@@ -104,12 +114,14 @@ val CreateForm = fc<RProps> { _ ->
 			}
 
 			styledButton("Ajouter un champ", action = {
-				fields = fields + ShallowFormField.Simple(
-					order = fields.size,
-					id = (maxFieldId++).toString(),
-					name = "Nouveau champ",
-					simple = SimpleField.Text(Arity.optional())
-				)
+				setFields { fields ->
+					fields + ShallowFormField.Simple(
+						order = fields.size,
+						id = (maxFieldId++).toString(),
+						name = "Nouveau champ",
+						simple = SimpleField.Text(Arity.optional())
+					)
+				}
 			})
 		}
 
