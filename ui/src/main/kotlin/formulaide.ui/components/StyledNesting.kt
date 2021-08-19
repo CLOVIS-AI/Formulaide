@@ -23,6 +23,8 @@ fun RBuilder.styledNesting(
 	depth: Int? = null,
 	fieldNumber: Int? = null,
 	onDeletion: (suspend () -> Unit)? = null,
+	onMoveUp: (suspend () -> Unit)? = null,
+	onMoveDown: (suspend () -> Unit)? = null,
 	block: RDOMBuilder<DIV>.() -> Unit,
 ) {
 	val selectedBackground = if (depth != null && fieldNumber != null) {
@@ -34,6 +36,12 @@ fun RBuilder.styledNesting(
 		block()
 
 		div("m-2 absolute top-0 right-0") {
+			if (onMoveUp != null)
+				styledButton("▲", action = onMoveUp)
+
+			if (onMoveDown != null)
+				styledButton("▼", action = onMoveDown)
+
 			if (onDeletion != null)
 				styledButton("×", action = onDeletion)
 		}

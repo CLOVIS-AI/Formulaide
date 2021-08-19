@@ -1,6 +1,7 @@
 package formulaide.ui.fields
 
 import formulaide.api.fields.DataField
+import formulaide.api.fields.DeepFormField
 import formulaide.api.fields.Field
 import formulaide.api.types.Arity
 import formulaide.ui.components.styledFormField
@@ -10,11 +11,18 @@ import react.RProps
 import react.child
 import react.dom.p
 import react.fc
+import react.memo
+
+enum class SwitchDirection(val offset: Int) {
+	UP(-1),
+	DOWN(1);
+}
 
 external interface EditableFieldProps : RProps {
 	var field: Field
 	var replace: (Field) -> Unit
 	var remove: () -> Unit
+	var switch: (SwitchDirection) -> Unit
 
 	var depth: Int
 	var fieldNumber: Int
@@ -26,11 +34,21 @@ fun EditableFieldProps.inheritFrom(props: EditableFieldProps) {
 	remove = props.remove
 	depth = props.depth
 	fieldNumber = props.fieldNumber
+	switch = props.switch
 }
 
-val FieldEditor = fc<EditableFieldProps> { props ->
-	styledNesting(props.depth, props.fieldNumber,
-	              onDeletion = { props.remove() }
+val FieldEditor = memo(fc<EditableFieldProps> { props ->
+	val onDeletion = suspend { props.remove() }.takeIf { props.field !is DeepFormField }
+	val onMoveUp =
+		suspend { props.switch(SwitchDirection.UP) }.takeIf { props.field !is DeepFormField }
+	val onMoveDown =
+		suspend { props.switch(SwitchDirection.DOWN) }.takeIf { props.field !is DeepFormField }
+
+	styledNesting(
+		props.depth, props.fieldNumber,
+		onDeletion = onDeletion,
+		onMoveUp = onMoveUp,
+		onMoveDown = onMoveDown,
 	) {
 
 		child(NameEditor) {
@@ -64,4 +82,4 @@ val FieldEditor = fc<EditableFieldProps> { props ->
 			}
 		}
 	}
-}
+})

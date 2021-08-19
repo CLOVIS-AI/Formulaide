@@ -2,6 +2,7 @@ package formulaide.ui.screens
 
 import formulaide.api.data.Action
 import formulaide.api.data.Form
+import formulaide.api.fields.Field
 import formulaide.api.fields.FormRoot
 import formulaide.api.fields.ShallowFormField
 import formulaide.api.fields.SimpleField
@@ -14,18 +15,17 @@ import formulaide.client.routes.createForm
 import formulaide.ui.*
 import formulaide.ui.components.*
 import formulaide.ui.fields.FieldEditor
+import formulaide.ui.fields.SwitchDirection
 import formulaide.ui.utils.remove
 import formulaide.ui.utils.replace
+import formulaide.ui.utils.switchOrder
 import formulaide.ui.utils.text
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
 import react.*
-import react.dom.attrs
-import react.dom.div
-import react.dom.option
-import react.dom.p
+import react.dom.*
 
 val CreateForm = fc<RProps> { _ ->
 	traceRenders("CreateForm")
@@ -43,12 +43,14 @@ val CreateForm = fc<RProps> { _ ->
 	val formName = useRef<HTMLInputElement>()
 	val public = useRef<HTMLInputElement>()
 
-	var fields by useState(emptyList<ShallowFormField>())
-	var actions by useState(emptyList<Action>())
+	val (fields, setFields) = useState(emptyList<ShallowFormField>())
+	val (actions, setActions) = useState(emptyList<Action>())
 
 	var maxFieldId by useState(0)
 	var maxActionId by useState(0)
 	val maxActionFieldId = useState(0)
+
+	val lambdas = useLambdas()
 
 	styledFormCard(
 		"Créer un formulaire", null,
@@ -85,17 +87,22 @@ val CreateForm = fc<RProps> { _ ->
 		}
 
 		styledField("new-form-fields", "Champs") {
-			for ((i, field) in fields.sortedBy { it.order }.withIndex()) {
+			for ((i, field) in fields.withIndex()) {
 				child(FieldEditor) {
 					attrs {
 						this.field = field
 						key = field.id
-						this.replace = {
-							fields = fields.replace(i, it as ShallowFormField)
-						}
+						this.replace = { it: Field ->
+							setFields { fields -> fields.replace(i, it as ShallowFormField) }
+						}.memoIn(lambdas, "replace-${field.id}", i)
 						this.remove = {
-							fields = fields.remove(i)
-						}
+							setFields { fields -> fields.remove(i) }
+						}.memoIn(lambdas, "remove-${field.id}", i)
+						switch = { direction: SwitchDirection ->
+							setFields { fields ->
+								fields.switchOrder(i, direction)
+							}
+						}.memoIn(lambdas, "switch-${field.id}", i)
 
 						depth = 0
 						fieldNumber = i
@@ -104,12 +111,14 @@ val CreateForm = fc<RProps> { _ ->
 			}
 
 			styledButton("Ajouter un champ", action = {
-				fields = fields + ShallowFormField.Simple(
-					order = fields.size,
-					id = (maxFieldId++).toString(),
-					name = "Nouveau champ",
-					simple = SimpleField.Text(Arity.optional())
-				)
+				setFields { fields ->
+					fields + ShallowFormField.Simple(
+						order = fields.size,
+						id = (maxFieldId++).toString(),
+						name = "Nouveau champ",
+						simple = SimpleField.Text(Arity.optional())
+					)
+				}
 			})
 		}
 
@@ -121,26 +130,44 @@ val CreateForm = fc<RProps> { _ ->
 					}
 					styledNesting(
 						depth = 0, fieldNumber = i,
-						onDeletion = { actions = actions.remove(i) },
+						onDeletion = { setActions { actions -> actions.remove(i) } },
 					) {
-						actionName(action, replace = { actions = actions.replace(i, it) })
+						actionName(action,
+						           replace = { setActions { actions -> actions.replace(i, it) } })
 
 						actionReviewerSelection(action, services,
-						                        replace = { actions = actions.replace(i, it) })
+						                        replace = {
+							                        setActions { actions ->
+								                        actions.replace(i,
+								                                        it)
+							                        }
+						                        })
 
-						actionFields(action,
-						             replace = { actions = actions.replace(i, it) },
-						             maxActionFieldId)
+						child(ActionFields) {
+							attrs {
+								this.action = action
+								this.replace = { newAction: Action ->
+									setActions { actions ->
+										actions.replace(i,
+										                newAction)
+									}
+								}
+									.memoIn(lambdas, "action-${action.id}-fields", i)
+								this.maxFieldId = maxActionFieldId
+							}
+						}
 					}
 				}
 			}
 			styledButton("Ajouter une étape", action = {
-				actions = actions + Action(
-					id = (maxActionId++).toString(),
-					order = actions.size,
-					services.getOrNull(0)?.createRef() ?: error("Aucun service n'a été trouvé"),
-					name = "Nom de l'étape",
-				)
+				setActions { actions ->
+					actions + Action(
+						id = (maxActionId++).toString(),
+						order = actions.size,
+						services.getOrNull(0)?.createRef() ?: error("Aucun service n'a été trouvé"),
+						name = "Nom de l'étape",
+					)
+				}
 			})
 			if (actions.isEmpty())
 				p { styledErrorText("Un formulaire doit avoir au moins une étape.") }
@@ -194,13 +221,19 @@ private fun RBuilder.actionReviewerSelection(
 	}
 }
 
-private fun RBuilder.actionFields(
-	action: Action,
-	replace: (Action) -> Unit,
-	_maxFieldId: StateInstance<Int>,
-) {
-	var maxFieldId by _maxFieldId
+private external interface ActionFieldProps : RProps {
+	var action: Action
+	var replace: (Action) -> Unit
+	var maxFieldId: StateInstance<Int>
+}
+
+private val ActionFields = memo(fc<ActionFieldProps> { props ->
+	val action = props.action
+	val replace = props.replace
+	var maxFieldId by props.maxFieldId
 	val root = action.fields ?: FormRoot(emptyList())
+
+	val lambdas = useLambdas()
 
 	styledField("new-form-action-${action.id}-fields", "Champs réservés à l'administration") {
 		for ((i, field) in root.fields.withIndex()) {
@@ -208,14 +241,18 @@ private fun RBuilder.actionFields(
 				attrs {
 					this.field = field
 					key = field.id
-					this.replace = {
+					this.replace = { it: Field ->
 						val newFields = root.fields.replace(i, it as ShallowFormField)
 						replace(action.copy(fields = FormRoot(newFields)))
-					}
+					}.memoIn(lambdas, "action-fields-replace-${field.id}", i, action, root)
 					this.remove = {
 						val newFields = root.fields.remove(i)
 						replace(action.copy(fields = FormRoot(newFields)))
-					}
+					}.memoIn(lambdas, "action-fields-remove-${field.id}", i, action, root)
+					this.switch = { direction: SwitchDirection ->
+						val newFields = root.fields.switchOrder(i, direction)
+						replace(action.copy(fields = FormRoot(newFields)))
+					}.memoIn(lambdas, "action-fields-switch-${field.id}", i, action, root)
 
 					depth = 1
 					fieldNumber = i
@@ -234,4 +271,4 @@ private fun RBuilder.actionFields(
 			replace(action.copy(fields = FormRoot(newFields)))
 		})
 	}
-}
+})

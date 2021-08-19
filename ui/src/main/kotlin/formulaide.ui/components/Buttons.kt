@@ -2,6 +2,8 @@ package formulaide.ui.components
 
 import formulaide.ui.reportExceptions
 import formulaide.ui.utils.text
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.html.InputType
 import kotlinx.html.js.onClickFunction
 import react.*
@@ -45,10 +47,14 @@ private val CustomButton = fc<ButtonProps> { props ->
 			onClickFunction = {
 				it.preventDefault()
 
-				scope.reportExceptions(onFailure = { loading = false }) {
+				val startLoading = scope.launch {
+					delay(10)
 					loading = true
+				}
 
+				scope.reportExceptions(onFailure = { loading = false }) {
 					props.action()
+					startLoading.cancel()
 
 					loading = false
 				}

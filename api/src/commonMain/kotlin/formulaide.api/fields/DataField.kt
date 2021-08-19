@@ -38,8 +38,11 @@ sealed class DataField : Field {
 	) : DataField(), Field.Simple {
 
 		override fun toString() = "Data.Simple($id, $name, order=$order, $simple)"
-		override fun requestCopy(name: String?, arity: Arity?) =
-			copy(name = name ?: this.name, simple = simple.requestCopy(arity))
+		override fun requestCopy(name: String?, arity: Arity?, order: Int?) = copy(
+			name = name ?: this.name,
+			simple = simple.requestCopy(arity),
+			order = order ?: this.order,
+		)
 
 		override fun requestCopy(simple: SimpleField) = copy(simple = simple)
 	}
@@ -60,8 +63,11 @@ sealed class DataField : Field {
 	) : DataField(), Field.Union<DataField> {
 
 		override fun toString() = "Data.Union($id, $name, order=$order, $arity, $options)"
-		override fun requestCopy(name: String?, arity: Arity?) =
-			copy(name = name ?: this.name, arity = arity ?: this.arity)
+		override fun requestCopy(name: String?, arity: Arity?, order: Int?) = copy(
+			name = name ?: this.name,
+			arity = arity ?: this.arity,
+			order = order ?: this.order,
+		)
 	}
 
 	/**
@@ -94,9 +100,14 @@ sealed class DataField : Field {
 		}
 
 		override fun toString() = "Data.Composite($id, $name, order=$order, $arity, composite=$ref)"
-		override fun requestCopy(name: String?, arity: Arity?) =
-			copy(name = name ?: this.name, arity = arity ?: this.arity)
+		override fun requestCopy(name: String?, arity: Arity?, order: Int?) = copy(
+			name = name ?: this.name,
+			arity = arity ?: this.arity,
+			order = order ?: this.order,
+		)
 	}
+
+	abstract override fun requestCopy(name: String?, arity: Arity?, order: Int?): DataField
 
 	fun copyToSimple(simple: SimpleField): Simple = Simple(id, order, name, simple)
 	fun copyToUnion(options: List<DataField>) = Union(id, order, name, arity, options)
