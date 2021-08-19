@@ -6,6 +6,7 @@ import formulaide.ui.components.styledButton
 import formulaide.ui.components.styledFormField
 import formulaide.ui.utils.remove
 import formulaide.ui.utils.replace
+import formulaide.ui.utils.switchOrder
 import formulaide.ui.utils.text
 import react.FunctionComponent
 import react.child
@@ -70,6 +71,26 @@ val RecursionEditor: FunctionComponent<EditableFieldProps> = fc { props ->
 						}
 
 						props.replace(newParent)
+					}
+
+					if (parent is DataField.Union || parent is ShallowFormField.Union) {
+						switch = { direction ->
+							val newParent = when (parent) {
+								is DataField.Union ->
+									parent.copy(options = parent.options.switchOrder(i, direction))
+								is ShallowFormField.Union ->
+									parent.copy(options = parent.options.switchOrder(i, direction))
+								is DeepFormField.Union ->
+									parent.copy(options = parent.options.switchOrder(i, direction))
+								is ShallowFormField.Composite ->
+									parent.copy(fields = parent.fields.switchOrder(i, direction))
+								is DeepFormField.Composite ->
+									parent.copy(fields = parent.fields.switchOrder(i, direction))
+								else -> error("Impossible de modifier les sous-champs de $parent")
+							}
+
+							props.replace(newParent)
+						}
 					}
 				}
 			}
