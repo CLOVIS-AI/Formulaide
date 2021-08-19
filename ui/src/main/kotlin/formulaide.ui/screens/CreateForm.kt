@@ -44,7 +44,7 @@ val CreateForm = fc<RProps> { _ ->
 	val public = useRef<HTMLInputElement>()
 
 	val (fields, setFields) = useState(emptyList<ShallowFormField>())
-	var actions by useState(emptyList<Action>())
+	val (actions, setActions) = useState(emptyList<Action>())
 
 	var maxFieldId by useState(0)
 	var maxActionId by useState(0)
@@ -130,26 +130,44 @@ val CreateForm = fc<RProps> { _ ->
 					}
 					styledNesting(
 						depth = 0, fieldNumber = i,
-						onDeletion = { actions = actions.remove(i) },
+						onDeletion = { setActions { actions -> actions.remove(i) } },
 					) {
-						actionName(action, replace = { actions = actions.replace(i, it) })
+						actionName(action,
+						           replace = { setActions { actions -> actions.replace(i, it) } })
 
 						actionReviewerSelection(action, services,
-						                        replace = { actions = actions.replace(i, it) })
+						                        replace = {
+							                        setActions { actions ->
+								                        actions.replace(i,
+								                                        it)
+							                        }
+						                        })
 
-						actionFields(action,
-						             replace = { actions = actions.replace(i, it) },
-						             maxActionFieldId)
+						child(ActionFields) {
+							attrs {
+								this.action = action
+								this.replace = { newAction: Action ->
+									setActions { actions ->
+										actions.replace(i,
+										                newAction)
+									}
+								}
+									.memoIn(lambdas, "action-${action.id}-fields", i)
+								this.maxFieldId = maxActionFieldId
+							}
+						}
 					}
 				}
 			}
 			styledButton("Ajouter une étape", action = {
-				actions = actions + Action(
-					id = (maxActionId++).toString(),
-					order = actions.size,
-					services.getOrNull(0)?.createRef() ?: error("Aucun service n'a été trouvé"),
-					name = "Nom de l'étape",
-				)
+				setActions { actions ->
+					actions + Action(
+						id = (maxActionId++).toString(),
+						order = actions.size,
+						services.getOrNull(0)?.createRef() ?: error("Aucun service n'a été trouvé"),
+						name = "Nom de l'étape",
+					)
+				}
 			})
 			if (actions.isEmpty())
 				p { styledErrorText("Un formulaire doit avoir au moins une étape.") }
@@ -203,13 +221,19 @@ private fun RBuilder.actionReviewerSelection(
 	}
 }
 
-private fun RBuilder.actionFields(
-	action: Action,
-	replace: (Action) -> Unit,
-	_maxFieldId: StateInstance<Int>,
-) {
-	var maxFieldId by _maxFieldId
+private external interface ActionFieldProps : RProps {
+	var action: Action
+	var replace: (Action) -> Unit
+	var maxFieldId: StateInstance<Int>
+}
+
+private val ActionFields = memo(fc<ActionFieldProps> { props ->
+	val action = props.action
+	val replace = props.replace
+	var maxFieldId by props.maxFieldId
 	val root = action.fields ?: FormRoot(emptyList())
+
+	val lambdas = useLambdas()
 
 	styledField("new-form-action-${action.id}-fields", "Champs réservés à l'administration") {
 		for ((i, field) in root.fields.withIndex()) {
@@ -217,14 +241,18 @@ private fun RBuilder.actionFields(
 				attrs {
 					this.field = field
 					key = field.id
-					this.replace = {
+					this.replace = { it: Field ->
 						val newFields = root.fields.replace(i, it as ShallowFormField)
 						replace(action.copy(fields = FormRoot(newFields)))
-					}
+					}.memoIn(lambdas, "action-fields-replace-${field.id}", i, action, root)
 					this.remove = {
 						val newFields = root.fields.remove(i)
 						replace(action.copy(fields = FormRoot(newFields)))
-					}
+					}.memoIn(lambdas, "action-fields-remove-${field.id}", i, action, root)
+					this.switch = { direction: SwitchDirection ->
+						val newFields = root.fields.switchOrder(i, direction)
+						replace(action.copy(fields = FormRoot(newFields)))
+					}.memoIn(lambdas, "action-fields-switch-${field.id}", i, action, root)
 
 					depth = 1
 					fieldNumber = i
@@ -243,4 +271,4 @@ private fun RBuilder.actionFields(
 			replace(action.copy(fields = FormRoot(newFields)))
 		})
 	}
-}
+})
