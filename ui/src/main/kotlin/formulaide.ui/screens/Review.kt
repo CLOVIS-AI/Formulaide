@@ -54,7 +54,7 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 	val (client) = useClient()
 	require(client is Client.Authenticated) { "Seuls les employés peuvent accéder à cette page." }
 
-	var records by useState(initialRecords)
+	val (records, updateRecords) = useState(initialRecords).asDelegated()
 	val (searches, updateSearches) = useState(
 		listOf(ReviewSearch(null, false, emptyList())) +
 				form.actions
@@ -65,21 +65,27 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 
 	val allCriteria = searches.groupBy { it.action }
 		.mapValues { (_, v) -> v.flatMap { it.criteria } }
+
+	val lambdas = useLambdas()
 	val refresh: suspend (Boolean) -> Unit = { forceUpdate ->
 		loading = true
 		val newRecords = client.todoListFor(form, state, allCriteria)
 
-		records = if (forceUpdate) {
-			traceRenders("Search Force Update")
-			newRecords
-		} else {
-			traceRenders("Search Nice Update")
-			val retained = records.filter { it in newRecords }
-			retained +
-					newRecords.filter { record -> record.id !in retained.map { it.id } }
+		updateRecords {
+			if (forceUpdate) {
+				traceRenders("Search Force Update")
+				newRecords
+			} else {
+				traceRenders("Search Nice Update")
+				val retained = filter { it in newRecords }
+				retained +
+						newRecords.filter { record -> record.id !in retained.map { it.id } }
+			}
 		}
 		loading = false
 	}
+	val memoizedRefresh: suspend (Boolean) -> Unit =
+		refresh.memoIn(lambdas, "refresh", form, state, searches)
 
 	var formLoaded by useState(false)
 	useEffect(form) {
@@ -189,7 +195,7 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 				this.formLoaded = formLoaded
 				this.record = record
 
-				this.refresh = refresh
+				this.refresh = memoizedRefresh
 
 				key = record.id
 			}
@@ -223,7 +229,7 @@ private data class ParsedTransition(
 	val submission: ParsedSubmission?,
 )
 
-private val ReviewRecord = fc<ReviewRecordProps> { props ->
+private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 	traceRenders("ReviewRecord ${props.record.id}")
 	val form = props.form
 	val record = props.record
@@ -429,4 +435,4 @@ private val ReviewRecord = fc<ReviewRecordProps> { props ->
 				styledErrorText("Ce champ est obligatoire pour un refus.")
 		}
 	}
-}
+})
