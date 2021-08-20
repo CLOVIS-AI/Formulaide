@@ -17,6 +17,7 @@ import formulaide.ui.reportExceptions
 import formulaide.ui.traceRenders
 import formulaide.ui.useClient
 import formulaide.ui.useUser
+import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
 import formulaide.ui.utils.parseHtmlForm
 import formulaide.ui.utils.remove
 import formulaide.ui.utils.replace
@@ -54,12 +55,12 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 	require(client is Client.Authenticated) { "Seuls les employés peuvent accéder à cette page." }
 
 	var records by useState(initialRecords)
-	var searches by useState(
+	val (searches, updateSearches) = useState(
 		listOf(ReviewSearch(null, false, emptyList())) +
 				form.actions
 					.filter { it.fields != null }
 					.map { ReviewSearch(it, false, emptyList()) }
-	)
+	).asDelegated()
 	var loading by useState(false)
 
 	val allCriteria = searches.groupBy { it.action }
@@ -117,7 +118,7 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 				enabled: Boolean = search.enabled,
 				criteria: List<SearchCriterion<*>> = search.criteria,
 			) {
-				searches = searches.replace(i, search.copy(enabled = enabled, criteria = criteria))
+				updateSearches { replace(i, search.copy(enabled = enabled, criteria = criteria)) }
 			}
 
 			styledNesting(depth = 0, fieldNumber = i) {
@@ -140,7 +141,7 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 
 					styledButton("Annuler la recherche",
 					             action = {
-						             searches = searches.replace(i, search.copy(enabled = false))
+						             updateSearches { replace(i, search.copy(enabled = false)) }
 					             })
 				} else {
 					val message = "Recherche : " +
@@ -171,9 +172,10 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 									.takeIf { it != -1 }
 									?: error("Impossible de trouver le critère dans la liste : $criterion")
 
-								searches = searches.replace(
-									searches.indexOf(reviewSearch),
-									reviewSearch.copy(criteria = criteria.remove(index)))
+								updateSearches {
+									replace(indexOf(reviewSearch),
+									        reviewSearch.copy(criteria = criteria.remove(index)))
+								}
 							}
 						}
 					)
