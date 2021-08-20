@@ -18,6 +18,7 @@ import formulaide.ui.traceRenders
 import formulaide.ui.useClient
 import formulaide.ui.useUser
 import formulaide.ui.utils.parseHtmlForm
+import formulaide.ui.utils.remove
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.text
 import kotlinx.coroutines.CoroutineScope
@@ -152,6 +153,31 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 				}
 			}
 		}
+
+		p { text("FUTUR : Ici la barre de recherche") }
+
+		styledPillContainer {
+			for ((root, criteria) in allCriteria)
+				for (criterion in criteria)
+					criterionPill(
+						root,
+						criterion,
+						onRemove = {
+							reportExceptions {
+								val reviewSearch = searches.find { it.action == root }
+									?: error("Impossible de trouver la racine $root, ce n'est pas possible !")
+
+								val index = reviewSearch.criteria.indexOf(criterion)
+									.takeIf { it != -1 }
+									?: error("Impossible de trouver le critère dans la liste : $criterion")
+
+								searches = searches.replace(
+									searches.indexOf(reviewSearch),
+									reviewSearch.copy(criteria = criteria.remove(index)))
+							}
+						}
+					)
+		}
 	}
 
 	for (record in records) {
@@ -168,6 +194,17 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 		}
 	}
 
+}
+
+private inline fun RBuilder.criterionPill(
+	root: Action?,
+	criterion: SearchCriterion<*>,
+	crossinline onRemove: () -> Unit,
+) {
+	styledPill {
+		text(criterion.toString())
+		styledButton("×", action = { onRemove() })
+	}
 }
 
 private external interface ReviewRecordProps : RProps {
