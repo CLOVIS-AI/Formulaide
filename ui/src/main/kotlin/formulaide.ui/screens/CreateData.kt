@@ -31,9 +31,9 @@ val CreateData = fc<RProps> { _ ->
 	}
 
 	val formName = useRef<HTMLInputElement>()
-	val (fields, setFields) = useState<List<DataField>>(emptyList())
+	val fields = useLocalStorage<List<DataField>>("data-fields", emptyList())
 	val (_, navigateTo) = useNavigation()
-	var maxId by useState(0)
+	var maxId by useState(fields.value.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0)
 
 	val lambdas = useLambdas()
 
@@ -45,14 +45,18 @@ val CreateData = fc<RProps> { _ ->
 			val data = Composite(
 				id = Ref.SPECIAL_TOKEN_NEW,
 				name = formName.current?.value ?: error("Ce groupe n'a pas de nom"),
-				fields = fields
+				fields = fields.value
 			)
 
 			launch {
 				client.createData(data)
+				clearLocalStorage("data-fields")
 				refreshComposites()
 				navigateTo(Screen.ShowData)
 			}
+		},
+		"Effacer" to {
+			fields.value = emptyList()
 		},
 	) {
 		styledField("new-data-name", "Nom") {
@@ -62,21 +66,19 @@ val CreateData = fc<RProps> { _ ->
 		}
 
 		styledField("data-fields", "Champs") {
-			for ((i, field) in fields.withIndex()) {
+			for ((i, field) in fields.value.withIndex()) {
 				child(FieldEditor) {
 					attrs {
 						this.field = field
 						key = field.id
 						replace = { it: Field ->
-							setFields { fields -> fields.replace(i, it as DataField) }
+							fields.update { replace(i, it as DataField) }
 						}.memoIn(lambdas, "replace-${field.id}", i)
 						remove = {
-							setFields { fields -> fields.remove(i) }
+							fields.update { remove(i) }
 						}.memoIn(lambdas, "remove-${field.id}", i)
 						switch = { direction: SwitchDirection ->
-							setFields { fields ->
-								fields.switchOrder(i, direction)
-							}
+							fields.update { switchOrder(i, direction) }
 						}.memoIn(lambdas, "switch-${field.id}", i)
 
 						depth = 0
@@ -86,11 +88,11 @@ val CreateData = fc<RProps> { _ ->
 			}
 
 			styledButton("Ajouter un champ", action = {
-				setFields { fields ->
-					fields + DataField.Simple(
-						order = fields.size,
+				fields.update {
+					this + DataField.Simple(
+						order = this.size,
 						id = (maxId++).toString(),
-						name = "Nouveau champ",
+						name = "",
 						simple = SimpleField.Text(Arity.optional())
 					)
 				}

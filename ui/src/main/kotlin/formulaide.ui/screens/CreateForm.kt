@@ -27,15 +27,11 @@ import org.w3c.dom.HTMLSelectElement
 import react.*
 import react.dom.*
 
-val CreateForm = fc<RProps> { _ ->
+val CreateForm = fc<RProps> {
 	traceRenders("CreateForm")
 
 	val (client) = useClient()
-	if (client !is Client.Authenticated) {
-		styledCard("Créer un formulaire",
-		           failed = true) { text("Cette page n'est accessible que pour les utilisateurs connectés") }
-		return@fc
-	}
+	require(client is Client.Authenticated) { "Cette page n'est accessible que pour les utilisateurs connectés" }
 
 	val services = useServices().value.filter { it.open }
 	val (_, navigateTo) = useNavigation()
@@ -43,12 +39,19 @@ val CreateForm = fc<RProps> { _ ->
 	val formName = useRef<HTMLInputElement>()
 	val public = useRef<HTMLInputElement>()
 
-	val (fields, setFields) = useState(emptyList<ShallowFormField>())
-	val (actions, setActions) = useState(emptyList<Action>())
+	val fields = useLocalStorage("form-fields", emptyList<ShallowFormField>())
+	val actions = useLocalStorage("form-actions", emptyList<Action>())
 
-	var maxFieldId by useState(0)
-	var maxActionId by useState(0)
-	val maxActionFieldId = useState(0)
+	var maxFieldId by useState(fields.value.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0)
+	var maxActionId by useState(actions.value.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0)
+	val maxActionFieldId = useState(
+		actions.value
+			.flatMap { it.fields?.fields ?: emptyList() }
+			.map { it.id.toInt() }
+			.maxOrNull()
+			?.plus(1)
+			?: 0
+	)
 
 	val lambdas = useLambdas()
 
@@ -61,18 +64,24 @@ val CreateForm = fc<RProps> { _ ->
 				public = public.current?.checked
 					?: error("Le formulaire ne précise pas s'il est public ou interne"),
 				open = true,
-				mainFields = FormRoot(fields),
-				actions = actions
+				mainFields = FormRoot(fields.value),
+				actions = actions.value
 			)
 
 			launch {
 				form.validate()
 				client.createForm(form)
+				clearLocalStorage("form-fields")
+				clearLocalStorage("form-actions")
 
 				refreshForms()
 				navigateTo(Screen.ShowForms)
 			}
 		},
+		"Effacer" to {
+			fields.value = emptyList()
+			actions.value = emptyList()
+		}
 	) {
 		styledField("new-form-name", "Nom") {
 			styledInput(InputType.text, "new-form-name", required = true, ref = formName) {
@@ -87,21 +96,19 @@ val CreateForm = fc<RProps> { _ ->
 		}
 
 		styledField("new-form-fields", "Champs") {
-			for ((i, field) in fields.withIndex()) {
+			for ((i, field) in fields.value.withIndex()) {
 				child(FieldEditor) {
 					attrs {
 						this.field = field
 						key = field.id
 						this.replace = { it: Field ->
-							setFields { fields -> fields.replace(i, it as ShallowFormField) }
+							fields.update { replace(i, it as ShallowFormField) }
 						}.memoIn(lambdas, "replace-${field.id}", i)
 						this.remove = {
-							setFields { fields -> fields.remove(i) }
+							fields.update { remove(i) }
 						}.memoIn(lambdas, "remove-${field.id}", i)
 						switch = { direction: SwitchDirection ->
-							setFields { fields ->
-								fields.switchOrder(i, direction)
-							}
+							fields.update { switchOrder(i, direction) }
 						}.memoIn(lambdas, "switch-${field.id}", i)
 
 						depth = 0
@@ -111,11 +118,11 @@ val CreateForm = fc<RProps> { _ ->
 			}
 
 			styledButton("Ajouter un champ", action = {
-				setFields { fields ->
-					fields + ShallowFormField.Simple(
-						order = fields.size,
+				fields.update {
+					this + ShallowFormField.Simple(
+						order = size,
 						id = (maxFieldId++).toString(),
-						name = "Nouveau champ",
+						name = "",
 						simple = SimpleField.Text(Arity.optional())
 					)
 				}
@@ -123,36 +130,29 @@ val CreateForm = fc<RProps> { _ ->
 		}
 
 		styledField("new-form-actions", "Étapes") {
-			for ((i, action) in actions.sortedBy { it.order }.withIndex()) {
+			for ((i, action) in actions.value.sortedBy { it.order }.withIndex()) {
 				div {
 					attrs {
 						key = action.id
 					}
 					styledNesting(
 						depth = 0, fieldNumber = i,
-						onDeletion = { setActions { actions -> actions.remove(i) } },
+						onDeletion = { actions.update { remove(i) } },
 					) {
 						actionName(action,
-						           replace = { setActions { actions -> actions.replace(i, it) } })
+						           replace = { actions.update { replace(i, it) } })
 
 						actionReviewerSelection(action, services,
 						                        replace = {
-							                        setActions { actions ->
-								                        actions.replace(i,
-								                                        it)
-							                        }
+							                        actions.update { replace(i, it) }
 						                        })
 
 						child(ActionFields) {
 							attrs {
 								this.action = action
 								this.replace = { newAction: Action ->
-									setActions { actions ->
-										actions.replace(i,
-										                newAction)
-									}
-								}
-									.memoIn(lambdas, "action-${action.id}-fields", i)
+									actions.update { replace(i, newAction) }
+								}.memoIn(lambdas, "action-${action.id}-fields", i)
 								this.maxFieldId = maxActionFieldId
 							}
 						}
@@ -160,16 +160,16 @@ val CreateForm = fc<RProps> { _ ->
 				}
 			}
 			styledButton("Ajouter une étape", action = {
-				setActions { actions ->
-					actions + Action(
+				actions.update {
+					this + Action(
 						id = (maxActionId++).toString(),
-						order = actions.size,
+						order = size,
 						services.getOrNull(0)?.createRef() ?: error("Aucun service n'a été trouvé"),
-						name = "Nom de l'étape",
+						name = "",
 					)
 				}
 			})
-			if (actions.isEmpty())
+			if (actions.value.isEmpty())
 				p { styledErrorText("Un formulaire doit avoir au moins une étape.") }
 		}
 	}
@@ -181,6 +181,7 @@ private fun RBuilder.actionName(
 ) {
 	styledField("new-form-action-${action.id}-name", "Nom de l'étape") {
 		styledInput(InputType.text, "new-form-action-${action.id}-name", required = true) {
+			value = action.name
 			onChangeFunction = { event ->
 				val target = event.target as HTMLInputElement
 				replace(action.copy(name = target.value))
@@ -244,15 +245,15 @@ private val ActionFields = memo(fc<ActionFieldProps> { props ->
 					this.replace = { it: Field ->
 						val newFields = root.fields.replace(i, it as ShallowFormField)
 						replace(action.copy(fields = FormRoot(newFields)))
-					}.memoIn(lambdas, "action-fields-replace-${field.id}", i, action, root)
+					}.memoIn(lambdas, "action-fields-replace-${field.id}", i, root)
 					this.remove = {
 						val newFields = root.fields.remove(i)
 						replace(action.copy(fields = FormRoot(newFields)))
-					}.memoIn(lambdas, "action-fields-remove-${field.id}", i, action, root)
+					}.memoIn(lambdas, "action-fields-remove-${field.id}", i, root)
 					this.switch = { direction: SwitchDirection ->
 						val newFields = root.fields.switchOrder(i, direction)
 						replace(action.copy(fields = FormRoot(newFields)))
-					}.memoIn(lambdas, "action-fields-switch-${field.id}", i, action, root)
+					}.memoIn(lambdas, "action-fields-switch-${field.id}", i, root)
 
 					depth = 1
 					fieldNumber = i
@@ -264,7 +265,7 @@ private val ActionFields = memo(fc<ActionFieldProps> { props ->
 			val newFields = root.fields + ShallowFormField.Simple(
 				(maxFieldId++).toString(),
 				root.fields.size,
-				"Nouveau champ",
+				"",
 				SimpleField.Text(Arity.mandatory()),
 			)
 
