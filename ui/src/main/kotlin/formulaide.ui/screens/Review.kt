@@ -210,7 +210,15 @@ private inline fun RBuilder.criterionPill(
 	crossinline onRemove: () -> Unit,
 ) {
 	styledPill {
-		text(criterion.toString())
+		text(criterion.fieldKey)
+		text(" ")
+		text(when (criterion) {
+			     is SearchCriterion.Exists -> "a été rempli"
+			     is SearchCriterion.TextContains -> "contient « ${criterion.text} »"
+			     is SearchCriterion.TextEquals -> "est exactement « ${criterion.text} »"
+			     is SearchCriterion.OrderBefore -> "est avant ${criterion.max}"
+			     is SearchCriterion.OrderAfter -> "est après ${criterion.min}"
+		     })
 		styledButton("×", action = { onRemove() })
 	}
 }
