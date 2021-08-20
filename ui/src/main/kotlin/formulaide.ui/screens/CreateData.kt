@@ -94,7 +94,7 @@ val CreateData = fc<RProps> { _ ->
 					fields + DataField.Simple(
 						order = fields.size,
 						id = (maxId++).toString(),
-						name = "Nouveau champ",
+						name = "",
 						simple = SimpleField.Text(Arity.optional())
 					)
 				}

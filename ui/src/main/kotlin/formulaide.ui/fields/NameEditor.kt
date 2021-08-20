@@ -17,6 +17,7 @@ val NameEditor = fc<EditableFieldProps> { props ->
 		styledField("item-name-${field.id}", "Nom") {
 			styledInput(InputType.text, "item-name-${field.id}", required = true) {
 				placeholder = "Nom du champ"
+				value = field.name
 				onChangeFunction = {
 					props.replace(
 						props.field.requestCopy(name = (it.target as HTMLInputElement).value))
