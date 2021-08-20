@@ -70,7 +70,6 @@ fun PasswordModification(user: Email, previousScreen: Screen) = fc<RProps> {
 
 	val (client, connect) = useClient()
 	val (me) = useUser()
-	val (_, navigateTo) = useNavigation()
 
 	if (me == null) {
 		styledCard("Modifier le mot de passe") {
@@ -107,7 +106,7 @@ fun PasswordModification(user: Email, previousScreen: Screen) = fc<RProps> {
 				client.editPassword(request)
 
 				if (user == me.email)
-					connect(defaultClient)
+					connect { defaultClient }
 				navigateTo(previousScreen)
 			}
 		}
@@ -141,7 +140,6 @@ val LoginAccess = fc<RProps> {
 	val (user) = useUser()
 	val (client, connect) = useClient()
 	val scope = useAsync()
-	val (_, navigateTo) = useNavigation()
 
 	if (user == null) {
 		child(Login)
@@ -153,7 +151,7 @@ val LoginAccess = fc<RProps> {
 				scope.reportExceptions {
 					if (client is Client.Authenticated) client.logout()
 
-					connect(defaultClient)
+					connect { defaultClient }
 				}
 			},
 			"Modifier mon mot de passe" to {

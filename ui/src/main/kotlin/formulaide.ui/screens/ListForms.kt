@@ -43,7 +43,6 @@ internal external interface FormDescriptionProps : RProps {
 
 internal val FormDescription = fc<FormDescriptionProps> { props ->
 	val form = props.form
-	val (_, navigateTo) = useNavigation()
 
 	p { text(form.name) }
 	styledNesting(depth = 0) {
@@ -88,7 +87,6 @@ internal val ActionDescription = fc<ActionDescriptionProps> { props ->
 	val (client) = useClient()
 	val user by useUser()
 	val scope = useAsync()
-	val (_, navigateTo) = useNavigation()
 
 	var records by useState(emptyList<Record>())
 	useEffect(client, user) {

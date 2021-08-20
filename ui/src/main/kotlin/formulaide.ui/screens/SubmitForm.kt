@@ -25,7 +25,6 @@ fun SubmitForm(formRef: Ref<Form>) = fc<RProps> {
 	val scope = useAsync()
 	val client by useClient()
 	val composites by useComposites()
-	val (_, navigateTo) = useNavigation()
 
 	val formRefState by useState(formRef)
 

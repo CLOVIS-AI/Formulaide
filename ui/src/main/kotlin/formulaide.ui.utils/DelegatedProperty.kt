@@ -85,7 +85,7 @@ class WriteDelegatedProperty<T>(
 	fun update(transform: T.() -> T) = onUpdate(transform)
 
 	// Destructuration
-	operator fun component2() = { value: T -> onUpdate { value } }
+	operator fun component2(): (T.() -> T) -> Unit = onUpdate
 
 	// Delegation
 	operator fun setValue(
