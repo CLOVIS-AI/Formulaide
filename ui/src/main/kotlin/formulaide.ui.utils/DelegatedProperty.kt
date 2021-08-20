@@ -1,5 +1,6 @@
 package formulaide.ui.utils
 
+import react.StateInstance
 import kotlin.reflect.KProperty
 
 interface DelegatedProperty<out T> {
@@ -9,8 +10,15 @@ interface DelegatedProperty<out T> {
 
 	@Suppress("FunctionName") // Factories that look like constructors
 	companion object {
-		fun <T> DelegatedProperty(get: () -> T) = ReadDelegatedProperty(get)
-		fun <T> DelegatedProperty(get: () -> T, set: (T) -> Unit) = WriteDelegatedProperty(get, set)
+		fun <T> DelegatedProperty(get: () -> T) =
+			ReadDelegatedProperty(get)
+
+		fun <T> DelegatedProperty(get: () -> T, onUpdate: ((T) -> T) -> Unit) =
+			WriteDelegatedProperty(ReadDelegatedProperty(get), onUpdate)
+
+		fun <T> StateInstance<T>.asDelegated() =
+			WriteDelegatedProperty(ReadDelegatedProperty { component1() },
+			                       onUpdate = { v -> component2().invoke(v) })
 	}
 }
 
@@ -62,28 +70,31 @@ class ReadDelegatedProperty<out T>(val get: () -> T) : DelegatedProperty<T> {
  * ```
  */
 class WriteDelegatedProperty<T>(
-	private val reader: ReadDelegatedProperty<T>,
-	val set: (T) -> Unit,
+	val reader: ReadDelegatedProperty<T>,
+	val onUpdate: ((T) -> T) -> Unit,
 ) : DelegatedProperty<T> by reader {
-
-	constructor(get: () -> T, set: (T) -> Unit) : this(ReadDelegatedProperty(get), set)
 
 	// Normal access
 	override var value: T
 		get() = reader.value
 		set(value) {
-			set(value)
+			onUpdate { value }
 		}
 
+	// Access that provides the current value, so it isn't captured in the caller's closure
+	fun update(transform: (T) -> T) {
+		onUpdate(transform)
+	}
+
 	// Destructuration
-	operator fun component2() = set
+	operator fun component2() = { value: T -> onUpdate { value } }
 
 	// Delegation
 	operator fun setValue(
 		thisRef: Nothing?,
 		property: KProperty<*>,
 		value: T,
-	) = set(value)
+	) = onUpdate { value }
 
 }
 
@@ -97,5 +108,20 @@ fun <I> DelegatedProperty<I>.filter(predicate: (I) -> Boolean) =
 
 inline fun <reified I> DelegatedProperty<*>.filterIs() =
 	map { it as? I }
+
+/**
+ * Get notified when the [DelegatedProperty]'s setter is called.
+ *
+ * @param listener A callback executed with the new value.
+ */
+fun <T> WriteDelegatedProperty<T>.onSet(listener: (T) -> Unit) =
+	WriteDelegatedProperty(
+		reader = reader,
+		onUpdate = { update ->
+			onUpdate {
+				update(it).also(listener)
+			}
+		}
+	)
 
 //endregion
