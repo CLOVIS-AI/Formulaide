@@ -82,9 +82,7 @@ class WriteDelegatedProperty<T>(
 		}
 
 	// Access that provides the current value, so it isn't captured in the caller's closure
-	fun update(transform: (T) -> T) {
-		onUpdate(transform)
-	}
+	fun update(transform: T.() -> T) = onUpdate(transform)
 
 	// Destructuration
 	operator fun component2() = { value: T -> onUpdate { value } }

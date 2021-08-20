@@ -72,15 +72,13 @@ val CreateData = fc<RProps> { _ ->
 						this.field = field
 						key = field.id
 						replace = { it: Field ->
-							fields.update { fields -> fields.replace(i, it as DataField) }
+							fields.update { replace(i, it as DataField) }
 						}.memoIn(lambdas, "replace-${field.id}", i)
 						remove = {
-							fields.update { fields -> fields.remove(i) }
+							fields.update { remove(i) }
 						}.memoIn(lambdas, "remove-${field.id}", i)
 						switch = { direction: SwitchDirection ->
-							fields.update { fields ->
-								fields.switchOrder(i, direction)
-							}
+							fields.update { switchOrder(i, direction) }
 						}.memoIn(lambdas, "switch-${field.id}", i)
 
 						depth = 0
@@ -90,9 +88,9 @@ val CreateData = fc<RProps> { _ ->
 			}
 
 			styledButton("Ajouter un champ", action = {
-				fields.update { fields ->
-					fields + DataField.Simple(
-						order = fields.size,
+				fields.update {
+					this + DataField.Simple(
+						order = this.size,
 						id = (maxId++).toString(),
 						name = "",
 						simple = SimpleField.Text(Arity.optional())
