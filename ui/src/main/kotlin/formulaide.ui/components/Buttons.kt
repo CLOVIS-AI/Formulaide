@@ -4,13 +4,12 @@ import formulaide.ui.reportExceptions
 import formulaide.ui.utils.text
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.html.DIV
 import kotlinx.html.InputType
+import kotlinx.html.SPAN
 import kotlinx.html.js.onClickFunction
 import react.*
-import react.dom.attrs
-import react.dom.button
-import react.dom.input
-import react.dom.span
+import react.dom.*
 
 private const val buttonShapeClasses = "rounded-full py-1 px-3"
 private const val buttonClasses = "$buttonShapeClasses hover:bg-purple-500"
@@ -94,5 +93,21 @@ fun RBuilder.styledSubmitButton(
 		attrs {
 			value = text
 		}
+	}
+}
+
+fun RBuilder.styledPill(
+	contents: RDOMBuilder<SPAN>.() -> Unit,
+) {
+	span("$buttonShapeClasses bg-blue-200 flex flex-shrink justify-between items-center gap-x-2 max-w-max pl-4 pr-1") {
+		contents()
+	}
+}
+
+fun RBuilder.styledPillContainer(
+	contents: RDOMBuilder<DIV>.() -> Unit,
+) {
+	div("flex flex-row flex-wrap gap-2") {
+		contents()
 	}
 }
