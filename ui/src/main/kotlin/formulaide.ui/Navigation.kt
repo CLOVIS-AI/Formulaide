@@ -7,9 +7,7 @@ import formulaide.api.types.Email
 import formulaide.api.types.Ref
 import formulaide.api.users.User
 import formulaide.ui.Role.Companion.role
-import formulaide.ui.components.styledButton
-import formulaide.ui.components.styledCard
-import formulaide.ui.components.styledDisabledButton
+import formulaide.ui.components.*
 import formulaide.ui.screens.*
 import formulaide.ui.utils.GlobalState
 import formulaide.ui.utils.text
@@ -19,7 +17,6 @@ import kotlinx.browser.window
 import org.w3c.dom.events.Event
 import org.w3c.dom.url.URL
 import react.*
-import react.dom.div
 
 private val currentScreen = GlobalState(getScreenFromWindow() ?: Screen.Home)
 	.apply { subscribers.add { window.history.pushState(null, it.displayName, "?d=${it.route}") } }
@@ -108,13 +105,11 @@ private val Navigation = fc<RProps> {
 
 	traceRenders("Navigation bar")
 
-	div {
-		for (screen in Screen.availableScreens(user)) {
-			if (screen != currentScreen)
-				styledButton(screen.displayName) { currentScreen = screen }
-			else
-				styledDisabledButton(screen.displayName)
-		}
+	for (screen in Screen.availableScreens(user)) {
+		if (screen != currentScreen)
+			styledButton(screen.displayName) { currentScreen = screen }
+		else
+			styledDisabledButton(screen.displayName)
 	}
 }
 
@@ -125,6 +120,7 @@ private fun getScreenFromWindow(): Screen? =
 		?.let { Screen.routeDecoder(it) }
 
 val Window = fc<RProps> {
+	val (_, setClient) = useClient()
 	var screen by useNavigation()
 	val user by useUser()
 
@@ -141,15 +137,24 @@ val Window = fc<RProps> {
 		}
 	}
 
-	val title = "Formulaide • ${screen.displayName}"
 	val subtitle = when (user) {
 		null -> "Accès anonyme"
 		else -> "Bonjour ${user!!.fullName}"
 	}
 
-	styledCard(title, subtitle) {
-		child(Navigation)
-	}
+	styledTitleCard(
+		title = {
+			styledTitle("Formulaide")
+			styledLightText(subtitle)
+			styledButton("×", action = {
+				setClient(defaultClient)
+				screen = Screen.Home
+			})
+		},
+		actions = {
+			child(Navigation)
+		}
+	)
 
 	if (user.role >= screen.requiredRole) {
 		child(screen.component())

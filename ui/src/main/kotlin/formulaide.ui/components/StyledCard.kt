@@ -51,6 +51,23 @@ fun RBuilder.styledCard(
 	}
 }
 
+fun RBuilder.styledTitleCard(
+	title: RBuilder.() -> Unit,
+	actions: RBuilder.() -> Unit,
+) {
+	styledCardShell {
+		div("flex flex-col-reverse justify-center md:flex-row md:justify-between md:items-center") {
+			div {
+				actions()
+			}
+
+			div("mb-2 md:mb-0") {
+				title()
+			}
+		}
+	}
+}
+
 private external interface FormCardProps : RProps {
 	var title: String
 	var secondary: String?
