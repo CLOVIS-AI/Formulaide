@@ -12,13 +12,10 @@ import formulaide.client.routes.compositesReferencedIn
 import formulaide.client.routes.findSubmission
 import formulaide.client.routes.review
 import formulaide.client.routes.todoListFor
+import formulaide.ui.*
 import formulaide.ui.components.*
 import formulaide.ui.fields.field
 import formulaide.ui.fields.immutableFields
-import formulaide.ui.reportExceptions
-import formulaide.ui.traceRenders
-import formulaide.ui.useClient
-import formulaide.ui.useUser
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
 import formulaide.ui.utils.parseHtmlForm
 import formulaide.ui.utils.remove
@@ -32,7 +29,9 @@ import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
 import react.*
-import react.dom.*
+import react.dom.br
+import react.dom.div
+import react.dom.p
 import kotlin.js.Date
 
 internal fun RecordState.displayName() = when (this) {
@@ -186,39 +185,30 @@ private external interface SearchInputProps : RProps {
 
 private val SearchInput = memo(fc<SearchInputProps> { props ->
 	val form = props.form
+	val composites by useComposites()
+	form.load(composites)
 	var selectedRoot by useState<Action?>(null)
-	val (fields, updateFields) = useState(emptyList<FormField>()).asDelegated()
+	val (fields, updateFields) = useState(emptyList<FormField>())
+		.asDelegated()
 	var criterion by useState<SearchCriterion<*>?>(null)
 
 	val lambdas = useLambdas()
 
 	styledField("search-field", "Rechercher dans :") {
 		//region Select the root
-		styledSelect(
-			onSelect = { select ->
-				selectedRoot =
-					if (select.value == "null") null
-					else form.actions.find { it.id == select.value }
-				criterion = null
-				updateFields { emptyList() }
-			}
-		) {
-			option {
-				text("Saisie originelle")
-				attrs {
-					value = "null"
-					selected = selectedRoot == null
-				}
-			}
+		fun selectRoot(root: Action?) {
+			selectedRoot = root
+			updateFields { emptyList() }
+			criterion = null
+		}
+
+		controlledSelect {
+			option("Saisie originelle", "null") { selectRoot(null) }
+				.selectIf { selectedRoot == null }
 
 			for (root in form.actions.filter { it.fields != null && it.fields!!.fields.isNotEmpty() }) {
-				option {
-					text(root.name)
-					attrs {
-						value = root.id
-						selected = selectedRoot == root
-					}
-				}
+				option(root.name, root.id) { selectRoot(root) }
+					.selectIf { selectedRoot == root }
 			}
 		}
 		//endregion
@@ -242,6 +232,7 @@ private val SearchInput = memo(fc<SearchInputProps> { props ->
 					this.allowEmpty = i != 0
 					this.select = { it: FormField? ->
 						updateFields {
+							println("USE_EFFECT_REPLACE $it")
 							if (it != null)
 								subList(0, i) + it
 							else
@@ -255,40 +246,12 @@ private val SearchInput = memo(fc<SearchInputProps> { props ->
 	}
 
 	val field = fields.lastOrNull()
-	val fieldKey = fields.joinToString(separator = ":") { it.id }
 	if (field != null) styledField("search-criterion", "Critère :") {
 		//region Select the criterion type
-		styledSelect(
-			onSelect = {
-				criterion = when (it.value) {
-					"EXISTS" -> SearchCriterion.Exists(fieldKey)
-					"CONTAINS" -> SearchCriterion.TextContains(fieldKey, "")
-					"EQUALS" -> SearchCriterion.TextEquals(fieldKey, "")
-					"AFTER" -> SearchCriterion.OrderAfter(fieldKey, "")
-					"BEFORE" -> SearchCriterion.OrderBefore(fieldKey, "")
-					else -> error("Impossible: choix de critère ${it.value}")
-				}
-			}
-		) {
-			option {
-				text("A été rempli")
-				attrs { value = "EXISTS" }
-			}
-			option {
-				text("Contient")
-				attrs { value = "CONTAINS" }
-			}
-			option {
-				text("Est exactement")
-				attrs { value = "EQUALS" }
-			}
-			option {
-				text("Après")
-				attrs { value = "AFTER" }
-			}
-			option {
-				text("Avant")
-				attrs { value = "BEFORE" }
+		child(SearchCriterionSelect) {
+			attrs {
+				this.fields = fields
+				this.select = { criterion = it }
 			}
 		}
 		//endregion
@@ -342,35 +305,94 @@ private external interface SearchInputSelectProps : RProps {
 }
 
 private val SearchInputSelect = memo(fc<SearchInputSelectProps> { props ->
-	val candidates = props.candidates
-		.filter { it !is FormField.Simple || it.simple !is SimpleField.Message }
+	val candidates = useMemo(props.candidates) {
+		props.candidates.filter { it !is FormField.Simple || (it.simple !is SimpleField.Message && it.simple !is SimpleField.Upload) }
+	}
 
+	fun reSelect() =
+		if (props.allowEmpty) null
+		else candidates.firstOrNull()
+
+	var selected by useState(
+		reSelect()
+	)
+	useEffect(selected) { props.select(selected) }
+	useEffect(candidates) { selected = reSelect() }
+	useEffect(props.field) {
+		if (props.field == null) {
+			val newSelect = reSelect()
+			selected = newSelect
+			props.select(newSelect)
+		}
+	}
+
+	//	text(props.field.toString())
 	if (candidates.isNotEmpty()) {
-		styledSelect(
-			onSelect = { select ->
-				val candidate = candidates.find { it.id == select.value }
-				props.select(candidate)
-			}
-		) {
+		controlledSelect {
 			if (props.allowEmpty)
-				option {
-					text("")
-					attrs {
-						value = "null"
-					}
-				}
+				option("", "null") { selected = null }
+					.selectIf { selected == null }
 
-			for (candidate in candidates) {
-				option {
-					text(candidate.name)
-					attrs {
-						value = candidate.id
-					}
-				}
-			}
+			for (candidate in candidates)
+				option(candidate.name, candidate.id) { selected = candidate }
+					.selectIf { selected == candidate }
 		}
 	}
 })
+
+private external interface SearchCriterionSelectProps : RProps {
+	var fields: List<FormField>
+	var select: (SearchCriterion<*>?) -> Unit
+}
+
+private val SearchCriterionSelect = fc<SearchCriterionSelectProps> { props ->
+	val field = props.fields.lastOrNull()
+	val fieldKey = props.fields.joinToString(separator = ":") { it.id }
+
+	// It is CRUCIAL that these are all different from one another
+	val exists = "A été rempli"
+	val contains = "Contient"
+	val equals = "Est exactement"
+	val after = "Après"
+	val before = "Avant"
+
+	val available = ArrayList<String>().apply {
+		if (field?.arity?.min == 0)
+			add(exists)
+
+		if (field is FormField.Simple || field is FormField.Union<*>)
+			add(equals)
+
+		if (field is FormField.Simple) {
+			add(contains)
+			add(after)
+			add(before)
+		}
+	}
+
+	var chosen by useState(available.firstOrNull())
+	useEffect(chosen) {
+		props.select(
+			when (chosen) {
+				exists -> SearchCriterion.Exists(fieldKey)
+				contains -> SearchCriterion.TextContains(fieldKey, "")
+				equals -> SearchCriterion.TextEquals(fieldKey, "")
+				after -> SearchCriterion.OrderAfter(fieldKey, "")
+				before -> SearchCriterion.OrderBefore(fieldKey, "")
+				else -> null
+			}
+		)
+	}
+	useEffect(field) {
+		chosen = available.firstOrNull()
+	}
+
+	controlledSelect {
+		for (option in available)
+			option(option, option) { chosen = option }
+				.selectIf { chosen == option }
+	}
+}
 
 private external interface CriterionPillProps : RProps {
 	var root: Action?
