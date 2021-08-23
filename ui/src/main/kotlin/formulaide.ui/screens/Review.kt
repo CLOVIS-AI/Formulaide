@@ -168,6 +168,11 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 					}
 				}
 			}
+			if (records.isEmpty()) {
+				div("flex w-full justify-center items-center h-full") {
+					p("my-8") { text("Aucun résultat") }
+				}
+			}
 		}
 		//endregion
 	}
