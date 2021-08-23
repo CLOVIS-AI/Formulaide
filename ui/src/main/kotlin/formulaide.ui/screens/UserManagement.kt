@@ -23,7 +23,6 @@ import react.dom.option
 val UserList = fc<RProps> { _ ->
 	traceRenders("UserList")
 
-	val (_, navigateTo) = useNavigation()
 	val scope = useAsync()
 
 	val (client) = useClient()
@@ -109,7 +108,6 @@ private suspend fun editUser(
 
 val CreateUser = fc<RProps> { _ ->
 	val services by useServices()
-	val (_, navigateTo) = useNavigation()
 
 	val email = useRef<HTMLInputElement>()
 	val fullName = useRef<HTMLInputElement>()

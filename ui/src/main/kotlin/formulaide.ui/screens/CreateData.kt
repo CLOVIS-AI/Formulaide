@@ -31,9 +31,8 @@ val CreateData = fc<RProps> { _ ->
 	}
 
 	val formName = useRef<HTMLInputElement>()
-	val fields = useLocalStorage<List<DataField>>("data-fields", emptyList())
-	val (_, navigateTo) = useNavigation()
-	var maxId by useState(fields.value.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0)
+	val (fields, updateFields) = useLocalStorage<List<DataField>>("data-fields", emptyList())
+	var maxId by useState(fields.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0)
 
 	val lambdas = useLambdas()
 
@@ -45,7 +44,7 @@ val CreateData = fc<RProps> { _ ->
 			val data = Composite(
 				id = Ref.SPECIAL_TOKEN_NEW,
 				name = formName.current?.value ?: error("Ce groupe n'a pas de nom"),
-				fields = fields.value
+				fields = fields
 			)
 
 			launch {
@@ -56,7 +55,7 @@ val CreateData = fc<RProps> { _ ->
 			}
 		},
 		"Effacer" to {
-			fields.value = emptyList()
+			updateFields { emptyList() }
 		},
 	) {
 		styledField("new-data-name", "Nom") {
@@ -66,19 +65,19 @@ val CreateData = fc<RProps> { _ ->
 		}
 
 		styledField("data-fields", "Champs") {
-			for ((i, field) in fields.value.withIndex()) {
+			for ((i, field) in fields.withIndex()) {
 				child(FieldEditor) {
 					attrs {
 						this.field = field
 						key = field.id
 						replace = { it: Field ->
-							fields.update { replace(i, it as DataField) }
+							updateFields { replace(i, it as DataField) }
 						}.memoIn(lambdas, "replace-${field.id}", i)
 						remove = {
-							fields.update { remove(i) }
+							updateFields { remove(i) }
 						}.memoIn(lambdas, "remove-${field.id}", i)
 						switch = { direction: SwitchDirection ->
-							fields.update { switchOrder(i, direction) }
+							updateFields { switchOrder(i, direction) }
 						}.memoIn(lambdas, "switch-${field.id}", i)
 
 						depth = 0
@@ -88,7 +87,7 @@ val CreateData = fc<RProps> { _ ->
 			}
 
 			styledButton("Ajouter un champ", action = {
-				fields.update {
+				updateFields {
 					this + DataField.Simple(
 						order = this.size,
 						id = (maxId++).toString(),

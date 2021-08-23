@@ -34,18 +34,17 @@ val CreateForm = fc<RProps> {
 	require(client is Client.Authenticated) { "Cette page n'est accessible que pour les utilisateurs connectés" }
 
 	val services = useServices().value.filter { it.open }
-	val (_, navigateTo) = useNavigation()
 
 	val formName = useRef<HTMLInputElement>()
 	val public = useRef<HTMLInputElement>()
 
-	val fields = useLocalStorage("form-fields", emptyList<ShallowFormField>())
-	val actions = useLocalStorage("form-actions", emptyList<Action>())
+	val (fields, updateFields) = useLocalStorage("form-fields", emptyList<ShallowFormField>())
+	val (actions, updateActions) = useLocalStorage("form-actions", emptyList<Action>())
 
-	var maxFieldId by useState(fields.value.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0)
-	var maxActionId by useState(actions.value.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0)
+	var maxFieldId by useState(fields.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0)
+	var maxActionId by useState(actions.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0)
 	val maxActionFieldId = useState(
-		actions.value
+		actions
 			.flatMap { it.fields?.fields ?: emptyList() }
 			.map { it.id.toInt() }
 			.maxOrNull()
@@ -64,8 +63,8 @@ val CreateForm = fc<RProps> {
 				public = public.current?.checked
 					?: error("Le formulaire ne précise pas s'il est public ou interne"),
 				open = true,
-				mainFields = FormRoot(fields.value),
-				actions = actions.value
+				mainFields = FormRoot(fields),
+				actions = actions
 			)
 
 			launch {
@@ -79,8 +78,8 @@ val CreateForm = fc<RProps> {
 			}
 		},
 		"Effacer" to {
-			fields.value = emptyList()
-			actions.value = emptyList()
+			updateFields { emptyList() }
+			updateActions { emptyList() }
 		}
 	) {
 		styledField("new-form-name", "Nom") {
@@ -96,19 +95,19 @@ val CreateForm = fc<RProps> {
 		}
 
 		styledField("new-form-fields", "Champs") {
-			for ((i, field) in fields.value.withIndex()) {
+			for ((i, field) in fields.withIndex()) {
 				child(FieldEditor) {
 					attrs {
 						this.field = field
 						key = field.id
 						this.replace = { it: Field ->
-							fields.update { replace(i, it as ShallowFormField) }
+							updateFields { replace(i, it as ShallowFormField) }
 						}.memoIn(lambdas, "replace-${field.id}", i)
 						this.remove = {
-							fields.update { remove(i) }
+							updateFields { remove(i) }
 						}.memoIn(lambdas, "remove-${field.id}", i)
 						switch = { direction: SwitchDirection ->
-							fields.update { switchOrder(i, direction) }
+							updateFields { switchOrder(i, direction) }
 						}.memoIn(lambdas, "switch-${field.id}", i)
 
 						depth = 0
@@ -118,7 +117,7 @@ val CreateForm = fc<RProps> {
 			}
 
 			styledButton("Ajouter un champ", action = {
-				fields.update {
+				updateFields {
 					this + ShallowFormField.Simple(
 						order = size,
 						id = (maxFieldId++).toString(),
@@ -130,28 +129,28 @@ val CreateForm = fc<RProps> {
 		}
 
 		styledField("new-form-actions", "Étapes") {
-			for ((i, action) in actions.value.sortedBy { it.order }.withIndex()) {
+			for ((i, action) in actions.sortedBy { it.order }.withIndex()) {
 				div {
 					attrs {
 						key = action.id
 					}
 					styledNesting(
 						depth = 0, fieldNumber = i,
-						onDeletion = { actions.update { remove(i) } },
+						onDeletion = { updateActions { remove(i) } },
 					) {
 						actionName(action,
-						           replace = { actions.update { replace(i, it) } })
+						           replace = { updateActions { replace(i, it) } })
 
 						actionReviewerSelection(action, services,
 						                        replace = {
-							                        actions.update { replace(i, it) }
+							                        updateActions { replace(i, it) }
 						                        })
 
 						child(ActionFields) {
 							attrs {
 								this.action = action
 								this.replace = { newAction: Action ->
-									actions.update { replace(i, newAction) }
+									updateActions { replace(i, newAction) }
 								}.memoIn(lambdas, "action-${action.id}-fields", i)
 								this.maxFieldId = maxActionFieldId
 							}
@@ -160,7 +159,7 @@ val CreateForm = fc<RProps> {
 				}
 			}
 			styledButton("Ajouter une étape", action = {
-				actions.update {
+				updateActions {
 					this + Action(
 						id = (maxActionId++).toString(),
 						order = size,
@@ -169,7 +168,7 @@ val CreateForm = fc<RProps> {
 					)
 				}
 			})
-			if (actions.value.isEmpty())
+			if (actions.isEmpty())
 				p { styledErrorText("Un formulaire doit avoir au moins une étape.") }
 		}
 	}

@@ -1,6 +1,9 @@
 package formulaide.ui.screens
 
 import formulaide.api.data.*
+import formulaide.api.fields.FormField
+import formulaide.api.fields.FormRoot
+import formulaide.api.fields.SimpleField
 import formulaide.api.search.SearchCriterion
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.types.Ref.Companion.load
@@ -9,15 +12,13 @@ import formulaide.client.routes.compositesReferencedIn
 import formulaide.client.routes.findSubmission
 import formulaide.client.routes.review
 import formulaide.client.routes.todoListFor
+import formulaide.ui.*
 import formulaide.ui.components.*
 import formulaide.ui.fields.field
 import formulaide.ui.fields.immutableFields
-import formulaide.ui.fields.searchFields
-import formulaide.ui.reportExceptions
-import formulaide.ui.traceRenders
-import formulaide.ui.useClient
-import formulaide.ui.useUser
+import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
 import formulaide.ui.utils.parseHtmlForm
+import formulaide.ui.utils.remove
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.text
 import kotlinx.coroutines.CoroutineScope
@@ -41,7 +42,7 @@ internal fun RecordState.displayName() = when (this) {
 private data class ReviewSearch(
 	val action: Action?,
 	val enabled: Boolean,
-	val criteria: List<SearchCriterion<*>>,
+	val criterion: SearchCriterion<*>,
 )
 
 @Suppress("FunctionName")
@@ -52,32 +53,33 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 	val (client) = useClient()
 	require(client is Client.Authenticated) { "Seuls les employés peuvent accéder à cette page." }
 
-	var records by useState(initialRecords)
-	var searches by useState(
-		listOf(ReviewSearch(null, false, emptyList())) +
-				form.actions
-					.filter { it.fields != null }
-					.map { ReviewSearch(it, false, emptyList()) }
-	)
+	val (records, updateRecords) = useState(initialRecords).asDelegated()
+	val (searches, updateSearches) = useState(emptyList<ReviewSearch>()).asDelegated()
 	var loading by useState(false)
 
 	val allCriteria = searches.groupBy { it.action }
-		.mapValues { (_, v) -> v.flatMap { it.criteria } }
+		.mapValues { (_, v) -> v.map { it.criterion } }
+
+	val lambdas = useLambdas()
 	val refresh: suspend (Boolean) -> Unit = { forceUpdate ->
 		loading = true
 		val newRecords = client.todoListFor(form, state, allCriteria)
 
-		records = if (forceUpdate) {
-			traceRenders("Search Force Update")
-			newRecords
-		} else {
-			traceRenders("Search Nice Update")
-			val retained = records.filter { it in newRecords }
-			retained +
-					newRecords.filter { record -> record.id !in retained.map { it.id } }
+		updateRecords {
+			if (forceUpdate) {
+				traceRenders("Search Force Update")
+				newRecords
+			} else {
+				traceRenders("Search Nice Update")
+				val retained = filter { it in newRecords }
+				retained +
+						newRecords.filter { record -> record.id !in retained.map { it.id } }
+			}
 		}
 		loading = false
 	}
+	val memoizedRefresh: suspend (Boolean) -> Unit =
+		refresh.memoIn(lambdas, "refresh", form, state, searches)
 
 	var formLoaded by useState(false)
 	useEffect(form) {
@@ -103,72 +105,352 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 		}
 	}
 
-	styledCard(
-		state.displayName(),
-		form.name,
-		"Actualiser" to { refresh(true) },
-		loading = loading,
-	) {
-		p { text("${records.size} dossiers sont chargés. Pour des raisons de performance, il n'est pas possible de charger plus de ${Record.MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION} dossiers à la fois.") }
-
-		for ((i, search) in searches.withIndex()) {
-			fun updateSearch(
-				enabled: Boolean = search.enabled,
-				criteria: List<SearchCriterion<*>> = search.criteria,
+	//region Full page
+	div("lg:grid lg:grid-cols-3 lg:gap-y-0") {
+		//region Search bar
+		div("lg:order-2") {
+			styledCard(
+				state.displayName(),
+				form.name,
+				"Actualiser" to { refresh(true) },
+				loading = loading,
 			) {
-				searches = searches.replace(i, search.copy(enabled = enabled, criteria = criteria))
-			}
+				p { text("${records.size} dossiers sont chargés. Pour des raisons de performance, il n'est pas possible de charger plus de ${Record.MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION} dossiers à la fois.") }
 
-			styledNesting(depth = 0, fieldNumber = i) {
-				if (search.enabled) {
-					searchFields(
-						search.action?.fields ?: form.mainFields,
-						criteria = search.criteria,
-						update = { previous, next ->
-							if (previous == null) {
-								updateSearch(criteria = search.criteria + next!!)
-							} else if (next == null) {
-								updateSearch(criteria = search.criteria - previous)
-							} else {
-								updateSearch(criteria = search.criteria.replace(
-									search.criteria.indexOf(previous),
-									next))
-							}
+				div {
+					child(SearchInput) {
+						attrs {
+							this.form = form
+							this.addCriterion = { updateSearches { this + it } }
 						}
-					)
+					}
+				}
 
-					styledButton("Annuler la recherche",
-					             action = {
-						             searches = searches.replace(i, search.copy(enabled = false))
-					             })
-				} else {
-					val message = "Recherche : " +
-							(if (search.action == null) "champs originaux" else search.action.name)
+				styledPillContainer {
+					for ((root, criteria) in allCriteria)
+						for (criterion in criteria)
+							child(CriterionPill) {
+								attrs {
+									this.root = root
+									this.fields = root?.fields ?: form.mainFields
+									this.criterion = criterion
+									this.onRemove = {
+										updateSearches {
+											reportExceptions {
+												val reviewSearch =
+													indexOfFirst { it.action == root && it.criterion == criterion }
+														.takeUnless { it == -1 }
+														?: error("Impossible de trouver le critère $criterion dans la racine $root, ce n'est pas possible !")
 
-					styledButton(
-						message,
-						action = { updateSearch(enabled = true) }
-					)
+												remove(reviewSearch)
+											}
+										}
+									}.memoIn(lambdas, "pill-$criterion", criterion, root, searches)
+								}
+							}
 				}
 			}
 		}
+		//endregion
+		//region Reviews
+		div("lg:col-span-2 lg:order-1") {
+			for (record in records) {
+				child(ReviewRecord) {
+					attrs {
+						this.form = form
+						this.formLoaded = formLoaded
+						this.record = record
+
+						this.refresh = memoizedRefresh
+
+						key = record.id
+					}
+				}
+			}
+			if (records.isEmpty()) {
+				div("flex w-full justify-center items-center h-full") {
+					p("my-8") { text("Aucun résultat") }
+				}
+			}
+		}
+		//endregion
+	}
+	//endregion
+}
+
+private external interface SearchInputProps : RProps {
+	var form: Form
+	var addCriterion: (ReviewSearch) -> Unit
+}
+
+private val SearchInput = memo(fc<SearchInputProps> { props ->
+	val form = props.form
+	val composites by useComposites()
+	form.load(composites)
+	var selectedRoot by useState<Action?>(null)
+	val (fields, updateFields) = useState(emptyList<FormField>())
+		.asDelegated()
+	var criterion by useState<SearchCriterion<*>?>(null)
+
+	val lambdas = useLambdas()
+
+	styledField("search-field", "Rechercher dans :") {
+		//region Select the root
+		fun selectRoot(root: Action?) {
+			selectedRoot = root
+			updateFields { emptyList() }
+			criterion = null
+		}
+
+		controlledSelect {
+			option("Saisie originelle", "null") { selectRoot(null) }
+				.selectIf { selectedRoot == null }
+
+			for (root in form.actions.filter { it.fields != null && it.fields!!.fields.isNotEmpty() }) {
+				option(root.name, root.id) { selectRoot(root) }
+					.selectIf { selectedRoot == root }
+			}
+		}
+		//endregion
+		//region Select the current field
+		for (i in 0..fields.size) { // fields.size+1 loops on purpose
+			val allCandidates: List<FormField> =
+				if (i == 0)
+					if (selectedRoot == null) form.mainFields.fields
+					else selectedRoot!!.fields!!.fields
+				else when (val lastParent = fields[i - 1]) {
+					is FormField.Simple -> emptyList()
+					is FormField.Union<*> -> lastParent.options
+					is FormField.Composite -> lastParent.fields
+				}
+
+			child(SearchInputSelect) {
+				attrs {
+					key = i.toString() // Safe, because the order cannot change
+					this.field = fields.getOrNull(i)
+					this.candidates = allCandidates
+					this.allowEmpty = i != 0
+					this.select = { it: FormField? ->
+						updateFields {
+							println("USE_EFFECT_REPLACE $it")
+							if (it != null)
+								subList(0, i) + it
+							else
+								subList(0, i)
+						}
+					}.memoIn(lambdas, "input-select-$i", i)
+				}
+			}
+		}
+		//endregion
 	}
 
-	for (record in records) {
-		child(ReviewRecord) {
+	val field = fields.lastOrNull()
+	if (field != null) styledField("search-criterion", "Critère :") {
+		//region Select the criterion type
+		child(SearchCriterionSelect) {
 			attrs {
-				this.form = form
-				this.formLoaded = formLoaded
-				this.record = record
-
-				this.refresh = refresh
-
-				key = record.id
+				this.fields = fields
+				this.select = { criterion = it }
 			}
+		}
+		//endregion
+		//region Select the criterion data
+		if (criterion !is SearchCriterion.Exists && criterion != undefined) {
+			styledInput(InputType.text, "search-criterion-data", required = true) {
+				value = when (val c = criterion) {
+					is SearchCriterion.TextContains -> c.text
+					is SearchCriterion.TextEquals -> c.text
+					is SearchCriterion.OrderBefore -> c.max
+					is SearchCriterion.OrderAfter -> c.min
+					else -> error("Aucune donnée connue pour le critère $c")
+				}
+				onChangeFunction = {
+					val target = it.target as HTMLInputElement
+					val text = target.value
+					criterion = when (val c = criterion) {
+						is SearchCriterion.TextContains -> c.copy(text = text)
+						is SearchCriterion.TextEquals -> c.copy(text = text)
+						is SearchCriterion.OrderBefore -> c.copy(max = text)
+						is SearchCriterion.OrderAfter -> c.copy(min = text)
+						else -> error("Aucune donnée à fournir pour le critère $c")
+					}
+				}
+			}
+		}
+		//endregion
+	}
+
+	if (criterion != null) {
+		styledButton("Rechercher",
+		             action = {
+			             props.addCriterion(ReviewSearch(
+				             action = selectedRoot,
+				             enabled = true,
+				             criterion = criterion!!
+			             ))
+			             selectedRoot = null
+			             updateFields { emptyList() }
+			             criterion = null
+		             })
+	} else
+		p { text("Choisissez une option pour activer la recherche.") }
+})
+
+private external interface SearchInputSelectProps : RProps {
+	var field: FormField?
+	var candidates: List<FormField>
+	var allowEmpty: Boolean
+	var select: (FormField?) -> Unit
+}
+
+private val SearchInputSelect = memo(fc<SearchInputSelectProps> { props ->
+	val candidates = useMemo(props.candidates) {
+		props.candidates.filter { it !is FormField.Simple || (it.simple !is SimpleField.Message && it.simple !is SimpleField.Upload) }
+	}
+
+	fun reSelect() =
+		if (props.allowEmpty) null
+		else candidates.firstOrNull()
+
+	var selected by useState(
+		reSelect()
+	)
+	useEffect(selected) { props.select(selected) }
+	useEffect(candidates) { selected = reSelect() }
+	useEffect(props.field) {
+		if (props.field == null) {
+			val newSelect = reSelect()
+			selected = newSelect
+			props.select(newSelect)
 		}
 	}
 
+	//	text(props.field.toString())
+	if (candidates.isNotEmpty()) {
+		controlledSelect {
+			if (props.allowEmpty)
+				option("", "null") { selected = null }
+					.selectIf { selected == null }
+
+			for (candidate in candidates)
+				option(candidate.name, candidate.id) { selected = candidate }
+					.selectIf { selected == candidate }
+		}
+	}
+})
+
+private external interface SearchCriterionSelectProps : RProps {
+	var fields: List<FormField>
+	var select: (SearchCriterion<*>?) -> Unit
 }
+
+private val SearchCriterionSelect = fc<SearchCriterionSelectProps> { props ->
+	val field = props.fields.lastOrNull()
+	val fieldKey = props.fields.joinToString(separator = ":") { it.id }
+
+	// It is CRUCIAL that these are all different from one another
+	val exists = "A été rempli"
+	val contains = "Contient"
+	val equals = "Est exactement"
+	val after = "Après"
+	val before = "Avant"
+
+	val available = ArrayList<String>().apply {
+		if (field?.arity?.min == 0)
+			add(exists)
+
+		if (field is FormField.Simple || field is FormField.Union<*>)
+			add(equals)
+
+		if (field is FormField.Simple) {
+			add(contains)
+			add(after)
+			add(before)
+		}
+	}
+
+	var chosen by useState(available.firstOrNull())
+	useEffect(chosen) {
+		props.select(
+			when (chosen) {
+				exists -> SearchCriterion.Exists(fieldKey)
+				contains -> SearchCriterion.TextContains(fieldKey, "")
+				equals -> SearchCriterion.TextEquals(fieldKey, "")
+				after -> SearchCriterion.OrderAfter(fieldKey, "")
+				before -> SearchCriterion.OrderBefore(fieldKey, "")
+				else -> null
+			}
+		)
+	}
+	useEffect(field) {
+		chosen = available.firstOrNull()
+	}
+
+	controlledSelect {
+		for (option in available)
+			option(option, option) { chosen = option }
+				.selectIf { chosen == option }
+	}
+}
+
+private external interface CriterionPillProps : RProps {
+	var root: Action?
+	var fields: FormRoot
+	var criterion: SearchCriterion<*>
+	var onRemove: () -> Unit
+}
+
+private val CriterionPill = memo(fc<CriterionPillProps> { props ->
+	var showFull by useState(false)
+
+	val fields = useMemo(props.fields, props.criterion.fieldKey) {
+		val fieldKeys = props.criterion.fieldKey.split(":")
+		val fields = ArrayList<FormField>(fieldKeys.size)
+
+		fields.add(props.fields.fields.find { it.id == fieldKeys[0] }
+			           ?: error("Aucun champ n'a l'ID ${fieldKeys[0]}"))
+
+		for ((i, key) in fieldKeys.withIndex().drop(1)) {
+			fields.add(when (val current = fields[i - 1]) {
+				           is FormField.Simple -> error("Impossible d'obtenir un enfant d'un champ simple")
+				           is FormField.Union<*> -> current.options.find { it.id == key }
+					           ?: error("Aucune option n'a l'ID $key: ${current.options}")
+				           is FormField.Composite -> current.fields.find { it.id == key }
+					           ?: error("Aucun champ n'a l'ID $key: ${current.fields}")
+			           })
+		}
+
+		fields
+	}
+
+	styledPill {
+		styledButton(
+			if (showFull) "‹"
+			else "›",
+			action = { showFull = !showFull }
+		)
+		if (showFull) {
+			text(props.root?.name ?: "Saisie originelle")
+
+			for (field in fields) {
+				br {}
+				text("→ ${field.name}")
+			}
+		} else {
+			text(fields.last().name)
+		}
+		text(" ")
+		text(when (val criterion = props.criterion) {
+			     is SearchCriterion.Exists -> "a été rempli"
+			     is SearchCriterion.TextContains -> "contient « ${criterion.text} »"
+			     is SearchCriterion.TextEquals -> "est exactement « ${criterion.text} »"
+			     is SearchCriterion.OrderBefore -> "est avant ${criterion.max}"
+			     is SearchCriterion.OrderAfter -> "est après ${criterion.min}"
+		     })
+		styledButton("×", action = { props.onRemove() })
+	}
+})
 
 private external interface ReviewRecordProps : RProps {
 	var form: Form
@@ -184,7 +466,7 @@ private data class ParsedTransition(
 	val submission: ParsedSubmission?,
 )
 
-private val ReviewRecord = fc<ReviewRecordProps> { props ->
+private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 	traceRenders("ReviewRecord ${props.record.id}")
 	val form = props.form
 	val record = props.record
@@ -390,4 +672,4 @@ private val ReviewRecord = fc<ReviewRecordProps> { props ->
 				styledErrorText("Ce champ est obligatoire pour un refus.")
 		}
 	}
-}
+})

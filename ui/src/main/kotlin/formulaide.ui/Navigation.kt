@@ -23,6 +23,9 @@ private val currentScreen = GlobalState(getScreenFromWindow() ?: Screen.Home)
 	.apply { subscribers.add { document.title = "${it.displayName} • Formulaide" } }
 
 fun RBuilder.useNavigation() = useGlobalState(currentScreen)
+fun navigateTo(screen: Screen) {
+	currentScreen.value = screen
+}
 
 abstract class Screen(
 	val displayName: String,
@@ -86,8 +89,6 @@ abstract class Screen(
 
 private val CannotAccessThisPage = fc<RProps> {
 	traceRenders("CannotAccessThisPage")
-
-	val (_, navigateTo) = useNavigation()
 
 	styledCard(
 		"Vous n'avez pas l'autorisation d'accéder à cette page",
