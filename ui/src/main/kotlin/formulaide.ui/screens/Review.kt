@@ -173,7 +173,7 @@ private val SearchInput = memo(fc<SearchInputProps> { props ->
 	val form = props.form
 	var selectedRoot by useState<Action?>(null)
 	var fields by useState(emptyList<FormField>())
-	var criterion by useState<SearchCriterion<*>>()
+	var criterion by useState<SearchCriterion<*>?>(null)
 
 	styledField("search-field", "Rechercher dans :") {
 		//region Select the root
@@ -291,7 +291,30 @@ private val SearchInput = memo(fc<SearchInputProps> { props ->
 		}
 		//endregion
 
-		//TODO: criterion parameters
+		//region Select the criterion data
+		if (criterion !is SearchCriterion.Exists && criterion != undefined) {
+			styledInput(InputType.text, "search-criterion-data", required = true) {
+				value = when (val c = criterion) {
+					is SearchCriterion.TextContains -> c.text
+					is SearchCriterion.TextEquals -> c.text
+					is SearchCriterion.OrderBefore -> c.max
+					is SearchCriterion.OrderAfter -> c.min
+					else -> error("Aucune donnée connue pour le critère $c")
+				}
+				onChangeFunction = {
+					val target = it.target as HTMLInputElement
+					val text = target.value
+					criterion = when (val c = criterion) {
+						is SearchCriterion.TextContains -> c.copy(text = text)
+						is SearchCriterion.TextEquals -> c.copy(text = text)
+						is SearchCriterion.OrderBefore -> c.copy(max = text)
+						is SearchCriterion.OrderAfter -> c.copy(min = text)
+						else -> error("Aucune donnée à fournir pour le critère $c")
+					}
+				}
+			}
+		}
+		//endregion
 	}
 
 	if (criterion != null) {
@@ -302,6 +325,9 @@ private val SearchInput = memo(fc<SearchInputProps> { props ->
 				             enabled = true,
 				             criterion = criterion!!
 			             ))
+			             selectedRoot = null
+			             fields = emptyList()
+			             criterion = null
 		             })
 	} else
 		p { text("Choisissez une option pour activer la recherche.") }
