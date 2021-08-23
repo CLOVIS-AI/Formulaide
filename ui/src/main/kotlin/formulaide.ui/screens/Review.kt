@@ -14,7 +14,6 @@ import formulaide.client.routes.todoListFor
 import formulaide.ui.components.*
 import formulaide.ui.fields.field
 import formulaide.ui.fields.immutableFields
-import formulaide.ui.fields.searchFields
 import formulaide.ui.reportExceptions
 import formulaide.ui.traceRenders
 import formulaide.ui.useClient
@@ -32,9 +31,7 @@ import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
 import react.*
-import react.dom.br
-import react.dom.div
-import react.dom.p
+import react.dom.*
 import kotlin.js.Date
 
 internal fun RecordState.displayName() = when (this) {
@@ -45,7 +42,7 @@ internal fun RecordState.displayName() = when (this) {
 private data class ReviewSearch(
 	val action: Action?,
 	val enabled: Boolean,
-	val criteria: List<SearchCriterion<*>>,
+	val criterion: SearchCriterion<*>,
 )
 
 @Suppress("FunctionName")
@@ -57,16 +54,11 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 	require(client is Client.Authenticated) { "Seuls les employés peuvent accéder à cette page." }
 
 	val (records, updateRecords) = useState(initialRecords).asDelegated()
-	val (searches, updateSearches) = useState(
-		listOf(ReviewSearch(null, false, emptyList())) +
-				form.actions
-					.filter { it.fields != null }
-					.map { ReviewSearch(it, false, emptyList()) }
-	).asDelegated()
+	val (searches, updateSearches) = useState(emptyList<ReviewSearch>()).asDelegated()
 	var loading by useState(false)
 
 	val allCriteria = searches.groupBy { it.action }
-		.mapValues { (_, v) -> v.flatMap { it.criteria } }
+		.mapValues { (_, v) -> v.map { it.criterion } }
 
 	val lambdas = useLambdas()
 	val refresh: suspend (Boolean) -> Unit = { forceUpdate ->
@@ -121,49 +113,14 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 	) {
 		p { text("${records.size} dossiers sont chargés. Pour des raisons de performance, il n'est pas possible de charger plus de ${Record.MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION} dossiers à la fois.") }
 
-		for ((i, search) in searches.withIndex()) {
-			fun updateSearch(
-				enabled: Boolean = search.enabled,
-				criteria: List<SearchCriterion<*>> = search.criteria,
-			) {
-				updateSearches { replace(i, search.copy(enabled = enabled, criteria = criteria)) }
-			}
-
-			styledNesting(depth = 0, fieldNumber = i) {
-				if (search.enabled) {
-					searchFields(
-						search.action?.fields ?: form.mainFields,
-						criteria = search.criteria,
-						update = { previous, next ->
-							if (previous == null) {
-								updateSearch(criteria = search.criteria + next!!)
-							} else if (next == null) {
-								updateSearch(criteria = search.criteria - previous)
-							} else {
-								updateSearch(criteria = search.criteria.replace(
-									search.criteria.indexOf(previous),
-									next))
-							}
-						}
-					)
-
-					styledButton("Annuler la recherche",
-					             action = {
-						             updateSearches { replace(i, search.copy(enabled = false)) }
-					             })
-				} else {
-					val message = "Recherche : " +
-							(if (search.action == null) "champs originaux" else search.action.name)
-
-					styledButton(
-						message,
-						action = { updateSearch(enabled = true) }
-					)
+		div {
+			child(SearchInput) {
+				attrs {
+					this.form = form
+					this.addCriterion = { updateSearches { this + it } }
 				}
 			}
 		}
-
-		p { text("FUTUR : Ici la barre de recherche") }
 
 		styledPillContainer {
 			for ((root, criteria) in allCriteria)
@@ -176,15 +133,12 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 							this.onRemove = {
 								updateSearches {
 									reportExceptions {
-										val reviewSearch = find { it.action == root }
-											?: error("Impossible de trouver la racine $root, ce n'est pas possible !")
+										val reviewSearch =
+											indexOfFirst { it.action == root && it.criterion == criterion }
+												.takeUnless { it == -1 }
+												?: error("Impossible de trouver le critère $criterion dans la racine $root, ce n'est pas possible !")
 
-										val index = reviewSearch.criteria.indexOf(criterion)
-											.takeIf { it != -1 }
-											?: error("Impossible de trouver le critère dans la liste : $criterion")
-
-										replace(indexOf(reviewSearch),
-										        reviewSearch.copy(criteria = criteria.remove(index)))
+										remove(reviewSearch)
 									}
 								}
 							}.memoIn(lambdas, "pill-$criterion", criterion, root, searches)
@@ -208,6 +162,70 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 	}
 
 }
+
+private external interface SearchInputProps : RProps {
+	var form: Form
+	var addCriterion: (ReviewSearch) -> Unit
+}
+
+private val SearchInput = memo(fc<SearchInputProps> { props ->
+	val form = props.form
+	var selectedRoot by useState<Action?>(null)
+	var fields by useState(emptyList<FormField>())
+	var criterion by useState<SearchCriterion<*>>()
+
+	styledField("search-field", "Rechercher dans :") {
+		//region Select the root
+		styledSelect(
+			autoFitSize = true,
+			onSelect = { select ->
+				selectedRoot =
+					if (select.value == "null") null
+					else form.actions.find { it.id == select.value }
+				criterion = null
+			}
+		) {
+			option {
+				text("Saisie originelle")
+				attrs {
+					value = "null"
+					selected = selectedRoot == null
+				}
+			}
+
+			for (root in form.actions.filter { it.fields != null }) {
+				option {
+					text(root.name)
+					attrs {
+						value = root.id
+						selected = selectedRoot == root
+					}
+				}
+			}
+		}
+		//endregion
+
+		//TODO: select the field
+	}
+
+	div {
+		//TODO: select the criterion
+
+		//TODO: criterion parameters
+	}
+
+	if (criterion != null)
+		styledButton("Rechercher",
+		             action = {
+			             props.addCriterion(ReviewSearch(
+				             action = selectedRoot,
+				             enabled = true,
+				             criterion = criterion!!
+			             ))
+		             })
+	else
+		p { text("Choisissez une option pour activer la recherche.") }
+})
 
 private external interface CriterionPillProps : RProps {
 	var root: Action?
