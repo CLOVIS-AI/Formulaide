@@ -187,8 +187,10 @@ private external interface SearchInputProps : RProps {
 private val SearchInput = memo(fc<SearchInputProps> { props ->
 	val form = props.form
 	var selectedRoot by useState<Action?>(null)
-	var fields by useState(emptyList<FormField>())
+	val (fields, updateFields) = useState(emptyList<FormField>()).asDelegated()
 	var criterion by useState<SearchCriterion<*>?>(null)
+
+	val lambdas = useLambdas()
 
 	styledField("search-field", "Rechercher dans :") {
 		//region Select the root
@@ -198,7 +200,7 @@ private val SearchInput = memo(fc<SearchInputProps> { props ->
 					if (select.value == "null") null
 					else form.actions.find { it.id == select.value }
 				criterion = null
-				fields = emptyList()
+				updateFields { emptyList() }
 			}
 		) {
 			option {
@@ -231,36 +233,21 @@ private val SearchInput = memo(fc<SearchInputProps> { props ->
 					is FormField.Union<*> -> lastParent.options
 					is FormField.Composite -> lastParent.fields
 				}
-			val candidates = allCandidates
-				.filter { it !is FormField.Simple || it.simple !is SimpleField.Message }
 
-			if (candidates.isNotEmpty()) {
-				styledSelect(
-					onSelect = { select ->
-						val candidate = candidates.find { it.id == select.value }
-
-						fields = if (candidate != null)
-							fields.subList(0, i) + candidate
-						else
-							fields.subList(0, i)
-					}
-				) {
-					if (i != 0)
-						option {
-							text("")
-							attrs {
-								value = "null"
-							}
+			child(SearchInputSelect) {
+				attrs {
+					key = i.toString() // Safe, because the order cannot change
+					this.field = fields.getOrNull(i)
+					this.candidates = allCandidates
+					this.allowEmpty = i != 0
+					this.select = { it: FormField? ->
+						updateFields {
+							if (it != null)
+								subList(0, i) + it
+							else
+								subList(0, i)
 						}
-
-					for (candidate in candidates) {
-						option {
-							text(candidate.name)
-							attrs {
-								value = candidate.id
-							}
-						}
-					}
+					}.memoIn(lambdas, "input-select-$i", i)
 				}
 			}
 		}
@@ -305,7 +292,6 @@ private val SearchInput = memo(fc<SearchInputProps> { props ->
 			}
 		}
 		//endregion
-
 		//region Select the criterion data
 		if (criterion !is SearchCriterion.Exists && criterion != undefined) {
 			styledInput(InputType.text, "search-criterion-data", required = true) {
@@ -341,11 +327,49 @@ private val SearchInput = memo(fc<SearchInputProps> { props ->
 				             criterion = criterion!!
 			             ))
 			             selectedRoot = null
-			             fields = emptyList()
+			             updateFields { emptyList() }
 			             criterion = null
 		             })
 	} else
 		p { text("Choisissez une option pour activer la recherche.") }
+})
+
+private external interface SearchInputSelectProps : RProps {
+	var field: FormField?
+	var candidates: List<FormField>
+	var allowEmpty: Boolean
+	var select: (FormField?) -> Unit
+}
+
+private val SearchInputSelect = memo(fc<SearchInputSelectProps> { props ->
+	val candidates = props.candidates
+		.filter { it !is FormField.Simple || it.simple !is SimpleField.Message }
+
+	if (candidates.isNotEmpty()) {
+		styledSelect(
+			onSelect = { select ->
+				val candidate = candidates.find { it.id == select.value }
+				props.select(candidate)
+			}
+		) {
+			if (props.allowEmpty)
+				option {
+					text("")
+					attrs {
+						value = "null"
+					}
+				}
+
+			for (candidate in candidates) {
+				option {
+					text(candidate.name)
+					attrs {
+						value = candidate.id
+					}
+				}
+			}
+		}
+	}
 })
 
 private external interface CriterionPillProps : RProps {
