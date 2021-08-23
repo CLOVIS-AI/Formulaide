@@ -3,6 +3,7 @@ package formulaide.ui.screens
 import formulaide.api.data.*
 import formulaide.api.fields.FormField
 import formulaide.api.fields.FormRoot
+import formulaide.api.fields.SimpleField
 import formulaide.api.search.SearchCriterion
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.types.Ref.Companion.load
@@ -177,7 +178,6 @@ private val SearchInput = memo(fc<SearchInputProps> { props ->
 	styledField("search-field", "Rechercher dans :") {
 		//region Select the root
 		styledSelect(
-			autoFitSize = true,
 			onSelect = { select ->
 				selectedRoot =
 					if (select.value == "null") null
@@ -193,7 +193,7 @@ private val SearchInput = memo(fc<SearchInputProps> { props ->
 				}
 			}
 
-			for (root in form.actions.filter { it.fields != null }) {
+			for (root in form.actions.filter { it.fields != null && it.fields!!.fields.isNotEmpty() }) {
 				option {
 					text(root.name)
 					attrs {
@@ -204,8 +204,51 @@ private val SearchInput = memo(fc<SearchInputProps> { props ->
 			}
 		}
 		//endregion
+		//region Select the current field
+		for (i in 0..fields.size) { // fields.size+1 loops on purpose
+			val allCandidates: List<FormField> =
+				if (i == 0)
+					if (selectedRoot == null) form.mainFields.fields
+					else selectedRoot!!.fields!!.fields
+				else when (val lastParent = fields[i - 1]) {
+					is FormField.Simple -> emptyList()
+					is FormField.Union<*> -> lastParent.options
+					is FormField.Composite -> lastParent.fields
+				}
+			val candidates = allCandidates
+				.filter { it !is FormField.Simple || it.simple !is SimpleField.Message }
 
-		//TODO: select the field
+			if (candidates.isNotEmpty()) {
+				styledSelect(
+					onSelect = { select ->
+						val candidate = candidates.find { it.id == select.value }
+
+						fields = if (candidate != null)
+							fields.subList(0, i) + candidate
+						else
+							fields.subList(0, i)
+					}
+				) {
+					if (i != 0)
+						option {
+							text("")
+							attrs {
+								value = "null"
+							}
+						}
+
+					for (candidate in candidates) {
+						option {
+							text(candidate.name)
+							attrs {
+								value = candidate.id
+							}
+						}
+					}
+				}
+			}
+		}
+		//endregion
 	}
 
 	div {
