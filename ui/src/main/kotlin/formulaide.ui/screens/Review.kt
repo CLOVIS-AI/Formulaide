@@ -183,6 +183,7 @@ private val SearchInput = memo(fc<SearchInputProps> { props ->
 					if (select.value == "null") null
 					else form.actions.find { it.id == select.value }
 				criterion = null
+				fields = emptyList()
 			}
 		) {
 			option {
@@ -251,13 +252,49 @@ private val SearchInput = memo(fc<SearchInputProps> { props ->
 		//endregion
 	}
 
-	div {
-		//TODO: select the criterion
+	val field = fields.lastOrNull()
+	val fieldKey = fields.joinToString(separator = ":") { it.id }
+	if (field != null) styledField("search-criterion", "Critère :") {
+		//region Select the criterion type
+		styledSelect(
+			onSelect = {
+				criterion = when (it.value) {
+					"EXISTS" -> SearchCriterion.Exists(fieldKey)
+					"CONTAINS" -> SearchCriterion.TextContains(fieldKey, "")
+					"EQUALS" -> SearchCriterion.TextEquals(fieldKey, "")
+					"AFTER" -> SearchCriterion.OrderAfter(fieldKey, "")
+					"BEFORE" -> SearchCriterion.OrderBefore(fieldKey, "")
+					else -> error("Impossible: choix de critère ${it.value}")
+				}
+			}
+		) {
+			option {
+				text("A été rempli")
+				attrs { value = "EXISTS" }
+			}
+			option {
+				text("Contient")
+				attrs { value = "CONTAINS" }
+			}
+			option {
+				text("Est exactement")
+				attrs { value = "EQUALS" }
+			}
+			option {
+				text("Après")
+				attrs { value = "AFTER" }
+			}
+			option {
+				text("Avant")
+				attrs { value = "BEFORE" }
+			}
+		}
+		//endregion
 
 		//TODO: criterion parameters
 	}
 
-	if (criterion != null)
+	if (criterion != null) {
 		styledButton("Rechercher",
 		             action = {
 			             props.addCriterion(ReviewSearch(
@@ -266,7 +303,7 @@ private val SearchInput = memo(fc<SearchInputProps> { props ->
 				             criterion = criterion!!
 			             ))
 		             })
-	else
+	} else
 		p { text("Choisissez une option pour activer la recherche.") }
 })
 
