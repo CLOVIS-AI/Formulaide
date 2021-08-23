@@ -1,6 +1,7 @@
 package formulaide.ui.screens
 
 import formulaide.api.data.*
+import formulaide.api.fields.FormRoot
 import formulaide.api.search.SearchCriterion
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.types.Ref.Companion.load
@@ -166,25 +167,29 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 		styledPillContainer {
 			for ((root, criteria) in allCriteria)
 				for (criterion in criteria)
-					criterionPill(
-						root,
-						criterion,
-						onRemove = {
-							reportExceptions {
-								val reviewSearch = searches.find { it.action == root }
-									?: error("Impossible de trouver la racine $root, ce n'est pas possible !")
-
-								val index = reviewSearch.criteria.indexOf(criterion)
-									.takeIf { it != -1 }
-									?: error("Impossible de trouver le critère dans la liste : $criterion")
-
+					child(CriterionPill) {
+						attrs {
+							key = criterion.fieldKey + "-" + criterion.hashCode()
+							this.root = root
+							this.fields = root?.fields ?: form.mainFields
+							this.criterion = criterion
+							this.onRemove = {
 								updateSearches {
-									replace(indexOf(reviewSearch),
-									        reviewSearch.copy(criteria = criteria.remove(index)))
+									reportExceptions {
+										val reviewSearch = find { it.action == root }
+											?: error("Impossible de trouver la racine $root, ce n'est pas possible !")
+
+										val index = reviewSearch.criteria.indexOf(criterion)
+											.takeIf { it != -1 }
+											?: error("Impossible de trouver le critère dans la liste : $criterion")
+
+										replace(indexOf(reviewSearch),
+										        reviewSearch.copy(criteria = criteria.remove(index)))
+									}
 								}
-							}
+							}.memoIn(lambdas, "pill-$criterion", criterion, root, searches)
 						}
-					)
+					}
 		}
 	}
 
@@ -204,24 +209,34 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 
 }
 
-private inline fun RBuilder.criterionPill(
-	root: Action?,
-	criterion: SearchCriterion<*>,
-	crossinline onRemove: () -> Unit,
-) {
+private external interface CriterionPillProps : RProps {
+	var root: Action?
+	var fields: FormRoot
+	var criterion: SearchCriterion<*>
+	var onRemove: () -> Unit
+}
+
+private val CriterionPill = memo(fc<CriterionPillProps> { props ->
+	var showFull by useState(false)
+
 	styledPill {
-		text(criterion.fieldKey)
+		styledButton(
+			if (showFull) "‹"
+			else "›",
+			action = { showFull = !showFull }
+		)
+		text(props.criterion.fieldKey)
 		text(" ")
-		text(when (criterion) {
+		text(when (val criterion = props.criterion) {
 			     is SearchCriterion.Exists -> "a été rempli"
 			     is SearchCriterion.TextContains -> "contient « ${criterion.text} »"
 			     is SearchCriterion.TextEquals -> "est exactement « ${criterion.text} »"
 			     is SearchCriterion.OrderBefore -> "est avant ${criterion.max}"
 			     is SearchCriterion.OrderAfter -> "est après ${criterion.min}"
 		     })
-		styledButton("×", action = { onRemove() })
+		styledButton("×", action = { props.onRemove() })
 	}
-}
+})
 
 private external interface ReviewRecordProps : RProps {
 	var form: Form

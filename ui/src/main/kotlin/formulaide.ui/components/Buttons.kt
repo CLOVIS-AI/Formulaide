@@ -99,7 +99,7 @@ fun RBuilder.styledSubmitButton(
 fun RBuilder.styledPill(
 	contents: RDOMBuilder<SPAN>.() -> Unit,
 ) {
-	span("$buttonShapeClasses bg-blue-200 flex flex-shrink justify-between items-center gap-x-2 max-w-max pl-4 pr-1") {
+	span("$buttonShapeClasses bg-blue-200 flex flex-shrink justify-between items-center gap-x-2 max-w-max pr-1 pl-1") {
 		contents()
 	}
 }
