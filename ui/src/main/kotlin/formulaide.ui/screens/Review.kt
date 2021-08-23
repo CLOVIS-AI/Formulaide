@@ -106,62 +106,72 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 		}
 	}
 
-	styledCard(
-		state.displayName(),
-		form.name,
-		"Actualiser" to { refresh(true) },
-		loading = loading,
-	) {
-		p { text("${records.size} dossiers sont chargés. Pour des raisons de performance, il n'est pas possible de charger plus de ${Record.MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION} dossiers à la fois.") }
+	//region Full page
+	div("lg:grid lg:grid-cols-3 lg:gap-y-0") {
+		//region Search bar
+		div("lg:order-2") {
+			styledCard(
+				state.displayName(),
+				form.name,
+				"Actualiser" to { refresh(true) },
+				loading = loading,
+			) {
+				p { text("${records.size} dossiers sont chargés. Pour des raisons de performance, il n'est pas possible de charger plus de ${Record.MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION} dossiers à la fois.") }
 
-		div {
-			child(SearchInput) {
-				attrs {
-					this.form = form
-					this.addCriterion = { updateSearches { this + it } }
+				div {
+					child(SearchInput) {
+						attrs {
+							this.form = form
+							this.addCriterion = { updateSearches { this + it } }
+						}
+					}
+				}
+
+				styledPillContainer {
+					for ((root, criteria) in allCriteria)
+						for (criterion in criteria)
+							child(CriterionPill) {
+								attrs {
+									this.root = root
+									this.fields = root?.fields ?: form.mainFields
+									this.criterion = criterion
+									this.onRemove = {
+										updateSearches {
+											reportExceptions {
+												val reviewSearch =
+													indexOfFirst { it.action == root && it.criterion == criterion }
+														.takeUnless { it == -1 }
+														?: error("Impossible de trouver le critère $criterion dans la racine $root, ce n'est pas possible !")
+
+												remove(reviewSearch)
+											}
+										}
+									}.memoIn(lambdas, "pill-$criterion", criterion, root, searches)
+								}
+							}
 				}
 			}
 		}
+		//endregion
+		//region Reviews
+		div("lg:col-span-2 lg:order-1") {
+			for (record in records) {
+				child(ReviewRecord) {
+					attrs {
+						this.form = form
+						this.formLoaded = formLoaded
+						this.record = record
 
-		styledPillContainer {
-			for ((root, criteria) in allCriteria)
-				for (criterion in criteria)
-					child(CriterionPill) {
-						attrs {
-							this.root = root
-							this.fields = root?.fields ?: form.mainFields
-							this.criterion = criterion
-							this.onRemove = {
-								updateSearches {
-									reportExceptions {
-										val reviewSearch =
-											indexOfFirst { it.action == root && it.criterion == criterion }
-												.takeUnless { it == -1 }
-												?: error("Impossible de trouver le critère $criterion dans la racine $root, ce n'est pas possible !")
+						this.refresh = memoizedRefresh
 
-										remove(reviewSearch)
-									}
-								}
-							}.memoIn(lambdas, "pill-$criterion", criterion, root, searches)
-						}
+						key = record.id
 					}
-		}
-	}
-
-	for (record in records) {
-		child(ReviewRecord) {
-			attrs {
-				this.form = form
-				this.formLoaded = formLoaded
-				this.record = record
-
-				this.refresh = memoizedRefresh
-
-				key = record.id
+				}
 			}
 		}
+		//endregion
 	}
-
+	//endregion
 }
 
 private external interface SearchInputProps : RProps {
