@@ -148,7 +148,7 @@ val Window = fc<RProps> {
 			styledTitle("Formulaide")
 			styledLightText(subtitle)
 			styledButton("×", action = {
-				setClient(defaultClient)
+				setClient { defaultClient }
 				screen = Screen.Home
 			})
 		},
