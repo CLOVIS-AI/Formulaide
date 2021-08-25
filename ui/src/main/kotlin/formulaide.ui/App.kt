@@ -8,10 +8,9 @@ import formulaide.client.refreshToken
 import formulaide.client.routes.*
 import formulaide.ui.components.styledCard
 import formulaide.ui.components.useAsync
+import formulaide.ui.components.useAsyncEffect
 import formulaide.ui.utils.*
 import kotlinx.browser.window
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import react.*
 import react.dom.p
@@ -113,11 +112,12 @@ val App = fc<RProps> {
 				}
 			}
 		}
+	}
 
-		// If the client is connected, wait a few minutes and refresh the access token, to ensure it never gets out of date
-		val job = Job()
+	// If the client is connected, wait a few minutes and refresh the access token, to ensure it never gets out of date
+	useAsyncEffect(client) {
 		(client as? Client.Authenticated)?.let {
-			CoroutineScope(job).reportExceptions {
+			reportExceptions {
 				delay(1000L * 60 * 25) // every 25 minutes
 
 				val accessToken = client.refreshToken()
@@ -127,7 +127,6 @@ val App = fc<RProps> {
 				console.log("Got an access token from the cookie-stored refresh token (expiration time was near)")
 			}
 		}
-		cleanup { job.cancel() }
 	}
 
 	child(Window)
