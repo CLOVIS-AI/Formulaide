@@ -20,7 +20,7 @@ import kotlinx.html.InputType
 import org.w3c.dom.HTMLInputElement
 import react.*
 
-val CreateData = fc<RProps> { _ ->
+fun CreateData(original: Composite? = null) = fc<RProps> { _ ->
 	traceRenders("CreateData")
 
 	val (client) = useClient()
@@ -33,6 +33,14 @@ val CreateData = fc<RProps> { _ ->
 	val formName = useRef<HTMLInputElement>()
 	val (fields, updateFields) = useLocalStorage<List<DataField>>("data-fields", emptyList())
 	var maxId by useState(fields.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0)
+
+	// Copy from 'original' if it exists
+	useEffect(original) {
+		if (original != null) {
+			updateFields { original.fields }
+			maxId = fields.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0
+		}
+	}
 
 	val lambdas = useLambdas()
 
