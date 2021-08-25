@@ -45,9 +45,8 @@ fun CreateData(original: Composite? = null) = fc<RProps> { _ ->
 	val lambdas = useLambdas()
 
 	styledFormCard(
-		"Créer un groupe",
-		"Grouper des données utilisées dans plusieurs formulaires permet de mieux gérer les mises à jours. " +
-				"Les données composées sont stockées et unifiées entre les services.",
+		if (original == null) "Créer un groupe" else "Copier un groupe",
+		null,
 		"Créer ce groupe" to {
 			val data = Composite(
 				id = Ref.SPECIAL_TOKEN_NEW,
