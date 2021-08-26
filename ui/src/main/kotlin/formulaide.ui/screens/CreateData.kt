@@ -20,7 +20,7 @@ import kotlinx.html.InputType
 import org.w3c.dom.HTMLInputElement
 import react.*
 
-val CreateData = fc<RProps> { _ ->
+fun CreateData(original: Composite? = null) = fc<RProps> { _ ->
 	traceRenders("CreateData")
 
 	val (client) = useClient()
@@ -34,12 +34,19 @@ val CreateData = fc<RProps> { _ ->
 	val (fields, updateFields) = useLocalStorage<List<DataField>>("data-fields", emptyList())
 	var maxId by useState(fields.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0)
 
+	// Copy from 'original' if it exists
+	useEffect(original) {
+		if (original != null) {
+			updateFields { original.fields }
+			maxId = fields.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0
+		}
+	}
+
 	val lambdas = useLambdas()
 
 	styledFormCard(
-		"Créer un groupe",
-		"Grouper des données utilisées dans plusieurs formulaires permet de mieux gérer les mises à jours. " +
-				"Les données composées sont stockées et unifiées entre les services.",
+		if (original == null) "Créer un groupe" else "Copier un groupe",
+		null,
 		"Créer ce groupe" to {
 			val data = Composite(
 				id = Ref.SPECIAL_TOKEN_NEW,

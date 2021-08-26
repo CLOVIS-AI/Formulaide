@@ -11,6 +11,7 @@ import formulaide.api.types.Ref
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.users.Service
 import formulaide.client.Client
+import formulaide.client.routes.compositesReferencedIn
 import formulaide.client.routes.createForm
 import formulaide.ui.*
 import formulaide.ui.components.*
@@ -27,7 +28,7 @@ import org.w3c.dom.HTMLSelectElement
 import react.*
 import react.dom.*
 
-val CreateForm = fc<RProps> {
+fun CreateForm(original: Form?) = fc<RProps> {
 	traceRenders("CreateForm")
 
 	val (client) = useClient()
@@ -51,6 +52,17 @@ val CreateForm = fc<RProps> {
 			?.plus(1)
 			?: 0
 	)
+
+	useAsyncEffectOnce {
+		if (original != null) {
+			val loaded = client.compositesReferencedIn(original)
+			original.load(loaded)
+
+			updateFields { original.mainFields.fields }
+			updateActions { original.actions }
+			maxActionId = actions.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0
+		}
+	}
 
 	val lambdas = useLambdas()
 

@@ -1,5 +1,6 @@
 package formulaide.ui
 
+import formulaide.api.data.Composite
 import formulaide.api.data.Form
 import formulaide.api.data.Record
 import formulaide.api.data.RecordState
@@ -37,8 +38,11 @@ abstract class Screen(
 	object Home : Screen("Accueil", Role.ANONYMOUS, { LoginAccess }, "home")
 	object ShowData : Screen("Groupes", Role.EMPLOYEE, { DataList }, "data")
 	object ShowForms : Screen("Formulaires", Role.ANONYMOUS, { FormList }, "forms")
-	object NewData : Screen("Créer un groupe", Role.ADMINISTRATOR, { CreateData }, "createData")
-	object NewForm : Screen("Créer un formulaire", Role.ADMINISTRATOR, { CreateForm }, "createForm")
+	class NewData(original: Composite?) :
+		Screen("Créer un groupe", Role.ADMINISTRATOR, { CreateData(original) }, "createData")
+
+	class NewForm(original: Form?) :
+		Screen("Créer un formulaire", Role.ADMINISTRATOR, { CreateForm(original) }, "createForm")
 	object ShowUsers : Screen("Employés", Role.ADMINISTRATOR, { UserList }, "employees")
 	object NewUser :
 		Screen("Créer un employé", Role.ADMINISTRATOR, { CreateUser }, "createEmployee")
@@ -65,14 +69,20 @@ abstract class Screen(
 
 	companion object {
 		val regularScreens =
-			sequenceOf(Home, ShowData, NewData, ShowForms, NewForm, ShowServices, ShowUsers)
+			sequenceOf(Home,
+			           ShowData,
+			           NewData(null),
+			           ShowForms,
+			           NewForm(null),
+			           ShowServices,
+			           ShowUsers)
 
 		fun availableScreens(user: User?) = regularScreens
 			.filter { it.requiredRole <= user.role }
 
 		fun routeDecoder(route: String): Screen? {
 			val simpleRoutes = listOf(
-				Home, ShowForms, NewData, NewForm, ShowUsers, NewUser, ShowServices
+				Home, ShowForms, NewData(null), NewForm(null), ShowUsers, NewUser, ShowServices
 			)
 			for (screen in simpleRoutes)
 				if (route == screen.route)

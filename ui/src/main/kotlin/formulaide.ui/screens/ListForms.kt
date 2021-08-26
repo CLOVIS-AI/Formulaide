@@ -7,6 +7,7 @@ import formulaide.api.types.Ref.Companion.createRef
 import formulaide.client.Client
 import formulaide.client.routes.todoListFor
 import formulaide.ui.*
+import formulaide.ui.Role.Companion.role
 import formulaide.ui.components.styledButton
 import formulaide.ui.components.styledCard
 import formulaide.ui.components.styledNesting
@@ -43,6 +44,7 @@ internal external interface FormDescriptionProps : RProps {
 
 internal val FormDescription = fc<FormDescriptionProps> { props ->
 	val form = props.form
+	val user by useUser()
 
 	p { text(form.name) }
 	styledNesting(depth = 0) {
@@ -70,6 +72,14 @@ internal val FormDescription = fc<FormDescriptionProps> { props ->
 					this.form = form
 					this.state = RecordState.Refused
 				}
+			}
+		}
+
+		div {
+			text("Maintenance : ")
+
+			if (user.role >= Role.ADMINISTRATOR) {
+				styledButton("Copier", action = { navigateTo(Screen.NewForm(form)) })
 			}
 		}
 	}

@@ -60,5 +60,6 @@ data class Form(
 	 */
 	fun validate() {
 		mainFields.validate()
+		actions.checkOrderValidity()
 	}
 }
