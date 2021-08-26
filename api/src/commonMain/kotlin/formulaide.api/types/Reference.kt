@@ -106,7 +106,7 @@ data class Ref<R : Referencable>(
 		 */
 		// inline to allow suspend lambdas
 		inline fun <R : Referencable> Ref<R>.load(
-			lazy: Boolean = true,
+			lazy: Boolean = false,
 			loader: (ReferenceId) -> R,
 		) {
 			if (!lazy || !loaded)
