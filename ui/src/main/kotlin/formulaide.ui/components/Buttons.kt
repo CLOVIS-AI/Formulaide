@@ -11,7 +11,7 @@ import kotlinx.html.js.onClickFunction
 import react.*
 import react.dom.*
 
-private const val buttonShapeClasses = "rounded-full py-1 px-3"
+private const val buttonShapeClasses = "rounded-full py-1 px-3 mx-1"
 private const val buttonClasses = "$buttonShapeClasses hover:bg-purple-500"
 internal const val buttonDefaultClasses = "$buttonClasses bg-purple-800 text-white"
 internal const val buttonNonDefaultClasses =

@@ -9,6 +9,7 @@ import formulaide.client.routes.*
 import formulaide.ui.components.styledCard
 import formulaide.ui.components.useAsync
 import formulaide.ui.components.useAsyncEffect
+import formulaide.ui.screens.clearRecords
 import formulaide.ui.utils.*
 import kotlinx.browser.window
 import kotlinx.coroutines.delay
@@ -34,6 +35,7 @@ fun traceRenders(componentName: String) {
 private val client = GlobalState<Client>(defaultClient)
 	.apply {
 		subscribers.add { println("The client has been updated") }
+		subscribers.add { clearRecords() }
 	}
 
 fun RBuilder.useClient() = useGlobalState(client)

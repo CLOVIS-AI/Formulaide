@@ -12,15 +12,48 @@ import formulaide.ui.components.styledButton
 import formulaide.ui.components.styledCard
 import formulaide.ui.components.styledNesting
 import formulaide.ui.components.useAsync
+import formulaide.ui.utils.GlobalState
 import formulaide.ui.utils.text
+import formulaide.ui.utils.useGlobalState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import react.*
 import react.dom.div
-import react.dom.p
+
+private typealias RecordKey = Pair<Form, RecordState>
+
+private val recordsCache = HashMap<RecordKey, GlobalState<List<Record>>>()
+fun clearRecords() {
+	recordsCache.clear()
+}
+
+private fun CoroutineScope.getRecords(
+	client: Client.Authenticated,
+	form: Form,
+	state: RecordState,
+) = recordsCache.getOrPut(form to state) {
+	GlobalState<List<Record>>(emptyList()).apply {
+		reportExceptions {
+			this@apply.value = client.todoListFor(form, state)
+		}
+	}
+}
 
 val FormList = fc<RProps> { _ ->
 	traceRenders("FormList")
 
 	val forms by useForms()
+	val scope = useAsync()
+
+	useEffectOnce {
+		scope.launch {
+			while (true) {
+				delay(1000L * 60 * 10)
+				clearRecords()
+			}
+		}
+	}
 
 	styledCard(
 		"Formulaires",
@@ -29,6 +62,7 @@ val FormList = fc<RProps> { _ ->
 			for (form in forms) {
 				child(FormDescription) {
 					attrs {
+						key = form.id
 						this.form = form
 					}
 				}
@@ -46,41 +80,51 @@ internal val FormDescription = fc<FormDescriptionProps> { props ->
 	val form = props.form
 	val user by useUser()
 
-	p { text(form.name) }
-	styledNesting(depth = 0) {
+	var showRecords by useState(false)
+	var showAdministration by useState(false)
 
-		div {
-			text("Actions : ")
+	fun toggle(bool: Boolean) = if (!bool) "▼" else "▲"
 
-			styledButton("Remplir") { navigateTo(Screen.SubmitForm(form.createRef())) }
-		}
+	div {
+		text(form.name)
 
-		div {
-			text("Dossiers : ")
+		styledButton("Remplir") { navigateTo(Screen.SubmitForm(form.createRef())) }
 
-			for (action in form.actions.sortedBy { it.order }) {
-				child(ActionDescription) {
-					attrs {
-						this.form = form
-						this.state = RecordState.Action(action.createRef())
-					}
-				}
+		if (user.role >= Role.EMPLOYEE)
+			styledButton("Dossiers ${toggle(showRecords)}") { showRecords = !showRecords }
+
+		if (user.role >= Role.EMPLOYEE)
+			styledButton("Gestion ${toggle(showAdministration)}") {
+				showAdministration = !showAdministration
 			}
+	}
 
+	if (showRecords) styledNesting {
+		text("Dossiers :")
+
+		for (action in form.actions.sortedBy { it.order }) {
 			child(ActionDescription) {
 				attrs {
+					key = form.id + "-" + action.id
 					this.form = form
-					this.state = RecordState.Refused
+					this.state = RecordState.Action(action.createRef())
 				}
 			}
 		}
 
-		div {
-			text("Maintenance : ")
-
-			if (user.role >= Role.ADMINISTRATOR) {
-				styledButton("Copier", action = { navigateTo(Screen.NewForm(form)) })
+		child(ActionDescription) {
+			attrs {
+				this.form = form
+				this.state = RecordState.Refused
 			}
+		}
+	}
+
+	if (showAdministration) styledNesting {
+		text("Gestion :")
+
+		if (user.role >= Role.ADMINISTRATOR) {
+			styledButton("Copier", action = { navigateTo(Screen.NewForm(form)) })
 		}
 	}
 }
@@ -97,14 +141,9 @@ internal val ActionDescription = fc<ActionDescriptionProps> { props ->
 	val (client) = useClient()
 	val user by useUser()
 	val scope = useAsync()
+	require(client is Client.Authenticated) { "Seuls les employés peuvent afficher 'ActionDescription'" }
 
-	var records by useState(emptyList<Record>())
-	useEffect(client, user) {
-		if (user != null && client is Client.Authenticated)
-			scope.reportExceptions {
-				records = client.todoListFor(form, state)
-			}
-	}
+	val records by useGlobalState(scope.getRecords(client, form, state))
 
 	val stateName = when (state) {
 		is RecordState.Action -> state.displayName()
