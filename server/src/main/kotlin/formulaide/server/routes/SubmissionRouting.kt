@@ -3,8 +3,10 @@ package formulaide.server.routes
 import formulaide.api.data.FormSubmission
 import formulaide.api.data.RecordsToReviewRequest
 import formulaide.api.data.ReviewRequest
+import formulaide.api.fields.FormField
 import formulaide.api.types.Ref
 import formulaide.api.types.Ref.Companion.createRef
+import formulaide.api.types.UploadRequest
 import formulaide.db.document.*
 import formulaide.server.Auth
 import formulaide.server.Auth.Companion.requireEmployee
@@ -40,10 +42,40 @@ fun Routing.submissionRoutes() {
 			val data = HashMap<String, String>()
 
 			call.receiveMultipart().forEachPart {
+				val name = it.name
+					?: error("La partie '${it.contentDisposition}' de type '${it.contentType}' devrait avoir un nom.")
+
 				when (it) {
-					is PartData.FormItem -> {
-						data[it.name ?: error("La valeur '${it.value}' devrait avoir un nom.")] =
-							it.value
+					is PartData.FormItem -> data[name] = it.value
+					is PartData.FileItem -> {
+						val fieldIds = name.split(":")
+						var fieldKey = fieldIds.getOrNull(0)
+							?: error("L'identifiant '$name' devrait contenir au moins une sous-partie.")
+						var field: FormField = form.mainFields.fields.find { it.id == fieldKey }
+							?: error("Le champ $fieldKey n'existe pas.")
+						val fieldIdsIterator = fieldIds.drop(1).iterator()
+						while (fieldIdsIterator.hasNext()) {
+							if (field.arity.max >= 1) {
+								// If the field is a list, then we can ignore the next ID (which is an index in that list)
+								fieldIdsIterator.next()
+							}
+
+							val next = fieldIdsIterator.next()
+
+							val nextField = when (field) {
+								is FormField.Simple -> error("Un champ simple ne contient pas de sous-champs, mais le champ $next est recherché dans le champ simple $field")
+								is FormField.Union<*> -> field.options.find { it.id == next }
+									?: error("L'union ${field.id} ne contient pas d'option $next")
+								is FormField.Composite -> field.fields.find { it.id == next }
+									?: error("La donnée composiée ${field.id} ne contient pas de champ $next")
+							}
+
+							field = nextField
+							fieldKey += ":" + field.id
+						}
+
+						data[name] =
+							uploadFile(UploadRequest(form.createRef(), null, fieldKey), it).id
 					}
 					else -> error("Le type de données '${it::class}' n'est pas supporté.")
 				}
