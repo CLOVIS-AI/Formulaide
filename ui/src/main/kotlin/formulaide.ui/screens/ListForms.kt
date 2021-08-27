@@ -29,6 +29,7 @@ val FormList = fc<RProps> { _ ->
 			for (form in forms) {
 				child(FormDescription) {
 					attrs {
+						key = form.id
 						this.form = form
 					}
 				}
@@ -61,6 +62,7 @@ internal val FormDescription = fc<FormDescriptionProps> { props ->
 			for (action in form.actions.sortedBy { it.order }) {
 				child(ActionDescription) {
 					attrs {
+						key = form.id + "-" + action.id
 						this.form = form
 						this.state = RecordState.Action(action.createRef())
 					}
