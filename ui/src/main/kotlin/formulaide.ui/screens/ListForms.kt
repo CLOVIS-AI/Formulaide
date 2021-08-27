@@ -15,7 +15,6 @@ import formulaide.ui.components.useAsync
 import formulaide.ui.utils.text
 import react.*
 import react.dom.div
-import react.dom.p
 
 val FormList = fc<RProps> { _ ->
 	traceRenders("FormList")
@@ -47,42 +46,51 @@ internal val FormDescription = fc<FormDescriptionProps> { props ->
 	val form = props.form
 	val user by useUser()
 
-	p { text(form.name) }
-	styledNesting(depth = 0) {
+	var showRecords by useState(false)
+	var showAdministration by useState(false)
 
-		div {
-			text("Actions : ")
+	fun toggle(bool: Boolean) = if (!bool) "▼" else "▲"
 
-			styledButton("Remplir") { navigateTo(Screen.SubmitForm(form.createRef())) }
-		}
+	div {
+		text(form.name)
 
-		div {
-			text("Dossiers : ")
+		styledButton("Remplir") { navigateTo(Screen.SubmitForm(form.createRef())) }
 
-			for (action in form.actions.sortedBy { it.order }) {
-				child(ActionDescription) {
-					attrs {
-						key = form.id + "-" + action.id
-						this.form = form
-						this.state = RecordState.Action(action.createRef())
-					}
-				}
+		if (user.role >= Role.EMPLOYEE)
+			styledButton("Dossiers ${toggle(showRecords)}") { showRecords = !showRecords }
+
+		if (user.role >= Role.EMPLOYEE)
+			styledButton("Gestion ${toggle(showAdministration)}") {
+				showAdministration = !showAdministration
 			}
+	}
 
+	if (showRecords) styledNesting {
+		text("Dossiers :")
+
+		for (action in form.actions.sortedBy { it.order }) {
 			child(ActionDescription) {
 				attrs {
+					key = form.id + "-" + action.id
 					this.form = form
-					this.state = RecordState.Refused
+					this.state = RecordState.Action(action.createRef())
 				}
 			}
 		}
 
-		div {
-			text("Maintenance : ")
-
-			if (user.role >= Role.ADMINISTRATOR) {
-				styledButton("Copier", action = { navigateTo(Screen.NewForm(form)) })
+		child(ActionDescription) {
+			attrs {
+				this.form = form
+				this.state = RecordState.Refused
 			}
+		}
+	}
+
+	if (showAdministration) styledNesting {
+		text("Gestion :")
+
+		if (user.role >= Role.ADMINISTRATOR) {
+			styledButton("Copier", action = { navigateTo(Screen.NewForm(form)) })
 		}
 	}
 }
