@@ -12,14 +12,48 @@ import formulaide.ui.components.styledButton
 import formulaide.ui.components.styledCard
 import formulaide.ui.components.styledNesting
 import formulaide.ui.components.useAsync
+import formulaide.ui.utils.GlobalState
 import formulaide.ui.utils.text
+import formulaide.ui.utils.useGlobalState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import react.*
 import react.dom.div
+
+private typealias RecordKey = Pair<Form, RecordState>
+
+private val recordsCache = HashMap<RecordKey, GlobalState<List<Record>>>()
+fun clearRecords() {
+	recordsCache.clear()
+}
+
+private fun CoroutineScope.getRecords(
+	client: Client.Authenticated,
+	form: Form,
+	state: RecordState,
+) = recordsCache.getOrPut(form to state) {
+	GlobalState<List<Record>>(emptyList()).apply {
+		reportExceptions {
+			this@apply.value = client.todoListFor(form, state)
+		}
+	}
+}
 
 val FormList = fc<RProps> { _ ->
 	traceRenders("FormList")
 
 	val forms by useForms()
+	val scope = useAsync()
+
+	useEffectOnce {
+		scope.launch {
+			while (true) {
+				delay(1000L * 60 * 10)
+				clearRecords()
+			}
+		}
+	}
 
 	styledCard(
 		"Formulaires",
@@ -107,14 +141,9 @@ internal val ActionDescription = fc<ActionDescriptionProps> { props ->
 	val (client) = useClient()
 	val user by useUser()
 	val scope = useAsync()
+	require(client is Client.Authenticated) { "Seuls les employés peuvent afficher 'ActionDescription'" }
 
-	var records by useState(emptyList<Record>())
-	useEffect(client, user) {
-		if (user != null && client is Client.Authenticated)
-			scope.reportExceptions {
-				records = client.todoListFor(form, state)
-			}
-	}
+	val records by useGlobalState(scope.getRecords(client, form, state))
 
 	val stateName = when (state) {
 		is RecordState.Action -> state.displayName()
