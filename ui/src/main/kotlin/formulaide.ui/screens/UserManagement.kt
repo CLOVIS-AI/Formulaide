@@ -116,6 +116,8 @@ val CreateUser = fc<RProps> { _ ->
 	val password1 = useRef<HTMLInputElement>()
 	val password2 = useRef<HTMLInputElement>()
 
+	useEffectOnce { admin.current?.value = "false" } // Ensure the default value is 'false'
+
 	val (client) = useClient()
 	require(client is Client.Authenticated) { "Un employé anonyme ne peut pas créer d'utilisateurs" }
 
