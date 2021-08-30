@@ -8,17 +8,14 @@ import formulaide.ui.utils.remove
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.switchOrder
 import formulaide.ui.utils.text
-import react.FunctionComponent
-import react.child
-import react.fc
-import react.useState
+import react.*
 
 val RecursionEditor: FunctionComponent<EditableFieldProps> = fc { props ->
 	val parent = props.field
 	val fields = (parent as? Field.Union<*>)?.options
 		?: (parent as? Field.Container<*>)?.fields
 
-	var maxId by useState(0)
+	val maxId = useMemo(fields) { (fields ?: emptyList()).map { it.id }.maxOrNull()?.plus(1) ?: 0 }
 
 	if (fields != null) {
 		styledFormField {
@@ -98,7 +95,7 @@ val RecursionEditor: FunctionComponent<EditableFieldProps> = fc { props ->
 
 		if (parent is DataField.Union || parent is ShallowFormField.Union) {
 			styledButton("Ajouter une option") {
-				val id = (maxId++).toString()
+				val id = maxId.toString()
 				val order = fields.size
 				val name = "Nouveau champ"
 				val simple = SimpleField.Text(Arity.optional())

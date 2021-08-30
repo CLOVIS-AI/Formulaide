@@ -42,16 +42,15 @@ fun CreateForm(original: Form?) = fc<RProps> {
 	val (fields, updateFields) = useLocalStorage("form-fields", emptyList<ShallowFormField>())
 	val (actions, updateActions) = useLocalStorage("form-actions", emptyList<Action>())
 
-	var maxFieldId by useState(fields.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0)
-	var maxActionId by useState(actions.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0)
-	val maxActionFieldId = useState(
-		actions
-			.flatMap { it.fields?.fields ?: emptyList() }
+	val maxFieldId = useMemo(fields) { fields.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0 }
+	val maxActionId = useMemo(actions) { actions.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0 }
+	val maxActionFieldId = useMemo(actions) {
+		actions.flatMap { it.fields?.fields ?: emptyList() }
 			.map { it.id.toInt() }
 			.maxOrNull()
 			?.plus(1)
 			?: 0
-	)
+	}
 
 	useAsyncEffectOnce {
 		if (original != null) {
@@ -60,7 +59,6 @@ fun CreateForm(original: Form?) = fc<RProps> {
 
 			updateFields { original.mainFields.fields }
 			updateActions { original.actions }
-			maxActionId = actions.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0
 		}
 	}
 
@@ -132,7 +130,7 @@ fun CreateForm(original: Form?) = fc<RProps> {
 				updateFields {
 					this + ShallowFormField.Simple(
 						order = size,
-						id = (maxFieldId++).toString(),
+						id = maxFieldId.toString(),
 						name = "",
 						simple = SimpleField.Text(Arity.optional())
 					)
@@ -173,7 +171,7 @@ fun CreateForm(original: Form?) = fc<RProps> {
 			styledButton("Ajouter une étape", action = {
 				updateActions {
 					this + Action(
-						id = (maxActionId++).toString(),
+						id = maxActionId.toString(),
 						order = size,
 						services.getOrNull(0)?.createRef() ?: error("Aucun service n'a été trouvé"),
 						name = "",
@@ -236,13 +234,13 @@ private fun RBuilder.actionReviewerSelection(
 private external interface ActionFieldProps : RProps {
 	var action: Action
 	var replace: (Action) -> Unit
-	var maxFieldId: StateInstance<Int>
+	var maxFieldId: Int
 }
 
 private val ActionFields = memo(fc<ActionFieldProps> { props ->
 	val action = props.action
 	val replace = props.replace
-	var maxFieldId by props.maxFieldId
+	val maxFieldId = props.maxFieldId
 	val root = action.fields ?: FormRoot(emptyList())
 
 	val lambdas = useLambdas()
@@ -274,7 +272,7 @@ private val ActionFields = memo(fc<ActionFieldProps> { props ->
 
 		styledButton("Ajouter un champ", action = {
 			val newFields = root.fields + ShallowFormField.Simple(
-				(maxFieldId++).toString(),
+				maxFieldId.toString(),
 				root.fields.size,
 				"",
 				SimpleField.Text(Arity.mandatory()),
