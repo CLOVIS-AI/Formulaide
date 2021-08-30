@@ -12,9 +12,8 @@ import formulaide.client.routes.todoListFor
 import formulaide.ui.*
 import formulaide.ui.Role.Companion.role
 import formulaide.ui.components.*
-import formulaide.ui.utils.GlobalState
-import formulaide.ui.utils.text
-import formulaide.ui.utils.useGlobalState
+import formulaide.ui.utils.*
+import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -45,6 +44,9 @@ private fun CoroutineScope.getRecords(
 val FormList = fc<RProps> { _ ->
 	traceRenders("FormList")
 
+	val (client) = useClient()
+	val user by useUser()
+
 	val forms by useForms()
 	val scope = useAsync()
 
@@ -57,7 +59,22 @@ val FormList = fc<RProps> { _ ->
 		}
 	}
 
+	var archivedForms by useState(emptyList<Form>()).asDelegated()
+		.useListEquality()
+		.useEquals()
 	var showArchivedForms by useState(false)
+	useAsyncEffect(showArchivedForms) {
+		require(client is Client.Authenticated) { "Il n'est pas possible d'appuyer sur ce bouton sans être connecté." }
+		if (showArchivedForms)
+			archivedForms = client.listClosedForms()
+	}
+
+	val shownForms = useMemo(forms, archivedForms, showArchivedForms) {
+		if (showArchivedForms)
+			forms + archivedForms
+		else
+			forms
+	}
 
 	styledCard(
 		"Formulaires",
@@ -67,14 +84,14 @@ val FormList = fc<RProps> { _ ->
 			clearRecords()
 		},
 		contents = {
-			styledField("hide-disabled", "Formulaires archivés") {
+			if (user.role >= Role.EMPLOYEE) styledField("hide-disabled", "Formulaires archivés") {
 				styledCheckbox("hide-disabled", "Afficher les formulaires archivés") {
 					onChangeFunction =
 						{ showArchivedForms = (it.target as HTMLInputElement).checked }
 				}
 			}
 
-			for (form in forms.filter { showArchivedForms || it.open }) {
+			for (form in shownForms) {
 				child(FormDescription) {
 					attrs {
 						key = form.id
