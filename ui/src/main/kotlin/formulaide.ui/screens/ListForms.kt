@@ -1,10 +1,13 @@
 package formulaide.ui.screens
 
 import formulaide.api.data.Form
+import formulaide.api.data.FormMetadata
 import formulaide.api.data.Record
 import formulaide.api.data.RecordState
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.client.Client
+import formulaide.client.routes.editForm
+import formulaide.client.routes.listClosedForms
 import formulaide.client.routes.todoListFor
 import formulaide.ui.*
 import formulaide.ui.Role.Companion.role
@@ -95,6 +98,8 @@ internal val FormDescription = memo(fc<FormDescriptionProps> { props ->
 	var showRecords by useState(false)
 	var showAdministration by useState(false)
 
+	val (client) = useClient()
+
 	fun toggle(bool: Boolean) = if (!bool) "▼" else "▲"
 
 	div {
@@ -136,7 +141,21 @@ internal val FormDescription = memo(fc<FormDescriptionProps> { props ->
 		text("Gestion :")
 
 		if (user.role >= Role.ADMINISTRATOR) {
+			require(client is Client.Authenticated) // not possible otherwise
+
 			styledButton("Copier", action = { navigateTo(Screen.NewForm(form)) })
+
+			styledButton(if (form.public) "Rendre interne" else "Rendre public", action = {
+				client.editForm(FormMetadata(form.createRef(),
+				                             public = !form.public))
+				refreshForms()
+			})
+
+			styledButton(if (form.open) "Archiver" else "Désarchiver", action = {
+				client.editForm(FormMetadata(form.createRef(),
+				                             open = !form.open))
+				refreshForms()
+			})
 		}
 	}
 })
