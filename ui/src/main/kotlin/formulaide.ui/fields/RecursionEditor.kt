@@ -97,7 +97,7 @@ val RecursionEditor: FunctionComponent<EditableFieldProps> = fc { props ->
 			styledButton("Ajouter une option") {
 				val id = maxId.toString()
 				val order = fields.size
-				val name = "Nouveau champ"
+				val name = ""
 				val simple = SimpleField.Text(Arity.optional())
 
 				val newParent = when (parent) {
