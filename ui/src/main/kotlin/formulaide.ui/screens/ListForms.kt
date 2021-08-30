@@ -58,6 +58,10 @@ val FormList = fc<RProps> { _ ->
 	styledCard(
 		"Formulaires",
 		null,
+		"Actualiser" to {
+			refreshForms()
+			clearRecords()
+		},
 		contents = {
 			for (form in forms) {
 				child(FormDescription) {
