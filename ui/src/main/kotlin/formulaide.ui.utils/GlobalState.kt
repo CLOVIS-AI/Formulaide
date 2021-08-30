@@ -53,5 +53,5 @@ fun <T> RBuilder.useGlobalState(globalState: GlobalState<T>): WriteDelegatedProp
 	return DelegatedProperty(
 		get = { globalState.value },
 		onUpdate = { update -> globalState.value = update(globalState.value) },
-	)
+	).useEquals()
 }

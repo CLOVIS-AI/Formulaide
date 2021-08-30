@@ -71,7 +71,7 @@ class ReadDelegatedProperty<out T>(val get: () -> T) : DelegatedProperty<T> {
  */
 class WriteDelegatedProperty<T>(
 	val reader: ReadDelegatedProperty<T>,
-	val onUpdate: ((T) -> T) -> Unit,
+	private val onUpdate: ((T) -> T) -> Unit,
 ) : DelegatedProperty<T> by reader {
 
 	// Normal access
@@ -115,10 +115,37 @@ inline fun <reified I> DelegatedProperty<*>.filterIs() =
 fun <T> WriteDelegatedProperty<T>.onSet(listener: (T) -> Unit) =
 	WriteDelegatedProperty(
 		reader = reader,
-		onUpdate = { update ->
-			onUpdate {
-				update(it).also(listener)
+		onUpdate = { newValueGenerator ->
+			update {
+				newValueGenerator(this@update).also(listener)
 			}
+		}
+	)
+
+/**
+ * Cancel the update if the new value is equal to the previous one.
+ *
+ * This allows to decrease the number of renders for list modifications.
+ *
+ * @see Any.equals
+ * @see Any.hashCode
+ */
+fun <T> WriteDelegatedProperty<T>.useEquals() =
+	WriteDelegatedProperty(
+		reader = reader,
+		onUpdate = { newValueGenerator ->
+			val old = reader.value
+			val new = newValueGenerator(old)
+
+			// Swallow the update if the object is the same reference
+			if (new === old)
+				Unit
+
+			// Test hashCode before testing equals
+			else if (new.hashCode() == old.hashCode() && new == old)
+				console.log("Cancelled state update because objects are the same according to 'equals'.")
+			else
+				update { new }
 		}
 	)
 
