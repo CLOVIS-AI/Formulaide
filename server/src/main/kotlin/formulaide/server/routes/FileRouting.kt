@@ -16,6 +16,7 @@ import formulaide.server.database
 import formulaide.server.serializer
 import io.ktor.application.*
 import io.ktor.auth.*
+import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.request.*
 import io.ktor.response.*
@@ -55,7 +56,7 @@ fun Routing.fileRoutes() {
 
 			val request = serializer.decodeFromString<UploadRequest>(body.value)
 
-			call.respond(uploadFile(request, file))
+			call.respond(uploadFile(request, file) ?: error("Aucun fichier n'a été envoyé."))
 
 			parts.forEach { it.dispose() }
 		}
@@ -63,7 +64,7 @@ fun Routing.fileRoutes() {
 	}
 }
 
-internal suspend fun uploadFile(request: UploadRequest, file: PartData.FileItem): Ref<Upload> {
+internal suspend fun uploadFile(request: UploadRequest, file: PartData.FileItem): Ref<Upload>? {
 	val form = database.findForm(request.form.id)
 		?: error("Le formulaire ${request.form} est introuvable, il n'est donc pas possible d'y publier une pièce jointe.")
 	val formRoot = request.root
@@ -93,6 +94,11 @@ internal suspend fun uploadFile(request: UploadRequest, file: PartData.FileItem)
 	require(field is FormField.Simple) { "Il n'est autorisé de publier un fichier que si le champ déclaré est de type ${FormField.Simple::class}, trouvé ${field::class}" }
 	val simple = field.simple
 	require(simple is SimpleField.Upload) { "Il n'est autorisé de publier un fichier que si le champ déclaré est de type ${SimpleField.Upload::class}, trouvé ${field.simple::class}" }
+
+	if (file.contentType == ContentType.Application.OctetStream) {
+		System.err.println("L'utilisateur a envoyé un fichier de type octet-stream. Il a été ignoré.")
+		return null
+	}
 
 	var mime = file.contentType.toString()
 	require(simple.allowedFormats.allowsContentType(mime)) { "Le type de fichier '$mime' ne correspond à aucun type autorisé pour ce champ : ${simple.allowedFormats.flatMap { it.mimeTypes }}" }

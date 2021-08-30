@@ -74,8 +74,12 @@ fun Routing.submissionRoutes() {
 							fieldKey += ":" + field.id
 						}
 
-						data[name] =
-							uploadFile(UploadRequest(form.createRef(), null, fieldKey), it).id
+						val uploaded = uploadFile(
+							UploadRequest(form.createRef(), null, fieldKey),
+							it
+						)
+						if (uploaded != null)
+							data[name] = uploaded.id
 					}
 					else -> error("Le type de données '${it::class}' n'est pas supporté.")
 				}
