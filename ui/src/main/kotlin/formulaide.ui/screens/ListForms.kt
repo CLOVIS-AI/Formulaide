@@ -8,16 +8,15 @@ import formulaide.client.Client
 import formulaide.client.routes.todoListFor
 import formulaide.ui.*
 import formulaide.ui.Role.Companion.role
-import formulaide.ui.components.styledButton
-import formulaide.ui.components.styledCard
-import formulaide.ui.components.styledNesting
-import formulaide.ui.components.useAsync
+import formulaide.ui.components.*
 import formulaide.ui.utils.GlobalState
 import formulaide.ui.utils.text
 import formulaide.ui.utils.useGlobalState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.html.js.onChangeFunction
+import org.w3c.dom.HTMLInputElement
 import react.*
 import react.dom.div
 
@@ -55,6 +54,8 @@ val FormList = fc<RProps> { _ ->
 		}
 	}
 
+	var showArchivedForms by useState(false)
+
 	styledCard(
 		"Formulaires",
 		null,
@@ -63,7 +64,14 @@ val FormList = fc<RProps> { _ ->
 			clearRecords()
 		},
 		contents = {
-			for (form in forms) {
+			styledField("hide-disabled", "Formulaires archivés") {
+				styledCheckbox("hide-disabled", "Afficher les formulaires archivés") {
+					onChangeFunction =
+						{ showArchivedForms = (it.target as HTMLInputElement).checked }
+				}
+			}
+
+			for (form in forms.filter { showArchivedForms || it.open }) {
 				child(FormDescription) {
 					attrs {
 						key = form.id
@@ -80,7 +88,7 @@ internal external interface FormDescriptionProps : RProps {
 	var form: Form
 }
 
-internal val FormDescription = fc<FormDescriptionProps> { props ->
+internal val FormDescription = memo(fc<FormDescriptionProps> { props ->
 	val form = props.form
 	val user by useUser()
 
@@ -131,7 +139,7 @@ internal val FormDescription = fc<FormDescriptionProps> { props ->
 			styledButton("Copier", action = { navigateTo(Screen.NewForm(form)) })
 		}
 	}
-}
+})
 
 internal external interface ActionDescriptionProps : RProps {
 	var form: Form
