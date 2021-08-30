@@ -46,19 +46,25 @@ fun RBuilder.useUser() = useGlobalState(client)
 
 private val composites = GlobalState(emptyList<Composite>())
 	.apply { subscribers.add { println("The composites have been updated: ${it.size} are stored") } }
+private val compositesDelegate = composites.asDelegated()
+	.useListEquality()
+	.useEquals()
 
-fun RBuilder.useComposites() = useGlobalState(composites)
+fun RBuilder.useComposites() = useGlobalState(composites, compositesDelegate)
 
 suspend fun refreshComposites() = (client.value as? Client.Authenticated)
-	?.let { c -> composites.value = c.listData() }
-	?: run { composites.value = emptyList() }
+	?.let { c -> compositesDelegate.value = c.listData() }
+	?: run { compositesDelegate.value = emptyList() }
 
 private val forms = GlobalState(emptyList<Form>())
 	.apply { subscribers.add { println("The forms have been updated: ${it.size} are stored") } }
+private val formsDelegate = forms.asDelegated()
+	.useListEquality()
+	.useEquals()
 
-fun RBuilder.useForms() = useGlobalState(forms)
+fun RBuilder.useForms() = useGlobalState(forms, formsDelegate)
 suspend fun refreshForms() {
-	forms.value = (client.value as? Client.Authenticated)
+	formsDelegate.value = (client.value as? Client.Authenticated)
 		?.listAllForms()
 		?: try {
 			client.value.listForms()
