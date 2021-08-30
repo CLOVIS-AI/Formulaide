@@ -1,5 +1,6 @@
 package formulaide.ui
 
+import formulaide.ui.components.styledFrame
 import formulaide.ui.utils.detectTests
 import kotlinext.js.require
 import kotlinx.browser.document
@@ -15,6 +16,8 @@ fun main() {
 	render(document.getElementById("root")) {
 		traceRenders("root")
 
-		child(App)
+		styledFrame {
+			child(App)
+		}
 	}
 }
