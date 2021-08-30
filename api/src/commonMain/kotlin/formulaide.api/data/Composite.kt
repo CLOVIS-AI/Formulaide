@@ -5,6 +5,7 @@ import formulaide.api.fields.fieldMonad
 import formulaide.api.fields.load
 import formulaide.api.types.OrderedListElement.Companion.checkOrderValidity
 import formulaide.api.types.Ref
+import formulaide.api.types.Ref.Companion.ids
 import formulaide.api.types.Referencable
 import formulaide.api.types.ReferenceId
 import kotlinx.serialization.Serializable
@@ -30,8 +31,8 @@ data class Composite(
 		require(name.isNotBlank()) { "Le nom d'une donnée ne peut pas être vide : '$name'" }
 		fields.checkOrderValidity()
 
-		val ids = fields.distinctBy { it.id }
-		require(ids == fields.toList()) { "L'identité d'un champ ne doit pas apparaitre plusieurs fois dans une même donnée" }
+		require(fields.ids() == fields.ids()
+			.distinct()) { "Plusieurs champs ont le même identifiant : ${fields.ids()}" }
 	}
 
 	/**
