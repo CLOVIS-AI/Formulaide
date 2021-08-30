@@ -16,11 +16,8 @@ import formulaide.ui.*
 import formulaide.ui.components.*
 import formulaide.ui.fields.field
 import formulaide.ui.fields.immutableFields
+import formulaide.ui.utils.*
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
-import formulaide.ui.utils.parseHtmlForm
-import formulaide.ui.utils.remove
-import formulaide.ui.utils.replace
-import formulaide.ui.utils.text
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -54,6 +51,8 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 	require(client is Client.Authenticated) { "Seuls les employés peuvent accéder à cette page." }
 
 	val (records, updateRecords) = useState(initialRecords).asDelegated()
+		.useListEquality()
+		.useEquals()
 	val (searches, updateSearches) = useState(emptyList<ReviewSearch>()).asDelegated()
 	var loading by useState(false)
 
@@ -61,25 +60,14 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 		.mapValues { (_, v) -> v.map { it.criterion } }
 
 	val lambdas = useLambdas()
-	val refresh: suspend (Boolean) -> Unit = { forceUpdate ->
+	val refresh: suspend () -> Unit = {
 		loading = true
 		val newRecords = client.todoListFor(form, state, allCriteria)
 
-		updateRecords {
-			if (forceUpdate) {
-				traceRenders("Search Force Update")
-				newRecords
-			} else {
-				traceRenders("Search Nice Update")
-				val retained = filter { it in newRecords }
-				retained +
-						newRecords.filter { record -> record.id !in retained.map { it.id } }
-			}
-		}
+		updateRecords { newRecords }
 		loading = false
 	}
-	val memoizedRefresh: suspend (Boolean) -> Unit =
-		refresh.memoIn(lambdas, "refresh", form, state, searches)
+	val memoizedRefresh = refresh.memoIn(lambdas, "refresh", form, state, searches)
 
 	var formLoaded by useState(false)
 	useEffect(form) {
@@ -96,7 +84,7 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 			reportExceptions {
 				delay(300)
 
-				refresh(false)
+				refresh()
 			}
 		}
 
@@ -112,7 +100,7 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 			styledCard(
 				state.displayName(),
 				form.name,
-				"Actualiser" to { refresh(true) },
+				"Actualiser" to { refresh() },
 				loading = loading,
 			) {
 				p { text("${records.size} dossiers sont chargés. Pour des raisons de performance, il n'est pas possible de charger plus de ${Record.MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION} dossiers à la fois.") }
@@ -458,7 +446,7 @@ private external interface ReviewRecordProps : RProps {
 
 	var formLoaded: Boolean
 
-	var refresh: suspend (Boolean) -> Unit
+	var refresh: suspend () -> Unit
 }
 
 private data class ParsedTransition(
@@ -542,7 +530,7 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 			fields.takeIf { sendFields },
 		))
 
-		props.refresh(true)
+		props.refresh()
 	}
 
 	styledFormCard(

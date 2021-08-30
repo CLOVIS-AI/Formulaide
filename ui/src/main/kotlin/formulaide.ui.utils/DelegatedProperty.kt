@@ -149,4 +149,44 @@ fun <T> WriteDelegatedProperty<T>.useEquals() =
 		}
 	)
 
+/**
+ * When the list is replaced by another one, prefer keeping the element in the original list (if it was not edited), rather than replacing it by the new version.
+ *
+ * Because React always compares objects with referential equality, this can significantly reduce renders of child components when using the result of an API endpoint in `useState` or similar.
+ *
+ * @see useEquals
+ * @see Any.equals
+ * @see Any.hashCode
+ */
+fun <T> WriteDelegatedProperty<List<T>>.useListEquality() =
+	WriteDelegatedProperty(
+		reader = reader,
+		onUpdate = { newValueGenerator ->
+			val old = reader.value
+			val new = newValueGenerator(old)
+
+			val result = ArrayList<T>(new.size)
+			var i = 0
+			while (i < new.size && i < old.size) {
+				val o = old[i]
+				val n = new[i]
+
+				result.add(
+					if (o.hashCode() == n.hashCode() && o == n) o
+					else n
+				)
+
+				i++
+			}
+			while (i < new.size) {
+				result.add(new[i])
+
+				i++
+			}
+
+			check(result == new) { "L'optimisation des listes ne devrait pas modifier les éléments de la liste." }
+			update { result }
+		}
+	)
+
 //endregion

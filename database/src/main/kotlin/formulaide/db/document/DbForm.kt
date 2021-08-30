@@ -2,9 +2,11 @@ package formulaide.db.document
 
 import formulaide.api.data.Composite
 import formulaide.api.data.Form
+import formulaide.api.data.FormMetadata
 import formulaide.api.fields.DeepFormField
 import formulaide.api.fields.ShallowFormField
 import formulaide.api.fields.fieldMonad
+import formulaide.api.types.Ref.Companion.load
 import formulaide.api.types.ReferenceId
 import formulaide.db.Database
 import formulaide.db.utils.generateId
@@ -70,4 +72,19 @@ suspend fun Database.referencedComposites(form: Form): List<Composite> {
 			async { findComposite(it) ?: error("La donnée composée $it est introuvable") }
 		}.awaitAll()
 	}
+}
+
+suspend fun Database.editForm(edition: FormMetadata): Form {
+	edition.form.load { findForm(it) ?: error("Le formulaire '$it' est introuvable") }
+
+	val form = edition.form.obj
+
+	val new = form.copy(
+		public = edition.public ?: form.public,
+		open = edition.open ?: form.open,
+	)
+
+	forms.replaceOne(Form::id eq form.id, new)
+
+	return new
 }

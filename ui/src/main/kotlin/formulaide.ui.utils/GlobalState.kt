@@ -18,6 +18,11 @@ class GlobalState<T>(initialValue: T) {
 		}
 
 	val subscribers = mutableListOf<(T) -> Unit>()
+
+	fun asDelegated() = DelegatedProperty(
+		get = { value },
+		onUpdate = { valueGenerator -> value = valueGenerator(value) },
+	)
 }
 
 /**
@@ -26,7 +31,10 @@ class GlobalState<T>(initialValue: T) {
  * This hook can be used with the same syntax as [useState], and will handle all the machinery for the component to be updated at the right time.
  */
 @Suppress("unused") // RBuilder for type safety
-fun <T> RBuilder.useGlobalState(globalState: GlobalState<T>): WriteDelegatedProperty<T> {
+fun <T> RBuilder.useGlobalState(
+	globalState: GlobalState<T>,
+	interceptor: WriteDelegatedProperty<T>? = null,
+): WriteDelegatedProperty<T> {
 	/*
 	 * Implementation details:
 	 * - We create a local state with useState
@@ -38,7 +46,9 @@ fun <T> RBuilder.useGlobalState(globalState: GlobalState<T>): WriteDelegatedProp
 	 * Inspired by https://dev.to/yezyilomo/global-state-management-in-react-with-global-variables-and-hooks-state-management-doesn-t-have-to-be-so-hard-2n2c
 	 */
 
-	val (_, setLocal) = useState(globalState.value)
+	val delegated = interceptor ?: globalState.asDelegated()
+
+	val (_, setLocal) = useState(delegated.value)
 
 	val subscriber = { new: T -> setLocal(new) }
 
@@ -50,8 +60,8 @@ fun <T> RBuilder.useGlobalState(globalState: GlobalState<T>): WriteDelegatedProp
 		}
 	}
 
-	return DelegatedProperty(
-		get = { globalState.value },
-		onUpdate = { update -> globalState.value = update(globalState.value) },
-	).useEquals()
+	return WriteDelegatedProperty(
+		reader = delegated.reader,
+		onUpdate = { valueGenerator -> delegated.update(valueGenerator) }
+	)
 }

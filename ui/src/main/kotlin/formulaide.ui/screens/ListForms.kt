@@ -1,23 +1,24 @@
 package formulaide.ui.screens
 
 import formulaide.api.data.Form
+import formulaide.api.data.FormMetadata
 import formulaide.api.data.Record
 import formulaide.api.data.RecordState
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.client.Client
+import formulaide.client.routes.editForm
+import formulaide.client.routes.listClosedForms
 import formulaide.client.routes.todoListFor
 import formulaide.ui.*
 import formulaide.ui.Role.Companion.role
-import formulaide.ui.components.styledButton
-import formulaide.ui.components.styledCard
-import formulaide.ui.components.styledNesting
-import formulaide.ui.components.useAsync
-import formulaide.ui.utils.GlobalState
-import formulaide.ui.utils.text
-import formulaide.ui.utils.useGlobalState
+import formulaide.ui.components.*
+import formulaide.ui.utils.*
+import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.html.js.onChangeFunction
+import org.w3c.dom.HTMLInputElement
 import react.*
 import react.dom.div
 
@@ -43,6 +44,9 @@ private fun CoroutineScope.getRecords(
 val FormList = fc<RProps> { _ ->
 	traceRenders("FormList")
 
+	val (client) = useClient()
+	val user by useUser()
+
 	val forms by useForms()
 	val scope = useAsync()
 
@@ -55,6 +59,23 @@ val FormList = fc<RProps> { _ ->
 		}
 	}
 
+	var archivedForms by useState(emptyList<Form>()).asDelegated()
+		.useListEquality()
+		.useEquals()
+	var showArchivedForms by useState(false)
+	useAsyncEffect(showArchivedForms) {
+		require(client is Client.Authenticated) { "Il n'est pas possible d'appuyer sur ce bouton sans être connecté." }
+		if (showArchivedForms)
+			archivedForms = client.listClosedForms()
+	}
+
+	val shownForms = useMemo(forms, archivedForms, showArchivedForms) {
+		if (showArchivedForms)
+			forms + archivedForms
+		else
+			forms
+	}
+
 	styledCard(
 		"Formulaires",
 		null,
@@ -63,7 +84,14 @@ val FormList = fc<RProps> { _ ->
 			clearRecords()
 		},
 		contents = {
-			for (form in forms) {
+			if (user.role >= Role.EMPLOYEE) styledField("hide-disabled", "Formulaires archivés") {
+				styledCheckbox("hide-disabled", "Afficher les formulaires archivés") {
+					onChangeFunction =
+						{ showArchivedForms = (it.target as HTMLInputElement).checked }
+				}
+			}
+
+			for (form in shownForms) {
 				child(FormDescription) {
 					attrs {
 						key = form.id
@@ -80,12 +108,14 @@ internal external interface FormDescriptionProps : RProps {
 	var form: Form
 }
 
-internal val FormDescription = fc<FormDescriptionProps> { props ->
+internal val FormDescription = memo(fc<FormDescriptionProps> { props ->
 	val form = props.form
 	val user by useUser()
 
 	var showRecords by useState(false)
 	var showAdministration by useState(false)
+
+	val (client) = useClient()
 
 	fun toggle(bool: Boolean) = if (!bool) "▼" else "▲"
 
@@ -128,10 +158,24 @@ internal val FormDescription = fc<FormDescriptionProps> { props ->
 		text("Gestion :")
 
 		if (user.role >= Role.ADMINISTRATOR) {
+			require(client is Client.Authenticated) // not possible otherwise
+
 			styledButton("Copier", action = { navigateTo(Screen.NewForm(form)) })
+
+			styledButton(if (form.public) "Rendre interne" else "Rendre public", action = {
+				client.editForm(FormMetadata(form.createRef(),
+				                             public = !form.public))
+				refreshForms()
+			})
+
+			styledButton(if (form.open) "Archiver" else "Désarchiver", action = {
+				client.editForm(FormMetadata(form.createRef(),
+				                             open = !form.open))
+				refreshForms()
+			})
 		}
 	}
-}
+})
 
 internal external interface ActionDescriptionProps : RProps {
 	var form: Form
