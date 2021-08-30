@@ -10,7 +10,9 @@ import formulaide.client.routes.login
 import formulaide.client.routes.todoList
 import formulaide.ui.*
 import formulaide.ui.components.*
+import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
 import formulaide.ui.utils.text
+import formulaide.ui.utils.useListEquality
 import kotlinx.browser.window
 import kotlinx.html.InputType
 import org.w3c.dom.HTMLInputElement
@@ -169,6 +171,7 @@ val LoginAccess = fc<RProps> {
 
 val FormsToReview = fc<RProps> {
 	val scope = useAsync()
+	val allForms by useForms()
 
 	val (client) = useClient()
 	if (client !is Client.Authenticated) {
@@ -176,12 +179,13 @@ val FormsToReview = fc<RProps> {
 		return@fc
 	}
 
-	var forms by useState(emptyList<Form>())
+	var forms by useState(emptyList<Form>()).asDelegated()
+		.useListEquality()
 	var loadingMessage by useState("Chargement des formulaires en cours…")
 	if (forms.isEmpty())
 		p { text(loadingMessage) }
 
-	useEffect(client) {
+	useEffect(client, allForms) {
 		scope.reportExceptions {
 			forms = client.todoList()
 			loadingMessage = "Vous n'avez aucun formulaire à vérifier"
