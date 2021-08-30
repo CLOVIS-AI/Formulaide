@@ -63,3 +63,14 @@ data class Form(
 		actions.checkOrderValidity()
 	}
 }
+
+//region API objects
+
+@Serializable
+data class FormMetadata(
+	val form: Ref<Form>,
+	val open: Boolean? = null,
+	val public: Boolean? = null,
+)
+
+//endregion

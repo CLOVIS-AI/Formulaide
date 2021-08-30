@@ -2,6 +2,7 @@ package formulaide.client.routes
 
 import formulaide.api.data.Composite
 import formulaide.api.data.Form
+import formulaide.api.data.FormMetadata
 import formulaide.client.Client
 
 /**
@@ -58,3 +59,13 @@ suspend fun Client.Authenticated.createForm(form: Form): Form =
  */
 suspend fun Client.compositesReferencedIn(form: Form): List<Composite> =
 	post("/forms/references", body = form.id)
+
+/**
+ * Edits form attributes, as specified in [edition].
+ *
+ * - POST /forms/editMetadata
+ * - Body: [FormMetadata]
+ * - Response: the modified [Form]
+ */
+suspend fun Client.Authenticated.editForm(edition: FormMetadata): Form =
+	post("/forms/editMetadata", body = edition)

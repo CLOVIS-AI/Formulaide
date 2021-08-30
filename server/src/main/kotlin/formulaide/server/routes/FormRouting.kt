@@ -1,11 +1,9 @@
 package formulaide.server.routes
 
 import formulaide.api.data.Form
+import formulaide.api.data.FormMetadata
 import formulaide.api.types.ReferenceId
-import formulaide.db.document.createForm
-import formulaide.db.document.findForm
-import formulaide.db.document.listForms
-import formulaide.db.document.referencedComposites
+import formulaide.db.document.*
 import formulaide.server.Auth.Companion.Employee
 import formulaide.server.Auth.Companion.requireAdmin
 import formulaide.server.Auth.Companion.requireEmployee
@@ -48,6 +46,15 @@ fun Routing.formRoutes() {
 				val form = call.receive<Form>()
 
 				call.respond(database.createForm(form))
+			}
+
+			post("/editMetadata") {
+				call.requireAdmin(database)
+
+				val metadata = call.receive<FormMetadata>()
+				val form = database.editForm(metadata)
+
+				call.respond(form)
 			}
 		}
 	}
