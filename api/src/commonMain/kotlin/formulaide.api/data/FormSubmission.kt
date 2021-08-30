@@ -163,7 +163,12 @@ data class FormSubmission(
 
 				require(answers.size in fieldArity.range) { "${fieldErrorMessage(field)} a une arité de ${fieldArity}, mais ${answers.size} valeurs ont été données : $answer" }
 
-				val parsedAnswers = answers.mapNotNull { parseField(parent + field.id, field, it) }
+				val parsedAnswers = answers.mapNotNull {
+					parseField(parent + field.id,
+					           field,
+					           it,
+					           overrideArity = Arity.optional())
+				}
 				ParsedList(field, parsedAnswers)
 					.apply {
 						parsedAnswers.forEachIndexed { index, it ->
@@ -181,10 +186,11 @@ data class FormSubmission(
 		parent: List<String>,
 		field: F,
 		answer: ReadOnlyAnswer?,
+		overrideArity: Arity? = null,
 	): ParsedField<F>? {
 		return when (field) {
-			is FormField.Simple -> parseSimple(parent, field, answer)
-			is FormField.Union<*> -> parseUnion(parent, field, answer)
+			is FormField.Simple -> parseSimple(parent, field, answer, overrideArity)
+			is FormField.Union<*> -> parseUnion(parent, field, answer, overrideArity)
 			is FormField.Composite -> parseComposite(parent, field, answer)
 			else -> error("Trouvé un champ de type impossible : $field")
 		}
@@ -209,11 +215,13 @@ data class FormSubmission(
 		parent: List<String>,
 		field: U,
 		answer: ReadOnlyAnswer?,
+		overrideArity: Arity? = null,
 	): ParsedUnion<U, C>? {
 		println("$parent ${field.id} -> union $field")
+		val arity = overrideArity ?: field.arity
 
 		val selectedId = answer?.value
-		if (field.arity.min == 0 && selectedId == null) return null
+		if (arity.min == 0 && selectedId == null) return null
 		requireNotNull("${fieldErrorMessage(field)} est une union, elle doit avoir une unique valeur ; trouvé le choix ${answer?.value}")
 
 		val selectedField = field.options.find { it.id == selectedId }
@@ -237,23 +245,29 @@ data class FormSubmission(
 		parent: List<String>,
 		field: S,
 		answer: ReadOnlyAnswer?,
-	): ParsedSimple<S>? = when {
-		field.arity.min == 0 && answer == null -> {
-			println("$parent ${field.id} -> simple, was not filled in")
-			null
-		}
-		field.simple is Message -> {
-			require(answer == null) { "${fieldErrorMessage(field)} est un champ de type $Message, il ne peut donc pas avoir de valeur : $answer" }
-			println("$parent ${field.id} -> simple $Message")
-			null
-		}
-		else -> {
-			requireNotNull(answer) { "${fieldErrorMessage(field)} est un champ obligatoire (${field.arity}), mais aucune réponse n'a été trouvée" }
-			field.simple.parse(answer.value)
-			require(answer.components.isEmpty()) { "${fieldErrorMessage(field)} est de type SIMPLE, il ne peut pas avoir des sous-réponses ; trouvé ${answer.components}" }
+		overrideArity: Arity? = null,
+	): ParsedSimple<S>? {
+		val arity = overrideArity ?: field.arity
+		return when {
+			arity.min == 0 && (answer == null || answer.value.isNullOrBlank()) -> {
+				println("$parent ${field.id} -> simple, was not filled in")
+				null
+			}
+			field.simple is Message -> {
+				println("$parent ${field.id} -> simple $Message")
+				require(answer == null) { "${fieldErrorMessage(field)} est un champ de type $Message, il ne peut donc pas avoir de valeur : $answer" }
+				null
+			}
+			else -> {
+				requireNotNull(answer) { "${fieldErrorMessage(field)} est un champ obligatoire (${field.arity}), mais aucune réponse n'a été trouvée" }
+				println("$parent ${field.id} -> simple ${answer.value}")
 
-			println("$parent ${field.id} -> simple ${answer.value}")
-			ParsedSimple(field, answer.value)
+				require(!answer.value.isNullOrBlank()) { "${fieldErrorMessage(field)} est un champ obligatoire (${field.arity}), mais la réponse donnée est vide : '${answer.value}'" }
+				field.simple.parse(answer.value)
+				require(answer.components.isEmpty()) { "${fieldErrorMessage(field)} est de type SIMPLE, il ne peut pas avoir des sous-réponses ; trouvé ${answer.components}" }
+
+				ParsedSimple(field, answer.value)
+			}
 		}
 	}
 

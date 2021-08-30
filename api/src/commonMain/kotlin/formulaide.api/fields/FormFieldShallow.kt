@@ -4,6 +4,7 @@ import formulaide.api.fields.ShallowFormField.Composite
 import formulaide.api.types.Arity
 import formulaide.api.types.OrderedListElement.Companion.checkOrderValidity
 import formulaide.api.types.Ref
+import formulaide.api.types.Ref.Companion.ids
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import formulaide.api.data.Composite as CompositeData
@@ -61,6 +62,8 @@ sealed class ShallowFormField : FormField {
 		override fun validate() {
 			super.validate()
 			options.checkOrderValidity()
+			require(options.ids() == options.ids()
+				.distinct()) { "Plusieurs champs de cette union ont le même identifiant : ${options.ids()}" }
 		}
 
 		override fun toString() = "Shallow.Union($id, $name, order=$order, $arity, $options)"
@@ -97,6 +100,8 @@ sealed class ShallowFormField : FormField {
 		override fun validate() {
 			super.validate()
 			fields.checkOrderValidity()
+			require(fields.ids() == fields.ids()
+				.distinct()) { "Plusieurs champs de ce groupe ont le même identifiant : ${fields.ids()}" }
 		}
 
 		override fun toString() =

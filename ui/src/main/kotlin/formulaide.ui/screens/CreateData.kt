@@ -32,13 +32,12 @@ fun CreateData(original: Composite? = null) = fc<RProps> { _ ->
 
 	val formName = useRef<HTMLInputElement>()
 	val (fields, updateFields) = useLocalStorage<List<DataField>>("data-fields", emptyList())
-	var maxId by useState(fields.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0)
+	val maxId = useMemo(fields) { fields.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0 }
 
 	// Copy from 'original' if it exists
 	useEffect(original) {
 		if (original != null) {
 			updateFields { original.fields }
-			maxId = fields.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0
 		}
 	}
 
@@ -97,7 +96,7 @@ fun CreateData(original: Composite? = null) = fc<RProps> { _ ->
 				updateFields {
 					this + DataField.Simple(
 						order = this.size,
-						id = (maxId++).toString(),
+						id = maxId.toString(),
 						name = "",
 						simple = SimpleField.Text(Arity.optional())
 					)

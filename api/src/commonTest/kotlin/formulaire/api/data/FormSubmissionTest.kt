@@ -206,14 +206,12 @@ class FormSubmissionTest {
 				"7:2" to "Mon Nom de Famille",
 				"7:3" to "Mon Prénom",
 				"7:4" to "+33 1 23 45 67 89",
-				"12:0" to "Mes notes",
-				"12:1" to "Mes notes 2",
+				"12:0" to "Mes notes", // this field is ignored, because the correct key is '12' (it's not a list)
+				"12:1" to "Mes notes 2", // this field is ignored, because the correct key is '13' (it's not a list)
 				"9" to "10",
 			)
 		)
-		assertFails {
-			submission3.parse(form).also { println(it.toDeepString()) }
-		}
+		submission3.parse(form).also { println(it.toDeepString()) }
 	}
 
 	@Test

@@ -2,6 +2,7 @@ package formulaide.api.fields
 
 import formulaide.api.data.Form
 import formulaide.api.types.Ref
+import formulaide.api.types.Ref.Companion.ids
 import kotlinx.serialization.Serializable
 import formulaide.api.data.Composite as CompositeData
 import formulaide.api.fields.FormField.Composite as FormComposite
@@ -36,6 +37,8 @@ data class FormRoot(
 	 * Validates this [FormRoot].
 	 */
 	fun validate() {
+		require(fields.ids() == fields.ids()
+			.distinct()) { "Plusieurs champs ont le même identifiant : ${fields.ids()}" }
 		fieldMonad().forEach { it.validate() }
 	}
 }

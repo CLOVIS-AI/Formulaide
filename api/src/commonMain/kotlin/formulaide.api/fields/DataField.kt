@@ -2,7 +2,9 @@ package formulaide.api.fields
 
 import formulaide.api.fields.DataField.Composite
 import formulaide.api.types.Arity
+import formulaide.api.types.OrderedListElement.Companion.checkOrderValidity
 import formulaide.api.types.Ref
+import formulaide.api.types.Ref.Companion.ids
 import formulaide.api.types.expandMin
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -61,6 +63,13 @@ sealed class DataField : Field {
 		override val arity: Arity,
 		override val options: List<DataField>,
 	) : DataField(), Field.Union<DataField> {
+
+		override fun validate() {
+			super.validate()
+			options.checkOrderValidity()
+			require(options.ids() == options.ids()
+				.distinct()) { "Plusieurs champs de cette union ont le même identifiant : ${options.ids()}" }
+		}
 
 		override fun toString() = "Data.Union($id, $name, order=$order, $arity, $options)"
 		override fun requestCopy(name: String?, arity: Arity?, order: Int?) = copy(
