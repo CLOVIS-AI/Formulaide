@@ -14,6 +14,7 @@ import formulaide.ui.Role.Companion.role
 import formulaide.ui.components.*
 import formulaide.ui.utils.*
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
+import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -174,6 +175,10 @@ internal val FormDescription = memo(fc<FormDescriptionProps> { props ->
 				refreshForms()
 			})
 		}
+
+		styledButton("Voir HTML", action = {
+			window.open("${client.hostUrl}/forms/html?id=${form.id}&url=${client.hostUrl}")
+		})
 	}
 })
 

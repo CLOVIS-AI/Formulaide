@@ -19,6 +19,7 @@ dependencies {
 
 	implementation(ktorServer("core"))
 	implementation(ktorServer("netty"))
+	implementation(ktor("html-builder"))
 	implementation(ktor("serialization"))
 	implementation(kotlinxSerialization("json"))
 	testImplementation(ktorServer("tests"))
