@@ -63,11 +63,11 @@ fun Routing.formRoutes() {
 			}
 		}
 
-		get("/html/{form}&url={url}") {
-			val formId = call.parameters["formId"]
-				?: error("Le paramètre GET 'formId' est obligatoire.")
+		get("/html") {
+			val formId = call.parameters["id"]
+				?: error("Le paramètre GET 'id' est obligatoire : ${call.parameters.entries()}")
 			val apiUrl = call.parameters["url"]
-				?: error("Le paramètre GET 'url' est obligatoire.")
+				?: error("Le paramètre GET 'url' est obligatoire : ${call.parameters.entries()}")
 			val form = database.findForm(formId)?.takeIf { it.public }
 				?: error("Le formulaire demandé n'existe pas, ou n'est pas public : $formId")
 			require(form.open) { "Le formulaire demandé a été archivé, il n'est plus possible d'y répondre." }
