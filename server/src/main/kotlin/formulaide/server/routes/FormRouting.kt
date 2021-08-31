@@ -217,7 +217,28 @@ private fun FlowContent.generateFieldHtml(
 				id = "$fieldId:${subField.id}+"
 				required = mandatory
 				value = subField.id
-				//TODO: generate inline JS onChange
+
+				val self = "'$fieldId:${subField.id}-'"
+				val others = field.options
+					.filter { it != subField }
+					.joinToString(
+						separator = ",",
+						prefix = "[",
+						postfix = "]"
+					) { "'$fieldId:${it.id}-'" }
+
+				//language=JavaScript
+				onChange = """
+					const me = document.getElementById($self)
+					me.disabled = false
+                    me.hidden = false
+                    $others.forEach(id => {
+                  		const o = document.getElementById(id)
+						o.disabled = true
+						o.hidden = true
+					})
+				""".trimIndent()
+					.replace("\n", "")
 			}
 			label {
 				htmlFor = "$fieldId:${subField.id}+"
