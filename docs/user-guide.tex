@@ -27,13 +27,127 @@
 	\mainmatter
 
 
-	\chapter{Navigation}\label{ch:navbar}
-
-
 	\chapter{Employé}\label{ch:employee}
 
 
+	\section{Accès anonyme}\label{sec:anonymous}
+
+	Tous les utilisateurs du site peuvent remplir des formulaires, même sans être connectés.
+	Vous pouvez utiliser ce système pour aider les personnes âgées ou malvoyantes à remplir un formulaire.
+
+	Pour cela, allez dans l'onglet «~Formulaires~», choisissez le formulaire que vous souhaitez remplir, puis appuyez sur «~Remplir~».
+	Si le formulaire nécessite des fichiers, vous pouvez utiliser votre scanneur et importer les fichiers de cette manière.
+
+
+	\section{Gestion de mon compte}\label{sec:account}
+
+	\subsection{Connexion et déconnexion}\label{subsec:login}
+
+	Le bouton de connexion est disponible sur la page d'accueil.
+	Les identifiants de connexion sont l'adresse mail et le mot de passe.
+	En cas d'oubli, contactez l'administrateur.
+
+	Si vous faites une faute lors de la connexion (par exemple, un mot de passe incorrect), attendez environ cinq secondes avant de réessayer.
+	Le système peut automatiquement bloquer les comptes qui font trop de tentatives, pour empêcher un attaquant d'essayer de deviner votre mot de passe.
+	Si vous n'arrivez pas à vous connecter après plusieurs tentatives, contactez l'administrateur.
+
+	\uparagraph
+	Le bouton de déconnexion est disponible en bas de la page d'acceuil.
+
+	Ne vous connectez jamais au système depuis un ordinateur partagé avec d'autres personnes.
+	Le système se souvient de qui fait quelle action.
+	Si vous laissez votre compte disponible sur une machine publique, toute opération frauduleuse sera faite en votre nom.
+
+	\subsection{Mot de passe}\label{subsec:password}
+
+	Lorsque vous êtes connectés, le bouton pour modifier le mot de passe est disponible en bas de la page d'acceuil.
+	Par mesure de sécurité, tous les ordinateurs sur lesquels vous êtes connectés seront déconnectés lorsque le mot de passe est modifié.
+
+	Contrairement à ce qui a été longtemps dit, un bon mot de passe doit être long et imprévisible.
+	Un mot de passe court (moins de 10 caractères) est un mauvais mot de passe, même s'il contient des caractères spéciaux.
+	Une bonne manière de créer un bon mot de passe est de choisir au hasard 5 ou 6 mots qui n'ont rien à voir entre eux\footnote{C'est une très bonne manière de créer un mot de passe d'au moins 20 caractères, qui se remémore facilement. Pour plus d'informations, \href{https://fr.wikipedia.org/wiki/Robustesse_d\%27un_mot_de_passe}{cliquez ici pour les bonnes pratiques}, et \href{https://fr.wikipedia.org/wiki/Diceware}{cliquez ici pour l'explication de cette technique de génération de mots de passe}.}.
+	Si vous décidez d'écrire le mot de passe quelque part, vérifiez qu'il ne sera pas accessible par d'autres personnes.
+
+
+	\section{Liste des tâches}\label{sec:review}
+
+	Lorsque vous êtes connectés, la page d'accueil correspond à votre liste des tâches : vous pouvez voir tous les formulaires dont vous êtes responsables.
+
+	\paragraph{Vocabulaire}
+	Pour chaque \emph{formulaire}, un administré saisit un \emph{dossier}.
+	Selon le formulaire, chaque dossier parcours un certain nombre \emph{d'étapes de validation}.
+
+	Par exemple, un formulaire imaginaire «~Demande de déviation pour déménagement~» pourrait avoir une première étape appelée «~Vérification de la demande~» (vérifier que l'administré vit bien à Arcachon, etc), une deuxième étape appelée «~Vérification de la rue concernée~», une troisième étape «~Demande acceptée~» (choisir la date de début et de fin), puis une dernière étape «~Archive~» (la date est passée).
+
+	Les étapes sont définies par l'administrateur.
+
+	\uparagraph
+	Dans les listes de formulaires (soit l'onglet «~Accueil~» pour voir les formulaires qui vous concernent, soit l'onglet «~Formulaires~» pour voir tous les formulaires), le bouton «~Dossiers~» de chaque formulaire permet d'accéder à la liste de toutes les étapes que vous avez l'autorisation de voir.
+
+	Dans cette interface, la liste des dossiers apparait verticalement à gauche de l'écran, et la barre de recherche apparait à droite (ou au dessus, sur une tablette).
+
+	\subsection{Valider, refuser, garder un dossier}\label{subsec:valider-refuser-garder-un-dossier}
+
+	Pour chaque dossier, vous pouvez effectuer 4 actions : accepter, refuser, garder, ou renvoyer le dossier.
+
+	\paragraph{Accepter le dossier}
+	Accepter le dossier correspond à le transmettre à la personne responsable de l'étape suivante.
+
+	\paragraph{Refuser le dossier}
+	Refuser le dossier correspond à le déplacer vers la liste de dossiers refusés.
+	Il sera ensuite possible de le déplacer vers une autre étape, dans le cas où c'était une erreur.
+
+	Un dossier refusé sort du chemin de validation normal du formulaire : il ne faut pas refuser un dossier qui pourrait servir dans le futur.
+	Par exemple, vous pouvez refuser un doublon d'une demande existante, ou un dossier frauduleux, mais il ne faut pas refuser un dossier incomplet (il vaut mieux le garder, et contacter la personne concernée).
+	N'oubliez pas que les administrés ne sont pas contactés automatiquement, quelles que soit vos actions.
+
+	\paragraph{Garder le dossier}
+	Garder le dossier correspond à le garder dans l'étape actuelle, pour traitement futur.
+
+	C'est utile dans plusieurs cas :
+	\begin{itemize}
+		\item Si le formulaire contient des champs réservés à l'administration : pour modifier la réponse à ces champs, sans pour autant envoyer le dossier à un autre employé (modification d'une date de rendez-vous, changer l'état d'un vélo de «~Livré~» à «~Volé~», etc).
+		\item Pour dénoter une modification de l'état du dossier, en utilisant le champ «~Pourquoi ce choix~» : par exemple, si la personne n'est pas venue à un rendez-vous.
+	\end{itemize}
+
+	\paragraph{Renvoyer le dossier}
+	S'il y a eu une erreur lors du traitement du dossier pendant une étape précédente, il est possible de renvoyer le dossier vers une de ces étapes.
+
+	Cela peut être utile lors d'une erreur de traitement, lorsqu'un habitant n'est pas venu à un rendez-vous prévu précédemment, etc.
+
+	\uparagraph
+	Le bouton «~Historique~» permet de voir l'historique complet du dossier, par exemple s'il est passé plusieurs fois dans une même étape.
+
+	\subsection{Recherche}\label{subsec:recherche}
+
+	La barre de droite (ou du haut, sur tablette) permet de faire une recherche parmi les dossiers.
+	Pour cela, il faut choisir un champ, puis choisir un critère à appliquer à ce champ.
+
+	Les critères disponibles sont :
+	\begin{itemize}
+		\item A été rempli : pour les champs facultatif, permet d'afficher uniquement les dossiers pour lesquels l'administré a fourni une réponse,
+		\item Est exactement : permet de chercher pour une valeur exacte,
+		\item Contient : permet de chercher pour une partie du texte (la casse est ignorée),
+		\item Après : permet de chercher pour les dossiers triés après le seuil fourni.
+		Pour du texte, trie dans l'ordre alphabétique.
+		Pour une date, trie dans l'ordre chronologique.
+		\item Avant : idem, pour les données triées avant.
+	\end{itemize}
+
+
 	\chapter{Administrateur}\label{ch:admin}
+
+
+	\section{Groupes et formulaires}\label{sec:groupes-et-formulaires}
+
+	\subsection{Groupes}\label{subsec:groupes}
+
+	\subsection{Formulaires}\label{subsec:formulaires}
+
+	\subsection{Étapes}\label{subsec:etapes}
+
+
+	\section{Services et utilisateurs}\label{sec:services-et-utilisateurs}
 
 
 	\chapter{Installation et maintenance}\label{ch:maintenance}
