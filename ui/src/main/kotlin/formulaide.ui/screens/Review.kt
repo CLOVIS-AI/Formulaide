@@ -18,7 +18,10 @@ import formulaide.ui.fields.field
 import formulaide.ui.fields.immutableFields
 import formulaide.ui.utils.*
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
@@ -62,10 +65,7 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 		val newRecords = client.todoListFor(form, state, allCriteria)
 
 		updateRecords { newRecords }
-		if (searches.isEmpty())
-			coroutineScope {
-				insertIntoRecordsCache(client, form, state, newRecords)
-			}
+		clearRecords()
 		loading = false
 	}
 	val memoizedRefresh = refresh.memoIn(lambdas, "refresh", form, state, searches)
