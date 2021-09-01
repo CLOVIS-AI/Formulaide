@@ -19,6 +19,7 @@ import formulaide.api.types.Ref.Companion.load
 import formulaide.client.runTest
 import formulaide.client.testAdministrator
 import formulaide.client.testEmployee
+import kotlinx.coroutines.delay
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -123,6 +124,8 @@ class RecordTest {
 		assertEquals(betaSubmission.form, betaSubmissionActual.form)
 		assertEquals(betaSubmission.root, betaSubmissionActual.root)
 		assertEquals(betaSubmission.data, betaSubmissionActual.data)
+
+		delay(1000)
 
 		client.review(ReviewRequest(
 			alphaSubmissionActualList.first().createRef(),
