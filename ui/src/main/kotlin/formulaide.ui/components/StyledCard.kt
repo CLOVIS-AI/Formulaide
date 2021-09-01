@@ -147,9 +147,9 @@ class SubmitAction(private val scope: CoroutineScope, private val setLoading: (B
 }
 
 fun RBuilder.styledFrame(block: RBuilder.() -> Unit) {
-	div("xl:grid xl:grid-cols-5") {
+	div("lg:grid lg:grid-cols-9 xl:grid-cols-7") {
 		div {}
-		div("xl:col-span-3") {
+		div("lg:col-span-7 xl:col-span-5") {
 			block()
 		}
 		div {}
