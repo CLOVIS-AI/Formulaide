@@ -30,6 +30,16 @@ fun clearRecords() {
 	recordsCache.clear()
 }
 
+fun CoroutineScope.insertIntoRecordsCache(
+	client: Client.Authenticated,
+	form: Form,
+	state: RecordState,
+	records: List<Record>,
+) {
+	val list = getRecords(client, form, state)
+	list.asDelegated().useListEquality().useEquals().update { records }
+}
+
 private fun CoroutineScope.getRecords(
 	client: Client.Authenticated,
 	form: Form,
