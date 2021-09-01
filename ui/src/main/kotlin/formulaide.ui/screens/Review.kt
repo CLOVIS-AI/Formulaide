@@ -415,8 +415,8 @@ private val CriterionPill = memo(fc<CriterionPillProps> { props ->
 
 	styledPill {
 		styledButton(
-			if (showFull) "‹"
-			else "›",
+			if (showFull) "▲"
+			else "▼",
 			action = { showFull = !showFull }
 		)
 		if (showFull) {
