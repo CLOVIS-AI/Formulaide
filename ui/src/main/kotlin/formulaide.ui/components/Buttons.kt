@@ -65,15 +65,19 @@ private val CustomButton = fc<ButtonProps> { props ->
 fun RBuilder.styledButton(
 	text: String,
 	default: Boolean = false,
+	enabled: Boolean = true,
 	action: suspend () -> Unit,
 ) {
-	child(CustomButton) {
-		attrs {
-			this.text = text
-			this.default = default
-			this.action = action
+	if (enabled)
+		child(CustomButton) {
+			attrs {
+				this.text = text
+				this.default = default
+				this.action = action
+			}
 		}
-	}
+	else
+		styledDisabledButton(text)
 }
 
 fun RBuilder.styledDisabledButton(
