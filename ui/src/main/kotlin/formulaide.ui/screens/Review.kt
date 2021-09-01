@@ -455,6 +455,13 @@ private data class ParsedTransition(
 	val submission: ParsedSubmission?,
 )
 
+private enum class ReviewDecision {
+	PREVIOUS,
+	NO_CHANGE,
+	NEXT,
+	REFUSE,
+}
+
 private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 	traceRenders("ReviewRecord ${props.record.id}")
 	val form = props.form
@@ -499,11 +506,13 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 
 	val state = record.state
 	val actionOrNull = (state as? RecordState.Action)?.current
-	val nextState = form.actions.indexOfFirst { actionOrNull?.id == it.id }
-		.takeUnless { it == -1 }
-		?.let { form.actions.getOrNull(it + 1) }
-		?.let { RecordState.Action(it.createRef()) }
-	var selectedNextState by useState(nextState ?: state)
+	val nextAction = useMemo(form.actions, actionOrNull) {
+		form.actions.indexOfFirst { actionOrNull?.id == it.id }
+			.takeUnless { it == -1 }
+			?.let { form.actions.getOrNull(it + 1) }
+			?.let { RecordState.Action(it.createRef()) }
+	}
+	val (selectedDestination, updateDestination) = useState(nextAction ?: state)
 
 	if (user == null) {
 		styledCard("Dossier", loading = true) { text("Chargement de l'utilisateur…") }
@@ -511,7 +520,6 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 	}
 
 	var reason by useState<String>()
-	var warnMandatoryReason by useState(false)
 
 	suspend fun review(
 		fields: FormSubmission?,
@@ -537,7 +545,7 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 	styledFormCard(
 		"Dossier",
 		null,
-		submit = "Enregistrer" to { htmlForm ->
+		submit = "Confirmer" to { htmlForm ->
 			val submission =
 				if (state is RecordState.Action && state.current.obj.fields?.fields?.isNotEmpty() == true)
 					parseHtmlForm(
@@ -550,25 +558,13 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 			launch {
 				review(
 					submission,
-					nextState = selectedNextState,
+					nextState = selectedDestination,
 					reason = reason,
 					sendFields = true,
 				)
 			}
 		},
-		"Refuser" to {
-			if (reason.isNullOrBlank()) {
-				warnMandatoryReason = true
-			} else {
-				review(
-					fields = null,
-					nextState = RecordState.Refused,
-					reason = reason,
-					sendFields = false,
-				)
-			}
-		},
-		(if (showFullHistory) "Afficher uniquement les valeurs les plus récentes" else "Historique") to {
+		(if (showFullHistory) "Valeurs les plus récentes" else "Historique") to {
 			showFullHistory = !showFullHistory
 		}
 	) {
@@ -622,43 +618,65 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 			}
 		}
 
-		div {
-			text("Envoyer ce dossier à :")
-
-			for (candidateNextState in form.actions.map { RecordState.Action(it.createRef()) }) {
-				if (selectedNextState != candidateNextState) {
-					styledButton(
-						candidateNextState.current.obj.name,
-						action = { selectedNextState = candidateNextState },
-					)
-				} else {
-					styledDisabledButton(candidateNextState.current.obj.name)
-				}
-
-				if (candidateNextState == nextState)
-					break
-			}
-
-			if (state == RecordState.Refused) {
-				if (selectedNextState != RecordState.Refused) {
-					styledButton(RecordState.Refused.displayName(),
-					             action = { selectedNextState = RecordState.Refused })
-				} else {
-					styledDisabledButton(RecordState.Refused.displayName())
-				}
-			}
+		val decision = when {
+			selectedDestination is RecordState.Action && selectedDestination == state -> ReviewDecision.NO_CHANGE
+			selectedDestination is RecordState.Refused && state is RecordState.Refused -> ReviewDecision.NO_CHANGE
+			selectedDestination is RecordState.Refused -> ReviewDecision.REFUSE
+			selectedDestination is RecordState.Action && selectedDestination == nextAction -> ReviewDecision.NEXT
+			else -> ReviewDecision.PREVIOUS
 		}
 
-		styledField("record-${record.id}-reason", "Pourquoi ce choix ?") {
-			styledInput(InputType.text, "record-${record.id}-reason") {
-				value = reason ?: ""
-				onChangeFunction = {
-					reason = (it.target as HTMLInputElement).value
+		div("mt-4") {
+			text("Votre décision :")
+
+			if ((state as? RecordState.Action)?.current?.obj != form.actions.firstOrNull())
+				styledButton("Renvoyer à une étape précédente",
+				             enabled = decision != ReviewDecision.PREVIOUS,
+				             action = {
+					             updateDestination {
+						             RecordState.Action(form.actions.first().createRef())
+					             }
+				             })
+
+			styledButton("Garder",
+			             enabled = decision != ReviewDecision.NO_CHANGE,
+			             action = { updateDestination { state } })
+
+			if (nextAction != null)
+				styledButton("Accepter",
+				             enabled = decision != ReviewDecision.NEXT,
+				             action = { updateDestination { nextAction } })
+
+			if (state != RecordState.Refused)
+				styledButton("Refuser",
+				             enabled = decision != ReviewDecision.REFUSE,
+				             action = { updateDestination { RecordState.Refused } })
+		}
+
+		if (decision == ReviewDecision.PREVIOUS)
+			div {
+				text("Étapes précédentes :")
+
+				for (previousState in form.actions.map { RecordState.Action(it.createRef()) }) {
+					if (previousState == state)
+						break
+
+					styledButton(previousState.current.obj.name,
+					             enabled = selectedDestination != previousState,
+					             action = { updateDestination { previousState } })
 				}
 			}
 
-			if (warnMandatoryReason)
-				styledErrorText("Ce champ est obligatoire pour un refus.")
-		}
+		if (decision != ReviewDecision.NEXT)
+			styledField("record-${record.id}-reason", "Pourquoi ce choix ?") {
+				styledInput(InputType.text,
+				            "record-${record.id}-reason",
+				            required = decision == ReviewDecision.REFUSE) {
+					value = reason ?: ""
+					onChangeFunction = {
+						reason = (it.target as HTMLInputElement).value
+					}
+				}
+			}
 	}
 })
