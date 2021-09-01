@@ -17,7 +17,7 @@ private fun RBuilder.styledCardShell(
 	failed: Boolean = false,
 	contents: RDOMBuilder<DIV>.() -> Unit,
 ) {
-	var classes = "m-4 p-4 shadow-2xl rounded-lg z-10 relative bg-white"
+	var classes = "m-4 p-8 shadow-lg rounded-lg z-10 relative bg-white"
 
 	if (failed)
 		classes += " bg-red-200"
@@ -147,9 +147,9 @@ class SubmitAction(private val scope: CoroutineScope, private val setLoading: (B
 }
 
 fun RBuilder.styledFrame(block: RBuilder.() -> Unit) {
-	div("xl:grid xl:grid-cols-5") {
+	div("lg:grid lg:grid-cols-9 xl:grid-cols-7") {
 		div {}
-		div("xl:col-span-3") {
+		div("lg:col-span-7 xl:col-span-5") {
 			block()
 		}
 		div {}
