@@ -568,7 +568,7 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 				)
 			}
 		},
-		(if (showFullHistory) "Afficher uniquement les valeurs les plus récentes" else "Historique complet") to {
+		(if (showFullHistory) "Afficher uniquement les valeurs les plus récentes" else "Historique") to {
 			showFullHistory = !showFullHistory
 		}
 	) {
