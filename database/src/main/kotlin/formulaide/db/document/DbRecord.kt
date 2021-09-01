@@ -39,14 +39,16 @@ suspend fun Database.reviewRecord(review: ReviewRequest, employee: DbUser) {
 	record.form.load {
 		findForm(it) ?: error("Impossible de trouver le formulaire ${record.form.id}")
 	}
+	val transition = review.transition
+		.copy(timestamp = Instant.now().epochSecond)
 
-	require(record.state == review.transition.previousState) { "Il n'est pas possible de transférer le dossier depuis l'étape ${review.transition.previousState} alors qu'il est actuellement dans l'état ${record.state}" }
-	require(employee.email == review.transition.assignee?.id) { "Il est interdit d'attribuer la modification à quelqu'un d'autre que soit-même" }
-	require(review.transition.timestamp > record.history.maxOf { it.timestamp }) { "Une modification doit être plus récente que toutes les modifications déjà appliquées" }
+	require(record.state == transition.previousState) { "Il n'est pas possible de transférer le dossier depuis l'étape ${transition.previousState} alors qu'il est actuellement dans l'état ${record.state}" }
+	require(employee.email == transition.assignee?.id) { "Il est interdit d'attribuer la modification à quelqu'un d'autre que soit-même" }
+	require(transition.timestamp > record.history.maxOf { it.timestamp }) { "Une modification doit être plus récente que toutes les modifications déjà appliquées" }
 
 	val submissionToCreate: DbSubmission?
-	val previous = review.transition.previousState
-	val next = review.transition.nextState
+	val previous = transition.previousState
+	val next = transition.nextState
 	when {
 		next is RecordState.Refused -> {
 			require(review.fields == null) { "Une transition depuis l'état ${RecordState.Refused} ne peut pas contenir de champs" }
@@ -66,12 +68,12 @@ suspend fun Database.reviewRecord(review: ReviewRequest, employee: DbUser) {
 	}
 
 	val newRecord = record.copy(
-		state = review.transition.nextState,
+		state = transition.nextState,
 		history = record.history +
 				(if (submissionToCreate != null)
-					review.transition.copy(fields = Ref(submissionToCreate.apiId))
+					transition.copy(fields = Ref(submissionToCreate.apiId))
 				else
-					review.transition)
+					transition)
 	)
 
 	records.updateOne(Record::id eq record.id, newRecord)
