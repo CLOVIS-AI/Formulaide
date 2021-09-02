@@ -20,7 +20,6 @@ import formulaide.ui.utils.*
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
@@ -83,8 +82,6 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 
 		CoroutineScope(job).launch {
 			reportExceptions {
-				delay(300)
-
 				refresh()
 			}
 		}
@@ -246,7 +243,14 @@ private val SearchInput = memo(fc<SearchInputProps> { props ->
 		//endregion
 		//region Select the criterion data
 		if (criterion !is SearchCriterion.Exists && criterion != undefined) {
-			styledInput(InputType.text, "search-criterion-data", required = true) {
+			val inputType = when {
+				field is FormField.Simple && field.simple is SimpleField.Date -> InputType.date
+				field is FormField.Simple && field.simple is SimpleField.Time -> InputType.time
+				field is FormField.Simple && field.simple is SimpleField.Email -> InputType.email
+				else -> InputType.text
+			}
+
+			styledInput(inputType, "search-criterion-data", required = true) {
 				value = when (val c = criterion) {
 					is SearchCriterion.TextContains -> c.text
 					is SearchCriterion.TextEquals -> c.text
@@ -352,7 +356,7 @@ private val SearchCriterionSelect = fc<SearchCriterionSelectProps> { props ->
 		if (field is FormField.Simple || field is FormField.Union<*>)
 			add(equals)
 
-		if (field is FormField.Simple) {
+		if (field is FormField.Simple && field.simple !is SimpleField.Boolean) {
 			add(contains)
 			add(after)
 			add(before)
