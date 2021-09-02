@@ -15,6 +15,7 @@ import org.w3c.files.Blob
 import org.w3c.files.BlobPropertyBag
 import react.*
 import react.dom.div
+import kotlin.js.Date
 
 fun RBuilder.immutableFields(answers: ParsedSubmission) {
 	for (answer in answers.fields) {
@@ -48,10 +49,15 @@ private val ImmutableField: FunctionComponent<ImmutableFieldProps> = fc { props 
 			is ParsedSimple<*> -> {
 				val field = answer.constraint
 				if (field.simple !is SimpleField.Message) {
-					text("${answer.constraint.name} : ${answer.value}")
+					text("${answer.constraint.name} : ")
 
-					if (field.simple is SimpleField.Upload) {
-						styledButton("Ouvrir", action = {
+					when (field.simple) {
+						is SimpleField.Boolean -> text(if (answer.value.toBoolean()) "✓" else "✗")
+						is SimpleField.Date -> {
+							val value = answer.value ?: error("Cette date n'a pas de valeur")
+							text(Date(value).toLocaleDateString())
+						}
+						is SimpleField.Upload -> styledButton("Ouvrir", action = {
 							val fileId = answer.value ?: error("Ce fichier n'a pas d'identifiants")
 							val file = client.downloadFile(fileId)
 
@@ -62,6 +68,7 @@ private val ImmutableField: FunctionComponent<ImmutableFieldProps> = fc { props 
 							val url = URL.createObjectURL(blob)
 							window.open(url, target = "_blank", features = "noopener,noreferrer")
 						})
+						else -> text(answer.value.toString())
 					}
 				} // else: don't display messages here
 			}
