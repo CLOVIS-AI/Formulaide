@@ -30,7 +30,7 @@ data class FormRoot(
 		allowNotFound: Boolean = false,
 		lazy: Boolean = true,
 	) {
-		fieldMonad().forEach { it.load(composites, allowNotFound, lazy) }
+		asSequence().forEach { it.load(composites, allowNotFound, lazy) }
 	}
 
 	/**
@@ -39,7 +39,7 @@ data class FormRoot(
 	fun validate() {
 		require(fields.ids() == fields.ids()
 			.distinct()) { "Plusieurs champs ont le même identifiant : ${fields.ids()}" }
-		fieldMonad().forEach { it.validate() }
+		asSequence().forEach { it.validate() }
 	}
 }
 
@@ -53,7 +53,7 @@ sealed interface FormField : Field {
 	/**
 	 * Loads the references contained by this [FormField].
 	 *
-	 * This function is not recursive; see [fieldMonad].
+	 * This function is not recursive; see [asSequence].
 	 */
 	fun load(composites: List<CompositeData>, allowNotFound: Boolean = false, lazy: Boolean = true)
 
@@ -61,7 +61,7 @@ sealed interface FormField : Field {
 	 * Checks that this field validates all of its constraints.
 	 *
 	 * The field should be [loaded][load] before this function is called.
-	 * This function is not recursive; see [fieldMonad].
+	 * This function is not recursive; see [asSequence].
 	 */
 	fun validate()
 

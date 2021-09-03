@@ -21,7 +21,7 @@ sealed class DataField : Field {
 	/**
 	 * Checks that all constraints of this [DataField] are respected.
 	 *
-	 * This function is not recursive, see [fieldMonad].
+	 * This function is not recursive, see [asSequence].
 	 */
 	open fun validate() = Unit
 
