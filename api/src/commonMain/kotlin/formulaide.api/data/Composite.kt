@@ -1,7 +1,7 @@
 package formulaide.api.data
 
 import formulaide.api.fields.DataField
-import formulaide.api.fields.fieldMonad
+import formulaide.api.fields.asSequence
 import formulaide.api.fields.load
 import formulaide.api.types.OrderedListElement.Companion.checkOrderValidity
 import formulaide.api.types.Ref
@@ -77,7 +77,7 @@ data class Composite(
  * Unlike [Composite.fields], this sequence is recursive, and can be used as an approximation of a Monad over [Composite].
  */
 val Composite.fieldsRecursively: Sequence<DataField>
-	get() = fields.asSequence().flatMap { it.fieldMonad() }
+	get() = fields.asSequence().flatMap { it.asSequence() }
 
 /**
  * Special ID that can be used for fields in data to refer to their parent data even before it was created (therefore doesn't have an ID yet).

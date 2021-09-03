@@ -77,29 +77,30 @@ data class DbSubmissionData(
 			val map = HashMap<String, String>()
 
 			fun convert(data: DbSubmissionData, parentKey: List<String>) {
-				println("${parentKey.joinToString(separator = ":")}:${data.key} -> $data")
+				val current = "${(parentKey + data.key).joinToString(separator = ":")}\t"
+				println("$current                  $data")
 
 				if (data.value != null) {
-					println("\tValue: ${data.value}")
+					println("$current Value:           ${data.value}")
 					map[(parentKey + data.key).joinToString(separator = ":")] = data.value
 				}
 
 				if (data.children.isNotEmpty()) {
 					for (child in data.children.filter { !it.isList }) {
-						println("\tChild: $child")
+						println("$current Child:           $child")
 						convert(child, parentKey + data.key)
 					}
 
 					val listChildren = data.children.filter { it.isList }.groupBy { it.key }
 					for ((key, children) in listChildren) {
-						println("\tList children: $children")
+						println("$current List children:   $children")
 
 						val editedChildren = children
 							.mapIndexed { i, it -> it.copy(key = i.toString(), isList = false) }
-						println("\tEdited children: $editedChildren")
+						println("$current Edited children: $editedChildren")
 
 						val list = DbSubmissionData(key, children = editedChildren)
-						convert(list, parentKey)
+						convert(list, parentKey + data.key)
 					}
 				}
 			}

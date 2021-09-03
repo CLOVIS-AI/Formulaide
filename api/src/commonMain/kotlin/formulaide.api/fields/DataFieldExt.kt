@@ -8,15 +8,15 @@ import formulaide.api.types.Ref
  *
  * Use the generated sequence to recursively do some operation on all fields.
  */
-fun DataField.fieldMonad(): Sequence<DataField> = when (this) {
-	is DataField.Union -> sequenceOf(this) + options.asSequence().flatMap { it.fieldMonad() }
+fun DataField.asSequence(): Sequence<DataField> = when (this) {
+	is DataField.Union -> sequenceOf(this) + options.asSequence().flatMap { it.asSequence() }
 	is DataField.Simple, is DataField.Composite -> sequenceOf(this)
 }
 
 /**
  * Loads this [DataField] if it hasn't been loaded yet.
  *
- * This function is not recursive; see [fieldMonad].
+ * This function is not recursive; see [asSequence].
  *
  * Parameters [allowNotFound] and [lazy] are passed to [Ref.loadFrom].
  */

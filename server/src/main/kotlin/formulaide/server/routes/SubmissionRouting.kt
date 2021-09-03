@@ -1,11 +1,12 @@
 package formulaide.server.routes
 
-import formulaide.api.data.FormSubmission
-import formulaide.api.data.RecordsToReviewRequest
-import formulaide.api.data.ReviewRequest
+import formulaide.api.data.*
 import formulaide.api.fields.FormField
+import formulaide.api.fields.FormRoot
+import formulaide.api.fields.asSequence
 import formulaide.api.types.Ref
 import formulaide.api.types.Ref.Companion.createRef
+import formulaide.api.types.Ref.Companion.load
 import formulaide.api.types.UploadRequest
 import formulaide.db.document.*
 import formulaide.server.Auth
@@ -13,6 +14,7 @@ import formulaide.server.Auth.Companion.requireEmployee
 import formulaide.server.database
 import io.ktor.application.*
 import io.ktor.auth.*
+import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.request.*
 import io.ktor.response.*
@@ -131,24 +133,119 @@ fun Routing.submissionRoutes() {
 
 				//TODO audit: refuse access to the records based on some rights?
 
-				val submissions =
-					if (request.query.isNotEmpty()) request.query
-						.map { (actionIdOrNull, query) -> actionIdOrNull?.let { actionId -> form.actions.find { it.id == actionId } } to query }
-						.filter { (_, query) -> query.isNotEmpty() }
-						.takeIf { it.isNotEmpty() } // If there are no criteria, ignore the request
-						?.flatMap { (actionId, query) ->
-							database.searchSubmission(
-								form,
-								actionId,
-								query
-							)
-						}
-					else null
-
-				val records = database.findRecords(form, request.state, submissions)
+				val records = submissionsMatchingRecord(request, form)
 
 				call.respond(records)
 			}
+
+			post("/csv") {
+				val request = call.receive<RecordsToReviewRequest>()
+				val form = database.findForm(request.form.id)
+					?: error("Le formulaire est introuvable : ${request.form.id}")
+				form.load(database.listComposites())
+
+				val output = StringBuilder()
+				output.csvBuildColumns(form)
+
+				val records = submissionsMatchingRecord(request, form, limit = null)
+
+				for (record in records)
+					output.csvBuildRow(form, record)
+
+				call.respondText(output.toString(), ContentType.Text.CSV)
+			}
 		}
 	}
+}
+
+private suspend fun submissionsMatchingRecord(
+	request: RecordsToReviewRequest,
+	form: Form,
+	limit: Int? = Record.MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION,
+): List<Record> {
+	val submissions =
+		if (request.query.isNotEmpty()) request.query
+			.map { (actionIdOrNull, query) -> actionIdOrNull?.let { actionId -> form.actions.find { it.id == actionId } } to query }
+			.filter { (_, query) -> query.isNotEmpty() }
+			.takeIf { it.isNotEmpty() } // If there are no criteria, ignore the request
+			?.flatMap { (actionId, query) ->
+				database.searchSubmission(
+					form,
+					actionId,
+					query
+				)
+			}
+		else null
+
+	return database.findRecords(form, request.state, submissions, limit)
+}
+
+private fun String.sanitizeForCsv() = this
+	.replace("\n", "\\n")
+	.replace(",", " ")
+
+private fun Form.csvFields() = mainFields.asSequence() +
+		actions.map { it.fields ?: FormRoot(emptyList()) }
+			.flatMap { it.asSequence() }
+
+private fun StringBuilder.csvBuildColumns(form: Form) {
+	for (field in form.csvFields()) {
+		repeat(field.arity.max) {
+			append(field.name.sanitizeForCsv())
+			append(',')
+		}
+	}
+	append('\n')
+}
+
+@Suppress("BlockingMethodInNonBlockingContext") // StringBuilder.append is not a blocking call
+private suspend fun StringBuilder.csvBuildRow(form: Form, record: Record) {
+	fun csvBuildField(field: FormField, submission: FormSubmission, key: String) {
+		repeat(field.arity.max) {
+			val currentKey =
+				if (field.arity.max <= 1) key
+				else "$key:$it"
+
+			append(submission.data[currentKey]?.sanitizeForCsv() ?: "")
+			append(',')
+		}
+
+		if (field is FormField.Union<*>)
+			for (subField in field.options)
+				csvBuildField(subField, submission, "$key:${subField.id}")
+
+		if (field is FormField.Composite)
+			for (subField in field.fields)
+				csvBuildField(subField, submission, "$key:${subField.id}")
+	}
+
+	val initialSubmission = record.history
+		.asSequence()
+		.filter { it.previousState == null }
+		.maxByOrNull { it.timestamp }
+		?.fields
+		?: error("Ce dossier n'a pas de première étape : ${record.id}")
+	initialSubmission.load {
+		database.findSubmissionById(it)?.toApi() ?: error("La saisie est introuvable : $it")
+	}
+	for (field in form.mainFields.fields) {
+		csvBuildField(field, initialSubmission.obj, field.id)
+	}
+
+	for (action in form.actions) {
+		val submission = record.history
+			.asSequence()
+			.filter { it.previousState == RecordState.Action(action.createRef()) }
+			.maxByOrNull { it.timestamp }
+			?.fields
+			?: continue
+		submission.load {
+			database.findSubmissionById(it)?.toApi() ?: error("La saisie est introuvable : $it")
+		}
+
+		for (field in action.fields?.fields ?: emptyList())
+			csvBuildField(field, submission.obj, field.id)
+	}
+
+	append('\n')
 }

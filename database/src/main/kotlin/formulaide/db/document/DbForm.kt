@@ -5,7 +5,7 @@ import formulaide.api.data.Form
 import formulaide.api.data.FormMetadata
 import formulaide.api.fields.DeepFormField
 import formulaide.api.fields.ShallowFormField
-import formulaide.api.fields.fieldMonad
+import formulaide.api.fields.asSequence
 import formulaide.api.types.Ref.Companion.load
 import formulaide.api.types.ReferenceId
 import formulaide.db.Database
@@ -57,7 +57,7 @@ suspend fun Database.referencedComposites(form: Form): List<Composite> {
 	form.mainFields.load(listComposites())
 
 	val compositeIds = form.mainFields
-		.fieldMonad()
+		.asSequence()
 		.flatMap { field ->
 			when (field) {
 				is ShallowFormField.Composite -> sequenceOf(field.ref.id)
