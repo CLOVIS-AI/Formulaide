@@ -130,7 +130,7 @@ private fun getScreenFromWindow(): Screen? =
 		.get("d")
 		?.let { Screen.routeDecoder(it) }
 
-val Window = fc<RProps> {
+val Window = memo(fc {
 	val (_, setClient) = useClient()
 	var screen by useNavigation()
 	val user by useUser()
@@ -172,4 +172,4 @@ val Window = fc<RProps> {
 	} else {
 		child(CannotAccessThisPage)
 	}
-}
+})
