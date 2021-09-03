@@ -99,7 +99,7 @@ data class DbSubmissionData(
 						println("\tEdited children: $editedChildren")
 
 						val list = DbSubmissionData(key, children = editedChildren)
-						convert(list, parentKey)
+						convert(list, parentKey + data.key)
 					}
 				}
 			}
