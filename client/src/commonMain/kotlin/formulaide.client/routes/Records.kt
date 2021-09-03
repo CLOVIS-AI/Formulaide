@@ -43,3 +43,16 @@ suspend fun Client.Authenticated.todoListFor(
  */
 suspend fun Client.Authenticated.review(review: ReviewRequest): String =
 	post("/submissions/review", body = review)
+
+/**
+ * Downloads the CSV of a given form.
+ */
+suspend fun Client.Authenticated.downloadCsv(
+	form: Form,
+	state: RecordState,
+	criteria: Map<Action?, List<SearchCriterion<*>>> = emptyMap(),
+): String =
+	post("/submissions/csv",
+	     body = RecordsToReviewRequest(form.createRef(),
+	                                   state,
+	                                   criteria.mapKeys { (k, _) -> k?.id }))

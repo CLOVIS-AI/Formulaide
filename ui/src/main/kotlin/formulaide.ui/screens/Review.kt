@@ -8,22 +8,23 @@ import formulaide.api.search.SearchCriterion
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.types.Ref.Companion.load
 import formulaide.client.Client
-import formulaide.client.routes.compositesReferencedIn
-import formulaide.client.routes.findSubmission
-import formulaide.client.routes.review
-import formulaide.client.routes.todoListFor
+import formulaide.client.routes.*
 import formulaide.ui.*
 import formulaide.ui.components.*
 import formulaide.ui.fields.field
 import formulaide.ui.fields.immutableFields
 import formulaide.ui.utils.*
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
+import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
+import org.w3c.dom.url.URL
+import org.w3c.files.Blob
+import org.w3c.files.BlobPropertyBag
 import react.*
 import react.dom.br
 import react.dom.div
@@ -99,6 +100,15 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 				state.displayName(),
 				form.name,
 				"Actualiser" to { refresh() },
+				"Exporter" to {
+					val file = client.downloadCsv(form, state, allCriteria)
+					val blob = Blob(arrayOf(file), BlobPropertyBag(
+						type = "text/csv"
+					))
+
+					val url = URL.createObjectURL(blob)
+					window.open(url, target = "_blank", features = "noopener,noreferrer")
+				},
 				loading = loading,
 			) {
 				p { text("${records.size} dossiers sont chargés. Pour des raisons de performance, il n'est pas possible de charger plus de ${Record.MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION} dossiers à la fois.") }
@@ -596,8 +606,10 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 				}
 
 				if (transition.fields != null) {
-					if (parsed.submission == null || !props.formLoaded) {
-						p { text("Chargement des saisies…"); loadingSpinner() }
+					if (!props.formLoaded) {
+						p { text("Chargement du formulaire…"); loadingSpinner() }
+					} else if (parsed.submission == null) {
+						p { text("Chargement de la saisie…"); loadingSpinner() }
 					} else {
 						br {}
 						immutableFields(parsed.submission)

@@ -91,13 +91,17 @@ suspend fun Database.findRecords(
 	form: Form,
 	state: RecordState,
 	submissions: List<DbSubmission>? = null,
+	limit: Int? = Record.MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION,
 ): List<Record> {
 	val submissionsFilter = submissions
 		?.map { it.apiId }
 		?.let { (Record::history / RecordStateTransition::fields / Ref<*>::id).`in`(it) }
 
-	return records
+	var results = records
 		.find(Record::form / Ref<*>::id eq form.id, Record::state eq state, submissionsFilter)
-		.limit(Record.MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION)
-		.toList()
+
+	if (limit != null)
+		results = results.limit(limit)
+
+	return results.toList()
 }
