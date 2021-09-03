@@ -57,6 +57,7 @@ private val RenderField = fc<FieldProps> { props ->
 				is SimpleField.Boolean -> styledCheckbox(props.id, "", required = false)
 				is SimpleField.Message -> Unit // The message has already been displayed
 				is SimpleField.Email -> simpleInput(InputType.email, required) {}
+				is SimpleField.Phone -> simpleInput(InputType.tel, required) {}
 				is SimpleField.Date -> simpleInput(InputType.date, required) {}
 				is SimpleField.Time -> simpleInput(InputType.time, required) {}
 				is SimpleField.Upload -> div {

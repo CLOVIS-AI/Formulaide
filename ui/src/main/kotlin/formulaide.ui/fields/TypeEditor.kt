@@ -116,6 +116,7 @@ private enum class SimpleFieldEnum(val displayName: String, val build: (Arity) -
 	DECIMAL("Nombre à virgule", { SimpleField.Decimal(it) }),
 	BOOLEAN("Bouton à cocher", { SimpleField.Boolean(it) }),
 	EMAIL("Adresse mail", { SimpleField.Email(it) }),
+	PHONE("Numéro de téléphone", { SimpleField.Phone(it) }),
 	DATE("Date", { SimpleField.Date(it) }),
 	TIME("Heure", { SimpleField.Time(it) }),
 	UPLOAD("Fichier", { SimpleField.Upload(it, allowedFormats = emptyList()) }),
@@ -129,6 +130,7 @@ private enum class SimpleFieldEnum(val displayName: String, val build: (Arity) -
 			is SimpleField.Boolean -> BOOLEAN
 			is SimpleField.Message -> MESSAGE
 			is SimpleField.Email -> EMAIL
+			is SimpleField.Phone -> PHONE
 			is SimpleField.Date -> DATE
 			is SimpleField.Time -> TIME
 			is SimpleField.Upload -> UPLOAD

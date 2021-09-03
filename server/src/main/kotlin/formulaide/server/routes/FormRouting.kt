@@ -155,6 +155,10 @@ private fun FlowContent.generateFieldHtml(
 					id = fieldId
 					required = mandatory
 				}
+				is SimpleField.Phone -> input(InputType.tel, name = fieldId) {
+					id = fieldId
+					required = mandatory
+				}
 				is SimpleField.Boolean -> {
 					input(InputType.hidden, name = fieldId) { value = "false" }
 					input(InputType.checkBox, name = fieldId) { value = "true"; id = fieldId }
