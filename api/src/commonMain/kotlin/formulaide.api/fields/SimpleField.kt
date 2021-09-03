@@ -161,6 +161,21 @@ sealed class SimpleField {
 	}
 
 	@Serializable
+	@SerialName("TELEPHONE")
+	data class Phone(
+		override val arity: Arity,
+	) : SimpleField() {
+
+		override fun parse(value: String?): String {
+			requireNotNull(value) { "Un numéro de téléphone ne peut pas être vide : trouvé $value" }
+			require(value.isNotBlank()) { "Un numéro de téléphone ne peut pas être vide : trouvé '$value'" }
+			return value
+		}
+
+		override fun requestCopy(arity: Arity?) = copy(arity = arity ?: this.arity)
+	}
+
+	@Serializable
 	@SerialName("DATE")
 	data class Date(
 		override val arity: Arity,
