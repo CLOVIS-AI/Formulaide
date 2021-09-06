@@ -535,6 +535,8 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 
 	var reason by useState<String>()
 
+	var collapsed by useState(true)
+
 	suspend fun review(
 		fields: FormSubmission?,
 		nextState: RecordState?,
@@ -556,7 +558,10 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 		props.refresh()
 	}
 
-	styledFormCard(
+	if (collapsed) styledCardShell(mini = true) {
+		text("Un dossier rétréci") //TODO
+		styledButton("▼", action = { collapsed = false })
+	} else styledFormCard(
 		"Dossier",
 		null,
 		submit = "Confirmer" to { htmlForm ->
@@ -578,6 +583,7 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 				)
 			}
 		},
+		"Réduire" to { collapsed = true },
 		(if (showFullHistory) "Valeurs les plus récentes" else "Historique") to {
 			showFullHistory = !showFullHistory
 		}

@@ -13,11 +13,13 @@ private fun RBuilder.styledCardTitle(title: String, secondary: String?, loading:
 	if (secondary != null) p { styledLightText(secondary) }
 }
 
-private fun RBuilder.styledCardShell(
+fun RBuilder.styledCardShell(
 	failed: Boolean = false,
+	mini: Boolean = false,
 	contents: RDOMBuilder<DIV>.() -> Unit,
 ) {
-	var classes = "m-4 p-8 shadow-lg rounded-lg z-10 relative bg-white"
+	var classes = "m-4 px-8 shadow-lg rounded-lg z-10 relative bg-white " +
+			if (mini) "py-4" else "py-8"
 
 	if (failed)
 		classes += " bg-red-200"
