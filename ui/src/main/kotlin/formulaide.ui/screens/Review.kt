@@ -55,6 +55,8 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 	val allCriteria = searches.groupBy { it.action }
 		.mapValues { (_, v) -> v.map { it.criterion } }
 
+	var collapsed by useState(false)
+
 	val lambdas = useLambdas()
 	val refresh: suspend () -> Unit = {
 		loading = true
@@ -112,6 +114,8 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 					val url = URL.createObjectURL(blob)
 					window.open(url, target = "_blank", features = "noopener,noreferrer")
 				},
+				"Tout ouvrir" to { collapsed = false },
+				"Tout réduire" to { collapsed = true },
 				loading = loading,
 			) {
 				p { text("${records.size} dossiers sont chargés. Pour des raisons de performance, il n'est pas possible de charger plus de ${Record.MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION} dossiers à la fois.") }
@@ -478,6 +482,8 @@ private external interface ReviewRecordProps : RProps {
 	var form: Form
 	var record: Record
 
+	var collapseAll: Boolean
+
 	var formLoaded: Boolean
 	var columnsToDisplay: List<Pair<String, FormField>>
 
@@ -555,7 +561,8 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 
 	var reason by useState<String>()
 
-	var collapsed by useState(true)
+	var collapsed by useState(false)
+	useEffect(props.collapseAll) { collapsed = props.collapseAll }
 
 	suspend fun review(
 		fields: FormSubmission?,
