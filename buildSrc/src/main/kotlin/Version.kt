@@ -32,6 +32,8 @@ object Version {
 	const val kmongo = "4.2.8"
 
 	const val apacheTika = "2.0.0"
+
+	const val gradleMinify = "1.3.0"
 }
 
 fun kotlinxSerialization(name: String) =
