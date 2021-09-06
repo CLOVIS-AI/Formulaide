@@ -15,7 +15,8 @@ val RecursionEditor: FunctionComponent<EditableFieldProps> = fc { props ->
 	val fields = (parent as? Field.Union<*>)?.options
 		?: (parent as? Field.Container<*>)?.fields
 
-	val maxId = useMemo(fields) { (fields ?: emptyList()).map { it.id }.maxOrNull()?.plus(1) ?: 0 }
+	val maxId =
+		useMemo(fields) { (fields ?: emptyList()).map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0 }
 
 	if (fields != null) {
 		styledFormField {

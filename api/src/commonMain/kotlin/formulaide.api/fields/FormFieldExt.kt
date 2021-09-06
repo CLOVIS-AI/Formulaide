@@ -25,3 +25,23 @@ fun FormField.asSequence(): Sequence<FormField> {
  */
 fun FormRoot.asSequence(): Sequence<FormField> =
 	fields.asSequence().flatMap { it.asSequence() }
+
+fun FormField.asSequenceWithKey(key: String = id): Sequence<Pair<String, FormField>> {
+	val self = sequenceOf(key to this)
+
+	return when (this) {
+		is ShallowFormField.Simple -> self
+		is ShallowFormField.Union -> self + options.asSequence()
+			.flatMap { it.asSequenceWithKey("$key:${it.id}") }
+		is ShallowFormField.Composite -> self + fields.asSequence()
+			.flatMap { it.asSequenceWithKey("$key:${it.id}") }
+		is DeepFormField.Simple -> self
+		is DeepFormField.Union -> self + options.asSequence()
+			.flatMap { it.asSequenceWithKey("$key:${it.id}") }
+		is DeepFormField.Composite -> self + fields.asSequence()
+			.flatMap { it.asSequenceWithKey("$key:${it.id}") }
+	}
+}
+
+fun FormRoot.asSequenceWithKey(): Sequence<Pair<String, FormField>> =
+	fields.asSequence().flatMap { it.asSequenceWithKey() }

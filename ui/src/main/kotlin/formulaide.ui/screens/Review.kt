@@ -1,9 +1,7 @@
 package formulaide.ui.screens
 
 import formulaide.api.data.*
-import formulaide.api.fields.FormField
-import formulaide.api.fields.FormRoot
-import formulaide.api.fields.SimpleField
+import formulaide.api.fields.*
 import formulaide.api.search.SearchCriterion
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.types.Ref.Companion.load
@@ -26,9 +24,7 @@ import org.w3c.dom.url.URL
 import org.w3c.files.Blob
 import org.w3c.files.BlobPropertyBag
 import react.*
-import react.dom.br
-import react.dom.div
-import react.dom.p
+import react.dom.*
 import kotlin.js.Date
 
 internal fun RecordState.displayName() = when (this) {
@@ -58,6 +54,8 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 
 	val allCriteria = searches.groupBy { it.action }
 		.mapValues { (_, v) -> v.map { it.criterion } }
+
+	var collapsed by useState(false)
 
 	val lambdas = useLambdas()
 	val refresh: suspend () -> Unit = {
@@ -92,6 +90,13 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 		}
 	}
 
+	val columnsToDisplay = useMemo(form.mainFields) {
+		form.mainFields.asSequenceWithKey()
+			.filter { (_, it) -> it !is FormField.Composite }
+			.filter { (_, it) -> it !is FormField.Simple || it.simple != SimpleField.Message }
+			.toList()
+	}
+
 	//region Full page
 	div("lg:grid lg:grid-cols-3 lg:gap-y-0") {
 		//region Search bar
@@ -109,6 +114,8 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 					val url = URL.createObjectURL(blob)
 					window.open(url, target = "_blank", features = "noopener,noreferrer")
 				},
+				"Tout ouvrir" to { collapsed = false },
+				"Tout réduire" to { collapsed = true },
 				loading = loading,
 			) {
 				p { text("${records.size} dossiers sont chargés. Pour des raisons de performance, il n'est pas possible de charger plus de ${Record.MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION} dossiers à la fois.") }
@@ -149,23 +156,39 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 		}
 		//endregion
 		//region Reviews
-		div("lg:col-span-2 lg:order-1") {
-			for (record in records) {
-				child(ReviewRecord) {
-					attrs {
-						this.form = form
-						this.formLoaded = formLoaded
-						this.record = record
-
-						this.refresh = memoizedRefresh
-
-						key = record.id
+		div("lg:col-span-2 lg:order-1 w-full overflow-x-auto") {
+			table("table-auto w-full") {
+				thead {
+					tr {
+						if (formLoaded) {
+							columnsToDisplay.forEach { (_, it) ->
+								th(classes = "first:pl-8 last:pr-8 py-2") { div("mx-4") { text(it.name) } }
+							}
+						}
 					}
 				}
-			}
-			if (records.isEmpty()) {
-				div("flex w-full justify-center items-center h-full") {
-					p("my-8") { text("Aucun résultat") }
+
+				tbody {
+					for (record in records) {
+						child(ReviewRecord) {
+							attrs {
+								this.form = form
+								this.formLoaded = formLoaded
+								this.record = record
+
+								this.refresh = memoizedRefresh
+								this.columnsToDisplay = columnsToDisplay
+
+								this.collapseAll = collapsed
+								key = record.id
+							}
+						}
+					}
+					if (records.isEmpty()) {
+						div("flex w-full justify-center items-center h-full") {
+							p("my-8") { text("Aucun résultat") }
+						}
+					}
 				}
 			}
 		}
@@ -459,7 +482,10 @@ private external interface ReviewRecordProps : RProps {
 	var form: Form
 	var record: Record
 
+	var collapseAll: Boolean
+
 	var formLoaded: Boolean
+	var columnsToDisplay: List<Pair<String, FormField>>
 
 	var refresh: suspend () -> Unit
 }
@@ -535,6 +561,9 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 
 	var reason by useState<String>()
 
+	var collapsed by useState(false)
+	useEffect(props.collapseAll) { collapsed = props.collapseAll }
+
 	suspend fun review(
 		fields: FormSubmission?,
 		nextState: RecordState?,
@@ -556,143 +585,182 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 		props.refresh()
 	}
 
-	styledFormCard(
-		"Dossier",
-		null,
-		submit = "Confirmer" to { htmlForm ->
-			val submission =
-				if (state is RecordState.Action && state.current.obj.fields?.fields?.isNotEmpty() == true)
-					parseHtmlForm(
-						htmlForm,
-						form,
-						state.current.obj,
-					)
-				else null
+	if (collapsed) tr {
+		val parsed = history.first { it.transition.previousState == null }
+		requireNotNull(parsed.submission) { "Une saisie initiale est nécessairement déjà remplie" }
 
-			launch {
-				review(
-					submission,
-					nextState = selectedDestination,
-					reason = reason,
-					sendFields = true,
-				)
+		for ((key, _) in props.columnsToDisplay) {
+			fun parsedAsSequence(p: ParsedField<*>): Sequence<ParsedField<*>> = sequence {
+				yield(p)
+				p.children?.let { child -> yieldAll(child.flatMap { parsedAsSequence(it) }) }
 			}
-		},
-		(if (showFullHistory) "Valeurs les plus récentes" else "Historique") to {
-			showFullHistory = !showFullHistory
-		}
-	) {
-		var i = 0
 
-		for (parsed in history) {
-			styledNesting(depth = 0, fieldNumber = i) {
-				val transition = parsed.transition
-				val title = transition.previousState?.displayName() ?: "Saisie originelle"
-				if (showFullHistory) {
-					styledTitle("$title → ${transition.nextState.displayName()}")
-				} else {
-					styledTitle(title)
-				}
-				val timestamp = Date(transition.timestamp * 1000)
-				if (transition.previousState != null) {
-					p {
-						text("Par ${transition.assignee?.id}")
-						if (transition.reason != null)
-							text(" parce que \"${transition.reason}\"")
-						text(", le ${timestamp.toLocaleString()}.")
-					}
-				} else {
-					p { text("Le ${timestamp.toLocaleString()}.") }
-				}
+			console.warn("Searching for $key")
+			val parsedField = parsed.submission.fields
+				.asSequence()
+				.flatMap { parsedAsSequence(it) }
+				.onEach { console.log(it, it.fullKeyString) }
+				.firstOrNull { it.fullKeyString == key }
 
-				if (transition.fields != null) {
-					if (!props.formLoaded) {
-						p { text("Chargement du formulaire…"); loadingSpinner() }
-					} else if (parsed.submission == null) {
-						p { text("Chargement de la saisie…"); loadingSpinner() }
+			td("first:pl-8 last:pr-8 py-2") {
+				div("mx-4") {
+					if (parsedField is ParsedList<*>) {
+						text(parsedField.children.mapNotNull { it.rawValue }
+							     .joinToString(separator = ", "))
 					} else {
-						br {}
-						immutableFields(parsed.submission)
+						text(parsedField?.rawValue ?: "")
 					}
 				}
 			}
-			i++
 		}
 
-		if (state is RecordState.Action) {
-			state.current.loadFrom(form.actions, lazy = true)
-			val action = state.current.obj
+		td { styledButton("▼", action = { collapsed = false }) }
+	} else tr {
+		td {
+			attrs {
+				colSpan = form.mainFields.asSequence().count().toString()
+			}
 
-			val root = action.fields
-			if (root != null) {
-				styledNesting(depth = 0, fieldNumber = i) {
-					for (field in root.fields) {
-						field(form, action, field)
+			styledFormCard(
+				"Dossier",
+				null,
+				submit = "Confirmer" to { htmlForm ->
+					val submission =
+						if (state is RecordState.Action && state.current.obj.fields?.fields?.isNotEmpty() == true)
+							parseHtmlForm(
+								htmlForm,
+								form,
+								state.current.obj,
+							)
+						else null
+
+					launch {
+						review(
+							submission,
+							nextState = selectedDestination,
+							reason = reason,
+							sendFields = true,
+						)
+					}
+				},
+				"Réduire" to { collapsed = true },
+				(if (showFullHistory) "Valeurs les plus récentes" else "Historique") to {
+					showFullHistory = !showFullHistory
+				}
+			) {
+				var i = 0
+
+				for (parsed in history) {
+					styledNesting(depth = 0, fieldNumber = i) {
+						val transition = parsed.transition
+						val title = transition.previousState?.displayName() ?: "Saisie originelle"
+						if (showFullHistory) {
+							styledTitle("$title → ${transition.nextState.displayName()}")
+						} else {
+							styledTitle(title)
+						}
+						val timestamp = Date(transition.timestamp * 1000)
+						if (transition.previousState != null) {
+							p {
+								text("Par ${transition.assignee?.id}")
+								if (transition.reason != null)
+									text(" parce que \"${transition.reason}\"")
+								text(", le ${timestamp.toLocaleString()}.")
+							}
+						} else {
+							p { text("Le ${timestamp.toLocaleString()}.") }
+						}
+
+						if (transition.fields != null) {
+							if (!props.formLoaded) {
+								p { text("Chargement du formulaire…"); loadingSpinner() }
+							} else if (parsed.submission == null) {
+								p { text("Chargement de la saisie…"); loadingSpinner() }
+							} else {
+								br {}
+								immutableFields(parsed.submission)
+							}
+						}
 					}
 					i++
 				}
-			}
-		}
 
-		val decision = when {
-			selectedDestination is RecordState.Action && selectedDestination == state -> ReviewDecision.NO_CHANGE
-			selectedDestination is RecordState.Refused && state is RecordState.Refused -> ReviewDecision.NO_CHANGE
-			selectedDestination is RecordState.Refused -> ReviewDecision.REFUSE
-			selectedDestination is RecordState.Action && selectedDestination == nextAction -> ReviewDecision.NEXT
-			else -> ReviewDecision.PREVIOUS
-		}
+				if (state is RecordState.Action) {
+					state.current.loadFrom(form.actions, lazy = true)
+					val action = state.current.obj
 
-		div("mt-4") {
-			text("Votre décision :")
-
-			if ((state as? RecordState.Action)?.current?.obj != form.actions.firstOrNull())
-				styledButton("Renvoyer à une étape précédente",
-				             enabled = decision != ReviewDecision.PREVIOUS,
-				             action = {
-					             updateDestination {
-						             RecordState.Action(form.actions.first().createRef())
-					             }
-				             })
-
-			styledButton("Garder",
-			             enabled = decision != ReviewDecision.NO_CHANGE,
-			             action = { updateDestination { state } })
-
-			if (nextAction != null)
-				styledButton("Accepter",
-				             enabled = decision != ReviewDecision.NEXT,
-				             action = { updateDestination { nextAction } })
-
-			if (state != RecordState.Refused)
-				styledButton("Refuser",
-				             enabled = decision != ReviewDecision.REFUSE,
-				             action = { updateDestination { RecordState.Refused } })
-		}
-
-		if (decision == ReviewDecision.PREVIOUS)
-			div {
-				text("Étapes précédentes :")
-
-				for (previousState in form.actions.map { RecordState.Action(it.createRef()) }) {
-					if (previousState == state)
-						break
-
-					styledButton(previousState.current.obj.name,
-					             enabled = selectedDestination != previousState,
-					             action = { updateDestination { previousState } })
-				}
-			}
-
-		if (decision != ReviewDecision.NEXT)
-			styledField("record-${record.id}-reason", "Pourquoi ce choix ?") {
-				styledInput(InputType.text,
-				            "record-${record.id}-reason",
-				            required = decision == ReviewDecision.REFUSE) {
-					value = reason ?: ""
-					onChangeFunction = {
-						reason = (it.target as HTMLInputElement).value
+					val root = action.fields
+					if (root != null) {
+						styledNesting(depth = 0, fieldNumber = i) {
+							for (field in root.fields) {
+								field(form, action, field)
+							}
+							i++
+						}
 					}
 				}
+
+				val decision = when {
+					selectedDestination is RecordState.Action && selectedDestination == state -> ReviewDecision.NO_CHANGE
+					selectedDestination is RecordState.Refused && state is RecordState.Refused -> ReviewDecision.NO_CHANGE
+					selectedDestination is RecordState.Refused -> ReviewDecision.REFUSE
+					selectedDestination is RecordState.Action && selectedDestination == nextAction -> ReviewDecision.NEXT
+					else -> ReviewDecision.PREVIOUS
+				}
+
+				div("mt-4") {
+					text("Votre décision :")
+
+					if ((state as? RecordState.Action)?.current?.obj != form.actions.firstOrNull())
+						styledButton("Renvoyer à une étape précédente",
+						             enabled = decision != ReviewDecision.PREVIOUS,
+						             action = {
+							             updateDestination {
+								             RecordState.Action(form.actions.first().createRef())
+							             }
+						             })
+
+					styledButton("Garder",
+					             enabled = decision != ReviewDecision.NO_CHANGE,
+					             action = { updateDestination { state } })
+
+					if (nextAction != null)
+						styledButton("Accepter",
+						             enabled = decision != ReviewDecision.NEXT,
+						             action = { updateDestination { nextAction } })
+
+					if (state != RecordState.Refused)
+						styledButton("Refuser",
+						             enabled = decision != ReviewDecision.REFUSE,
+						             action = { updateDestination { RecordState.Refused } })
+				}
+
+				if (decision == ReviewDecision.PREVIOUS)
+					div {
+						text("Étapes précédentes :")
+
+						for (previousState in form.actions.map { RecordState.Action(it.createRef()) }) {
+							if (previousState == state)
+								break
+
+							styledButton(previousState.current.obj.name,
+							             enabled = selectedDestination != previousState,
+							             action = { updateDestination { previousState } })
+						}
+					}
+
+				if (decision != ReviewDecision.NEXT)
+					styledField("record-${record.id}-reason", "Pourquoi ce choix ?") {
+						styledInput(InputType.text,
+						            "record-${record.id}-reason",
+						            required = decision == ReviewDecision.REFUSE) {
+							value = reason ?: ""
+							onChangeFunction = {
+								reason = (it.target as HTMLInputElement).value
+							}
+						}
+					}
 			}
+		}
 	}
 })
