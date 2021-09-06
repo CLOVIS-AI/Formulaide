@@ -64,9 +64,19 @@ tasks.create<Copy>("copyFrontend") {
 
 	from("${project(":ui").buildDir}/distributions")
 	into("${project.buildDir}/resources/main/front")
+	exclude("ui.js", "ui.js.map")
+}
+
+tasks.create<Copy>("copyFrontendJs") {
+	dependsOn(":ui:browserProductionWebpack", ":ui:jsMinify")
+
+	from("${project(":ui").buildDir}/distributions-minified")
+	into("${project.buildDir}/resources/main/front")
+	include("ui.min.js")
+	rename { "ui.js" }
 }
 
 tasks.processResources {
 	if (!project.hasProperty("devMode"))
-		dependsOn("copyFrontend")
+		dependsOn("copyFrontend", "copyFrontendJs")
 }

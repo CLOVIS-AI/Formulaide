@@ -2,6 +2,8 @@ plugins {
 	kotlin("js")
 
 	id("org.jetbrains.dokka")
+
+	id("org.gradlewebtools.minify") version Version.gradleMinify
 }
 
 kotlin {
@@ -62,3 +64,17 @@ rootProject.plugins.withType<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJ
 	rootProject.the<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootExtension>().versions.webpackDevServer.version =
 		"4.0.0-rc.0"
 }
+
+val jsMinify by tasks.creating(org.gradlewebtools.minify.JsMinifyTask::class.java) {
+	dependsOn("browserProductionWebpack")
+
+	srcDir = project.buildDir / "distributions"
+	dstDir = project.buildDir / "distributions-minified"
+
+	options {
+		compilationLevel = com.google.javascript.jscomp.CompilationLevel.SIMPLE_OPTIMIZATIONS
+		env = com.google.javascript.jscomp.CompilerOptions.Environment.BROWSER
+	}
+}
+
+operator fun File.div(childName: String) = File(this, childName)
