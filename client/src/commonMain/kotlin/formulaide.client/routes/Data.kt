@@ -1,6 +1,7 @@
 package formulaide.client.routes
 
 import formulaide.api.data.Composite
+import formulaide.api.data.CompositeMetadata
 import formulaide.client.Client
 
 /**
@@ -23,3 +24,14 @@ suspend fun Client.Authenticated.listData(): List<Composite> =
  */
 suspend fun Client.Authenticated.createData(newData: Composite): Composite =
 	post("/data/create", body = newData)
+
+/**
+ * Edits a [Composite].
+ *
+ * - POST /data/editMetadata
+ * - Requires 'administrator' authentication
+ * - Body: [CompositeMetadata]
+ * - Response: "SUCCESS"
+ */
+suspend fun Client.Authenticated.editData(edit: CompositeMetadata): String =
+	post("/data/editMetadata", body = edit)

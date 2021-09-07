@@ -51,6 +51,9 @@ private val compositesDelegate = composites.asDelegated()
 	.useEquals()
 
 fun RBuilder.useComposites() = useGlobalState(composites, compositesDelegate)
+	.map { composite -> composite.filter { it.open } }
+
+fun RBuilder.useAllComposites() = useGlobalState(composites, compositesDelegate)
 
 suspend fun refreshComposites() = (client.value as? Client.Authenticated)
 	?.let { c -> compositesDelegate.value = c.listData() }
