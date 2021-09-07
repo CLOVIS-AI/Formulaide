@@ -101,6 +101,9 @@ class WriteDelegatedProperty<T>(
 fun <I : Any, O : Any?> DelegatedProperty<I?>.map(transform: (I) -> O) =
 	ReadDelegatedProperty { value?.let(transform) }
 
+fun <I : Any, O : Any> DelegatedProperty<I>.map(transform: (I) -> O) =
+	ReadDelegatedProperty { transform(value) }
+
 fun <I> DelegatedProperty<I>.filter(predicate: (I) -> Boolean) =
 	ReadDelegatedProperty { value.takeIf(predicate) }
 
