@@ -82,6 +82,8 @@ suspend fun Database.editForm(edition: FormMetadata): Form {
 	val new = form.copy(
 		public = edition.public ?: form.public,
 		open = edition.open ?: form.open,
+		mainFields = edition.mainFields ?: form.mainFields,
+		actions = edition.actions ?: form.actions,
 	)
 
 	forms.replaceOne(Form::id eq form.id, new)
