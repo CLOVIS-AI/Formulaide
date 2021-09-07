@@ -171,7 +171,8 @@ internal val FormDescription = memo(fc<FormDescriptionProps> { props ->
 		if (user.role >= Role.ADMINISTRATOR) {
 			require(client is Client.Authenticated) // not possible otherwise
 
-			styledButton("Copier", action = { navigateTo(Screen.NewForm(form)) })
+			styledButton("Copier", action = { navigateTo(Screen.NewForm(form, copy = true)) })
+			styledButton("Modifier", action = { navigateTo(Screen.NewForm(form, copy = false)) })
 
 			styledButton(if (form.public) "Rendre interne" else "Rendre public", action = {
 				client.editForm(FormMetadata(form.createRef(),

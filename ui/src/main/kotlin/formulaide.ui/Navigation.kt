@@ -41,8 +41,12 @@ abstract class Screen(
 	class NewData(original: Composite?) :
 		Screen("Créer un groupe", Role.ADMINISTRATOR, { CreateData(original) }, "createData")
 
-	class NewForm(original: Form?) :
-		Screen("Créer un formulaire", Role.ADMINISTRATOR, { CreateForm(original) }, "createForm")
+	class NewForm(original: Form?, copy: Boolean) :
+		Screen("Créer un formulaire",
+		       Role.ADMINISTRATOR,
+		       { CreateForm(original, copy) },
+		       "createForm")
+
 	object ShowUsers : Screen("Employés", Role.ADMINISTRATOR, { UserList }, "employees")
 	object NewUser :
 		Screen("Créer un employé", Role.ADMINISTRATOR, { CreateUser }, "createEmployee")
@@ -73,7 +77,7 @@ abstract class Screen(
 			           ShowData,
 			           NewData(null),
 			           ShowForms,
-			           NewForm(null),
+			           NewForm(null, copy = true),
 			           ShowServices,
 			           ShowUsers)
 
@@ -82,7 +86,13 @@ abstract class Screen(
 
 		fun routeDecoder(route: String): Screen? {
 			val simpleRoutes = listOf(
-				Home, ShowForms, NewData(null), NewForm(null), ShowUsers, NewUser, ShowServices
+				Home,
+				ShowForms,
+				NewData(null),
+				NewForm(null, true),
+				ShowUsers,
+				NewUser,
+				ShowServices
 			)
 			for (screen in simpleRoutes)
 				if (route == screen.route)

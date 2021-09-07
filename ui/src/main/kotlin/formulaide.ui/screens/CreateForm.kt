@@ -2,6 +2,7 @@ package formulaide.ui.screens
 
 import formulaide.api.data.Action
 import formulaide.api.data.Form
+import formulaide.api.data.FormMetadata
 import formulaide.api.fields.Field
 import formulaide.api.fields.FormRoot
 import formulaide.api.fields.ShallowFormField
@@ -13,6 +14,7 @@ import formulaide.api.users.Service
 import formulaide.client.Client
 import formulaide.client.routes.compositesReferencedIn
 import formulaide.client.routes.createForm
+import formulaide.client.routes.editForm
 import formulaide.ui.*
 import formulaide.ui.components.*
 import formulaide.ui.fields.FieldEditor
@@ -28,7 +30,7 @@ import org.w3c.dom.HTMLSelectElement
 import react.*
 import react.dom.*
 
-fun CreateForm(original: Form?) = fc<RProps> {
+fun CreateForm(original: Form?, copy: Boolean) = fc<RProps> {
 	traceRenders("CreateForm")
 
 	val (client) = useClient()
@@ -96,7 +98,17 @@ fun CreateForm(original: Form?) = fc<RProps> {
 
 			launch {
 				form.validate()
-				client.createForm(form)
+
+				if (original == null || copy)
+					client.createForm(form)
+				else
+					client.editForm(FormMetadata(
+						original.createRef(),
+						public = public.current?.checked,
+						mainFields = FormRoot(fields),
+						actions = actions,
+					))
+
 				clearLocalStorage("form-fields")
 				clearLocalStorage("form-actions")
 
@@ -109,6 +121,14 @@ fun CreateForm(original: Form?) = fc<RProps> {
 			updateActions { emptyList() }
 		}
 	) {
+		if (original != null && copy) {
+			text("Vous êtes en train de copier ce formulaire. Vous allez créer un nouveau formulaire n'ayant aucun lien avec l'ancien. Les dossiers remplis pour le formulaire précédent ne seront pas visible pour celui-ci.")
+		}
+		if (original != null && !copy) {
+			text("Vous êtes en train de modifier un formulaire. Vous pouvez effectuer n'importe quelle modification, mais le système devra ensuite vérifier si elle est compatible avec les dossiers remplis précédemment. Il est possible que le système refuse certaines modifications.")
+			styledErrorText(" La modification d'un formulaire est EXPÉRIMENTALE. Il est possible que des données soient perdues.")
+		}
+
 		styledField("new-form-name", "Nom") {
 			styledInput(InputType.text, "new-form-name", required = true, ref = formName) {
 				autoFocus = true
@@ -190,7 +210,8 @@ fun CreateForm(original: Form?) = fc<RProps> {
 					this + Action(
 						id = maxActionId.toString(),
 						order = size,
-						services.getOrNull(0)?.createRef() ?: error("Aucun service n'a été trouvé"),
+						services.getOrNull(0)?.createRef()
+							?: error("Aucun service n'a été trouvé"),
 						name = "",
 					)
 				}
