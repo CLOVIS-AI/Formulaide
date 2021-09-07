@@ -71,6 +71,8 @@ data class FormMetadata(
 	val form: Ref<Form>,
 	val open: Boolean? = null,
 	val public: Boolean? = null,
+	val mainFields: FormRoot? = null,
+	val actions: List<Action>? = null,
 )
 
 //endregion

@@ -2,9 +2,11 @@ package formulaide.server.routes
 
 import formulaide.api.data.Form
 import formulaide.api.data.FormMetadata
+import formulaide.api.data.RecordState
 import formulaide.api.fields.FormField
 import formulaide.api.fields.SimpleField
 import formulaide.api.types.Arity
+import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.types.ReferenceId
 import formulaide.db.document.*
 import formulaide.server.Auth.Companion.Employee
@@ -57,6 +59,31 @@ fun Routing.formRoutes() {
 				call.requireAdmin(database)
 
 				val metadata = call.receive<FormMetadata>()
+				if (metadata.mainFields != null || metadata.actions != null) {
+					val old = database.findForm(metadata.form.id)
+						?: error("Vous essayez de modifier un formulaire qui n'existe pas : ${metadata.form.id}")
+					val new = old.copy(
+						mainFields = metadata.mainFields ?: old.mainFields,
+						actions = metadata.actions ?: old.actions,
+					)
+
+					// Check submissions
+					for (root in new.actions + null) {
+						for (submission in database.searchSubmission(new, root, emptyList())) {
+							val submissionData = submission.toApi()
+							submissionData.parse(new)
+						}
+					}
+
+					// Check records
+					for (state in new.actions.map { RecordState.Action(it.createRef()) } + RecordState.Refused) {
+						for (record in database.findRecords(new, state, limit = null)) {
+							record.form.load(new)
+							record.load()
+						}
+					}
+				}
+
 				val form = database.editForm(metadata)
 
 				call.respond(form)
