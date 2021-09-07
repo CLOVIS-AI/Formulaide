@@ -57,6 +57,8 @@ fun CreateForm(original: Form?) = fc<RProps> {
 			val loaded = client.compositesReferencedIn(original)
 			original.load(loaded)
 
+			formName.current?.let { it.value = original.name }
+			public.current?.let { it.value = original.public.toString() }
 			updateFields { original.mainFields.fields }
 			updateActions { original.actions }
 		}
