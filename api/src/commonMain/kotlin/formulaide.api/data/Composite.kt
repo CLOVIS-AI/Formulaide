@@ -26,6 +26,7 @@ data class Composite(
 	override val id: ReferenceId,
 	val name: String,
 	val fields: List<DataField>,
+	val open: Boolean = true,
 ) : Referencable {
 	init {
 		require(name.isNotBlank()) { "Le nom d'une donnée ne peut pas être vide : '$name'" }
