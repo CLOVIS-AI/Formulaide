@@ -44,3 +44,12 @@ private fun DataField.cleanUpRecursionToken(comp: Composite): DataField = when {
 	)
 	else -> this
 }
+
+suspend fun Database.editComposite(id: ReferenceId, open: Boolean? = null) {
+	var composite = findComposite(id) ?: error("La donnée est introuvable : $id")
+
+	if (open != null)
+		composite = composite.copy(open = open)
+
+	data.updateOne(Composite::id eq id, composite)
+}

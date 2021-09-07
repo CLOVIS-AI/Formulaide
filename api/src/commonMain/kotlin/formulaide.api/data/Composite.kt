@@ -85,3 +85,13 @@ val Composite.fieldsRecursively: Sequence<DataField>
  */
 // The semicolon is not allowed in normal IDs
 const val SPECIAL_TOKEN_RECURSION: ReferenceId = "special:myself"
+
+//region API
+
+@Serializable
+data class CompositeMetadata(
+	val id: ReferenceId,
+	val open: Boolean? = null,
+)
+
+//endregion
