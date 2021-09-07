@@ -52,6 +52,15 @@ fun CreateForm(original: Form?) = fc<RProps> {
 			?: 0
 	}
 
+	val composites by useAllComposites()
+	var formLoaded by useState(false)
+
+	useAsyncEffectOnce {
+		fields.forEach { it.load(composites) }
+		actions.forEach { it.reviewer.loadFrom(services) }
+		formLoaded = true
+	}
+
 	useAsyncEffectOnce {
 		if (original != null) {
 			val loaded = client.compositesReferencedIn(original)
@@ -65,6 +74,12 @@ fun CreateForm(original: Form?) = fc<RProps> {
 	}
 
 	val lambdas = useLambdas()
+
+	if (!formLoaded) {
+		text("Chargement des champs…")
+		loadingSpinner()
+		return@fc
+	}
 
 	styledFormCard(
 		"Créer un formulaire", null,
