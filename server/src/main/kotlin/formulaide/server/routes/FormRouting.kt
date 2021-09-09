@@ -109,20 +109,23 @@ fun Routing.formRoutes() {
 				}
 
 				body {
-					form(
-						action = "$apiUrl/submissions/nativeCreate/${form.id}",
-						method = FormMethod.post,
-						encType = FormEncType.multipartFormData,
-					) {
+					div(formGroupClass) {
+						form(
+							action = "$apiUrl/submissions/nativeCreate/${form.id}",
+							method = FormMethod.post,
+							encType = FormEncType.multipartFormData,
+						) {
+							h1(formTitleClass) { form.name }
 
-						h1(formTitleClass) { form.name }
+							for (field in form.mainFields.fields) {
+								generateFieldHtml(field, field.id)
+							}
 
-						for (field in form.mainFields.fields) {
-							generateFieldHtml(field, field.id)
+							input(InputType.submit, classes = defaultButtonClass) {
+								value = "Envoyer"
+							}
+							input(InputType.reset, classes = buttonClass) { value = "Effacer" }
 						}
-
-						input(InputType.submit) { value = "Envoyer" }
-						input(InputType.reset) { value = "Effacer" }
 					}
 				}
 			}
@@ -130,12 +133,16 @@ fun Routing.formRoutes() {
 	}
 }
 
-private const val fieldNameClass = "field-name"
+private const val formGroupClass = "form-group"
+private const val fieldNameClass = "control-label"
+private const val fieldClass = "form-control"
 private const val formTitleClass = "form-title"
-private const val requiredClass = "required-mark"
+private const val requiredClass = "field_required"
 private const val allowedFormatsClass = "formats"
 private const val compositeClass = "composite"
 private const val unionClass = "union"
+private const val buttonClass = "btn"
+private const val defaultButtonClass = "btn btn-default"
 
 private fun FlowContent.generateFieldHtml(
 	field: FormField,
@@ -173,39 +180,48 @@ private fun FlowContent.generateFieldHtml(
 				}
 
 			when (val simple = field.simple) {
-				is SimpleField.Text -> input(InputType.text, name = fieldId) {
+				is SimpleField.Text -> input(InputType.text, name = fieldId, classes = fieldClass) {
 					id = fieldId
 					required = mandatory
 					maxLength = simple.effectiveMaxLength.toString()
 				}
-				is SimpleField.Email -> input(InputType.email, name = fieldId) {
+				is SimpleField.Email -> input(InputType.email,
+				                              name = fieldId,
+				                              classes = fieldClass) {
 					id = fieldId
 					required = mandatory
 				}
-				is SimpleField.Phone -> input(InputType.tel, name = fieldId) {
+				is SimpleField.Phone -> input(InputType.tel, name = fieldId, classes = fieldClass) {
 					id = fieldId
 					required = mandatory
 				}
 				is SimpleField.Boolean -> {
 					input(InputType.hidden, name = fieldId) { value = "false" }
-					input(InputType.checkBox, name = fieldId) { value = "true"; id = fieldId }
+					input(InputType.checkBox,
+					      name = fieldId,
+					      classes = "$fieldClass checkbox") { value = "true"; id = fieldId }
 				}
-				is SimpleField.Integer -> input(InputType.number, name = fieldId) {
+				is SimpleField.Integer -> input(InputType.number,
+				                                name = fieldId,
+				                                classes = fieldClass) {
 					id = fieldId
 					required = mandatory
 					min = simple.effectiveMin.toString()
 					max = simple.effectiveMax.toString()
 					step = "1"
 				}
-				is SimpleField.Decimal -> input(InputType.number, name = fieldId) {
+				is SimpleField.Decimal -> input(InputType.number,
+				                                name = fieldId,
+				                                classes = fieldClass) {
+					id = fieldId
+					step = "any"
+					required = mandatory
+				}
+				is SimpleField.Date -> input(InputType.date, name = fieldId, classes = fieldClass) {
 					id = fieldId
 					required = mandatory
 				}
-				is SimpleField.Date -> input(InputType.date, name = fieldId) {
-					id = fieldId
-					required = mandatory
-				}
-				is SimpleField.Time -> input(InputType.time, name = fieldId) {
+				is SimpleField.Time -> input(InputType.time, name = fieldId, classes = fieldClass) {
 					id = fieldId
 					required = mandatory
 				}
@@ -218,7 +234,7 @@ private fun FlowContent.generateFieldHtml(
 								.joinToString(separator = ", ")
 						}"
 					}
-					input(InputType.file, name = fieldId) {
+					input(InputType.file, name = fieldId, classes = fieldClass) {
 						id = fieldId
 						required = mandatory
 						multiple = false
@@ -244,7 +260,7 @@ private fun FlowContent.generateFieldHtml(
 			}
 
 		for (subField in field.options) {
-			input(InputType.radio, name = fieldId) {
+			input(InputType.radio, name = fieldId, classes = fieldClass) {
 				id = "$fieldId:${subField.id}+"
 				required = mandatory
 				value = subField.id
