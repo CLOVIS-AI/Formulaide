@@ -66,6 +66,7 @@ private fun RBuilder.uploadMetadata(
 
 					setHandler(
 						simple.allowedFormats.find { it == format },
+						null,
 						props,
 						field,
 						update = {
@@ -86,6 +87,7 @@ private fun RBuilder.uploadMetadata(
 			min = "1"
 			max = "10"
 			setHandler(simple.maxSizeMB,
+			           simple.effectiveMaxSizeMB,
 			           props,
 			           field,
 			           update = {
@@ -104,6 +106,7 @@ private fun RBuilder.uploadMetadata(
 			min = "1"
 			max = "5000"
 			setHandler(simple.expiresAfterDays,
+			           simple.effectiveExpiresAfterDays,
 			           props,
 			           field,
 			           update = {
@@ -127,6 +130,7 @@ private fun RBuilder.integerMetadata(
 	styledField(id, "Valeur minimale") {
 		styledInput(InputType.number, id) {
 			setHandler(simple.min,
+			           null,
 			           props,
 			           field,
 			           update = {
@@ -140,6 +144,7 @@ private fun RBuilder.integerMetadata(
 	styledField(id2, "Valeur maximale") {
 		styledInput(InputType.number, id2) {
 			setHandler(simple.max,
+			           null,
 			           props,
 			           field,
 			           update = {
@@ -159,6 +164,7 @@ private fun RBuilder.textMetadata(
 	styledField(id, "Longueur maximale") {
 		styledInput(InputType.number, id) {
 			setHandler(simple.maxLength,
+			           null,
 			           props,
 			           field,
 			           update = {
@@ -188,11 +194,14 @@ private fun RBuilder.cancelButton(
 
 private fun INPUT.setHandler(
 	value: Any?,
+	defaultValue: Any?,
 	props: EditableFieldProps,
 	field: Field.Simple,
 	update: (HTMLInputElement) -> SimpleField?,
 ) {
 	this.value = value?.toString() ?: ""
+	if (defaultValue != null)
+		this.placeholder = defaultValue.toString()
 	this.onChangeFunction = {
 		val target = it.target as HTMLInputElement
 		val updated = update(target)
