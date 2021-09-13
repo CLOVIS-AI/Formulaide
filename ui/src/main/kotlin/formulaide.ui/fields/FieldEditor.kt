@@ -9,6 +9,7 @@ import formulaide.ui.components.styledNesting
 import formulaide.ui.utils.text
 import react.RProps
 import react.child
+import react.dom.div
 import react.dom.p
 import react.fc
 import react.memo
@@ -53,16 +54,22 @@ val FieldEditor = memo(fc<EditableFieldProps> { props ->
 		onMoveDown = onMoveDown,
 	) {
 
-		child(NameEditor) {
-			attrs { inheritFrom(props) }
-		}
+		div("flex gap-x-16 flex-wrap") {
+			div {
+				child(NameEditor) {
+					attrs { inheritFrom(props) }
+				}
 
-		child(TypeEditor) {
-			attrs { inheritFrom(props) }
-		}
+				child(TypeEditor) {
+					attrs { inheritFrom(props) }
+				}
+			}
 
-		child(MetadataEditor) {
-			attrs { inheritFrom(props) }
+			div("mr-32") {
+				child(MetadataEditor) {
+					attrs { inheritFrom(props) }
+				}
+			}
 		}
 
 		child(ArityEditor) {
