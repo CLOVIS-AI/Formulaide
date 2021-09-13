@@ -49,6 +49,11 @@ sealed class SimpleField {
 	 */
 	abstract val defaultValue: String?
 
+	fun validate() {
+		if (defaultValue != null)
+			parse(defaultValue)
+	}
+
 	/**
 	 * The user should input some text.
 	 * @property maxLength The maximum number of characters allowed (`null` means 'no limit').
@@ -62,6 +67,10 @@ sealed class SimpleField {
 	) : SimpleField() {
 
 		val effectiveMaxLength get() = maxLength ?: Int.MAX_VALUE
+
+		init {
+			validate()
+		}
 
 		override fun parse(value: String?): String {
 			requireNotNull(value) { "Un champ de texte doit être rempli : trouvé '$value'" }
@@ -102,6 +111,10 @@ sealed class SimpleField {
 		val effectiveMin get() = min ?: Long.MIN_VALUE
 		val effectiveMax get() = max ?: Long.MAX_VALUE
 
+		init {
+			validate()
+		}
+
 		override fun parse(value: String?): Long {
 			requireNotNull(value) { "Un entier ne peut pas être vide : trouvé $value" }
 			val intVal =
@@ -137,6 +150,10 @@ sealed class SimpleField {
 		override val defaultValue: String? = null,
 	) : SimpleField() {
 
+		init {
+			validate()
+		}
+
 		override fun parse(value: String?): Double {
 			requireNotNull(value) { "Un réel ne peut pas être vide : trouvé $value" }
 
@@ -159,6 +176,10 @@ sealed class SimpleField {
 		override val defaultValue: String? = null,
 	) : SimpleField() {
 
+		init {
+			validate()
+		}
+
 		override fun parse(value: String?): kotlin.Boolean {
 			requireNotNull(value) { "Un booléen ne peut pas être vide : trouvé $value" }
 			return requireNotNull(value.toBooleanStrictOrNull()) { "Cette donnée n'est pas un booléen : $value" }
@@ -176,6 +197,10 @@ sealed class SimpleField {
 		override val arity: Arity,
 		override val defaultValue: String? = null,
 	) : SimpleField() {
+
+		init {
+			validate()
+		}
 
 		override fun parse(value: String?): ApiEmail {
 			requireNotNull(value) { "Un email ne peut pas être vide : trouvé $value" }
@@ -195,6 +220,10 @@ sealed class SimpleField {
 		override val defaultValue: String? = null,
 	) : SimpleField() {
 
+		init {
+			validate()
+		}
+
 		override fun parse(value: String?): String {
 			requireNotNull(value) { "Un numéro de téléphone ne peut pas être vide : trouvé $value" }
 			require(value.isNotBlank()) { "Un numéro de téléphone ne peut pas être vide : trouvé '$value'" }
@@ -213,6 +242,10 @@ sealed class SimpleField {
 		override val arity: Arity,
 		override val defaultValue: String? = null,
 	) : SimpleField() {
+
+		init {
+			validate()
+		}
 
 		override fun parse(value: String?): ApiDate {
 			requireNotNull(value) { "Une date ne peut pas être vide : trouvé $value" }
@@ -240,6 +273,10 @@ sealed class SimpleField {
 		override val arity: Arity,
 		override val defaultValue: String? = null,
 	) : SimpleField() {
+
+		init {
+			validate()
+		}
 
 		override fun parse(value: String?): ApiTime {
 			requireNotNull(value) { "Une heure ne peut pas être vide : trouvé $value" }
@@ -294,9 +331,12 @@ sealed class SimpleField {
 		val expiresAfterDays: Int? = null,
 		override val defaultValue: String? = null,
 	) : SimpleField() {
+
 		init {
 			require(effectiveMaxSizeMB in 1..10) { "Une pièce jointe doit avoir une taille comprise entre 1 et 10 Mo : trouvé $effectiveMaxSizeMB Mo" }
 			require(effectiveExpiresAfterDays in 1..5000) { "Une pièce jointe ne peut pas avoir une date d'expiration de tant de temps : trouvé $effectiveExpiresAfterDays jours" }
+
+			validate()
 		}
 
 		val effectiveMaxSizeMB get() = maxSizeMB ?: 10
