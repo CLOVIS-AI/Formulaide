@@ -1,5 +1,6 @@
 package formulaide.api.fields
 
+import formulaide.api.data.FormSubmission
 import formulaide.api.fields.SimpleField.Message.arity
 import formulaide.api.fields.SimpleField.Upload.Format
 import formulaide.api.types.Arity
@@ -39,7 +40,14 @@ sealed class SimpleField {
 		require(newer.arity.max <= arity.max) { "Une donnée ne peut que diminuer l'arité maximale : la valeur d'origine ($arity) autorise un espace moins large que la nouvelle valeur (${newer.arity})" }
 	}
 
-	abstract fun requestCopy(arity: Arity? = null): SimpleField
+	abstract fun requestCopy(arity: Arity? = null, defaultValue: String? = null): SimpleField
+
+	/**
+	 * If this field wasn't filled in by the user, and [defaultValue] isn't `null`, then it should be displayed during review.
+	 *
+	 * This can be used to create [mandatory][Arity] fields when editing a form, as [FormSubmission.parse] will use this value instead of refusing non-filled fields.
+	 */
+	abstract val defaultValue: String?
 
 	/**
 	 * The user should input some text.
@@ -50,6 +58,7 @@ sealed class SimpleField {
 	data class Text(
 		override val arity: Arity,
 		val maxLength: Int? = null,
+		override val defaultValue: String? = null,
 	) : SimpleField() {
 
 		val effectiveMaxLength get() = maxLength ?: Int.MAX_VALUE
@@ -70,7 +79,10 @@ sealed class SimpleField {
 			require(newer.effectiveMaxLength <= effectiveMaxLength) { "La longueur maximale ne peut être que diminuée : la valeur d'origine est $effectiveMaxLength, la nouvelle valeur est ${newer.effectiveMaxLength}" }
 		}
 
-		override fun requestCopy(arity: Arity?) = copy(arity = arity ?: this.arity)
+		override fun requestCopy(arity: Arity?, defaultValue: String?) = copy(
+			arity = arity ?: this.arity,
+			defaultValue = defaultValue ?: this.defaultValue,
+		)
 	}
 
 	/**
@@ -84,6 +96,7 @@ sealed class SimpleField {
 		override val arity: Arity,
 		val min: Long? = null,
 		val max: Long? = null,
+		override val defaultValue: String? = null,
 	) : SimpleField() {
 
 		val effectiveMin get() = min ?: Long.MIN_VALUE
@@ -108,7 +121,10 @@ sealed class SimpleField {
 			require(effectiveMax >= newer.effectiveMax) { "La valeur maximale ne peut pas être augmentée : la valeur d'origine est $effectiveMax, la nouvelle valeur est ${newer.effectiveMax}" }
 		}
 
-		override fun requestCopy(arity: Arity?) = copy(arity = arity ?: this.arity)
+		override fun requestCopy(arity: Arity?, defaultValue: String?) = copy(
+			arity = arity ?: this.arity,
+			defaultValue = defaultValue ?: this.defaultValue,
+		)
 	}
 
 	/**
@@ -118,6 +134,7 @@ sealed class SimpleField {
 	@SerialName("DECIMAL")
 	data class Decimal(
 		override val arity: Arity,
+		override val defaultValue: String? = null,
 	) : SimpleField() {
 
 		override fun parse(value: String?): Double {
@@ -126,7 +143,10 @@ sealed class SimpleField {
 			return requireNotNull(value.toDoubleOrNull()) { "Cette donnée n'est pas un réel : $value" }
 		}
 
-		override fun requestCopy(arity: Arity?) = copy(arity = arity ?: this.arity)
+		override fun requestCopy(arity: Arity?, defaultValue: String?) = copy(
+			arity = arity ?: this.arity,
+			defaultValue = defaultValue ?: this.defaultValue,
+		)
 	}
 
 	/**
@@ -136,6 +156,7 @@ sealed class SimpleField {
 	@SerialName("BOOLEAN")
 	data class Boolean(
 		override val arity: Arity,
+		override val defaultValue: String? = null,
 	) : SimpleField() {
 
 		override fun parse(value: String?): kotlin.Boolean {
@@ -143,13 +164,17 @@ sealed class SimpleField {
 			return requireNotNull(value.toBooleanStrictOrNull()) { "Cette donnée n'est pas un booléen : $value" }
 		}
 
-		override fun requestCopy(arity: Arity?) = copy(arity = arity ?: this.arity)
+		override fun requestCopy(arity: Arity?, defaultValue: String?) = copy(
+			arity = arity ?: this.arity,
+			defaultValue = defaultValue ?: this.defaultValue,
+		)
 	}
 
 	@Serializable
 	@SerialName("EMAIL")
 	data class Email(
 		override val arity: Arity,
+		override val defaultValue: String? = null,
 	) : SimpleField() {
 
 		override fun parse(value: String?): ApiEmail {
@@ -157,13 +182,17 @@ sealed class SimpleField {
 			return ApiEmail(value)
 		}
 
-		override fun requestCopy(arity: Arity?) = copy(arity = arity ?: this.arity)
+		override fun requestCopy(arity: Arity?, defaultValue: String?) = copy(
+			arity = arity ?: this.arity,
+			defaultValue = defaultValue ?: this.defaultValue,
+		)
 	}
 
 	@Serializable
 	@SerialName("TELEPHONE")
 	data class Phone(
 		override val arity: Arity,
+		override val defaultValue: String? = null,
 	) : SimpleField() {
 
 		override fun parse(value: String?): String {
@@ -172,13 +201,17 @@ sealed class SimpleField {
 			return value
 		}
 
-		override fun requestCopy(arity: Arity?) = copy(arity = arity ?: this.arity)
+		override fun requestCopy(arity: Arity?, defaultValue: String?) = copy(
+			arity = arity ?: this.arity,
+			defaultValue = defaultValue ?: this.defaultValue,
+		)
 	}
 
 	@Serializable
 	@SerialName("DATE")
 	data class Date(
 		override val arity: Arity,
+		override val defaultValue: String? = null,
 	) : SimpleField() {
 
 		override fun parse(value: String?): ApiDate {
@@ -195,13 +228,17 @@ sealed class SimpleField {
 			return ApiDate(year, month, day)
 		}
 
-		override fun requestCopy(arity: Arity?) = copy(arity = arity ?: this.arity)
+		override fun requestCopy(arity: Arity?, defaultValue: String?) = copy(
+			arity = arity ?: this.arity,
+			defaultValue = defaultValue ?: this.defaultValue,
+		)
 	}
 
 	@Serializable
 	@SerialName("TIME")
 	data class Time(
 		override val arity: Arity,
+		override val defaultValue: String? = null,
 	) : SimpleField() {
 
 		override fun parse(value: String?): ApiTime {
@@ -217,7 +254,10 @@ sealed class SimpleField {
 			return ApiTime(hour, minutes)
 		}
 
-		override fun requestCopy(arity: Arity?) = copy(arity = arity ?: this.arity)
+		override fun requestCopy(arity: Arity?, defaultValue: String?) = copy(
+			arity = arity ?: this.arity,
+			defaultValue = defaultValue ?: this.defaultValue,
+		)
 	}
 
 	/**
@@ -230,8 +270,11 @@ sealed class SimpleField {
 		override val arity get() = Arity.mandatory()
 		override fun parse(value: String?): Nothing? = null // whatever is always valid
 
+		override val defaultValue: String? = null
+
 		override fun toString() = "Message"
-		override fun requestCopy(arity: Arity?) = this // there's no arity here
+		override fun requestCopy(arity: Arity?, defaultValue: String?) =
+			this // there's no arity or default value here
 	}
 
 	/**
@@ -249,6 +292,7 @@ sealed class SimpleField {
 		val allowedFormats: List<Format>,
 		val maxSizeMB: Int? = null,
 		val expiresAfterDays: Int? = null,
+		override val defaultValue: String? = null,
 	) : SimpleField() {
 		init {
 			require(effectiveMaxSizeMB in 1..10) { "Une pièce jointe doit avoir une taille comprise entre 1 et 10 Mo : trouvé $effectiveMaxSizeMB Mo" }
@@ -264,7 +308,10 @@ sealed class SimpleField {
 			return Ref(value)
 		}
 
-		override fun requestCopy(arity: Arity?): SimpleField = copy(arity = arity ?: this.arity)
+		override fun requestCopy(arity: Arity?, defaultValue: String?) = copy(
+			arity = arity ?: this.arity,
+			defaultValue = defaultValue ?: this.defaultValue,
+		)
 
 		// These formats were selected because they are often used, and the employees likely already have everything needed to open them.
 		@Serializable
