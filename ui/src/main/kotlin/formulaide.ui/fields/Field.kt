@@ -42,31 +42,34 @@ private val RenderField = fc<FieldProps> { props ->
 	val scope = useAsync()
 
 	var simpleInputState by useState<String>()
-	val simpleInput = { type: InputType, _required: Boolean, handler: INPUT.() -> Unit ->
-		styledInput(type, props.id, required = _required) {
-			onChangeFunction = {
-				val newValue = (it.target as HTMLInputElement).value
-				simpleInputState = newValue
-				props.input?.let { onChange -> onChange(props.fieldKey, newValue) }
+	val simpleInput =
+		{ type: InputType, _required: Boolean, simple: SimpleField, handler: INPUT.() -> Unit ->
+			styledInput(type, props.id, required = _required) {
+				onChangeFunction = {
+					val newValue = (it.target as HTMLInputElement).value
+					simpleInputState = newValue
+					props.input?.let { input -> input(props.fieldKey, newValue) }
+				}
+				if (simple.defaultValue != null)
+					placeholder = simple.defaultValue.toString()
+				handler()
 			}
-			handler()
-		}
 	}
 
 	when (field) {
 		is FormField.Simple -> {
 			when (val simple = field.simple) {
-				is SimpleField.Text -> simpleInput(InputType.text, required) {}
-				is SimpleField.Integer -> simpleInput(InputType.number, required) {}
-				is SimpleField.Decimal -> simpleInput(InputType.number, required) {
+				is SimpleField.Text -> simpleInput(InputType.text, required, simple) {}
+				is SimpleField.Integer -> simpleInput(InputType.number, required, simple) {}
+				is SimpleField.Decimal -> simpleInput(InputType.number, required, simple) {
 					step = "any"
 				}
 				is SimpleField.Boolean -> styledCheckbox(props.id, "", required = false)
 				is SimpleField.Message -> Unit // The message has already been displayed
-				is SimpleField.Email -> simpleInput(InputType.email, required) {}
-				is SimpleField.Phone -> simpleInput(InputType.tel, required) {}
-				is SimpleField.Date -> simpleInput(InputType.date, required) {}
-				is SimpleField.Time -> simpleInput(InputType.time, required) {}
+				is SimpleField.Email -> simpleInput(InputType.email, required, simple) {}
+				is SimpleField.Phone -> simpleInput(InputType.tel, required, simple) {}
+				is SimpleField.Date -> simpleInput(InputType.date, required, simple) {}
+				is SimpleField.Time -> simpleInput(InputType.time, required, simple) {}
 				is SimpleField.Upload -> div {
 					if (props.form != null)
 						upload(simple,
@@ -248,7 +251,7 @@ fun RBuilder.field(
 	form: Form?,
 	root: Action?,
 	field: Field,
-	onChange: ((String, String) -> Unit)? = null,
+	input: ((String, String) -> Unit)? = null,
 	id: String? = null,
 	key: String? = null,
 ) = child(Field) {
@@ -258,6 +261,6 @@ fun RBuilder.field(
 		this.form = form
 		this.root = root
 		this.fieldKey = key ?: this.id
-		this.input = onChange
+		this.input = input
 	}
 }
