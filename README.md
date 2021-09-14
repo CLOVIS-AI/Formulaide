@@ -2,7 +2,7 @@
 
 Système de gestion publique pour la Mairie d'Arcachon, pour permettre aux habitants de faire des requêtes auprès de la Mairie et les suivre.
 
-Pour contribuer, voir [CONTRIBUTING.md](CONTRIBUTING.md). La documentation du code [est disponible ici](http://arcachon-ville.gitlab.io/formulaide/documentation).
+Pour contribuer, voir [CONTRIBUTING.md](CONTRIBUTING.md). La documentation du code [est disponible ici](http://clovis-ai.gitlab.io/formulaide/documentation).
 
 ## Déploiement
 
@@ -15,7 +15,7 @@ Il est théoriquement possible d'utiliser des répliques Mongo pour utiliser plu
 Liens de téléchargement :
 
 - MongoDB : [Site officiel](https://www.mongodb.com/) | [Docker](https://hub.docker.com/_/mongo)
-- Serveur : [Zip](http://arcachon-ville.gitlab.io/formulaide/bin/server.zip) | [Tar](http://arcachon-ville.gitlab.io/formulaide/bin/server.tar) | [Docker](https://gitlab.com/arcachon-ville/formulaide/container_registry)
+- Serveur : [Zip](http://clovis-ai.gitlab.io/formulaide/bin/server.zip) | [Tar](http://clovis-ai.gitlab.io/formulaide/bin/server.tar) | [Docker](https://gitlab.com/clovis-ai/formulaide/container_registry)
 
 Les binaires du serveur (zip, tar) nécessitent une installation valide de Java. Tous les liens donnés ci-dessus fonctionnent sur Linux, MacOS et Windows.
 
