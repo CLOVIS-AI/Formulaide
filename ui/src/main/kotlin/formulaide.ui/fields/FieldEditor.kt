@@ -20,6 +20,7 @@ enum class SwitchDirection(val offset: Int) {
 
 external interface EditableFieldProps : RProps {
 	var field: Field
+	var uniqueId: String
 	var replace: (Field) -> Unit
 	var remove: () -> Unit
 	var switch: (SwitchDirection) -> Unit
@@ -30,6 +31,7 @@ external interface EditableFieldProps : RProps {
 
 fun EditableFieldProps.inheritFrom(props: EditableFieldProps) {
 	field = props.field
+	uniqueId = props.uniqueId
 	replace = props.replace
 	remove = props.remove
 	depth = props.depth

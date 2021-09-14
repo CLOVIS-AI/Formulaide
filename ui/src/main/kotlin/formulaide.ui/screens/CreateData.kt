@@ -76,6 +76,7 @@ fun CreateData(original: Composite? = null) = fc<RProps> { _ ->
 					attrs {
 						this.field = field
 						key = field.id
+						uniqueId = "field:${field.id}"
 						replace = { it: Field ->
 							updateFields { replace(i, it as DataField) }
 						}.memoIn(lambdas, "replace-${field.id}", i)
