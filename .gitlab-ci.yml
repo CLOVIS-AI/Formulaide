@@ -298,3 +298,13 @@ pages:
       - public
   only:
     - main
+
+telegram:
+  stage: deploy
+  image: registry.gitlab.com/clovis-ai/dotfiles:latest
+  needs: [ ]
+  script:
+    - git changelog --format telegram-html --incoming >changelog
+    - announce-telegram changelog "$CHAT_IDS"
+  only:
+    - main
