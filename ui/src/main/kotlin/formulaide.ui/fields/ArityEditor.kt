@@ -68,7 +68,7 @@ val ArityEditor = fc<EditableFieldProps> { props ->
 			text("De ")
 			if (field !is DataField.Composite) {
 				styledSmallInput(InputType.number,
-				                 "item-arity-min-${props.field.id}",
+				                 "item-arity-min-${props.uniqueId}",
 				                 required = true) {
 					value = arity.min.toString()
 					min = minAllowedRange.first.toString()
@@ -85,7 +85,7 @@ val ArityEditor = fc<EditableFieldProps> { props ->
 			}
 			text(" à ")
 			styledSmallInput(InputType.number,
-			                 "item-arity-min-${props.field.id}",
+			                 "item-arity-min-${props.uniqueId}",
 			                 required = true) {
 				value = arity.max.toString()
 				min = max(arity.min, max(maxAllowedRange.first, 2)).toString()
