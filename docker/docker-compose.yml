@@ -11,7 +11,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: "development-password"
 
   server:
-    image: "registry.gitlab.com/arcachon-ville/formulaide/server:0.22"
+    image: "registry.gitlab.com/clovis-ai/formulaide/server:0.22"
     depends_on: [ mongo ]
     networks: [ database, internal-proxy ]
     environment:
