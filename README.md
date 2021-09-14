@@ -124,3 +124,7 @@ docker stack deploy -c docker-compose.yml -c docker-compose.prod.yml formulaide
 # La première fois, pour créer les comptes :
 docker stack deploy -c docker-compose.yml -c docker-compose.prod.yml -c docker-compose.init.yml formulaide
 ```
+
+## Développement
+
+[Comment participer à ce projet ?](CONTRIBUTING.md) | [Licence](LICENSE.txt)
