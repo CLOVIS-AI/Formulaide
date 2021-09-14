@@ -31,6 +31,7 @@ val RecursionEditor: FunctionComponent<EditableFieldProps> = fc { props ->
 				attrs {
 					this.field = field
 					key = field.id
+					uniqueId = "${props.uniqueId}:${field.id}"
 
 					depth = props.depth + 1
 					fieldNumber = i

@@ -14,8 +14,10 @@ val NameEditor = fc<EditableFieldProps> { props ->
 	val allowModification = field is DataField || field is ShallowFormField
 
 	if (allowModification) {
-		styledField("item-name-${field.id}", "Nom") {
-			styledInput(InputType.text, "item-name-${field.id}", required = true) {
+		val id = "item-name-${props.uniqueId}"
+
+		styledField(id, "Nom") {
+			styledInput(InputType.text, id, required = true) {
 				placeholder = "Nom du champ"
 				value = field.name
 				onChangeFunction = {

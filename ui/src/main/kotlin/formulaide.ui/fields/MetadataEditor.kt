@@ -22,7 +22,7 @@ val MetadataEditor = fc<EditableFieldProps> { props ->
 	if (field is Field.Simple) {
 		when (val simple = field.simple) {
 			is SimpleField.Text -> {
-				val id = idOf(field, "max-length")
+				val id = idOf(props.uniqueId, "max-length")
 				styledField(id, "Longueur maximale") {
 					styledInput(InputType.number, id) {
 						setHandler(simple.maxLength,
@@ -40,7 +40,7 @@ val MetadataEditor = fc<EditableFieldProps> { props ->
 				}
 			}
 			is SimpleField.Integer -> {
-				val id = idOf(field, "min")
+				val id = idOf(props.uniqueId, "min")
 				styledField(id, "Valeur minimale") {
 					styledInput(InputType.number, id) {
 						setHandler(simple.min,
@@ -53,7 +53,7 @@ val MetadataEditor = fc<EditableFieldProps> { props ->
 					cancelButton(simple.min, props, field, update = { simple.copy(min = null) })
 				}
 
-				val id2 = idOf(field, "max")
+				val id2 = idOf(props.uniqueId, "max")
 				styledField(id2, "Valeur maximale") {
 					styledInput(InputType.number, id2) {
 						setHandler(simple.max,
@@ -67,11 +67,11 @@ val MetadataEditor = fc<EditableFieldProps> { props ->
 				}
 			}
 			is SimpleField.Upload -> {
-				val id = idOf(field, "files")
+				val id = idOf(props.uniqueId, "files")
 				styledField(id, "Formats autorisés") {
 					for (format in Format.values()) {
 						val name = format.displayName()
-						val idFormat = idOf(field, name)
+						val idFormat = idOf(props.uniqueId, name)
 						div {
 							styledCheckbox(
 								idFormat,
@@ -95,7 +95,7 @@ val MetadataEditor = fc<EditableFieldProps> { props ->
 					}
 				}
 
-				val idSize = idOf(field, "size")
+				val idSize = idOf(props.uniqueId, "size")
 				styledField(idSize, "Taille maximale (Mo)") {
 					styledInput(InputType.number, idSize) {
 						min = "1"
@@ -113,7 +113,7 @@ val MetadataEditor = fc<EditableFieldProps> { props ->
 					             update = { simple.copy(maxSizeMB = null) })
 				}
 
-				val idExpiration = idOf(field, "expiration")
+				val idExpiration = idOf(props.uniqueId, "expiration")
 				styledField(idExpiration, "Durée de vie avant suppression (jours)") {
 					styledInput(InputType.number, idExpiration) {
 						min = "1"
@@ -136,8 +136,8 @@ val MetadataEditor = fc<EditableFieldProps> { props ->
 	}
 }
 
-private fun idOf(field: Field, attributeName: String) =
-	"field-editor-metadata-${field.id}-$attributeName"
+private fun idOf(uniqueId: String, attributeName: String) =
+	"field-editor-metadata-${uniqueId}-$attributeName"
 
 private fun RBuilder.cancelButton(
 	value: Any?,
