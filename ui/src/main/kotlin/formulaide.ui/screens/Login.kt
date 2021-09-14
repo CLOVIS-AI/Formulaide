@@ -161,7 +161,7 @@ val LoginAccess = fc<RProps> {
 				                               Screen.Home))
 			},
 			"Aide" to {
-				window.open("https://arcachon-ville.gitlab.io/formulaide/docs/user-guide.pdf")
+				window.open("https://clovis-ai.gitlab.io/formulaide/docs/user-guide.pdf")
 			}
 		) {
 			child(FormsToReview)
