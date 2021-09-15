@@ -69,7 +69,7 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<RProps> {
 			original.load(loaded)
 
 			formName.current?.let { it.value = original.name }
-			public.current?.let { it.value = original.public.toString() }
+			public.current?.let { it.checked = original.public }
 			updateFields { original.mainFields.fields }
 			updateActions { original.actions }
 		}
