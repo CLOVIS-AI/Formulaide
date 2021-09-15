@@ -251,7 +251,11 @@ data class FormSubmission(
 		return when {
 			arity.min == 0 && (answer == null || answer.value.isNullOrBlank()) -> {
 				println("$parent ${field.id} -> simple, was not filled in")
-				null
+
+				field.simple.defaultValue?.let {
+					println("$parent ${field.id} -> however, it has a default value: '$it'")
+					ParsedSimple(field, it)
+				} // else null
 			}
 			field.simple is Message -> {
 				println("$parent ${field.id} -> simple $Message")
