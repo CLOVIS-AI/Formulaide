@@ -7,10 +7,13 @@ import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.types.Ref.Companion.load
 import formulaide.client.Client
 import formulaide.client.routes.*
-import formulaide.ui.*
 import formulaide.ui.components.*
 import formulaide.ui.fields.field
 import formulaide.ui.fields.immutableFields
+import formulaide.ui.reportExceptions
+import formulaide.ui.traceRenders
+import formulaide.ui.useClient
+import formulaide.ui.useUser
 import formulaide.ui.utils.*
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
 import kotlinx.browser.window
@@ -124,6 +127,7 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 					child(SearchInput) {
 						attrs {
 							this.form = form
+							this.formLoaded = formLoaded
 							this.addCriterion = { updateSearches { this + it } }
 						}
 					}
@@ -199,19 +203,24 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 
 private external interface SearchInputProps : RProps {
 	var form: Form
+	var formLoaded: Boolean
 	var addCriterion: (ReviewSearch) -> Unit
 }
 
 private val SearchInput = memo(fc<SearchInputProps> { props ->
 	val form = props.form
-	val composites by useComposites()
-	form.load(composites)
 	var selectedRoot by useState<Action?>(null)
 	val (fields, updateFields) = useState(emptyList<FormField>())
 		.asDelegated()
 	var criterion by useState<SearchCriterion<*>?>(null)
 
 	val lambdas = useLambdas()
+
+	if (!props.formLoaded) {
+		text("Chargement du formulaire en cours…")
+		loadingSpinner()
+		return@fc
+	}
 
 	styledField("search-field", "Rechercher dans :") {
 		//region Select the root
