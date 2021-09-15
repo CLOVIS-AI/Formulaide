@@ -43,6 +43,14 @@ private val client = GlobalState<Client>(defaultClient)
 
 fun RBuilder.useClient() = useGlobalState(client)
 
+suspend fun logout() {
+	val authenticated = client.value as? Client.Authenticated
+		?: error("Impossible de se déconnecter, si on n'est pas connecté")
+
+	authenticated.logout()
+	client.value = defaultClient
+}
+
 fun RBuilder.useUser() = useGlobalState(client)
 	.filterIs<Client.Authenticated>()
 	.map { it.me }
