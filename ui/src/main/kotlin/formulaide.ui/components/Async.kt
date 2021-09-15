@@ -1,5 +1,6 @@
 package formulaide.ui.components
 
+import formulaide.ui.reportExceptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
@@ -28,7 +29,9 @@ fun RBuilder.useAsyncEffect(vararg dependencies: dynamic, effect: suspend () -> 
 		val job = Job()
 
 		CoroutineScope(job).launch {
-			effect()
+			reportExceptions {
+				effect()
+			}
 		}
 
 		cleanup { job.cancel("Les dépendances de l'effet ont été modifiées") }
@@ -41,7 +44,9 @@ fun RBuilder.useAsyncEffectOnce(effect: suspend () -> Unit) {
 		val job = Job()
 
 		CoroutineScope(job).launch {
-			effect()
+			reportExceptions {
+				effect()
+			}
 		}
 
 		cleanup { job.cancel("Les dépendances de l'effet ont été modifiées") }
