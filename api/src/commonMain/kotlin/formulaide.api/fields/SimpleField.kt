@@ -282,7 +282,7 @@ sealed class SimpleField {
 				listOf("RTF") to listOf("application/rtf"),
 			),
 			ARCHIVE(
-				listOf("ZIP") to listOf("application/zip"),
+				listOf("ZIP") to listOf("application/zip", "application/x-zip-compressed"),
 			),
 			AUDIO(
 				listOf("MP3") to listOf("audio/mpeg"),
