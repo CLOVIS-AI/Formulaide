@@ -717,7 +717,7 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 							             }
 						             })
 
-					styledButton("Garder",
+					styledButton("Conserver",
 					             enabled = decision != ReviewDecision.NO_CHANGE,
 					             action = { updateDestination { state }; reason = null })
 
