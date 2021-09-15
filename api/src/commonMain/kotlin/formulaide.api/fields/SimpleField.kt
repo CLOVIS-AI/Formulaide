@@ -268,45 +268,45 @@ sealed class SimpleField {
 
 		// These formats were selected because they are often used, and the employees likely already have everything needed to open them.
 		@Serializable
-		enum class Format(vararg formats: Pair<List<String>, String>) {
+		enum class Format(vararg formats: Pair<List<String>, List<String>>) {
 			IMAGE(
-				listOf("JPEG", "JPG") to "image/jpeg",
-				listOf("PNG") to "image/png",
-				listOf("BMP") to "image/bmp",
-				listOf("TIF", "TIFF") to "image/tiff",
-				listOf("WEBP") to "image/webp",
+				listOf("JPEG", "JPG") to listOf("image/jpeg"),
+				listOf("PNG") to listOf("image/png"),
+				listOf("BMP") to listOf("image/bmp"),
+				listOf("TIF", "TIFF") to listOf("image/tiff"),
+				listOf("WEBP") to listOf("image/webp"),
 			),
 			DOCUMENT(
-				listOf("PDF") to "application/pdf",
-				listOf("TXT") to "text/plain",
-				listOf("RTF") to "application/rtf",
+				listOf("PDF") to listOf("application/pdf"),
+				listOf("TXT") to listOf("text/plain"),
+				listOf("RTF") to listOf("application/rtf"),
 			),
 			ARCHIVE(
-				listOf("ZIP") to "application/zip",
+				listOf("ZIP") to listOf("application/zip"),
 			),
 			AUDIO(
-				listOf("MP3") to "audio/mpeg",
-				listOf("OGG") to "audio/ogg",
-				listOf("WAV") to "audio/wav",
-				listOf("WEBA") to "audio/webm",
+				listOf("MP3") to listOf("audio/mpeg"),
+				listOf("OGG") to listOf("audio/ogg"),
+				listOf("WAV") to listOf("audio/wav"),
+				listOf("WEBA") to listOf("audio/webm"),
 			),
 			VIDEO(
-				listOf("AVI") to "video/x-msvideo",
-				listOf("MP4") to "video/mp4",
-				listOf("OGV") to "video/ogg",
-				listOf("WEBM") to "video/webm",
+				listOf("AVI") to listOf("video/x-msvideo"),
+				listOf("MP4") to listOf("video/mp4"),
+				listOf("OGV") to listOf("video/ogg"),
+				listOf("WEBM") to listOf("video/webm"),
 			),
 			TABULAR(
-				listOf("CSV") to "text/csv",
+				listOf("CSV") to listOf("text/csv"),
 			),
 			EVENT(
-				listOf("ICS") to "text/calendar",
+				listOf("ICS") to listOf("text/calendar"),
 			),
 			;
 
 			val formats = formats.toMap()
 			val extensions get() = formats.keys.flatten()
-			val mimeTypes get() = formats.values
+			val mimeTypes get() = formats.values.flatten()
 
 			companion object {
 				/**
