@@ -83,9 +83,13 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<RProps> {
 		return@fc
 	}
 
+	val (title, buttonName) =
+		if (original == null || copy) "Créer un formulaire" to "Créer ce formulaire"
+		else "Modifier un formulaire" to "Modifier ce formulaire"
+
 	styledFormCard(
-		"Créer un formulaire", null,
-		"Créer ce formulaire" to {
+		title, null,
+		buttonName to {
 			val form = Form(
 				name = formName.current?.value ?: error("Le formulaire n'a pas de nom"),
 				id = Ref.SPECIAL_TOKEN_NEW,
