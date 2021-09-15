@@ -251,7 +251,6 @@ private val SearchInput = memo(fc<SearchInputProps> { props ->
 					this.allowEmpty = i != 0
 					this.select = { it: FormField? ->
 						updateFields {
-							println("USE_EFFECT_REPLACE $it")
 							if (it != null)
 								subList(0, i) + it
 							else
@@ -595,11 +594,9 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 				p.children?.let { child -> yieldAll(child.flatMap { parsedAsSequence(it) }) }
 			}
 
-			console.warn("Searching for $key")
 			val parsedField = parsed.submission.fields
 				.asSequence()
 				.flatMap { parsedAsSequence(it) }
-				.onEach { console.log(it, it.fullKeyString) }
 				.firstOrNull { it.fullKeyString == key }
 
 			td("first:pl-8 last:pr-8 py-2") {
