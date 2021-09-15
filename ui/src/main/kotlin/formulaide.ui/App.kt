@@ -194,7 +194,7 @@ internal class CrashReporter : RComponent<RProps, CrashReporterState>() {
 				"Le site a rencontré un échec fatal",
 				failed = true,
 			) {
-				p { text("Veuillez signaler cette erreur à l'administrateur, en lui envoyant les informations ci-dessous :") }
+				p { text("Veuillez signaler cette erreur à l'administrateur, en lui envoyant les informations ci-dessous, à l'adresse incoming+clovis-ai-formulaide-27107472-issue-@incoming.gitlab.com :") }
 
 				p(errorSectionClass) {
 					text("Ce que j'étais en train de faire : ")
