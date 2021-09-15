@@ -7,13 +7,16 @@ import formulaide.client.Client
 import formulaide.client.refreshToken
 import formulaide.client.routes.*
 import formulaide.ui.components.styledCard
+import formulaide.ui.components.styledLightText
 import formulaide.ui.components.useAsync
 import formulaide.ui.components.useAsyncEffect
 import formulaide.ui.screens.clearRecords
 import formulaide.ui.utils.*
 import kotlinx.browser.window
 import kotlinx.coroutines.delay
+import org.w3c.dom.get
 import react.*
+import react.dom.br
 import react.dom.p
 
 //region Production / development environments
@@ -163,3 +166,106 @@ val App = fc<RProps> {
 		}
 	}
 }
+
+//region Crash reporter
+
+private const val errorSectionClass = "mt-2"
+
+internal external interface CrashReporterState : RState {
+	var failed: Boolean
+	var error: Throwable
+	var info: ErrorInfo
+}
+
+internal class CrashReporter : RComponent<RProps, CrashReporterState>() {
+
+	override fun componentDidCatch(error: Throwable, info: ErrorInfo) {
+		setState {
+			failed = true
+			this.error = error
+			this.info = info
+		}
+	}
+
+	override fun RBuilder.render() {
+		if (state.failed) {
+			styledCard(
+				"Erreur",
+				"Le site a rencontré un échec fatal",
+				failed = true,
+			) {
+				p { text("Veuillez signaler cette erreur à l'administrateur, en lui envoyant les informations ci-dessous, à l'adresse incoming+clovis-ai-formulaide-27107472-issue-@incoming.gitlab.com :") }
+
+				p(errorSectionClass) {
+					text("Ce que j'étais en train de faire : ")
+					br {}
+					styledLightText("Ici, expliquez ce que vous étiez en train de faire quand le problème a eu lieu.")
+				}
+
+				p(errorSectionClass) {
+					text("Error type : ")
+					br {}
+					styledLightText("Plantage de l'application, capturé par CrashReporter")
+				}
+
+				p(errorSectionClass) {
+					text("Throwable : ")
+					state.error.stackTraceToString()
+						.removeSurrounding("\n")
+						.split("\n")
+						.forEach {
+							br {}
+							styledLightText(it.trim())
+						}
+				}
+
+				p(errorSectionClass) {
+					text("Component stack : ")
+					state.info.componentStack
+						.trim()
+						.removeSurrounding("\n")
+						.split("\n")
+						.forEach {
+							br {}
+							styledLightText(it.trim())
+						}
+				}
+
+				for (local in listOf("form-fields", "form-actions", "data-fields")) {
+					p(errorSectionClass) {
+						text("Local storage : $local")
+						br {}
+						styledLightText(window.localStorage[local].toString())
+					}
+				}
+
+				p(errorSectionClass) {
+					text("Client : ")
+					br {}
+					styledLightText(client.value.hostUrl)
+					br {}
+					styledLightText((client.value as? Client.Authenticated)?.me.toString())
+				}
+
+				for ((globalName, global) in mapOf(
+					"Groupes" to composites,
+					"Formulaires" to forms,
+					"Services" to services,
+				)) {
+					p(errorSectionClass) {
+						text("Cache : $globalName")
+						global.value.forEach {
+							br {}
+							styledLightText(it.toString())
+						}
+					}
+				}
+			}
+		} else {
+			props.children()
+		}
+	}
+
+}
+
+//endregion
