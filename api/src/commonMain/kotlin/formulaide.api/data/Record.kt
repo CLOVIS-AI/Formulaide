@@ -99,7 +99,7 @@ data class RecordStateTransition(
 @Serializable
 data class RecordsToReviewRequest(
 	val form: Ref<Form>,
-	val state: RecordState,
+	val state: RecordState?,
 	val query: Map<ReferenceId?, List<SearchCriterion<*>>>,
 )
 
