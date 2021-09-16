@@ -16,7 +16,7 @@ import formulaide.ui.useClient
 import formulaide.ui.useUser
 import formulaide.ui.utils.*
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
-import kotlinx.browser.window
+import kotlinx.browser.document
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -114,8 +114,16 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 						type = "text/csv"
 					))
 
-					val url = URL.createObjectURL(blob)
-					window.open(url, target = "_blank", features = "noopener,noreferrer")
+					document.createElement("a").run {
+						setAttribute("href", URL.createObjectURL(blob))
+						setAttribute("target", "_blank")
+						setAttribute("download", "${form.name} - ${state.displayName()}.csv")
+						setAttribute("hidden", "hidden")
+						setAttribute("rel", "noopener,noreferrer")
+
+						asDynamic().click()
+						Unit
+					}
 				},
 				"Tout ouvrir" to { collapsed = false },
 				"Tout réduire" to { collapsed = true },
