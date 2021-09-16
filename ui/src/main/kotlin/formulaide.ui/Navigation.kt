@@ -65,7 +65,7 @@ abstract class Screen(
 		       { formulaide.ui.screens.SubmitForm(form) },
 		       "submit-${form.id}")
 
-	class Review(form: Form, state: RecordState, records: List<Record>) :
+	class Review(form: Form, state: RecordState?, records: List<Record>) :
 		Screen("Vérification",
 		       Role.EMPLOYEE,
 		       { formulaide.ui.screens.Review(form, state, records) },
