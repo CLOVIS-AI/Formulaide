@@ -8,12 +8,14 @@ import formulaide.api.fields.SimpleField
 import formulaide.api.types.Arity
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.types.UploadRequest
+import formulaide.client.Client
 import formulaide.client.files.FileUploadJS
 import formulaide.client.routes.uploadFile
 import formulaide.ui.components.*
 import formulaide.ui.reportExceptions
 import formulaide.ui.useClient
 import formulaide.ui.utils.text
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.html.INPUT
 import kotlinx.html.InputType
 import kotlinx.html.id
@@ -24,11 +26,12 @@ import react.*
 import react.dom.*
 
 private external interface FieldProps : RProps {
-	var form: Form
+	var form: Form?
 	var root: Action?
-	var field: FormField
+	var field: Field
 	var id: String
 	var fieldKey: String
+	var input: ((String, String) -> Unit)?
 }
 
 private val RenderField = fc<FieldProps> { props ->
@@ -39,72 +42,47 @@ private val RenderField = fc<FieldProps> { props ->
 	val scope = useAsync()
 
 	var simpleInputState by useState<String>()
-	val simpleInput = { type: InputType, _required: Boolean, handler: INPUT.() -> Unit ->
-		styledInput(type, props.id, required = _required) {
-			onChangeFunction = { simpleInputState = (it.target as HTMLInputElement).value }
-			handler()
-		}
+	val simpleInput =
+		{ type: InputType, _required: Boolean, simple: SimpleField, handler: INPUT.() -> Unit ->
+			styledInput(type, props.id, required = _required) {
+				onChangeFunction = {
+					val newValue = (it.target as HTMLInputElement).value
+					simpleInputState = newValue
+					props.input?.let { input -> input(props.fieldKey, newValue) }
+				}
+				if (simple.defaultValue != null)
+					placeholder = simple.defaultValue.toString()
+				handler()
+			}
 	}
 
 	when (field) {
 		is FormField.Simple -> {
 			when (val simple = field.simple) {
-				is SimpleField.Text -> simpleInput(InputType.text, required) {}
-				is SimpleField.Integer -> simpleInput(InputType.number, required) {}
-				is SimpleField.Decimal -> simpleInput(InputType.number, required) {
+				is SimpleField.Text -> simpleInput(InputType.text, required, simple) {}
+				is SimpleField.Integer -> simpleInput(InputType.number, required, simple) {}
+				is SimpleField.Decimal -> simpleInput(InputType.number, required, simple) {
 					step = "any"
 				}
 				is SimpleField.Boolean -> styledCheckbox(props.id, "", required = false)
 				is SimpleField.Message -> Unit // The message has already been displayed
-				is SimpleField.Email -> simpleInput(InputType.email, required) {}
-				is SimpleField.Phone -> simpleInput(InputType.tel, required) {}
-				is SimpleField.Date -> simpleInput(InputType.date, required) {}
-				is SimpleField.Time -> simpleInput(InputType.time, required) {}
+				is SimpleField.Email -> simpleInput(InputType.email, required, simple) {}
+				is SimpleField.Phone -> simpleInput(InputType.tel, required, simple) {}
+				is SimpleField.Date -> simpleInput(InputType.date, required, simple) {}
+				is SimpleField.Time -> simpleInput(InputType.time, required, simple) {}
 				is SimpleField.Upload -> div {
-					ul {
-						li {
-							text("Formats autorisés : ${
-								simple.allowedFormats.flatMap { it.extensions }
-									.joinToString(separator = ", ")
-							}")
-						}
-						li {
-							text("Taille maximale : ${simple.effectiveMaxSizeMB} Mo")
-						}
-						li {
-							text("RGPD : Ce fichier sera conservé ${simple.effectiveExpiresAfterDays} jours")
-						}
-					}
-					styledInput(InputType.file, "", required) {
-						accept = simple.allowedFormats.flatMap { it.mimeTypes }
-							.joinToString(separator = ", ")
-						multiple = false
-						onChangeFunction = {
-							val target = it.target as HTMLInputElement
-							reportExceptions {
-								val file =
-									requireNotNull(target.files?.get(0)) { "Aucun fichier n'a été trouvé : $target" }
-
-								scope.reportExceptions {
-									val uploaded = client.uploadFile(
-										UploadRequest(
-											form = props.form.createRef(),
-											root = props.root?.createRef(),
-											field = props.fieldKey
-										),
-										file = FileUploadJS(file, file.name)
-									)
-									simpleInputState = uploaded.id
-								}
-							}
-						}
-					}
-					input(InputType.hidden, name = props.id) {
-						attrs {
-							id = props.id
-							value = simpleInputState ?: ""
-						}
-					}
+					if (props.form != null)
+						upload(simple,
+						       scope,
+						       client,
+						       props.form!!,
+						       props.root,
+						       props.id,
+						       props.fieldKey,
+						       simpleInputState,
+						       props.input)
+					else
+						styledErrorText("Ce champ ne correspond à aucun formulaire, il n'est pas possible d'envoyer un fichier.")
 				}
 			}
 
@@ -120,7 +98,11 @@ private val RenderField = fc<FieldProps> { props ->
 
 			styledNesting {
 				for (subField in subFields) {
-					field(props.form, props.root, subField, "${props.id}:${subField.id}")
+					field(props.form,
+					      props.root,
+					      subField,
+					      props.input,
+					      "${props.id}:${subField.id}")
 				}
 			}
 		}
@@ -143,9 +125,70 @@ private val RenderField = fc<FieldProps> { props ->
 				}
 
 				if (selected !is Field.Simple || selected.simple != SimpleField.Message) {
-					field(props.form, props.root, selected, "${props.id}:${selected.id}")
+					field(props.form,
+					      props.root,
+					      selected,
+					      props.input,
+					      id = "${props.id}:${selected.id}")
 				}
 			}
+		}
+	}
+}
+
+private fun RBuilder.upload(
+	simple: SimpleField.Upload,
+	scope: CoroutineScope,
+	client: Client,
+	form: Form,
+	root: Action?,
+	id: String,
+	fieldKey: String,
+	simpleInputState: String?,
+	onChange: ((String, String) -> Unit)?,
+) {
+	ul {
+		li {
+			text("Formats autorisés : ${
+				simple.allowedFormats.flatMap { it.extensions }
+					.joinToString(separator = ", ")
+			}")
+		}
+		li {
+			text("Taille maximale : ${simple.effectiveMaxSizeMB} Mo")
+		}
+		li {
+			text("RGPD : Ce fichier sera conservé ${simple.effectiveExpiresAfterDays} jours")
+		}
+	}
+	styledInput(InputType.file, "", simple.arity.min > 0) {
+		accept = simple.allowedFormats.flatMap { it.mimeTypes }
+			.joinToString(separator = ", ")
+		multiple = false
+		onChangeFunction = {
+			val target = it.target as HTMLInputElement
+			reportExceptions {
+				val file =
+					requireNotNull(target.files?.get(0)) { "Aucun fichier n'a été trouvé : $target" }
+
+				scope.reportExceptions {
+					val uploaded = client.uploadFile(
+						UploadRequest(
+							form = form.createRef(),
+							root = root?.createRef(),
+							field = fieldKey
+						),
+						file = FileUploadJS(file, file.name)
+					)
+					onChange?.let { onChange -> onChange(fieldKey, uploaded.id) }
+				}
+			}
+		}
+	}
+	input(InputType.hidden, name = id) {
+		attrs {
+			this.id = id
+			value = simpleInputState ?: ""
 		}
 	}
 }
@@ -161,6 +204,7 @@ private val Field: FunctionComponent<FieldProps> = fc { props ->
 					this.field = props.field
 					this.id = props.id
 					this.fieldKey = props.id
+					this.input = props.input
 				}
 			}
 		}
@@ -177,6 +221,7 @@ private val Field: FunctionComponent<FieldProps> = fc { props ->
 							this.field = props.field
 							this.id = "${props.id}:$fieldId"
 							this.fieldKey = fieldId.toString()
+							this.input = props.input
 						}
 					}
 					if (fieldIds.size > props.field.arity.min) {
@@ -203,9 +248,10 @@ private val Field: FunctionComponent<FieldProps> = fc { props ->
 }
 
 fun RBuilder.field(
-	form: Form,
+	form: Form?,
 	root: Action?,
-	field: FormField,
+	field: Field,
+	input: ((String, String) -> Unit)? = null,
 	id: String? = null,
 	key: String? = null,
 ) = child(Field) {
@@ -215,5 +261,6 @@ fun RBuilder.field(
 		this.form = form
 		this.root = root
 		this.fieldKey = key ?: this.id
+		this.input = input
 	}
 }
