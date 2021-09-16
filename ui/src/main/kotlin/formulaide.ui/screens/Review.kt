@@ -638,33 +638,7 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 				colSpan = form.mainFields.asSequence().count().toString()
 			}
 
-			styledFormCard(
-				"Dossier",
-				null,
-				submit = "Confirmer" to { htmlForm ->
-					val submission =
-						if (state is RecordState.Action && state.current.obj.fields?.fields?.isNotEmpty() == true)
-							parseHtmlForm(
-								htmlForm,
-								form,
-								state.current.obj,
-							)
-						else null
-
-					launch {
-						review(
-							submission,
-							nextState = selectedDestination,
-							reason = reason,
-							sendFields = true,
-						)
-					}
-				},
-				"Réduire" to { collapsed = true },
-				(if (showFullHistory) "Valeurs les plus récentes" else "Historique") to {
-					showFullHistory = !showFullHistory
-				}
-			) {
+			fun RBuilder.cardContents() {
 				var i = 0
 
 				for (parsed in history) {
@@ -716,6 +690,36 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 						}
 					}
 				}
+			}
+
+			if (props.windowState != null) styledFormCard(
+				"Dossier",
+				null,
+				submit = "Confirmer" to { htmlForm ->
+					val submission =
+						if (state is RecordState.Action && state.current.obj.fields?.fields?.isNotEmpty() == true)
+							parseHtmlForm(
+								htmlForm,
+								form,
+								state.current.obj,
+							)
+						else null
+
+					launch {
+						review(
+							submission,
+							nextState = selectedDestination,
+							reason = reason,
+							sendFields = true,
+						)
+					}
+				},
+				"Réduire" to { collapsed = true },
+				(if (showFullHistory) "Valeurs les plus récentes" else "Historique") to {
+					showFullHistory = !showFullHistory
+				}
+			) {
+				cardContents()
 
 				val decision = when {
 					selectedDestination is RecordState.Action && selectedDestination == state -> ReviewDecision.NO_CHANGE
@@ -777,6 +781,12 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 							}
 						}
 					}
+			} else styledCard(
+				"Dossier",
+				state.displayName(),
+				"Réduire" to { collapsed = true },
+			) {
+				cardContents()
 			}
 		}
 	}
