@@ -87,9 +87,16 @@ suspend fun Database.findFormsAssignedTo(user: DbUser): List<Form> {
 		.toList()
 }
 
+/**
+ * Find records corresponding to a given [form].
+ *
+ * @param state If not `null`, this function will only return records that are currently in that [state].
+ * @param submissions If not `null`, only returns records that contain at least one of these [submissions].
+ * @param limit If not `null`, return at most [limit] results.
+ */
 suspend fun Database.findRecords(
 	form: Form,
-	state: RecordState,
+	state: RecordState?,
 	submissions: List<DbSubmission>? = null,
 	limit: Int? = Record.MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION,
 ): List<Record> {
@@ -97,8 +104,11 @@ suspend fun Database.findRecords(
 		?.map { it.apiId }
 		?.let { (Record::history / RecordStateTransition::fields / Ref<*>::id).`in`(it) }
 
+	val stateFilter = (Record::state eq state)
+		.takeIf { state != null }
+
 	var results = records
-		.find(Record::form / Ref<*>::id eq form.id, Record::state eq state, submissionsFilter)
+		.find(Record::form / Ref<*>::id eq form.id, stateFilter, submissionsFilter)
 
 	if (limit != null)
 		results = results.limit(limit)

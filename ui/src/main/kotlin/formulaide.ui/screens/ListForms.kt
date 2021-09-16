@@ -26,8 +26,10 @@ import react.dom.div
 private typealias RecordKey = Pair<Form, RecordState>
 
 private val recordsCache = HashMap<RecordKey, GlobalState<List<Record>>>()
+private val recordsCacheModification = GlobalState(0)
 fun clearRecords() {
 	recordsCache.clear()
+	recordsCacheModification.value++
 }
 
 fun CoroutineScope.insertIntoRecordsCache(
@@ -48,9 +50,17 @@ private fun CoroutineScope.getRecords(
 	GlobalState<List<Record>>(emptyList()).apply {
 		reportExceptions {
 			this@apply.value = client.todoListFor(form, state)
+			recordsCacheModification.value++
 		}
 	}
 }
+
+private fun CoroutineScope.getRecords(
+	client: Client.Authenticated,
+	form: Form,
+) = (form.actions.map { RecordState.Action(it.createRef()) } + RecordState.Refused)
+	.map { getRecords(client, form, it) }
+	.flatMap { it.value }
 
 val FormList = fc<RProps> { _ ->
 	traceRenders("FormList")
@@ -163,6 +173,13 @@ internal val FormDescription = memo(fc<FormDescriptionProps> { props ->
 				this.state = RecordState.Refused
 			}
 		}
+
+		child(ActionDescription) {
+			attrs {
+				this.form = form
+				this.state = null
+			}
+		}
 	}
 
 	if (showAdministration) styledNesting {
@@ -195,7 +212,7 @@ internal val FormDescription = memo(fc<FormDescriptionProps> { props ->
 
 internal external interface ActionDescriptionProps : RProps {
 	var form: Form
-	var state: RecordState
+	var state: RecordState?
 }
 
 internal val ActionDescription = fc<ActionDescriptionProps> { props ->
@@ -207,12 +224,18 @@ internal val ActionDescription = fc<ActionDescriptionProps> { props ->
 	val scope = useAsync()
 	require(client is Client.Authenticated) { "Seuls les employés peuvent afficher 'ActionDescription'" }
 
-	val records by useGlobalState(scope.getRecords(client, form, state))
+	val recordsCacheEdits by useGlobalState(recordsCacheModification) // to force a render when the cache changes
+
+	val recordsDelegate =
+		if (state != null) useGlobalState(scope.getRecords(client, form, state))
+		else useMemo(recordsCacheEdits) { ReadDelegatedProperty { scope.getRecords(client, form) } }
+
+	val records by recordsDelegate
 
 	val stateName = when (state) {
 		is RecordState.Action -> state.displayName()
 			.takeIf { user?.service?.id == state.current.obj.reviewer.id }
-		is RecordState.Refused -> state.displayName()
+		else -> state.displayName()
 	}
 	if (stateName != null) {
 		val title = stateName +

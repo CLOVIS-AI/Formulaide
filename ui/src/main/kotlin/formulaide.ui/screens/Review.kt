@@ -30,9 +30,10 @@ import react.*
 import react.dom.*
 import kotlin.js.Date
 
-internal fun RecordState.displayName() = when (this) {
+internal fun RecordState?.displayName() = when (this) {
 	is RecordState.Action -> this.current.obj.name
 	is RecordState.Refused -> "Dossiers refusés"
+	null -> "Tous les dossiers"
 }
 
 private data class ReviewSearch(
@@ -42,7 +43,7 @@ private data class ReviewSearch(
 )
 
 @Suppress("FunctionName")
-internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>) = fc<RProps> {
+internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record>) = fc<RProps> {
 	traceRenders("Review ${form.name}")
 
 	val scope = useAsync()
@@ -172,9 +173,14 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 			table("table-auto w-full") {
 				thead {
 					tr {
+						val thClasses = "first:pl-8 last:pr-8 py-2"
+
+						if (state == null)
+							th(classes = thClasses) { div("mx-4") { text("Étape") } }
+
 						if (formLoaded) {
 							columnsToDisplay.forEach { (_, it) ->
-								th(classes = "first:pl-8 last:pr-8 py-2") { div("mx-4") { text(it.name) } }
+								th(classes = thClasses) { div("mx-4") { text(it.name) } }
 							}
 						}
 					}
@@ -185,6 +191,7 @@ internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>
 						child(ReviewRecord) {
 							attrs {
 								this.form = form
+								this.windowState = state
 								this.formLoaded = formLoaded
 								this.record = record
 
@@ -496,6 +503,7 @@ private val CriterionPill = memo(fc<CriterionPillProps> { props ->
 
 private external interface ReviewRecordProps : RProps {
 	var form: Form
+	var windowState: RecordState?
 	var record: Record
 
 	var collapseAll: Boolean
@@ -602,6 +610,15 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 	}
 
 	if (collapsed) tr {
+		val tdClasses = "first:pl-8 last:pr-8 py-2"
+		val tdDivClasses = "mx-4"
+
+		if (props.windowState == null) td(tdClasses) {
+			div(tdDivClasses) {
+				text(state.displayName())
+			}
+		}
+
 		val parsed = history.first { it.transition.previousState == null }
 		requireNotNull(parsed.submission) { "Une saisie initiale est nécessairement déjà remplie" }
 
@@ -616,8 +633,8 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 				.flatMap { parsedAsSequence(it) }
 				.firstOrNull { it.fullKeyString == key }
 
-			td("first:pl-8 last:pr-8 py-2") {
-				div("mx-4") {
+			td(tdClasses) {
+				div(tdDivClasses) {
 					if (parsedField is ParsedList<*>) {
 						text(parsedField.children.mapNotNull { it.rawValue }
 							     .joinToString(separator = ", "))
@@ -635,33 +652,7 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 				colSpan = form.mainFields.asSequence().count().toString()
 			}
 
-			styledFormCard(
-				"Dossier",
-				null,
-				submit = "Confirmer" to { htmlForm ->
-					val submission =
-						if (state is RecordState.Action && state.current.obj.fields?.fields?.isNotEmpty() == true)
-							parseHtmlForm(
-								htmlForm,
-								form,
-								state.current.obj,
-							)
-						else null
-
-					launch {
-						review(
-							submission,
-							nextState = selectedDestination,
-							reason = reason,
-							sendFields = true,
-						)
-					}
-				},
-				"Réduire" to { collapsed = true },
-				(if (showFullHistory) "Valeurs les plus récentes" else "Historique") to {
-					showFullHistory = !showFullHistory
-				}
-			) {
+			fun RBuilder.cardContents() {
 				var i = 0
 
 				for (parsed in history) {
@@ -713,6 +704,36 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 						}
 					}
 				}
+			}
+
+			if (props.windowState != null) styledFormCard(
+				"Dossier",
+				null,
+				submit = "Confirmer" to { htmlForm ->
+					val submission =
+						if (state is RecordState.Action && state.current.obj.fields?.fields?.isNotEmpty() == true)
+							parseHtmlForm(
+								htmlForm,
+								form,
+								state.current.obj,
+							)
+						else null
+
+					launch {
+						review(
+							submission,
+							nextState = selectedDestination,
+							reason = reason,
+							sendFields = true,
+						)
+					}
+				},
+				"Réduire" to { collapsed = true },
+				(if (showFullHistory) "Valeurs les plus récentes" else "Historique") to {
+					showFullHistory = !showFullHistory
+				}
+			) {
+				cardContents()
 
 				val decision = when {
 					selectedDestination is RecordState.Action && selectedDestination == state -> ReviewDecision.NO_CHANGE
@@ -774,6 +795,12 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 							}
 						}
 					}
+			} else styledCard(
+				"Dossier",
+				state.displayName(),
+				"Réduire" to { collapsed = true },
+			) {
+				cardContents()
 			}
 		}
 	}
