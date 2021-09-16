@@ -161,9 +161,14 @@ internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record
 			table("table-auto w-full") {
 				thead {
 					tr {
+						val thClasses = "first:pl-8 last:pr-8 py-2"
+
+						if (state == null)
+							th(classes = thClasses) { div("mx-4") { text("Étape") } }
+
 						if (formLoaded) {
 							columnsToDisplay.forEach { (_, it) ->
-								th(classes = "first:pl-8 last:pr-8 py-2") { div("mx-4") { text(it.name) } }
+								th(classes = thClasses) { div("mx-4") { text(it.name) } }
 							}
 						}
 					}
@@ -174,6 +179,7 @@ internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record
 						child(ReviewRecord) {
 							attrs {
 								this.form = form
+								this.windowState = state
 								this.formLoaded = formLoaded
 								this.record = record
 
@@ -481,6 +487,7 @@ private val CriterionPill = memo(fc<CriterionPillProps> { props ->
 
 private external interface ReviewRecordProps : RProps {
 	var form: Form
+	var windowState: RecordState?
 	var record: Record
 
 	var collapseAll: Boolean
@@ -587,6 +594,15 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 	}
 
 	if (collapsed) tr {
+		val tdClasses = "first:pl-8 last:pr-8 py-2"
+		val tdDivClasses = "mx-4"
+
+		if (props.windowState == null) td(tdClasses) {
+			div(tdDivClasses) {
+				text(state.displayName())
+			}
+		}
+
 		val parsed = history.first { it.transition.previousState == null }
 		requireNotNull(parsed.submission) { "Une saisie initiale est nécessairement déjà remplie" }
 
@@ -603,8 +619,8 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 				.onEach { console.log(it, it.fullKeyString) }
 				.firstOrNull { it.fullKeyString == key }
 
-			td("first:pl-8 last:pr-8 py-2") {
-				div("mx-4") {
+			td(tdClasses) {
+				div(tdDivClasses) {
 					if (parsedField is ParsedList<*>) {
 						text(parsedField.children.mapNotNull { it.rawValue }
 							     .joinToString(separator = ", "))
