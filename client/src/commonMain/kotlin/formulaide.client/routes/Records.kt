@@ -25,7 +25,7 @@ suspend fun Client.Authenticated.todoList(): List<Form> =
  */
 suspend fun Client.Authenticated.todoListFor(
 	form: Form,
-	state: RecordState,
+	state: RecordState?,
 	criteria: Map<Action?, List<SearchCriterion<*>>> = emptyMap(),
 ): List<Record> =
 	post("/submissions/recordsToReview",
@@ -49,7 +49,7 @@ suspend fun Client.Authenticated.review(review: ReviewRequest): String =
  */
 suspend fun Client.Authenticated.downloadCsv(
 	form: Form,
-	state: RecordState,
+	state: RecordState?,
 	criteria: Map<Action?, List<SearchCriterion<*>>> = emptyMap(),
 ): String =
 	post("/submissions/csv",
