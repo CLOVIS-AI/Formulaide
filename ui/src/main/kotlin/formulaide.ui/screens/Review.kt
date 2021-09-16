@@ -27,9 +27,10 @@ import react.*
 import react.dom.*
 import kotlin.js.Date
 
-internal fun RecordState.displayName() = when (this) {
+internal fun RecordState?.displayName() = when (this) {
 	is RecordState.Action -> this.current.obj.name
 	is RecordState.Refused -> "Dossiers refusés"
+	null -> "Tous les dossiers"
 }
 
 private data class ReviewSearch(
@@ -39,7 +40,7 @@ private data class ReviewSearch(
 )
 
 @Suppress("FunctionName")
-internal fun Review(form: Form, state: RecordState, initialRecords: List<Record>) = fc<RProps> {
+internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record>) = fc<RProps> {
 	traceRenders("Review ${form.name}")
 
 	val scope = useAsync()
