@@ -140,7 +140,6 @@ val LoginAccess = fc<RProps> {
 	traceRenders("LoginAccess")
 
 	val (user) = useUser()
-	val (client, connect) = useClient()
 	val scope = useAsync()
 
 	if (user == null) {
@@ -151,9 +150,7 @@ val LoginAccess = fc<RProps> {
 			null,
 			"Déconnexion" to {
 				scope.reportExceptions {
-					if (client is Client.Authenticated) client.logout()
-
-					connect { defaultClient }
+					logout()
 				}
 			},
 			"Modifier mon mot de passe" to {

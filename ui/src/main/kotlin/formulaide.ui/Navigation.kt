@@ -141,7 +141,6 @@ private fun getScreenFromWindow(): Screen? =
 		?.let { Screen.routeDecoder(it) }
 
 val Window = memo(fc {
-	val (_, setClient) = useClient()
 	var screen by useNavigation()
 	val user by useUser()
 
@@ -167,8 +166,8 @@ val Window = memo(fc {
 		title = {
 			styledTitle("Formulaide")
 			styledLightText(subtitle)
-			styledButton("×", action = {
-				setClient { defaultClient }
+			if (user != null) styledButton("×", action = {
+				logout()
 				screen = Screen.Home
 			})
 		},
