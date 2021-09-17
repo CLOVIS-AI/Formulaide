@@ -19,6 +19,7 @@ object Version {
 
 	const val react = "17.0.2"
 	const val kotlinReact = "$react-pre.235-kotlin-$kotlinVersion"
+	const val reactUseErrorBoundary = "2.0.6"
 
 	const val postcss = "8.3.5"
 	const val postcssLoader = "6.1.1"
