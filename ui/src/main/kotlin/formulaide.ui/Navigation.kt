@@ -177,9 +177,7 @@ val Window = memo(fc {
 	)
 
 	if (user.role >= screen.requiredRole) {
-		child(CrashReporter::class) {
-			child(screen.component())
-		}
+		child(screen.component())
 	} else {
 		child(CannotAccessThisPage)
 	}
