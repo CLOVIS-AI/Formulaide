@@ -109,7 +109,7 @@ suspend fun refreshServices() {
 /**
  * The main app screen.
  */
-val App = fc<RProps> {
+val App = fc<Props> {
 	traceRenders("App")
 
 	var client by useClient()
@@ -179,13 +179,13 @@ val App = fc<RProps> {
 
 private const val errorSectionClass = "mt-2"
 
-internal external interface CrashReporterState : RState {
+internal external interface CrashReporterState : State {
 	var failed: Boolean
 	var error: Throwable
 	var info: ErrorInfo
 }
 
-internal class CrashReporter : RComponent<RProps, CrashReporterState>() {
+internal class CrashReporter : RComponent<PropsWithChildren, CrashReporterState>() {
 
 	override fun componentDidCatch(error: Throwable, info: ErrorInfo) {
 		setState {
