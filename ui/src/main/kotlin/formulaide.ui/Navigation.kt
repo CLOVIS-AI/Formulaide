@@ -177,7 +177,7 @@ val Window = memo(fc {
 	)
 
 	if (user.role >= screen.requiredRole) {
-		child(CrashReporter::class) {
+		child(CrashReporter) {
 			child(screen.component())
 		}
 	} else {
