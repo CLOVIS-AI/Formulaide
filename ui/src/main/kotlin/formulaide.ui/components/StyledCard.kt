@@ -5,8 +5,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.html.DIV
 import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLFormElement
-import react.*
+import react.Props
+import react.RBuilder
 import react.dom.*
+import react.fc
+import react.useState
 
 private fun RBuilder.styledCardTitle(title: String, secondary: String?, loading: Boolean = false) {
 	styledTitle(title, loading)
@@ -70,7 +73,7 @@ fun RBuilder.styledTitleCard(
 	}
 }
 
-private external interface FormCardProps : RProps {
+private external interface FormCardProps : Props {
 	var title: String
 	var secondary: String?
 	var submit: Pair<String, SubmitAction.(HTMLFormElement) -> Unit>

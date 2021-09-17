@@ -1,9 +1,8 @@
 package formulaide.ui.components
 
 import formulaide.ui.utils.text
+import react.Props
 import react.RBuilder
-import react.RProps
-import react.child
 import react.dom.attrs
 import react.dom.option
 import react.fc
@@ -35,7 +34,7 @@ class ControlledSelectOptionBuilder {
 	}
 }
 
-private external interface ControlledSelectProps : RProps {
+private external interface ControlledSelectProps : Props {
 	var options: List<ControlledSelectOption>
 	var selected: ControlledSelectOption?
 }

@@ -20,7 +20,7 @@ import kotlinx.html.InputType
 import org.w3c.dom.HTMLInputElement
 import react.*
 
-fun CreateData(original: Composite? = null) = fc<RProps> { _ ->
+fun CreateData(original: Composite? = null) = fc<Props> {
 	traceRenders("CreateData")
 
 	val (client) = useClient()

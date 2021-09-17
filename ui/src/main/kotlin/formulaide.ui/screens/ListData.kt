@@ -11,11 +11,11 @@ import formulaide.ui.components.styledCheckbox
 import formulaide.ui.components.styledField
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
-import react.RProps
+import react.Props
 import react.fc
 import react.useState
 
-val DataList = fc<RProps> {
+val DataList = fc<Props> {
 	traceRenders("DataList")
 
 	val (client) = useClient()

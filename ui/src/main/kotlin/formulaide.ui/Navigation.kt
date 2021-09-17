@@ -31,7 +31,7 @@ fun navigateTo(screen: Screen) {
 abstract class Screen(
 	val displayName: String,
 	val requiredRole: Role,
-	val component: () -> FC<RProps>,
+	val component: () -> FC<Props>,
 	val route: String,
 ) {
 
@@ -107,7 +107,7 @@ abstract class Screen(
 	}
 }
 
-private val CannotAccessThisPage = fc<RProps> {
+private val CannotAccessThisPage = fc<Props> {
 	traceRenders("CannotAccessThisPage")
 
 	styledCard(
@@ -120,7 +120,7 @@ private val CannotAccessThisPage = fc<RProps> {
 	}
 }
 
-private val Navigation = fc<RProps> {
+private val Navigation = fc<Props> {
 	val user by useUser()
 	var currentScreen by useNavigation()
 
@@ -177,7 +177,7 @@ val Window = memo(fc {
 	)
 
 	if (user.role >= screen.requiredRole) {
-		child(CrashReporter::class) {
+		child(CrashReporter) {
 			child(screen.component())
 		}
 	} else {

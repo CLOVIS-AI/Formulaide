@@ -13,13 +13,13 @@ import formulaide.ui.utils.text
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
-import react.RProps
+import react.Props
 import react.dom.div
 import react.fc
 import react.useRef
 import react.useState
 
-val ServiceList = fc<RProps> { _ ->
+val ServiceList = fc<Props> {
 	traceRenders("ServiceList")
 
 	val (client) = useClient()
