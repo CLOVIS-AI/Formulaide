@@ -13,8 +13,11 @@ import kotlinx.browser.window
 import org.w3c.dom.url.URL
 import org.w3c.files.Blob
 import org.w3c.files.BlobPropertyBag
-import react.*
+import react.FunctionComponent
+import react.Props
+import react.RBuilder
 import react.dom.div
+import react.fc
 import kotlin.js.Date
 
 fun RBuilder.immutableFields(answers: ParsedSubmission) {
@@ -31,7 +34,7 @@ private fun RBuilder.immutableField(answer: ParsedField<*>) {
 	}
 }
 
-private external interface ImmutableFieldProps : RProps {
+private external interface ImmutableFieldProps : Props {
 	var answer: ParsedField<*>
 }
 

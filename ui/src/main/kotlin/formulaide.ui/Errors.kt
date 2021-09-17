@@ -23,7 +23,7 @@ fun reportError(error: Throwable) {
 	errors.value = errors.value + error
 }
 
-external interface ErrorProps : RProps {
+external interface ErrorProps : Props {
 	var error: Throwable
 }
 

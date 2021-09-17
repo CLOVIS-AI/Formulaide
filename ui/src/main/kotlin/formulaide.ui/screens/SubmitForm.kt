@@ -12,13 +12,13 @@ import formulaide.ui.components.useAsync
 import formulaide.ui.fields.field
 import formulaide.ui.utils.parseHtmlForm
 import formulaide.ui.utils.text
-import react.RProps
+import react.Props
 import react.fc
 import react.useEffectOnce
 import react.useState
 
 @Suppress("FunctionName")
-fun SubmitForm(formRef: Ref<Form>) = fc<RProps> {
+fun SubmitForm(formRef: Ref<Form>) = fc<Props> {
 	traceRenders("SubmitForm")
 
 	val forms by useForms()

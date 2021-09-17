@@ -6,6 +6,7 @@ import kotlinx.html.InputType
 import kotlinx.html.SELECT
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
+import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
 import react.RBuilder
 import react.dom.*
@@ -36,7 +37,7 @@ fun RBuilder.styledInput(
 	type: InputType,
 	id: String,
 	required: Boolean = false,
-	ref: RRef? = null,
+	ref: RRef<HTMLInputElement>? = null,
 	handler: INPUT.() -> Unit = {},
 ) {
 	input(type, classes = largeInputStyle) {
@@ -58,7 +59,7 @@ fun RBuilder.styledSmallInput(
 	type: InputType,
 	id: String,
 	required: Boolean = false,
-	ref: RRef? = null,
+	ref: RRef<HTMLInputElement>? = null,
 	handler: INPUT.() -> Unit = {},
 ) {
 	input(type, classes = smallInputStyle) {
@@ -108,7 +109,7 @@ fun RBuilder.styledCheckbox(
 	id: String,
 	message: String,
 	required: Boolean = false,
-	ref: RRef? = null,
+	ref: RRef<HTMLInputElement>? = null,
 	handler: INPUT.() -> Unit = {},
 ) {
 	input(InputType.hidden, name = id) {

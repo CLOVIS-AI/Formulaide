@@ -62,7 +62,7 @@ private fun CoroutineScope.getRecords(
 	.map { getRecords(client, form, it) }
 	.flatMap { it.value }
 
-val FormList = fc<RProps> { _ ->
+val FormList = fc<Props> { _ ->
 	traceRenders("FormList")
 
 	val (client) = useClient()
@@ -128,7 +128,7 @@ val FormList = fc<RProps> { _ ->
 
 }
 
-internal external interface FormDescriptionProps : RProps {
+internal external interface FormDescriptionProps : Props {
 	var form: Form
 }
 
@@ -213,7 +213,7 @@ internal val FormDescription = memo(fc<FormDescriptionProps> { props ->
 	}
 })
 
-internal external interface ActionDescriptionProps : RProps {
+internal external interface ActionDescriptionProps : Props {
 	var form: Form
 	var state: RecordState?
 }

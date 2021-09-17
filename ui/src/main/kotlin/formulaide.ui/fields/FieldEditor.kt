@@ -7,8 +7,7 @@ import formulaide.api.types.Arity
 import formulaide.ui.components.styledFormField
 import formulaide.ui.components.styledNesting
 import formulaide.ui.utils.text
-import react.RProps
-import react.child
+import react.Props
 import react.dom.div
 import react.dom.p
 import react.fc
@@ -19,7 +18,7 @@ enum class SwitchDirection(val offset: Int) {
 	DOWN(1);
 }
 
-external interface EditableFieldProps : RProps {
+external interface EditableFieldProps : Props {
 	var field: Field
 	var replace: (Field) -> Unit
 	var remove: () -> Unit
