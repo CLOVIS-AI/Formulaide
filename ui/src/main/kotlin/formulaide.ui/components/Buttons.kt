@@ -8,8 +8,11 @@ import kotlinx.html.DIV
 import kotlinx.html.InputType
 import kotlinx.html.SPAN
 import kotlinx.html.js.onClickFunction
-import react.*
+import react.Props
+import react.RBuilder
 import react.dom.*
+import react.fc
+import react.useState
 
 private const val buttonShapeClasses = "rounded-full py-1 px-3 mx-1"
 private const val buttonClasses = "$buttonShapeClasses hover:bg-purple-500"
@@ -17,7 +20,7 @@ internal const val buttonDefaultClasses = "$buttonClasses bg-purple-800 text-whi
 internal const val buttonNonDefaultClasses =
 	"$buttonClasses text-purple-800 border-1 border-purple-800 hover:text-white"
 
-internal external interface ButtonProps : RProps {
+internal external interface ButtonProps : Props {
 	var text: String
 	var default: Boolean
 

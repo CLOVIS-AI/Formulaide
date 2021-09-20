@@ -30,7 +30,7 @@ import org.w3c.dom.HTMLSelectElement
 import react.*
 import react.dom.*
 
-fun CreateForm(original: Form?, copy: Boolean) = fc<RProps> {
+fun CreateForm(original: Form?, copy: Boolean) = fc<Props> {
 	traceRenders("CreateForm")
 
 	val (client) = useClient()
@@ -273,7 +273,7 @@ private fun RBuilder.actionReviewerSelection(
 	}
 }
 
-private external interface ActionFieldProps : RProps {
+private external interface ActionFieldProps : Props {
 	var action: Action
 	var replace: (Action) -> Unit
 	var maxFieldId: Int

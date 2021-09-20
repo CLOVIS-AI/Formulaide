@@ -7,13 +7,17 @@ import formulaide.client.Client
 import formulaide.client.refreshToken
 import formulaide.client.routes.*
 import formulaide.ui.components.styledCard
+import formulaide.ui.components.styledLightText
 import formulaide.ui.components.useAsync
 import formulaide.ui.components.useAsyncEffect
 import formulaide.ui.screens.clearRecords
 import formulaide.ui.utils.*
+import kotlinext.js.jsObject
 import kotlinx.browser.window
 import kotlinx.coroutines.delay
+import org.w3c.dom.get
 import react.*
+import react.dom.br
 import react.dom.p
 
 //region Production / development environments
@@ -106,7 +110,7 @@ suspend fun refreshServices() {
 /**
  * The main app screen.
  */
-val App = fc<RProps> {
+val App = fc<Props> {
 	traceRenders("App")
 
 	var client by useClient()
@@ -171,3 +175,82 @@ val App = fc<RProps> {
 		}
 	}
 }
+
+//region Crash reporter
+
+private const val errorSectionClass = "mt-2"
+
+val CrashReporter = fc<PropsWithChildren> { props ->
+	val (boundary, didCatch, error) = useErrorBoundary()
+
+	if (didCatch) {
+		styledCard(
+			"Erreur",
+			"Le site a rencontré un échec fatal",
+			failed = true,
+		) {
+			p { text("Veuillez signaler cette erreur à l'administrateur, en lui envoyant les informations ci-dessous, à l'adresse incoming+clovis-ai-formulaide-27107472-issue-@incoming.gitlab.com :") }
+
+			p(errorSectionClass) {
+				text("Ce que j'étais en train de faire : ")
+				br {}
+				styledLightText("Ici, expliquez ce que vous étiez en train de faire quand le problème a eu lieu.")
+			}
+
+			p(errorSectionClass) {
+				text("Error type : ")
+				br {}
+				styledLightText("Plantage de l'application, capturé par CrashReporter")
+			}
+
+			p(errorSectionClass) {
+				text("Throwable : ")
+				error?.stackTraceToString()
+					?.removeSurrounding("\n")
+					?.split("\n")
+					?.forEach {
+						br {}
+						styledLightText(it.trim())
+					}
+					?: run { styledLightText("No stacktrace available") }
+			}
+
+			for (local in listOf("form-fields", "form-actions", "data-fields")) {
+				p(errorSectionClass) {
+					text("Local storage : $local")
+					br {}
+					styledLightText(window.localStorage[local].toString())
+				}
+			}
+
+			p(errorSectionClass) {
+				text("Client : ")
+				br {}
+				styledLightText(client.value.hostUrl)
+				br {}
+				styledLightText((client.value as? Client.Authenticated)?.me.toString())
+			}
+
+			for ((globalName, global) in mapOf(
+				"Groupes" to composites,
+				"Formulaires" to forms,
+				"Services" to services,
+			)) {
+				p(errorSectionClass) {
+					text("Cache : $globalName")
+					global.value.forEach {
+						br {}
+						styledLightText(it.toString())
+					}
+				}
+			}
+		}
+	} else {
+		child(boundary(
+			jsObject<ErrorBoundaryProps>()
+				.apply { children = props.children }
+		))
+	}
+}
+
+//endregion

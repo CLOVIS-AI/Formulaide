@@ -10,9 +10,8 @@ import formulaide.ui.utils.text
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
+import react.Props
 import react.RBuilder
-import react.RProps
-import react.child
 import react.dom.attrs
 import react.dom.option
 import react.fc
@@ -44,7 +43,7 @@ private fun RBuilder.searchField(
 	}
 }
 
-private external interface SearchFieldProps : RProps {
+private external interface SearchFieldProps : Props {
 	var field: FormField
 	var keyList: List<String>
 	var depth: Int

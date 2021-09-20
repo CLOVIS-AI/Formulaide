@@ -43,7 +43,7 @@ private data class ReviewSearch(
 )
 
 @Suppress("FunctionName")
-internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record>) = fc<RProps> {
+internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record>) = fc<Props> {
 	traceRenders("Review ${form.name}")
 
 	val scope = useAsync()
@@ -216,7 +216,7 @@ internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record
 	//endregion
 }
 
-private external interface SearchInputProps : RProps {
+private external interface SearchInputProps : Props {
 	var form: Form
 	var formLoaded: Boolean
 	var addCriterion: (ReviewSearch) -> Unit
@@ -346,7 +346,7 @@ private val SearchInput = memo(fc<SearchInputProps> { props ->
 		p { text("Choisissez une option pour activer la recherche.") }
 })
 
-private external interface SearchInputSelectProps : RProps {
+private external interface SearchInputSelectProps : Props {
 	var field: FormField?
 	var candidates: List<FormField>
 	var allowEmpty: Boolean
@@ -389,7 +389,7 @@ private val SearchInputSelect = memo(fc<SearchInputSelectProps> { props ->
 	}
 })
 
-private external interface SearchCriterionSelectProps : RProps {
+private external interface SearchCriterionSelectProps : Props {
 	var fields: List<FormField>
 	var select: (SearchCriterion<*>?) -> Unit
 }
@@ -443,7 +443,7 @@ private val SearchCriterionSelect = fc<SearchCriterionSelectProps> { props ->
 	}
 }
 
-private external interface CriterionPillProps : RProps {
+private external interface CriterionPillProps : Props {
 	var root: Action?
 	var fields: FormRoot
 	var criterion: SearchCriterion<*>
@@ -501,7 +501,7 @@ private val CriterionPill = memo(fc<CriterionPillProps> { props ->
 	}
 })
 
-private external interface ReviewRecordProps : RProps {
+private external interface ReviewRecordProps : Props {
 	var form: Form
 	var windowState: RecordState?
 	var record: Record

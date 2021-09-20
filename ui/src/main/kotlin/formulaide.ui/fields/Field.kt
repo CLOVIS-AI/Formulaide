@@ -25,7 +25,7 @@ import org.w3c.files.get
 import react.*
 import react.dom.*
 
-private external interface FieldProps : RProps {
+private external interface FieldProps : Props {
 	var form: Form?
 	var root: Action?
 	var field: Field

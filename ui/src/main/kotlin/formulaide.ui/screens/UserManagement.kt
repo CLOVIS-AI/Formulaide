@@ -20,7 +20,7 @@ import react.dom.attrs
 import react.dom.div
 import react.dom.option
 
-val UserList = fc<RProps> { _ ->
+val UserList = fc<Props> {
 	traceRenders("UserList")
 
 	val scope = useAsync()
@@ -106,7 +106,7 @@ private suspend fun editUser(
 	onChange(newUser)
 }
 
-val CreateUser = fc<RProps> { _ ->
+val CreateUser = fc<Props> {
 	val services by useServices()
 
 	val email = useRef<HTMLInputElement>()
