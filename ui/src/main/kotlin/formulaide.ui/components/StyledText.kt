@@ -19,3 +19,7 @@ fun RBuilder.styledLightText(text: String) {
 fun RBuilder.styledErrorText(text: String) {
 	span("text-red-600") { text(text) }
 }
+
+fun RBuilder.styledFooterText(text: String) {
+	span("text-sm text-gray-600 mx-4") { text(text) }
+}
