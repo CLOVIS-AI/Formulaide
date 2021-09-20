@@ -36,7 +36,7 @@ abstract class Screen(
 ) {
 
 	object Home : Screen("Accueil", Role.ANONYMOUS, { LoginAccess }, "home")
-	object ShowData : Screen("Groupes", Role.EMPLOYEE, { DataList }, "data")
+	object ShowData : Screen("Groupes", Role.ADMINISTRATOR, { DataList }, "data")
 	object ShowForms : Screen("Formulaires", Role.ANONYMOUS, { FormList }, "forms")
 	class NewData(original: Composite?) :
 		Screen("Créer un groupe", Role.ADMINISTRATOR, { CreateData(original) }, "createData")
