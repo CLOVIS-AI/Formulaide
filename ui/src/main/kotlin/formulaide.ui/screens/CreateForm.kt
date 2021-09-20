@@ -151,6 +151,7 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props> {
 					attrs {
 						this.field = field
 						key = field.id
+						uniqueId = "initial:${field.id}"
 						this.replace = { it: Field ->
 							updateFields { replace(i, it as ShallowFormField) }
 						}.memoIn(lambdas, "replace-${field.id}", i)
@@ -293,6 +294,7 @@ private val ActionFields = memo(fc<ActionFieldProps> { props ->
 				attrs {
 					this.field = field
 					key = field.id
+					uniqueId = "action-${action.id}:${field.id}"
 					this.replace = { it: Field ->
 						val newFields = root.fields.replace(i, it as ShallowFormField)
 						replace(action.copy(fields = FormRoot(newFields)))

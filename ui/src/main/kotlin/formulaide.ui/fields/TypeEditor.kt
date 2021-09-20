@@ -26,7 +26,9 @@ val TypeEditor = fc<EditableFieldProps> { props ->
 	val allowTypeModifications = field is DataField || field is ShallowFormField
 
 	if (allowTypeModifications) {
-		styledField("item-type-${props.field.id}", "Type") {
+		val typeId = "item-type-${props.uniqueId}"
+
+		styledField(typeId, "Type") {
 			styledSelect(
 				onSelect = { onSelect(it.value, field, props, composites) }
 			) {
@@ -48,7 +50,7 @@ val TypeEditor = fc<EditableFieldProps> { props ->
 				}
 
 				attrs {
-					id = "field-editor-${field.id}"
+					id = typeId
 					required = true
 				}
 			}
