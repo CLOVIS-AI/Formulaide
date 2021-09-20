@@ -111,6 +111,7 @@ server-bin:
   before_script:
     - *prepare_gradle
   script:
+    - echo -e "Formulaide $CI_COMMIT_REF_NAME par $CI_PROJECT_NAMESPACE\nCommit $CI_COMMIT_SHA" >> ui/src/main/resources/version.txt
     - "./gradlew server:assembleDist"
   artifacts:
     paths:
