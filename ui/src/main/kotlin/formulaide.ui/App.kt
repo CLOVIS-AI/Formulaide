@@ -189,7 +189,7 @@ val CrashReporter = fc<PropsWithChildren> { props ->
 			"Le site a rencontré un échec fatal",
 			failed = true,
 		) {
-			p { text("Veuillez signaler cette erreur à l'administrateur, en lui envoyant les informations ci-dessous, à l'adresse incoming+clovis-ai-formulaide-27107472-issue-@incoming.gitlab.com :") }
+			p { text("Veuillez signaler cette erreur à l'administrateur, en lui envoyant les informations ci-dessous, à l'adresse incoming+arcachon-ville-formulaide-27105418-issue-@incoming.gitlab.com :") }
 
 			p(errorSectionClass) {
 				text("Ce que j'étais en train de faire : ")
