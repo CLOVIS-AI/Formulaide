@@ -6,14 +6,13 @@ import formulaide.api.users.Service
 import formulaide.client.Client
 import formulaide.client.refreshToken
 import formulaide.client.routes.*
-import formulaide.ui.components.styledCard
-import formulaide.ui.components.styledLightText
-import formulaide.ui.components.useAsync
-import formulaide.ui.components.useAsyncEffect
+import formulaide.ui.components.*
 import formulaide.ui.screens.clearRecords
 import formulaide.ui.utils.*
+import io.ktor.client.fetch.*
 import kotlinext.js.jsObject
 import kotlinx.browser.window
+import kotlinx.coroutines.await
 import kotlinx.coroutines.delay
 import org.w3c.dom.get
 import react.*
@@ -105,6 +104,8 @@ suspend fun refreshServices() {
 				?: emptyList())
 }
 
+private val bottomText = GlobalState("")
+
 //endregion
 
 /**
@@ -150,6 +151,9 @@ val App = fc<Props> {
 				console.log("Got an access token from the cookie-stored refresh token (expiration time was near)")
 			}
 		}
+
+		bottomText.value = fetch("version.txt").await().text().await()
+			.takeIf { "DOCTYPE" !in it } ?: "Les informations de version ne sont pas disponibles."
 	}
 
 	child(Window)
@@ -174,6 +178,11 @@ val App = fc<Props> {
 			p { text("Actuellement, il est possible d'accéder à tout ce que vous faites, dont votre compte et les mots de passes tapés. Veuillez contacter l'administrateur du site.") }
 		}
 	}
+
+	val footerText by useGlobalState(bottomText)
+	if (footerText.isNotBlank())
+		footerText.split("\n")
+			.forEach { br {}; styledFooterText(it) }
 }
 
 //region Crash reporter
