@@ -222,12 +222,12 @@ data class FormSubmission(
 
 		val selectedId = answer?.value
 		if (arity.min == 0 && selectedId == null) return null
-		requireNotNull("${fieldErrorMessage(field)} est une union, elle doit avoir une unique valeur ; trouvé le choix ${answer?.value}")
+		requireNotNull(selectedId) { "${fieldErrorMessage(field)} est une union, elle doit avoir une unique valeur ; trouvé le choix ${answer?.value}" }
 
 		val selectedField = field.options.find { it.id == selectedId }
 			?: error("${fieldErrorMessage(field)} est une union, mais le choix donné ne correspond à aucun des choix disponibles : $selectedId")
 
-		val child = answer?.components?.get(selectedId)
+		val child = answer.components[selectedId]
 		val parsedChild = parseFieldWithArity(parent + field.id, selectedField, child)
 
 		return when {
