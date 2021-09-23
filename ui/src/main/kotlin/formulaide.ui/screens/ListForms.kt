@@ -84,14 +84,12 @@ val FormList = fc<Props> { _ ->
 		.useListEquality()
 		.useEquals()
 	var showArchivedForms by useState(false)
-		.asDelegated()
-		.onSet {
-			scope.reportExceptions {
-				require(client is Client.Authenticated) { "Il n'est pas possible d'appuyer sur ce bouton sans être connecté." }
-				if (it)
-					archivedForms = client.listClosedForms()
-			}
+	useAsyncEffect(showArchivedForms) {
+		if (showArchivedForms) {
+			require(client is Client.Authenticated) { "Il n'est pas possible d'appuyer sur ce bouton sans être connecté." }
+			archivedForms = client.listClosedForms()
 		}
+	}
 
 	val shownForms = useMemo(forms, archivedForms, showArchivedForms) {
 		if (showArchivedForms)
