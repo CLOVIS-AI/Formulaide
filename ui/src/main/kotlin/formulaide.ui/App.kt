@@ -37,11 +37,11 @@ fun traceRenders(componentName: String) {
 
 private val client = GlobalState<Client>(defaultClient)
 	.apply {
-		subscribers.add { println("The client has been updated") }
-		subscribers.add { clearRecords() }
+		subscribers.add("client console" to { console.log("The client has been updated") })
+		subscribers.add("clear records" to { clearRecords() })
 	}
 
-fun RBuilder.useClient() = useGlobalState(client)
+fun RBuilder.useClient(name: String? = null) = useGlobalState(client, name = name)
 
 suspend fun logout() {
 	val authenticated = client.value as? Client.Authenticated
@@ -51,12 +51,12 @@ suspend fun logout() {
 	client.value = defaultClient
 }
 
-fun RBuilder.useUser() = useGlobalState(client)
+fun RBuilder.useUser(name: String? = null) = useGlobalState(client, name = name)
 	.filterIs<Client.Authenticated>()
 	.map { it.me }
 
 private val composites = GlobalState(emptyList<Composite>())
-	.apply { subscribers.add { println("The composites have been updated: ${it.size} are stored") } }
+	.apply { subscribers.add("composites console" to { println("The composites have been updated: ${it.size} are stored") }) }
 private val compositesDelegate = composites.asDelegated()
 	.useListEquality()
 	.useEquals()
@@ -71,7 +71,7 @@ suspend fun refreshComposites() = (client.value as? Client.Authenticated)
 	?: run { compositesDelegate.value = emptyList() }
 
 private val forms = GlobalState(emptyList<Form>())
-	.apply { subscribers.add { println("The forms have been updated: ${it.size} are stored") } }
+	.apply { subscribers.add("forms console" to { println("The forms have been updated: ${it.size} are stored") }) }
 private val formsDelegate = forms.asDelegated()
 	.useListEquality()
 	.useEquals()
@@ -91,7 +91,7 @@ suspend fun refreshForms() {
 }
 
 private val services = GlobalState(emptyList<Service>())
-	.apply { subscribers.add { println("The services have been updated: ${it.size} are stored") } }
+	.apply { subscribers.add("services console" to { println("The services have been updated: ${it.size} are stored") }) }
 
 fun RBuilder.useServices() = useGlobalState(services)
 suspend fun refreshServices() {
@@ -112,9 +112,24 @@ private val bottomText = GlobalState("")
  * The main app screen.
  */
 val App = fc<Props> {
+	//region User fix
+	/*
+	 * For some reason, without this unused hook, the 'App' component doesn't re-render when:
+	 * - Open the app
+	 * - Login
+	 * - Go to a 'Composites', 'Forms', or 'Services' pages (none appear)
+	 * UNLESS the user went to the 'Forms' page _before_ logging in, in which case 'App' renders fine.
+	 *
+	 * The 'useClient' a few lines below should force a render, but it doesn't.
+	 * 'useUser' and 'useClient' are currently implemented using the same hook, so it doesn't make sense.
+	 */
+	@Suppress("UNUSED_VARIABLE")
+	val user by useUser("App user")
+	//endregion
+
 	traceRenders("App")
 
-	var client by useClient()
+	var client by useClient("App")
 	val scope = useAsync()
 
 	val errors = useErrors()
@@ -131,7 +146,7 @@ val App = fc<Props> {
 				val accessToken = client.refreshToken()
 
 				if (accessToken != null) {
-					client = c.authenticate(accessToken)
+					formulaide.ui.client.value = c.authenticate(accessToken)
 					console.log("Got an access token from the cookie-stored refresh token (page loading)")
 				}
 			}

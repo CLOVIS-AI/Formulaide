@@ -65,8 +65,8 @@ private fun CoroutineScope.getRecords(
 val FormList = fc<Props> { _ ->
 	traceRenders("FormList")
 
-	val (client) = useClient()
-	val user by useUser()
+	val (client) = useClient("FormList client")
+	val user by useUser("FormList user")
 
 	val forms by useForms()
 	val scope = useAsync()
@@ -85,9 +85,10 @@ val FormList = fc<Props> { _ ->
 		.useEquals()
 	var showArchivedForms by useState(false)
 	useAsyncEffect(showArchivedForms) {
-		require(client is Client.Authenticated) { "Il n'est pas possible d'appuyer sur ce bouton sans être connecté." }
-		if (showArchivedForms)
+		if (showArchivedForms) {
+			require(client is Client.Authenticated) { "Il n'est pas possible d'appuyer sur ce bouton sans être connecté." }
 			archivedForms = client.listClosedForms()
+		}
 	}
 
 	val shownForms = useMemo(forms, archivedForms, showArchivedForms) {

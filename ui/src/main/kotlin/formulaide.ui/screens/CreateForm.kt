@@ -28,7 +28,10 @@ import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
 import react.*
-import react.dom.*
+import react.dom.attrs
+import react.dom.div
+import react.dom.option
+import react.dom.p
 
 fun CreateForm(original: Form?, copy: Boolean) = fc<Props> {
 	traceRenders("CreateForm")
@@ -58,8 +61,11 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props> {
 	var formLoaded by useState(false)
 
 	useAsyncEffectOnce {
-		fields.forEach { it.load(composites) }
-		actions.forEach { it.reviewer.loadFrom(services) }
+		FormRoot(fields).load(composites)
+		actions.forEach { action ->
+			action.reviewer.loadFrom(services)
+			action.fields?.load(composites)
+		}
 		formLoaded = true
 	}
 
@@ -281,6 +287,8 @@ private external interface ActionFieldProps : Props {
 }
 
 private val ActionFields = memo(fc<ActionFieldProps> { props ->
+	traceRenders("ActionFields")
+
 	val action = props.action
 	val replace = props.replace
 	val maxFieldId = props.maxFieldId

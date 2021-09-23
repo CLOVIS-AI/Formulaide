@@ -30,7 +30,7 @@ val MetadataEditor = fc<EditableFieldProps> { props ->
 			is SimpleField.Upload -> uploadMetadata(field, simple, props)
 		}
 
-		if (field.simple !is SimpleField.Upload) {
+		if (field.simple !is SimpleField.Upload && field.simple != SimpleField.Message) {
 			field(
 				form = null,
 				root = null,
