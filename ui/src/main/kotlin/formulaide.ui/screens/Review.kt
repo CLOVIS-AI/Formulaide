@@ -59,8 +59,6 @@ internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record
 	val allCriteria = searches.groupBy { it.action }
 		.mapValues { (_, v) -> v.map { it.criterion } }
 
-	var collapsed by useState(false)
-
 	val lambdas = useLambdas()
 	val refresh: suspend () -> Unit = {
 		loading = true
@@ -71,6 +69,9 @@ internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record
 		loading = false
 	}
 	val memoizedRefresh = refresh.memoIn(lambdas, "refresh", form, state, searches)
+
+	val (openedRecords, setOpenedRecords) = useState(records.associateWith { true })
+		.asDelegated()
 
 	var formLoaded by useState(false)
 	useEffect(form) {
@@ -126,8 +127,8 @@ internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record
 						Unit
 					}
 				},
-				"Tout ouvrir" to { collapsed = false },
-				"Tout réduire" to { collapsed = true },
+				"Tout ouvrir" to { setOpenedRecords { mapValues { true } } },
+				"Tout réduire" to { setOpenedRecords { mapValues { false } } },
 				loading = loading,
 			) {
 				p { text("${records.size} dossiers sont chargés. Pour des raisons de performance, il n'est pas possible de charger plus de ${Record.MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION} dossiers à la fois.") }
@@ -198,7 +199,10 @@ internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record
 								this.refresh = memoizedRefresh
 								this.columnsToDisplay = columnsToDisplay
 
-								this.collapseAll = collapsed
+								this.collapsed = !(openedRecords[record] ?: true)
+								this.collapse =
+									{ it: Boolean -> setOpenedRecords { this + (record to !it) } }
+										.memoIn(lambdas, "record-${record.id}-collapse")
 								key = record.id
 							}
 						}
@@ -506,7 +510,8 @@ private external interface ReviewRecordProps : Props {
 	var windowState: RecordState?
 	var record: Record
 
-	var collapseAll: Boolean
+	var collapsed: Boolean
+	var collapse: (Boolean) -> Unit
 
 	var formLoaded: Boolean
 	var columnsToDisplay: List<Pair<String, FormField>>
@@ -585,8 +590,7 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 
 	var reason by useState<String>()
 
-	var collapsed by useState(false)
-	useEffect(props.collapseAll) { collapsed = props.collapseAll }
+	val collapsed = props.collapsed
 
 	suspend fun review(
 		fields: FormSubmission?,
@@ -645,7 +649,7 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 			}
 		}
 
-		td { styledButton("▼", action = { collapsed = false }) }
+		td { styledButton("▼", action = { props.collapse(false) }) }
 	} else tr {
 		td {
 			attrs {
@@ -728,7 +732,7 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 						)
 					}
 				},
-				"Réduire" to { collapsed = true },
+				"Réduire" to { props.collapse(true) },
 				(if (showFullHistory) "Valeurs les plus récentes" else "Historique") to {
 					showFullHistory = !showFullHistory
 				}
@@ -798,7 +802,7 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 			} else styledCard(
 				"Dossier",
 				state.displayName(),
-				"Réduire" to { collapsed = true },
+				"Réduire" to { props.collapse(true) },
 			) {
 				cardContents()
 			}
