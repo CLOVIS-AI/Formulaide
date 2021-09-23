@@ -14,10 +14,10 @@ class GlobalState<T>(initialValue: T) {
 	var value = initialValue
 		set(new) {
 			field = new
-			subscribers.forEach { it(new) }
+			subscribers.forEach { (_, it) -> it(new) }
 		}
 
-	val subscribers = mutableListOf<(T) -> Unit>()
+	val subscribers = mutableListOf<Pair<String?, (T) -> Unit>>()
 
 	fun asDelegated() = DelegatedProperty(
 		get = { value },
@@ -34,6 +34,7 @@ class GlobalState<T>(initialValue: T) {
 fun <T> RBuilder.useGlobalState(
 	globalState: GlobalState<T>,
 	interceptor: WriteDelegatedProperty<T>? = null,
+	name: String? = null,
 ): WriteDelegatedProperty<T> {
 	/*
 	 * Implementation details:
@@ -50,7 +51,7 @@ fun <T> RBuilder.useGlobalState(
 
 	val (_, setLocal) = useState(delegated.value)
 
-	val subscriber = { new: T -> setLocal(new) }
+	val subscriber = name to { new: T -> setLocal(new) }
 
 	useEffectOnce {
 		globalState.subscribers.add(subscriber)
