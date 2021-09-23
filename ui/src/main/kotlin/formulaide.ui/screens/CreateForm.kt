@@ -59,7 +59,10 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props> {
 
 	useAsyncEffectOnce {
 		fields.forEach { it.load(composites) }
-		actions.forEach { it.reviewer.loadFrom(services) }
+		actions.forEach { action ->
+			action.reviewer.loadFrom(services)
+			action.fields?.fields?.forEach { it.load(composites) }
+		}
 		formLoaded = true
 	}
 
