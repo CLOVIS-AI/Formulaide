@@ -65,8 +65,8 @@ private fun CoroutineScope.getRecords(
 val FormList = fc<Props> { _ ->
 	traceRenders("FormList")
 
-	val (client) = useClient()
-	val user by useUser()
+	val (client) = useClient("FormList client")
+	val user by useUser("FormList user")
 
 	val forms by useForms()
 	val scope = useAsync()

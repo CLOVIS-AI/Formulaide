@@ -20,8 +20,18 @@ import org.w3c.dom.url.URL
 import react.*
 
 private val currentScreen = GlobalState(getScreenFromWindow() ?: Screen.Home)
-	.apply { subscribers.add { window.history.pushState(null, it.displayName, "?d=${it.route}") } }
-	.apply { subscribers.add { document.title = "${it.displayName} • Formulaide" } }
+	.apply {
+		subscribers.add("history push state" to {
+			window.history.pushState(null,
+			                         it.displayName,
+			                         "?d=${it.route}")
+		})
+	}
+	.apply {
+		subscribers.add("document title" to {
+			document.title = "${it.displayName} • Formulaide"
+		})
+	}
 
 fun RBuilder.useNavigation() = useGlobalState(currentScreen)
 fun navigateTo(screen: Screen) {
