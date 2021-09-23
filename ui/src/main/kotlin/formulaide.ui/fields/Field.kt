@@ -57,7 +57,7 @@ private val RenderField = fc<FieldProps> { props ->
 	}
 
 	when (field) {
-		is FormField.Simple -> {
+		is Field.Simple -> {
 			when (val simple = field.simple) {
 				is SimpleField.Text -> simpleInput(InputType.text, required, simple) {}
 				is SimpleField.Integer -> simpleInput(InputType.number, required, simple) {}
@@ -106,7 +106,7 @@ private val RenderField = fc<FieldProps> { props ->
 				}
 			}
 		}
-		is FormField.Union<*> -> {
+		is Field.Union<*> -> {
 			val subFields = field.options
 			val (selected, setSelected) = useState(subFields.first())
 
@@ -133,6 +133,7 @@ private val RenderField = fc<FieldProps> { props ->
 				}
 			}
 		}
+		else -> error("Unknown field type in RenderField: ${field::class}")
 	}
 }
 
@@ -194,7 +195,6 @@ private fun RBuilder.upload(
 }
 
 private val Field: FunctionComponent<FieldProps> = fc { props ->
-
 	if (props.field.arity.max == 1) {
 		styledField(props.id, props.field.name) {
 			child(RenderField) {
