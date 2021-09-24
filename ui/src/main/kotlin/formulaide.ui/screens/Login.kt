@@ -31,7 +31,7 @@ val Login = fc<Props> {
 	val email = useRef<HTMLInputElement>(null)
 	val password = useRef<HTMLInputElement>(null)
 
-	var client by useClient()
+	var client by useClient("Login")
 
 	styledFormCard(
 		"Espace employé",
@@ -139,7 +139,7 @@ fun PasswordModification(user: Email, previousScreen: Screen) = fc<Props> {
 val LoginAccess = fc<Props> {
 	traceRenders("LoginAccess")
 
-	val (user) = useUser()
+	val (user) = useUser("LoginAccess")
 	val scope = useAsync()
 
 	if (user == null) {

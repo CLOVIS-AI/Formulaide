@@ -8,12 +8,15 @@ import formulaide.ui.utils.remove
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.switchOrder
 import formulaide.ui.utils.text
-import react.*
+import react.FunctionComponent
+import react.fc
+import react.key
+import react.useMemo
 
 val RecursionEditor: FunctionComponent<EditableFieldProps> = fc { props ->
 	val parent = props.field
-	val fields = (parent as? Field.Union<*>)?.options
-		?: (parent as? Field.Container<*>)?.fields
+	val fields = (parent as? Field.Union<*>)?.options?.sortedBy { it.order }
+		?: (parent as? Field.Container<*>)?.fields?.sortedBy { it.order }
 
 	val maxId =
 		useMemo(fields) { (fields ?: emptyList()).map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0 }
@@ -26,7 +29,7 @@ val RecursionEditor: FunctionComponent<EditableFieldProps> = fc { props ->
 			}
 		}
 
-		for ((i, field) in fields.sortedBy { it.order }.withIndex()) {
+		for ((i, field) in fields.withIndex()) {
 			child(FieldEditor) {
 				attrs {
 					this.field = field
@@ -37,16 +40,17 @@ val RecursionEditor: FunctionComponent<EditableFieldProps> = fc { props ->
 					fieldNumber = i
 
 					replace = { newField ->
+						@Suppress("UNCHECKED_CAST")
 						val newParent = when (parent) {
-							is DataField.Union -> parent.copy(options = parent.options
+							is DataField.Union -> parent.copy(options = (fields as List<DataField>)
 								.replace(i, newField as DataField))
-							is ShallowFormField.Union -> parent.copy(options = parent.options
+							is ShallowFormField.Union -> parent.copy(options = (fields as List<ShallowFormField>)
 								.replace(i, newField as ShallowFormField))
-							is DeepFormField.Union -> parent.copy(options = parent.options
+							is DeepFormField.Union -> parent.copy(options = (fields as List<DeepFormField>)
 								.replace(i, newField as DeepFormField))
-							is ShallowFormField.Composite -> parent.copy(fields = parent.fields
+							is ShallowFormField.Composite -> parent.copy(fields = (fields as List<DeepFormField>)
 								.replace(i, newField as DeepFormField))
-							is DeepFormField.Composite -> parent.copy(fields = parent.fields
+							is DeepFormField.Composite -> parent.copy(fields = (fields as List<DeepFormField>)
 								.replace(i, newField as DeepFormField))
 							else -> error("Impossible de modifier les sous-champs de $parent")
 						}
