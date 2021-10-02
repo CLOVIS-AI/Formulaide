@@ -1,0 +1,116 @@
+%! Author = Ivan Canet
+%! Date = 30/07/2021
+
+% Preamble
+\documentclass[11pt,french]{memoir}
+
+% Packages
+\usepackage{amsmath}
+\usepackage{babel}
+\usepackage{clovisai}
+
+\newcommand{\hrefs}[1]{\href{#1}{\texttt{#1}}}
+
+% Document
+\begin{document}
+	\renewcommand{\chaptername}{Partie}
+
+	\frontmatter
+	\title{Formulaide --- Stage de 2\ieme{} année à la mairie d'Arcachon}
+	\date{1\ier{} Juin -- 15 Septembre 2021}
+	\author{Ivan Canet, ENSEIRB-MATMECA}
+	\maketitle
+
+	\begin{abstract}
+		La Mairie d’Arcachon reçoit chaque jour des centaines de demandes en tout genre provenant des habitants.
+		Actuellement, ces demandes arrivent sous format papier, que les employés doivent alors saisir dans un système informatisé (Excell dans de nombreux cas, mais aussi des logiciels métier).
+		Ces traitements sont longs, répétitifs et automatisables.
+
+		Il est prévu, dans un futur proche, de refaire entièrement le site de la ville.
+		L’objectif de ce stage est de fournir un outil permettant de collecter les demandes via ce nouveau site, pour éliminer le papier et permettre aux habitants de remplir tous les formulaires en ligne.
+		Pour que cet outil soit utile, il faut qu’il corresponde à un gain de temps significatif pour la majorité des employés concernés, il est donc important que l’outil n’exige pas une seconde saisie par l’employé pour utiliser son logiciel métier.
+
+		La majorité des services ont un fichier Excell qui correspond à leurs demandes métiers.
+		Ces fichiers ne sont pas standardisés, posent des problèmes de sauvegarde, ne peuvent pas être utilisés par plusieurs employés en même temps, et sont difficiles à mettre à jour (par exemple, chaque service a une colonne « habitant », il arrive fréquemment qu’un service soit informé des décès ou déménagements, mais non les autres).
+		La mise en place d’une base de données réelle peut régler tous ces problèmes, à condition que cela ne demande pas de modification majeure à la manière de travailler des employés.
+
+		Les services utilisant des logiciels métiers spécialisés sont voués à n’utiliser que très peu l’outil réalisé lors de ce stage.
+		Pour ces services, l’objectif est de s’arrêter à l’étape de collecte, en rendant l’import dans leur logiciel le plus simple possible.
+
+		La création et modification de formulaires proposés à la population doit pouvoir être effectuée sans l’intervention d’un développeur.
+
+		\uparagraph
+		Le projet consiste donc en la réalisation d’un serveur, fournissant une base de données
+		et une API pouvant être utilisée par le nouveau site, ainsi qu’un client léger à l’intention des
+		employés.
+		Tout cela doit être entièrement transparent pour les habitants (de leur point de vue,
+		il s’agit simplement de remplir un formulaire en ligne).
+	\end{abstract}
+
+	\tableofcontents
+
+	\mainmatter
+
+
+	\chapter{Contexte}\label{ch:contexte}
+
+
+	\section{La Mairie d'Arcachon}\label{sec:la-mairie-d'arcachon}
+
+
+	\section{Situation Actuelle}\label{sec:situation-actuelle}
+
+	\subsection{Récolte des données}\label{subsec:recolte-des-donnees}
+
+	\subsection{Excell}\label{subsec:excell}
+
+	\subsection{Logiciels métiers}\label{subsec:logiciels-metiers}
+
+
+	\section{Contraintes et objectifs}\label{sec:contraintes-et-objectifs}
+
+
+	\chapter{Réalisation}\label{ch:realisation}
+
+
+	\section{Technologies utilisées}\label{sec:technologies-utilisees}
+
+	\subsection{Implémentation}\label{subsec:livrables-et-developpement}
+
+	\subsection{Suivi de projet}\label{subsec:suivi-de-projet}
+
+
+	\section{Sécurité}\label{sec:securite}
+
+	\subsection{Base de données et serveur}\label{subsec:base-de-donnees-et-serveur}
+
+	\subsection{Authentification}\label{subsec:authentification}
+
+	\subsection{Mots de passe}\label{subsec:mots-de-passe}
+
+	\subsection{Bilan de sécurité}\label{subsec:bilan-de-securité}
+
+
+	\section{Groupes et formulaires}\label{sec:groupes-et-formulaires}
+
+
+	\section{Saisie des réponses}\label{sec:saisie-des-reponses}
+
+
+	\section{Suivi}\label{sec:suivi}
+
+
+	\chapter{Conclusion}\label{ch:conclusion}
+
+
+	\section{Bilan du projet}\label{sec:bilan-du-projet}
+
+
+	\section{Retour sur les choix techniques}\label{sec:retour-sur-les-choix-techniques}
+
+
+	\section{Bilan personnel}\label{sec:bilan-personnel}
+
+	\appendix
+
+\end{document}
