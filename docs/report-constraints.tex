@@ -1,0 +1,33 @@
+\section{Contraintes et objectifs}\label{sec:contraintes-et-objectifs}
+
+L'objectif de ce stage est de créer un outil permettant au personnel de la mairie de créer des formulaires, de les rendre accessibles sur le site de la ville sans intervention de développeurs, de collecter les réponses, et d'aider au traitement et à l'import dans les logiciels métiers.
+
+\paragraph{Authentification}
+Il est impératif (vœu politique) que le système ne nécessite \emph{pas} de comptes de la part des administrés.
+Cette volonté provient du nombre élevé de comptes qui sont déjà nécessaires pour accéder aux différents services de la ville.
+De plus, la faible qualité des mots de passe dans la population est un problème de sécurité.
+
+Une conséquence de cette décision est qu'il n'est pas possible de créer un «~espace utilisateur~» pour suivre les dossiers en cours, ou les modifier lorsqu'une pièce est incorrecte.
+Pour cette raison, en cas de dossier incorrect, l'administré sera obligé de faire une nouvelle saisie (permettre à un employé de modifier la saisie d'un administré a été jugé comme trop dangereux).
+Il devient donc aussi impossible pour les administrés de prouver leur identité auprès du système, les employés devront donc vérifier l'identité des demandeurs pour chaque formulaire.
+
+\paragraph{Interface publique}
+Lors de ce projet, je ne devais pas être amené à réaliser une interface graphique visible par les administrés.
+Cette contrainte provient des chartes graphiques de la mairie, qui ont un rôle important pour l'identité de la ville.
+D'autre part, je n'ai pas compétences de design.
+
+Puisque le logiciel produit est destiné à l'utilisation interne par les agents, cette contrainte n'a eu d'impact que sur la partie d'interfaçage avec le site de la ville.
+
+Pour des raisons similaires, il n'était pas souhaité que le logiciel envoie des accusés de réception aux utilisateurs (par mail ou SMS).
+Lors de la création d'un formulaire, il est donc nécessaire que les employés mettent en place une manière de contacter les administrés (pour demander des informations manquantes, etc).
+
+\paragraph{Accessibilité}
+L'outil doit être utilisable par les employés de l'accueil de la mairie, pour permettre aux personnes âgées ou autres personnes n'ayant pas d'accès internet de remplir les formulaires.
+Dans ce cas, les employés doivent effectuer la saisie, mais l'on suppose que ce cas est suffisamment rare pour qu'un gain de temps soit effectué sur les autres dossiers.
+
+L'utilisation d'un logiciel web permet aussi une meilleure accessibilité pour les personnes malvoyantes que les formulaires papier, en particulier grâce aux lecteurs d'écrans.
+HTML5, le standard actuel pour la création de pages web, a été pensé pour être compatible avec ces outils.
+
+\paragraph{Maintenance}
+Pour faciliter les audits indépendants et la maintenance future, le logiciel entier est publié sous la license Apache 2.0 dans un dépôt public sur GitLab.
+Cette license autorise toute modification pour n'importe quel but, avec très peu de contraintes (attribution…).

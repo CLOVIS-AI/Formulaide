@@ -1,0 +1,154 @@
+\section{Technologies utilisées}\label{sec:technologies-utilisees}
+
+\subsection{Implémentation}\label{subsec:livrables-et-developpement}
+
+Le choix des technologies utilisées pour la réalisation du projet s’est basé sur plusieurs critères, que nous allons maintenant détailler.
+
+\subsubsection{Base de données}
+
+Comme nous le verrons plus tard, le domaine est composé d’un grand nombre de structures récursives.
+Les bases de données relationnelles ne sont pas en mesure de travailler efficacement avec des données récursives~: les deux options sont d’utiliser une table pour représenter un nœud, mais il faut dans ce cas enchaîner un grand nombre de JOIN, ou alors de sérialiser l’arbre dans une seule colonne, mais il devient alors impossible d’effectuer des recherches sur son contenu.
+Les bases de données relationnelles sont aussi connues pour la complexité des migrations (modifications de la base de données sans suppression des données contenues).
+Puisque le domaine comporte de nombreuses structures compliquées, il était nécessaire d’utiliser des outils étant capable de supporter des modifications du schéma avec le moins de maintenance possible.
+
+\uparagraph
+MongoDB est une base de données de type NoSQL (non-relationnelle) qui est devenue populaire dans les récentes années grâce à son intégration avec Docker, NodeJS et Kubernetes.
+MongoDB ne requiert pas de schéma, et est donc capable de gérer des ajouts de colonnes ou suppressions de colonnes dynamiquement.
+Au lieu de fournir un langage spécifique au domaine (DSL) comme les bases de données relationnelles (SQL), MongoDB se base sur le format JSON (avec de légères modifications).
+
+Puisque toutes les colonnes représentent des objets JSON, il est possible de stocker des listes, et de faire de recherche dans les listes à l’intérieur des colonnes.
+Cela permet de bien meilleures performances que ce qui serait possible avec une base de données relationnelles, tout en étant plus simple à utiliser puisque le langage peut travailler avec des colonnes réelles ou des listes JSON dans des colonnes, de manière transparente.
+
+De manière générale, les bases de données NoSQL essaient de décentraliser les données : permettre à plusieurs répliques de la base de coopérer, et de permettre au système de survivre à l’échec d’une des répliques.
+Ceci est un grand atout pour le client, puisqu’il est très important que le système soit toujours accessible.
+
+\uparagraph
+MongoDB a aussi la particularité de fournir des implémentations du driver pour de nombreux langages, qui, au lieu d’être un miroir du langage de requêtes, essaient de s’intégrer au mieux dans le langage source.
+Cette intégration permet un développement très rapide, car travailler avec la base de données devient aussi simple que de travailler avec les structures habituelles du langage.
+
+\subsubsection{Langage et architecture}
+
+Les besoins du client étant de fournir à la fois une interface web et une API REST, il était nécessaire de choisir des technologies permettant de satisfaire ces besoins.
+Il existe un grand nombre d’alternatives, dont les plus populaires sont JavaScript pour l’interface et PHP pour le serveur.
+
+En raison de la complexité du domaine, il était nécessaire de ne pas avoir à l’implémenter deux fois~;
+les solutions du type JavaScript + PHP étaient donc à proscrire.
+Peu de langages sont capables de servir à la fois côté serveur et client : les deux principaux sont JavaScript et Kotlin.
+
+\uparagraph
+JavaScript est un langage originellement développé pour remplacer Java pour les sites internet, dans les années 1990.
+Il a connu une croissance très forte et est aujourd’hui un des langages les plus populaires.
+Récemment, NodeJS a permis à JavaScript d’être utilisé pour la réalisation de serveurs, ce qui permet de réaliser un projet entier en JavaScript.
+
+Kotlin est un langage créé en 2011 par JetBrains (entreprise développant Android Studio, IntelliJ IDEA, WebStorm, PyCharm, etc) pour remplacer Java dans leurs outils.
+Kotlin garde les concepts majeurs de Java (programmation orientée objet) tout en ajoutant de nouvelles fonctionnalités (programmation fonctionnelle, gestion de la nullabilité au niveau des types, inférence de types, programmation asynchrone, etc).
+En 2017, Google a annoncé le support officiel de Kotlin pour Android, puis en 2019 a annoncé que les APIs Android futures seraient écrites pour Kotlin, et non pour Java.
+Ces annonces ont propulsé la popularité de Kotlin, qui est actuellement un des langages les plus demandés.
+Il s’agit d’un langage originellement basé sur la JVM, mais il peut aussi être transpilé vers JavaScript (pour le web), ou vers des exécutables natifs (via LLVM, pour les appareils connectés et iOS).
+
+JavaScript est un langage typé dynamiquement (les vérifications de compatibilité des données sont faites pendant l’exécution du programme).
+Kotlin est un langage typé statiquement (les vérifications sont réalisées pendant le développement).
+Cela permet d’éviter un très grand nombre d’erreurs et d’augmenter la qualité du logiciel fini.
+N’ayant jamais utilisé TypeScript, je ne l’ai pas considéré comme alternative.
+À l'inverse, j'ai réalisé de nombreux projets en Kotlin.
+
+\uparagraph
+Le projet consiste donc en deux applications : un serveur s’exécutant sur la JVM, et une interface web transpilée en JavaScript, s’exécutant dans le navigateur.
+La communication entre ces deux applications est réalisée via HTTP, en transmettant des objets Kotlin sérialisés en JSON via KotlinX.Serialization, en utilisant le framework HTTP Ktor (côté client et côté serveur).
+
+De cette manière, il est possible de créer un module commun contenant tous les objets de l’API, d’y implémenter toute la logique de vérification des données, puis de le partager entre le client et le serveur.
+Cela permet de s’assurer que le client et le serveur effectuent les mêmes
+opérations.
+Le projet est donc séparé entre les modules :
+\begin{itemize}
+	\item \lstinline{api}, qui contient tous les objets du domaine, la logique de validation, etc (JVM \& JS).
+	\item \lstinline{client}, qui contient l’implémentation côté client de l’API (dépend de \lstinline{api}, JVM \& JS).
+	\item \lstinline{ui}, qui contient l’implémentation de l’interface graphique (dépend de \lstinline{client}, JS).
+	\item \lstinline{database}, qui contient la connexion et les requêtes à la base de données (dépend de \lstinline{api}, JVM).
+	\item \lstinline{server}, qui contient l’implémentation côté serveur de l’API (dépend de \lstinline{api} et \lstinline{database}, JVM).
+\end{itemize}
+
+\subsubsection{Interface web}
+
+React est un framework déclaratif pour créer des interfaces graphiques en JavaScript.
+C’est une des solutions les plus populaires aujourd’hui, ce qui rend la maintenance future bien plus aisée.
+JetBrains (les développeurs de Kotlin) proposent des bindings pour React (informations de types).
+
+Pour la décoration de la page, le choix de TailwindCSS a été fait.
+TailwindCSS est une collection de classes CSS utilitaires, permettant d’accélérer le développement d’interfaces.
+En utilisant un framework déclaratif comme React, on n’écrit pas directement du HTML, l’utilisation de classes utilitaires permet de placer le style directement dans la structure de l’interface.
+
+\subsection{Suivi de projet}\label{subsec:suivi-de-projet}
+
+La gestion de projet est réalisée sous GitLab~\cite{gitlab}.
+
+GitLab est un logiciel de gestion des sources (basé sur Git), de gestion de projet, de DevOps, etc.
+GitLab est disponible en version Community (gratuite et libre), et plusieurs versions Entreprise (payantes et non-libres).
+Toutes ces versions sont disponibles dans le Cloud (géré par l'entreprise GitLab) ou On-Premises (géré par la Mairie).
+Les versions Entreprise sont gratuites dans un cadre de projet Open Source.
+Puisque le code n'est pas secret, et est Open Source, GitLab Cloud a été choisi pour simplifier l'installation, et faciliter l'accès aux futurs auditeurs ou collaborateurs.
+
+\subsubsection{Forks}
+
+GitLab permet l'utilisation de forks, des copies du projet conservant un lien avec la version originale.
+Les forks permettent de laisser des entreprises tierces accéder au code et de modifier leur copie comme elles se souhaitent, tout en fournissant une manière privilégiée pour transmettre des améliorations au projet d'origine.
+Cela permet à la mairie d'avoir le contrôle total sur sa version du logiciel, tout en permettant l'accès aux futurs mainteneurs.
+
+En suivant ce modèle, j'ai travaillé pendant le stage sur ma propre copie du dépôt de la mairie, tout en publiant toutes les nouvelles versions de manière jointe sur le dépôt de la mairie.
+À la fin du stage, les droits d'administration ont été transférés à Benoît Landa (employé de la DSI).
+
+\subsubsection{Liste des tâches}
+
+GitLab permet d'organiser la liste des tâches.
+Cette liste est alors disponible dans IntelliJ (l'IDE que j'utilise), ce qui permet de générer automatiquement une branche qui correspond à la tâche voulue, et de chronométrer le temps passé à la réaliser.
+Ces tâches sont organisées en jalons (milestones) pour avoir une vue globale sur l'avancée du projet et de quantifier les retards.
+
+Les tâches peuvent posséder plusieurs étiquettes, qui sont utilisées pour communiquer sur la zone du projet impactée, la gravité du problème, et la priorité de la résolution.
+
+Le Service Desk permet de créer une addresse mail qui transforme chaque mail reçu comme une tâche.
+Cette addresse mail est affichée lors d'un plantage de l'application, ce qui permet aux utilisateurs de signaler les erreurs directement sur GitLab depuis leur boite mail, sans avoir à se créer un compte.
+
+\subsection{DevOps}\label{subsec:devops}
+
+GitLab permet d'automatiser de nombreux aspects du développement.
+Par exemple, une nouvelle version du projet est générée automatiquement lorsque l'on crée une étiquette Git dans l'interface web, ce qui permet aux employés de la mairie de créer des versions et de les déployer sans avoir besoin de cloner le dépôt ni d'installer quelque outil que ce soit.
+
+\subsubsection{Tests et vérification}
+
+Lors de toute modification du code, les tests suivants sont effectués :
+\begin{itemize}
+	\item La compilation des différents modules du projet,
+	\item Les tests unitaires et d'intégration des différents modules du projet,
+	\item La mesure du code testé (ne mesure que le code Kotlin/JVM à cause de l'indisponibilité d'une technologie similaire pour Kotlin/JS),
+	\item L'analyse statique du code grâce à Qodana (uniquement à titre indicatif, Qodana a été jugée trop expérimentale et instable pour être utilisée comme critère d'acceptation du code),
+\end{itemize}
+
+De plus, un certain nombre de fichiers sont générés :
+\begin{itemize}
+	\item Le guide utilisateur et le rapport de stage sont compilés depuis leurs sources en \LaTeX,
+	\item La génération du code est publiée en HTML (via l'outil Dokka, un équivalent de Javadoc ou Doxygen),
+	\item Les différents livrables du projet (voir la section suivante).
+\end{itemize}
+Les fichiers générés sont ensuite rendus accessibles sur GitLab Pages, un outil permettant de générer des sites statiques directement depuis les pipelines d'automatisation.
+
+\subsubsection{Livrables}
+
+Pour simplifier la gestion des dépendances, le projet est livré sous la forme d'un conteneur Docker, ainsi que la configuration nécessaire pour Docker Compose.
+Un conteneur est une manière d'encapsuler un logiciel et ses dépendances dans un environnement séparé de l'OS sur lequel il tourne, mais sans les barrières de sécurité des machines virtuelles.
+Les conteneurs peuvent être utilisés de manière similaire aux machines virtuelles, tout en étant bien plus rapides et plus légers.
+
+Docker est l'entreprise fournissant l'implémentation la plus populaire de conteneurs.
+Docker Compose est une technologie permettant d'organiser la coopération entre plusieurs conteneurs, qui peut être distribuée sous la forme de quelques fichiers de configuration.
+Grâce à cet outil, il suffit à l'administrateur de récupérer ses fichiers, puis de les exécuter, pour mettre entièrement en place les différents services du projet.
+
+Dans ce projet, quatre services sont utilisés :
+\begin{itemize}
+	\item \lstinline{mongo}, le conteneur officiel fourni par MongoDB (pour faciliter les mises à jour de sécurité),
+	\item \lstinline{mongo-express}, une interface web d'administration de MongoDB,
+	\item \lstinline{server}, le conteneur fourni par ce projet, contenant le serveur web ainsi que l'interface graphique (automatiquement généré lors de la création d'une nouvelle version, stocké dans le registre du dépôt sur GitLab),
+	\item \lstinline{proxy}, le reverse-proxy Caddy qui implémente SSL et renouvelle les certificats automatiquement (le seul conteneur accessible depuis le réseau extérieur).
+\end{itemize}
+En plus de la déclaration de ces conteneurs, la configuration Docker Compose détermine les ports accessibles depuis l'extérieur, le paramétrage des variables d'environnement et des mots de passe d'administration, etc.
+Ces fichiers sont disponibles dans le dossier \lstinline{docker} du dépôt.
+
+Les fichiers sources sont aussi disponibles sous la forme d'archives (ZIP et TAR.GZ).

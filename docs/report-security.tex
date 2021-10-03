@@ -1,0 +1,122 @@
+\section{Sécurité}\label{sec:securite}
+
+
+Dans cette section, nous allons aborder la sécurité au niveau de la base de données, du serveur,
+et enfin du client.
+
+\subsection{Base de données et serveur}\label{subsec:base-de-donnees-et-serveur}
+
+La base de données est la partie la plus critique du logiciel.
+Un attaquant en prenant le contrôle aurait un pouvoir absolu sur le logiciel entier.
+Cependant, la base de données ne nécessite d’être accessible que par le serveur, il est donc possible de l’isoler complètement du monde extérieur.
+Toutes les requêtes à la base de données sont générées par le client officiel MongoDB~\cite{mongo}, via l’intermédiaire de KMongo~\cite{mongo-kotlin} ; il ne devrait donc pas être possible d’effectuer une attaque par injection à travers le serveur.
+La configuration fournie pour Docker n’expose pas la base de données.
+
+\uparagraph
+Toutes les communications entre les clients et le serveur ont lieu via HTTP (ou HTTPS).
+Le serveur livré n’est pas capable de gérer HTTPS de lui-même, mais la configuration est donnée pour utiliser un reverse-proxy~\cite{caddy}.
+Ce reverse-proxy permet de gérer automatiquement la mise à jour des certificats SSL, etc.
+La publication des ports HTTP (non-sécurisés) du serveur n’est pas nécessaire, il est donc possible de n’exposer publiquement que les ports HTTPS du reverse-proxy.
+
+La partie de l’API destinée à être utilisée par le site public de la ville est très limitée, et ne contient aucun transfert d’identifiants.
+HTTPS est jugé comme une protection suffisante.
+Au sein de la base de données, les mots de passe sont hachés via BCrypt~\cite{bcrypt}.
+
+\subsection{Authentification}\label{subsec:authentification}
+
+L’interface interne pour les employés communique avec le serveur via HTTPS ou HTTP.
+Un avertissement de sécurité est affiché si HTTPS n’est pas disponible.
+Pour des raisons de sécurité, il existe deux identifiants pour chaque utilisateur : un \emph{access token} et un \emph{refresh token}.
+
+L’\emph{access token} permet de s’identifier auprès du serveur, et d’effectuer n’importe quelle action en tant qu’un employé.
+Il n’est valable que quelques dizaines de minutes, et n’est stocké que dans une variable JavaScript ; il ne devrait donc pas être possible de le voler.
+Le \emph{refresh token} permet de demander au serveur de fournir un nouveau access token, quand le précédent a expiré.
+Il est stocké comme cookie dans le navigateur, protégé par :
+\begin{itemize}
+	\item \lstinline{HttpOnly} : inaccessible par le code JavaScript de la page,
+	\item \lstinline{Secure} : transmis uniquement via HTTPS,
+	\item \lstinline{SameSite Strict} : le navigateur refuse de transmettre le cookie à un autre serveur que celui qui l’a créé.
+\end{itemize}
+Le \emph{refresh token} reste valable pendant quelques jours, mais sa durée de vie est étendue à chaque
+utilisation.
+Si l’utilisateur modifie son mot de passe, tous les \emph{refresh token} existant deviennent invalides (déconnectant de force sur toutes les machines qui avaient accès à son compte).
+
+\uparagraph
+Les deux attaques courantes sur un site web sont XSS~\cite{xss} et CSRF~\cite{csrf}.
+
+On appelle une attaque XSS une situation dans laquelle l’attaquant peut exécuter du code JavaScript arbitraire sur une page du site.
+Elles ont souvent lieu grâce à une injection de code.
+L’interface graphique est écrite via ReactJS~\cite{react} et n’utilise pas les fonctions \lstinline{dangerouslySetInnerHtml} ou similaire ;
+elle ne devrait donc pas être sensible aux injections de code.
+Si une attaque XSS a lieu, le refresh token ne sera pas accessible, grâce à \lstinline{HttpOnly} : même si un attaquant arrive à exécuter du code arbitraire, il n’aura pas accès aux identifiants.
+
+On appelle une attaque CSRF une situation dans laquelle l’attaquant peut exécuter une requête depuis la page (se faisant ainsi passer pour l’utilisateur, du point de vue du serveur).
+Comme les attaques XSS, ces attaques ont souvent comme origine des injections de code.
+Si une attaque CSRF a lieu, l’attaquant n’aura pas accès au refresh token mais sera en possibilité de le transmettre au serveur, ce qui lui permettrait de récupérer un access token qu’il pourrait ensuite utiliser pour prendre le contrôle du compte, jusqu’à son expiration.
+L’attaquant ne pourra pas transmettre le refresh token vers un autre site (grâce à \lstinline{SameSite}), il ne peut donc pas le voler.
+
+Si l’attaquant a un accès physique au navigateur de la victime, il est trivial d’accéder au cookie et le copier.
+En cas de suspicion, il faut modifier le mot de passe de l’utilisateur concerné.
+
+\subsection{Mots de passe}\label{subsec:mots-de-passe}
+
+La modification de mot de passe nécessite :
+\begin{itemize}
+	\item de transmettre un \emph{access token} valide,
+	\item de fournir le mot de passe actuel (sauf pour l'administrateur).
+\end{itemize}
+
+Si l’utilisateur ne connait pas le mot de passe de la victime, une attaque CSRF dure donc au maximum le temps de validité d’un access token.
+Une attaque par accès physique dure jusqu’à ce que la victime modifie son mot de passe.
+Il est important de noter qu’une attaque sur un compte administrateur est bien plus grave :
+quelqu’un prenant le contrôle d’un compte administrateur peut modifier tous les mots de passe, et ainsi bloquer tous les employés (dont l’administrateur réel)hors du site.
+Il n’est pas possible de régler cette situation via l’API ni l’interface fournie (sinon l’attaquant y aurait aussi accès)---dans cette situation, la seule solution est d'intervenir sur la base de données directement.
+
+Il existe une faille théorique lorsqu’un utilisateur modifie son mot de passe plus de $2^{64}$ fois (environ 18 milliards de milliards de fois) pendant moins de temps que la durée de validité d’un \emph{refresh token} (quelques jours, les extensions de durée lors de l’utilisation ne sont pas utilisables dans cette situation).
+Je considère que cette faille ne pose pas de risque crédible qui mériterait de la corriger.
+
+\uparagraph
+Pour empêcher qu’un attaquant devine le mot de passe d’un utilisateur en essayant des mots de passe communs, deux protections sont en place :
+\begin{itemize}
+	\item Le blocage des comptes cibles,
+	\item Le blocage du serveur entier.
+\end{itemize}
+
+Lorsqu’un utilisateur essaie de se connecter avec un mot de passe incorrect, son compte est bloqué pendant quelques secondes, cumulées à chaque échec.
+Un compte utilisateur n’est bloqué au maximum que pendant quelques minutes à partir de la fin de l’attaque.
+Quand un compte est bloqué, il est impossible de s’y connecter, même avec le mot de passe correct (même si l’attaquant devine le mot de passe réel, il ne peut pas se connecter).
+Un utilisateur déjà connecté (qui possède un \emph{refresh token}) n’est pas impacté par le blocage de son compte (les employés peuvent continuer à travailler normalement même pendant une attaque).
+
+L’interface ne prévient pas l’utilisateur que son compte est actuellement bloqué, pour ne pas donner d’informations à l’attaquant.
+Pour un administrateur, la seule manière de savoir pourquoi l’accès à été refusé est de vérifier les journaux du serveur.
+
+Une variation de l’attaque par recherche de mot de passe consiste à essayer un même mot de passe envers chaque compte, pour esquiver le blocage d’un compte cible.
+Pour se protéger contre ce type d’attaque, chaque réplique du serveur est capable de se bloquer temporairement (comme si tous les comptes étaient bloqués).
+Le fonctionnement est identique au blocage d’un compte spécifique, mais affecte tous les comptes et dure moins longtemps.
+De la même manière, les employés déjà connectés ne sont pas impactés.
+Les utilisateurs anonymes (les habitants de la ville, qui remplissent des formulaires) ne sont impactés par aucun blocage, puisqu’ils ne possèdent pas de compte.
+
+\subsection{Bilan de sécurité}\label{subsec:bilan-de-securité}
+
+En conclusion de ces attaques, les risques les plus importants sont :
+\begin{itemize}
+	\item Les mots de passe de mauvaise qualité.
+	Quoiqu’il arrive, aucune des mesures de sécurité mise en place n’est efficace contre un attaquant qui connaît déjà le mot de passe.
+	Face à une attaque de ce type, la solution est de changer le mot de passe.
+	\item Une attaque par accès physique sur un compte employé.
+	L’attaque dure au maximum jusqu’à la fin de l’accès physique (ou jusqu’à la modification du mot de passe) plus la durée de vie d’un access token (une dizaine de minutes).
+	\item Une attaque par accès physique sur un compte administrateur.
+	L’attaque peut potentiellement empêcher tous les employés d’accéder au système.
+	La seule solution est une intervention technique sur la base de données, ou remettre en place une sauvegarde datant d’avant l’attaque tout en changeant le secret des tokens.
+	\item L’interception du traffic HTTP\@.
+	L’attaquant peut avoir accès total à un compte jusqu’à ce que le mot de passe soit modifié.
+	Interdir l’accès au serveur via HTTP, et autoriser uniquement HTTPS, rend cette attaque impossible à exploiter.
+	\item Une attaque XSS ou CSRF sur un navigateur ne supportant pas toutes les fonctionnalités de sécurité (à supposer qu’une attaque XSS ou CSRF existe).
+	Dans ce cas, l’attaquant pourrait avoir accès total à un compte jusqu’à ce que le mot de passe soit modifié.
+	À l’écriture de ce document, les navigateurs compatibles~\cite{browser-compat-security} sont Chrome 80 (PC et Android), Edge 86 et Opera 71.
+	Firefox 69 est compatible à condition d’activer un paramètre spécifique.
+	Internet Exporer est incompatible, quelle que soit la version.
+\end{itemize}
+
+On notera que toutes ces attaques sont en lien avec les comptes employés ou administrateurs : la seule attaque possible via un accès anonyme (les habitants de la ville) consiste à polluer la base de données avec des données inutiles, il n’est pas possible ni d’accéder ni de modifier les données existantes.
+Une simple protection DoS/DDoS est efficace contre ce type d'attaque (mais n'est pas incluse par la configuration fournie du projet).
