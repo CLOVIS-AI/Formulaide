@@ -4,15 +4,21 @@ import formulaide.ui.reportExceptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import react.RBuilder
 import react.useEffect
 import react.useEffectOnce
 import react.useState
 
+/**
+ * Returns a [CoroutineScope] that is active as long as this component is mounted.
+ *
+ * Use this hook to launch code that should be cancelled if the component that started it is unmounted.
+ */
 @Suppress("unused") // RBuilder is used for type safety
 fun RBuilder.useAsync(): CoroutineScope {
-	val job by useState(Job())
+	val job by useState(SupervisorJob())
 
 	useEffectOnce {
 		cleanup {
