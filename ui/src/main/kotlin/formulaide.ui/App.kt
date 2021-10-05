@@ -166,7 +166,9 @@ val App = fc<Props> {
 				console.log("Got an access token from the cookie-stored refresh token (expiration time was near)")
 			}
 		}
+	}
 
+	useAsyncEffectOnce() {
 		bottomText.value = fetch("version.txt").await().text().await()
 			.takeIf { "DOCTYPE" !in it } ?: "Les informations de version ne sont pas disponibles."
 	}
