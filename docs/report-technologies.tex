@@ -6,20 +6,19 @@ Le choix des technologies utilisées pour la réalisation du projet s'est basé 
 
 \subsubsection{Base de données}
 
-Comme nous le verrons plus tard, le domaine est composé d'un grand nombre de structures récursives.
-Les bases de données relationnelles ne sont pas en mesure de travailler efficacement avec des données récursives~: les deux options sont d'utiliser une table pour représenter un nœud, mais il faut dans ce cas enchaîner un grand nombre de \lstinline{JOIN}, ou alors de sérialiser l'arbre dans une seule colonne, mais il devient alors impossible d'effectuer des recherches sur son contenu.
-Les bases de données relationnelles sont aussi connues pour la complexité des migrations (modifications de la base de données sans suppression des données contenues).
-Puisque le domaine comporte de nombreuses structures compliquées, il était nécessaire d'utiliser des outils étant capable de supporter des modifications du schéma avec le moins de maintenance possible.
+Pour ce projet, il était nécessaire de pouvoir travailler efficacement avec des structures récursives.
+Les bases de données relationnelles n'en sont pas capable~: les deux options sont d'utiliser une table pour représenter un nœud, ce qui implique d'enchaîner un grand nombre de \lstinline{JOIN}, ou alors de sérialiser l'arbre dans une seule colonne, mais il devient alors impossible d'effectuer des recherches sur son contenu.
+Les migrations sont aussi compliquées (modification des colonnes sans suppression des données contenues), ce qui aurait posé problème lors de ce projet.
 
 \uparagraph
 MongoDB est une base de données de type NoSQL (non-relationnelle) qui est devenue populaire dans les récentes années grâce à son intégration avec Docker, NodeJS et Kubernetes.
 MongoDB ne requiert pas de schéma, et est donc capable de gérer des ajouts de colonnes ou suppressions de colonnes dynamiquement.
-Au lieu de fournir un langage spécifique au domaine (DSL) comme les bases de données relationnelles (SQL), MongoDB se base sur le format JSON (avec de légères modifications).
+Au lieu de fournir un langage spécifique au domaine comme les bases de données relationnelles, MongoDB s'inspire du le format JSON\@.
 
 Puisque toutes les colonnes représentent des objets JSON, il est possible de stocker des listes, et de faire de recherche dans les listes à l'intérieur des colonnes.
 Cela permet de bien meilleures performances que ce qui serait possible avec une base de données relationnelles, tout en étant plus simple à utiliser puisque le langage peut travailler avec des colonnes réelles ou des listes JSON dans des colonnes, de manière transparente.
 
-De manière générale, les bases de données NoSQL essaient de décentraliser les données : permettre à plusieurs répliques de la base de coopérer, et de permettre au système de survivre à l'échec d'une des répliques.
+Les systèmes NoSQL sont aussi capables de coopérer entre plusieurs copies de la base de données, pour permettre au système de survivre à l'échec de l'une d'elles.
 Ceci est un grand atout pour le client, puisqu'il est très important que le système soit toujours accessible.
 
 \uparagraph
@@ -36,22 +35,14 @@ les solutions du type JavaScript + PHP étaient donc à proscrire.
 Peu de langages sont capables de servir à la fois côté serveur et client : les deux principaux sont JavaScript et Kotlin.
 
 \uparagraph
-JavaScript est un langage originellement développé pour remplacer Java pour les sites internet, dans les années 1990.
-Il a connu une croissance très forte et est aujourd'hui un des langages les plus populaires.
-Récemment, NodeJS a permis à JavaScript d'être utilisé pour la réalisation de serveurs, ce qui permet de réaliser un projet entier en JavaScript.
-
 Kotlin est un langage créé en 2011 par JetBrains (entreprise développant Android Studio, IntelliJ IDEA, WebStorm, PyCharm, etc) pour remplacer Java dans leurs outils.
 Kotlin garde les concepts majeurs de Java (programmation orientée objet) tout en ajoutant de nouvelles fonctionnalités (programmation fonctionnelle, gestion de la nullabilité au niveau des types, inférence de types, programmation asynchrone, etc).
 En 2017, Google a annoncé le support officiel de Kotlin pour Android, puis en 2019 a annoncé que les APIs Android futures seraient écrites pour Kotlin, et non pour Java.
 Ces annonces ont propulsé la popularité de Kotlin, qui est actuellement un des langages les plus demandés.
 Il s'agit d'un langage originellement basé sur la JVM, mais il peut aussi être transpilé vers JavaScript (pour le web), ou vers des exécutables natifs (via LLVM, pour les appareils connectés et iOS).
 
-JavaScript est un langage typé dynamiquement (les vérifications de compatibilité des données sont faites pendant l'exécution du programme).
-Kotlin est un langage typé statiquement (les vérifications sont réalisées pendant le développement).
-Cela permet d'éviter un très grand nombre d'erreurs et d'augmenter la qualité du logiciel fini.
-
 \uparagraph
-Le projet consiste donc en deux applications : un serveur s'exécutant sur la JVM, et une interface web transpilée en JavaScript, s'exécutant dans le navigateur.
+Le projet consiste en deux applications : un serveur s'exécutant sur la JVM, et une interface web transpilée en JavaScript, s'exécutant dans le navigateur.
 La communication entre ces deux applications est réalisée via HTTP, en transmettant des objets Kotlin sérialisés en JSON via KotlinX.Serialization, en utilisant le framework HTTP Ktor (côté client et côté serveur).
 
 De cette manière, il est possible de créer un module commun contenant tous les objets de l'API, d'y implémenter toute la logique de vérification des données, puis de le partager entre le client et le serveur.
@@ -79,12 +70,6 @@ En utilisant un framework déclaratif comme React, on n'écrit pas directement d
 \subsection{Suivi de projet}\label{subsec:suivi-de-projet}
 
 La gestion de projet est réalisée sous GitLab~\cite{gitlab}.
-
-GitLab est un logiciel de gestion des sources (basé sur Git), de gestion de projet, de DevOps, etc.
-GitLab est disponible en version Community (gratuite et libre), et plusieurs versions Entreprise (payantes et non-libres).
-Toutes ces versions sont disponibles dans le Cloud (géré par l'entreprise GitLab) ou On-Premises (géré par la Mairie).
-Les versions Entreprise sont gratuites dans un cadre de projet Open Source.
-Puisque le code n'est pas secret, et est Open Source, GitLab Cloud a été choisi pour simplifier l'installation, et faciliter l'accès aux futurs auditeurs ou collaborateurs.
 
 \subsubsection{Forks}
 

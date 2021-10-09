@@ -1,1 +1,24 @@
 \section{Suivi}\label{sec:suivi}
+
+Lorsque les administrés remplissent un formulaire, leurs saisies doivent être transmises aux différents services de la mairie.
+Pour cela, l'administrateur peut créer plusieurs «~étapes~» lors de la création d'un formulaire.
+
+Une étape représente la vérification de la saisie par un agent de la mairie appartenant à un service particulier.
+Ensembles, les étapes forment un automate dont l'état piège correspond aux dossiers refusés.
+
+Chaque étape peut aussi comporter des champs réservés à l'administration, qui sont visibles par les autres employés.
+Les employés ont donc la possibilité :
+\begin{itemize}
+	\item de refuser un dossier (il sera déplacé dans l'étape spéciale «~Dossiers refusés~»),
+	\item d'accepter un dossier (il sera transféré au service responsable de l'étape suivante),
+	\item de déplacer un dossier vers une étape précédente (lors d'une erreur de saisie),
+	\item de conserver le dossier dans l'étape actuelle, en l'annotant (par exemple, si l'étape correspond à prendre un rendez-vous, mais que la personne n'est pas disponible).
+\end{itemize}
+Le système conserve l'historique de toutes les opérations appliquées à un dossier.
+
+\uparagraph
+Du point de vue de la base de données, chaque dossier est une association entre des identifiants de champs et les valeurs saisies par l'administré.
+Cela permet de modifier les noms des champs, leur type ou même leur ordre sans risquer de perdre des données.
+
+Pour rendre impossible la perte de données, le système n'est pas capable de modifier les dossiers.
+L'inconvénient de cette méthode de fonctionnement est que la suppression de champs dans un formulaire ne permet pas de réellement supprimer les données.

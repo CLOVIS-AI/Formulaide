@@ -5,20 +5,16 @@ Cet éditeur permet de fabriquer un schéma, qui est ensuite utilisé pour gén�
 
 Pour cela, on définit plusieurs termes :
 \begin{itemize}
-	\item Champ : une donnée demandée à l'utilisateur, peut être simple (du texte, un numéro de téléphone…) ou posséder des sous-champs (choisir entre plusieurs options),
+	\item Champ : une donnée demandée à l'utilisateur, qui peut être simple (du texte, un numéro de téléphone…) ou posséder des sous-champs (choisir entre plusieurs options).
+	Ils sont représentés par des structures récursives, dont la racine dicte des contraintes spécifiques.
 	\item Formulaire : un groupement de champs ayant un nom, pouvait être accessible par les administrés,
 	\item Groupe : un groupement de champs ayant un nom, représentant un morceau d'un formulaire, pouvant être réutilisé au sein de plusieurs formulaires (similaire à un patron de formulaire).
 \end{itemize}
 
-\subsection{Champs}\label{subsec:conception-des-champs}
-
-Les champs sont le cœur du logiciel.
-Ils sont représentés comme des structures récursives, dont la racine dicte des contraintes spécifiques.
-
 \paragraph{Familles de champs}
 Il existe cinq familles de champs :
 \begin{itemize}
-	\item Le champ d'affichage de texte, qui permet d'afficher un simple texte à l'utilisateur,
+	\item Les champs d'affichage de texte, qui permettent d'afficher un simple texte à l'utilisateur,
 	\item Les champs simples, qui n'ont pas de sous-champs et représentent les champs traditionnels (addresse mail, numéro de téléphone…),
 	\item Les champs composés, qui représentent un ensemble de sous-champs que l'utilisateur doit remplir,
 	\item Les champs unions, qui représentent un ensemble de sous-champs dont l'utilisateur ne remplit qu'un,
@@ -66,16 +62,7 @@ Toutes les modifications doivent cependant être compatibles\footnote{Cette rest
 
 \subparagraph{Listes}
 Au lieu de représenter les listes par un type spécifique, elles sont représentées par une classe \lstinline{Arity}.
-L'arité d'un champ est définie comme le nombre de réponses autorisées pour ce champ.
-On retrouve les cas particuliers suivants :
-\begin{itemize}
-	\item De 0 à 0 réponses : le champ est interdit, et ne peut pas être rempli.
-	Dans l'interface web, ces champs s'appellent «~cachés~», et servent à inclure une partie seulement d'un groupe (on marque les champs non souhaités comme cachés).
-	\item De 0 à 1 réponse : le champ est facultatif.
-	\item De 1 à 1 réponse : le champ est obligatoire.
-	\item De 0 à $n$ réponses : le champ est facultatif, mais peut être rempli jusqu'à $n$ fois.
-	\item De 1 à $n$ réponses : le champ est obligatoire et peut être rempli jusqu'à $n$ fois.
-\end{itemize}
+L'arité d'un champ est définie comme le nombre de réponses autorisées pour ce champ (nombre de réponses autorisées au minimum et au maximum).
 
 Tous les champs possèdent une arité, un champ n'étant pas une liste a donc une arité maximale de 1 ou moins.
 Il n'est donc pas nécessaire d'ajouter un type «~Liste~».
@@ -106,8 +93,6 @@ Les références peuvent référencer d'autres groupes ou le groupe actuel lui-m
 Les références vers d'autres groupes sont obligatoirement facultatives (sinon, il serait possible de créer un cycle récursif obligatoire, qui serait infini).
 Quand un groupe est ajouté à un formulaire, il est possible de rendre plus stricte son arité (rendre le groupe facultatif obligatoire), donc cela n'a pas d'impact sur les possibilités de création de formulaire.
 
-%TODO UML
-
 \subparagraph{Champs dans un formulaire}
 Les formulaires sont séparés en deux niveaux, dont le code commun est placé dans l'interface \lstinline{FormField} :
 \begin{itemize}
@@ -119,15 +104,3 @@ Le niveau supérieur (\lstinline{ShallowFormField}) peut contenir des champs sim
 Dans un formulaire, il est possible de modifier certains aspects des champs provenant des groupes (arité, métadonnées d'un champ simple, etc).
 Les descendants d'une référence vers un groupe ne permettent que de modifier les champs autorisés, et héritent des autres (héritage par composition).
 On retrouve donc une deuxième implémentation de chaque type qui ne stocke que les données qui peuvent être modifiées, pour les champs simples (\lstinline{DeepFormField.Simple}), pour les unions (\lstinline{DeepFormField.Union}) et pour les références vers d'autres groupes (\lstinline{DeepFormField.Composite}).
-
-%TODO UML
-
-\subsection{Groupes}\label{subsec:groupes}
-
-\subsubsection{Modification de groupes}
-
-\subsection{Formulaires}\label{subsec:formulaires}
-
-\subsubsection{Modification de formulaires}
-
-\subsubsection{Interfaçage avec le site de la ville}
