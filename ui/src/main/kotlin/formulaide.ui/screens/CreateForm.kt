@@ -61,24 +61,28 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props> {
 	var formLoaded by useState(false)
 
 	useAsyncEffectOnce {
-		FormRoot(fields).load(composites)
-		actions.forEach { action ->
-			action.reviewer.loadFrom(services)
-			action.fields?.load(composites)
-		}
-		formLoaded = true
-	}
+		val mentionedComposites =
+			if (original != null) client.compositesReferencedIn(original) + composites
+			else composites
 
-	useAsyncEffectOnce {
 		if (original != null) {
-			val loaded = client.compositesReferencedIn(original)
-			original.load(loaded)
-
+			original.load(mentionedComposites)
+			original.actions.forEach { action ->
+				action.reviewer.loadFrom(services)
+				action.fields?.load(mentionedComposites)
+			}
 			formName.current?.let { it.value = original.name }
 			public.current?.let { it.checked = original.public }
 			updateFields { original.mainFields.fields }
 			updateActions { original.actions }
+		} else {
+			FormRoot(fields).load(mentionedComposites)
+			actions.forEach { action ->
+				action.reviewer.loadFrom(services)
+				action.fields?.load(mentionedComposites)
+			}
 		}
+		formLoaded = true
 	}
 
 	val lambdas = useLambdas()
