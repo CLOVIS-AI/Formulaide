@@ -131,6 +131,8 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props> {
 			updateActions { emptyList() }
 		}
 	) {
+		traceRenders("CreateForm Main card (loaded)")
+
 		if (original != null && copy) {
 			text("Vous êtes en train de copier ce formulaire. Vous allez créer un nouveau formulaire n'ayant aucun lien avec l'ancien. Les dossiers remplis pour le formulaire précédent ne seront pas visible pour celui-ci.")
 		}
@@ -151,6 +153,7 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props> {
 			               ref = public)
 		}
 
+		traceRenders("CreateForm Fields")
 		styledField("new-form-fields", "Champs") {
 			for ((i, field) in fields.withIndex()) {
 				child(FieldEditor) {
@@ -186,6 +189,7 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props> {
 			})
 		}
 
+		traceRenders("CreateForm Actions")
 		styledField("new-form-actions", "Étapes") {
 			for ((i, action) in actions.sortedBy { it.order }.withIndex()) {
 				div {
@@ -231,6 +235,8 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props> {
 				p { styledErrorText("Un formulaire doit avoir au moins une étape.") }
 		}
 	}
+
+	traceRenders("CreateForm … done")
 }
 
 private fun RBuilder.actionName(
