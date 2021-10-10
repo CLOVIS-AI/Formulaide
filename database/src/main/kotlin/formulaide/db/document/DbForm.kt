@@ -56,8 +56,10 @@ suspend fun Database.createForm(form: Form): Form {
 suspend fun Database.referencedComposites(form: Form): List<Composite> {
 	form.mainFields.load(listComposites())
 
-	val compositeIds = form.mainFields
-		.asSequence()
+	val fields = listOf(form.mainFields) + form.actions.mapNotNull { it.fields }
+
+	val compositeIds = fields
+		.flatMap { it.asSequence() }
 		.flatMap { field ->
 			when (field) {
 				is ShallowFormField.Composite -> sequenceOf(field.ref.id)
