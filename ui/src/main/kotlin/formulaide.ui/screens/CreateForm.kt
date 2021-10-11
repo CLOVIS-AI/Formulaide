@@ -61,24 +61,28 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props> {
 	var formLoaded by useState(false)
 
 	useAsyncEffectOnce {
-		FormRoot(fields).load(composites)
-		actions.forEach { action ->
-			action.reviewer.loadFrom(services)
-			action.fields?.load(composites)
-		}
-		formLoaded = true
-	}
+		val mentionedComposites =
+			if (original != null) client.compositesReferencedIn(original) + composites
+			else composites
 
-	useAsyncEffectOnce {
 		if (original != null) {
-			val loaded = client.compositesReferencedIn(original)
-			original.load(loaded)
-
+			original.load(mentionedComposites)
+			original.actions.forEach { action ->
+				action.reviewer.loadFrom(services)
+				action.fields?.load(mentionedComposites)
+			}
 			formName.current?.let { it.value = original.name }
 			public.current?.let { it.checked = original.public }
 			updateFields { original.mainFields.fields }
 			updateActions { original.actions }
+		} else {
+			FormRoot(fields).load(mentionedComposites)
+			actions.forEach { action ->
+				action.reviewer.loadFrom(services)
+				action.fields?.load(mentionedComposites)
+			}
 		}
+		formLoaded = true
 	}
 
 	val lambdas = useLambdas()
@@ -131,6 +135,8 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props> {
 			updateActions { emptyList() }
 		}
 	) {
+		traceRenders("CreateForm Main card (loaded)")
+
 		if (original != null && copy) {
 			text("Vous êtes en train de copier ce formulaire. Vous allez créer un nouveau formulaire n'ayant aucun lien avec l'ancien. Les dossiers remplis pour le formulaire précédent ne seront pas visible pour celui-ci.")
 		}
@@ -151,6 +157,7 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props> {
 			               ref = public)
 		}
 
+		traceRenders("CreateForm Fields")
 		styledField("new-form-fields", "Champs") {
 			for ((i, field) in fields.withIndex()) {
 				child(FieldEditor) {
@@ -186,6 +193,7 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props> {
 			})
 		}
 
+		traceRenders("CreateForm Actions")
 		styledField("new-form-actions", "Étapes") {
 			for ((i, action) in actions.sortedBy { it.order }.withIndex()) {
 				div {
@@ -231,6 +239,8 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props> {
 				p { styledErrorText("Un formulaire doit avoir au moins une étape.") }
 		}
 	}
+
+	traceRenders("CreateForm … done")
 }
 
 private fun RBuilder.actionName(

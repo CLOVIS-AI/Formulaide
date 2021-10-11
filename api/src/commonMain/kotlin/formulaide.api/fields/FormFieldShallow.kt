@@ -59,6 +59,11 @@ sealed class ShallowFormField : FormField {
 		override val options: List<ShallowFormField>,
 	) : ShallowFormField(), FormField.Union<ShallowFormField> {
 
+		override fun load(composites: List<CompositeData>, allowNotFound: Boolean, lazy: Boolean) {
+			super.load(composites, allowNotFound, lazy)
+			options.forEach { it.load(composites, allowNotFound, lazy) }
+		}
+
 		override fun validate() {
 			super.validate()
 			options.checkOrderValidity()
