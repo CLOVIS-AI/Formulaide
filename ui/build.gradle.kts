@@ -3,7 +3,7 @@ plugins {
 
 	id("org.jetbrains.dokka")
 
-	id("org.gradlewebtools.minify") version Version.gradleMinify
+	id("org.gradlewebtools.minify") version "1.3.0"
 }
 
 kotlin {
@@ -27,18 +27,18 @@ dependencies {
 
 	implementation(project(":client"))
 
-	implementation(kotlinWrapper("react", Version.kotlinReact))
-	implementation(kotlinWrapper("react-dom", Version.kotlinReact))
-	implementation(npm("react", Version.react))
-	implementation(npm("react-dom", Version.react))
-	implementation(npm("use-error-boundary", Version.reactUseErrorBoundary))
+	implementation("org.jetbrains.kotlin-wrappers:kotlin-react:17.0.2-pre.235-kotlin-1.5.21")
+	implementation("org.jetbrains.kotlin-wrappers:kotlin-react-dom:17.0.2-pre.235-kotlin-1.5.21")
+	implementation(npm("react", "17.0.2"))
+	implementation(npm("react-dom", "17.0.2"))
+	implementation(npm("use-error-boundary", "2.0.6"))
 
-	implementation(npm("postcss", Version.postcss))
-	implementation(npm("postcss-loader", Version.postcssLoader))
-	implementation(npm("autoprefixer", Version.autoprefixer))
-	implementation(npm("tailwindcss", Version.tailwind))
+	implementation(npm("postcss", "8.3.5"))
+	implementation(npm("postcss-loader", "6.1.1"))
+	implementation(npm("autoprefixer", "10.3.1"))
+	implementation(npm("tailwindcss", "2.2.4"))
 
-	implementation(kotlinxCoroutines("core-js"))
+	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:1.5.1")
 }
 
 val copyTailwindConfig = tasks.register<Copy>("copyTailwindConfig") {
