@@ -17,7 +17,7 @@ kotlin {
 			dependencies {
 				implementation(kotlin("stdlib-common"))
 
-				api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.1")
+				api(KotlinX.serialization.json)
 			}
 		}
 

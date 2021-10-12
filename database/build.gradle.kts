@@ -5,7 +5,7 @@ plugins {
 	id("org.jetbrains.dokka")
 
 	id("jacoco")
-	id("de.jansauer.printcoverage").version("2.0.0")
+	id("de.jansauer.printcoverage")
 }
 
 dependencies {
@@ -15,13 +15,13 @@ dependencies {
 
 	api(project(":api"))
 
-	api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.1")
-	testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.5.1")
-	implementation("org.litote.kmongo:kmongo-coroutine-serialization:4.2.8")
+	api(KotlinX.coroutines.core)
+	testImplementation(KotlinX.coroutines.test)
+	implementation("org.litote.kmongo:kmongo-coroutine-serialization:_")
 
-	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.1")
+	implementation(KotlinX.serialization.json)
 
-	implementation("ch.qos.logback:logback-classic:1.2.4")
+	implementation("ch.qos.logback:logback-classic:_")
 }
 
 tasks.jacocoTestReport {
