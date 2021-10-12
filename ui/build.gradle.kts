@@ -33,10 +33,10 @@ dependencies {
 	implementation(npm("react-dom", "17.0.2"))
 	implementation(npm("use-error-boundary", "2.0.6"))
 
-	implementation(npm("postcss", "8.3.5"))
+	implementation(npm("postcss", "8.3.9"))
 	implementation(npm("postcss-loader", "6.1.1"))
-	implementation(npm("autoprefixer", "10.3.1"))
-	implementation(npm("tailwindcss", "2.2.4"))
+	implementation(npm("autoprefixer", "10.3.7"))
+	implementation(npm("tailwindcss", "2.2.16"))
 
 	implementation(KotlinX.coroutines.coreJs)
 }
