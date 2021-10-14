@@ -1,5 +1,6 @@
 package formulaide.ui.components
 
+import formulaide.ui.traceRenders
 import kotlinx.html.DIV
 import react.RBuilder
 import react.dom.RDOMBuilder
@@ -27,6 +28,7 @@ fun RBuilder.styledNesting(
 	onMoveDown: (suspend () -> Unit)? = null,
 	block: RDOMBuilder<DIV>.() -> Unit,
 ) {
+	traceRenders("styledNesting … depth $depth, number $fieldNumber")
 	val selectedBackground = if (depth != null && fieldNumber != null) {
 		val backgroundColors = colorPerDepth[depth % colorPerDepth.size]
 		backgroundColors[fieldNumber % backgroundColors.size]
