@@ -33,8 +33,8 @@ data class Record(
 			.flatMap { sequenceOf(it.previousState, it.nextState) }
 			.plus(state)
 			.forEach {
-				if (it is RecordState.Action) it.current.loadFrom(form.obj.actions,
-				                                                  lazy = true)
+				if (it is RecordState.Action)
+					it.current.loadFrom(form.obj.actions, lazy = true)
 			}
 	}
 
