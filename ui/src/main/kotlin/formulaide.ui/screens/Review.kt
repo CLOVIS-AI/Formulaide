@@ -73,10 +73,13 @@ internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record
 	val (openedRecords, setOpenedRecords) = useState(records.associateWith { true })
 		.asDelegated()
 
+	var composites by useState(emptyList<Composite>())
 	var formLoaded by useState(false)
 	useEffect(form) {
 		scope.reportExceptions {
-			form.load(client.compositesReferencedIn(form))
+			val referenced = client.compositesReferencedIn(form)
+			form.load(referenced)
+			composites = referenced
 			formLoaded = true
 		}
 	}
@@ -196,6 +199,7 @@ internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record
 							attrs {
 								this.form = form
 								this.windowState = state
+								this.composites = composites
 								this.formLoaded = formLoaded
 								this.record = record
 
@@ -512,6 +516,7 @@ private val CriterionPill = memo(fc<CriterionPillProps> { props ->
 private external interface ReviewRecordProps : Props {
 	var form: Form
 	var windowState: RecordState?
+	var composites: List<Composite>
 	var record: Record
 
 	var collapsed: Boolean
@@ -594,6 +599,7 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 	val (selectedDestination, updateDestination) = useState(nextAction ?: state)
 
 	if (user == null) {
+		traceRenders("ReviewRecord … cancelled")
 		styledCard("Dossier", loading = true) { text("Chargement de l'utilisateur…") }
 		return@fc
 	}
@@ -617,6 +623,7 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 			attrs {
 				this.form = form
 				this.formLoaded = props.formLoaded
+				this.composites = props.composites
 				this.windowState = props.windowState
 				this.state = state
 				this.record = props.record
@@ -633,6 +640,8 @@ private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
 			}
 		}
 	}
+
+	traceRenders("ReviewRecord … done")
 })
 
 //region ReviewRecord Collapsed
@@ -692,6 +701,7 @@ private val ReviewRecordCollapsed = fc<ReviewRecordCollapsedProps> { props ->
 private external interface ReviewRecordExpandedProps : Props {
 	var form: Form
 	var formLoaded: Boolean
+	var composites: List<Composite>
 	var windowState: RecordState?
 	var state: RecordState
 	var record: Record
@@ -771,13 +781,14 @@ private val ReviewRecordExpanded = fc<ReviewRecordExpandedProps> { props ->
 			}
 		) {
 			traceRenders("ReviewRecordExpanded … card with decisions")
-			child(ReviewRecordCard) {
+			child(ReviewRecordContents) {
 				attrs {
 					this.form = props.form
 					this.state = state
 					this.formLoaded = props.formLoaded
 					this.showFullHistory = props.showFullHistory
 					this.history = props.history
+					this.composites = props.composites
 				}
 			}
 
@@ -857,13 +868,14 @@ private val ReviewRecordExpanded = fc<ReviewRecordExpandedProps> { props ->
 			"Réduire" to { props.collapse(true) },
 		) {
 			traceRenders("ReviewRecordExpanded … card without decisions")
-			child(ReviewRecordCard) {
+			child(ReviewRecordContents) {
 				attrs {
 					this.form = props.form
 					this.state = state
 					this.formLoaded = props.formLoaded
 					this.showFullHistory = props.showFullHistory
 					this.history = props.history
+					this.composites = props.composites
 				}
 			}
 		}
@@ -874,18 +886,48 @@ private val ReviewRecordExpanded = fc<ReviewRecordExpandedProps> { props ->
 //endregion
 //region ReviewRecord Card
 
-private external interface ReviewRecordCardProps : Props {
+private external interface ReviewRecordContentsProps : Props {
 	var history: List<ParsedTransition>
 	var showFullHistory: Boolean
 	var formLoaded: Boolean
 
 	var form: Form
 	var state: RecordState
+
+	var composites: List<Composite>
 }
 
-private val ReviewRecordCard = fc<ReviewRecordCardProps> { props ->
+private val ReviewRecordContents = fc<ReviewRecordContentsProps> { props ->
 	traceRenders("ReviewRecordCard")
 	var i = 0
+
+	var loaded by useState(false)
+	useEffect(props.composites, props.formLoaded) {
+		val state = props.state
+		if (state is RecordState.Action) reportExceptions {
+			state.current.loadFrom(props.form.actions, lazy = true)
+			val action = state.current.obj
+
+			if (props.formLoaded) { // if the form isn't loaded, props.composites is empty
+				action.fields?.load(props.composites, allowNotFound = !props.formLoaded)
+				loaded = true
+			}
+		} else {
+			loaded = true
+		}
+	}
+	if (!props.formLoaded) {
+		traceRenders("ReviewRecordCard … cancelled because the form is not loaded")
+		text("Chargement du formulaide…")
+		loadingSpinner()
+		return@fc
+	}
+	if (!loaded) {
+		traceRenders("ReviewRecordCard … cancelled because the action fields are not loaded")
+		text("Chargement des champs…")
+		loadingSpinner()
+		return@fc
+	}
 
 	for (parsed in props.history) {
 		styledNesting(depth = 0, fieldNumber = i) {
@@ -924,7 +966,6 @@ private val ReviewRecordCard = fc<ReviewRecordCardProps> { props ->
 
 	val state = props.state
 	if (state is RecordState.Action) {
-		state.current.loadFrom(props.form.actions, lazy = true)
 		val action = state.current.obj
 
 		val root = action.fields
