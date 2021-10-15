@@ -51,6 +51,9 @@ data class Form(
 	 */
 	fun load(composites: List<Composite>, allowNotFound: Boolean = false, lazy: Boolean = true) {
 		mainFields.load(composites, allowNotFound, lazy)
+
+		for (action in actions)
+			action.fields?.load(composites, allowNotFound, lazy)
 	}
 
 	/**
