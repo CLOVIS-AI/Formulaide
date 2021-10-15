@@ -6,7 +6,7 @@ plugins {
 	id("org.jetbrains.dokka")
 
 	id("jacoco")
-	id("de.jansauer.printcoverage").version(Version.printCoverage)
+	id("de.jansauer.printcoverage")
 }
 
 dependencies {
@@ -17,22 +17,22 @@ dependencies {
 	implementation(project(":api"))
 	implementation(project(":database"))
 
-	implementation(ktorServer("core"))
-	implementation(ktorServer("netty"))
-	implementation(ktor("html-builder"))
-	implementation(ktor("serialization"))
-	implementation(kotlinxSerialization("json"))
-	testImplementation(ktorServer("tests"))
-	implementation(logback("classic"))
+	implementation(Ktor.server.core)
+	implementation(Ktor.server.netty)
+	implementation(Ktor.features.htmlBuilder)
+	implementation(Ktor.features.serialization)
+	implementation(KotlinX.serialization.json)
+	testImplementation("io.ktor:ktor-server-tests:_")
+	implementation("ch.qos.logback:logback-classic:_")
 
-	implementation(ktor("auth"))
-	implementation(ktor("auth-jwt"))
-	implementation(bcrypt())
+	implementation(Ktor.features.auth)
+	implementation(Ktor.features.authJwt)
+	implementation("at.favre.lib:bcrypt:_")
 
-	implementation(kotlinxCoroutines("core"))
-	testImplementation(kotlinxCoroutines("test"))
+	implementation(KotlinX.coroutines.core)
+	testImplementation(KotlinX.coroutines.test)
 
-	implementation(apacheTika("core"))
+	implementation("org.apache.tika:tika-core:_")
 }
 
 application {
@@ -46,7 +46,7 @@ tasks.named<JavaExec>("run") {
 }
 
 jacoco {
-	toolVersion = Version.jacocoVersion
+	toolVersion = "0.8.7"
 }
 
 tasks.jacocoTestReport {
