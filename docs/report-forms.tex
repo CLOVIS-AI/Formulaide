@@ -11,7 +11,7 @@ Pour cela, on définit plusieurs termes :
 	\item Groupe : un groupement de champs ayant un nom, représentant un morceau d'un formulaire, pouvant être réutilisé au sein de plusieurs formulaires (similaire à un patron de formulaire).
 \end{itemize}
 
-\paragraph{Familles de champs}
+\subsection{Familles de champs}\label{subsec:familles-de-champs}
 Il existe cinq familles de champs :
 \begin{itemize}
 	\item Les champs d'affichage de texte, qui permettent d'afficher un simple texte à l'utilisateur,
@@ -22,7 +22,7 @@ Il existe cinq familles de champs :
 \end{itemize}
 Ces différentes familles sont implémentées de manière très différente les unes des autres, mais aussi d'une racine à une autre.
 
-\subparagraph{Champs simple et affichage de texte}
+\paragraph{Champs simple et affichage de texte}
 Il existe de nombreux types de champs simples, qui sont implémentés par la classe scéllée \lstinline{SimpleField}.
 Parmi ces implémentations, on retrouve les cases à cocher (\lstinline{SimpleField.Boolean}), les addresses mail (\lstinline{SimpleField.Email}), les fichiers à téléverser (\lstinline{SimpleField.Upload}), etc.
 
@@ -33,7 +33,7 @@ Pour éviter d'avoir à ajouter une interface de plus à la hiérarchie, il est 
 Les champs simples peuvent avoir des métadonnées en plus, selon le type.
 Par exemple, on peut préciser la longueur maximale d'un texte, les formats autorisés pour une pièce jointe, etc.
 
-\subparagraph{Unions}
+\paragraph{Unions}
 Les unions (appelées «~choix~» dans l'interface web) permettent de créer un formulaire où l'utilisateur a le choix entre plusieurs champs.
 Pour cela, les unions possèdent une liste de sous-champs, dont un seul peut être rempli par l'utilisateur.
 
@@ -47,7 +47,7 @@ Choix : « Genre »
 	Texte modifiable : « Autre »
 \end{lstlisting}
 
-\subparagraph{Champs composés}
+\paragraph{Champs composés}
 Les champs composés sont similaires aux unions, mais affichent tous les champs à l'utilisateur.
 
 Contrairement aux unions, les champs composés ne peuvent se trouver qu'à la racine d'un arbre de champs --- et la racine d'un arbre de champs est obligatoirement un champ composé.
@@ -60,7 +60,7 @@ Ces champs référence permettent aussi d'utiliser un groupe à l'intérieur d'u
 Les champs référence permettent de modifier certains attributs des champs référencés, par exemple l'arité.
 Toutes les modifications doivent cependant être compatibles\footnote{Cette restriction provient du but original d'utiliser les groupes pour effectuer des recherches à travers tous les formulaires dont un groupe fait partie. Pour des raisons de temps, cela n'a pas été implémenté, mais la restriction est gardée en place pour le permettre dans le futur.} avec les champs originaux, il est donc recommandé de créer des groupes n'étant pas trop restrictifs.
 
-\subparagraph{Listes}
+\paragraph{Listes}
 Au lieu de représenter les listes par un type spécifique, elles sont représentées par une classe \lstinline{Arity}.
 L'arité d'un champ est définie comme le nombre de réponses autorisées pour ce champ (nombre de réponses autorisées au minimum et au maximum).
 
@@ -76,7 +76,7 @@ Ces différentes familles de champs sont représentées par des interfaces, qui 
 	\includegraphics[width=\textwidth]{reports-forms-fields}
 \end{figure}
 
-\paragraph{Contextes}
+\subsection{Contextes}\label{subsec:contextes}
 Comme dit précédemment, les champs forment des arbres récursifs dont la racine dicte certaines informations.
 Il existe trois racines différentes :
 \begin{itemize}
@@ -85,7 +85,7 @@ Il existe trois racines différentes :
 	\item Les champs référence d'un formulaire.
 \end{itemize}
 
-\subparagraph{Champs dans un groupe}
+\paragraph{Champs dans un groupe}
 Dans un groupe, on retrouve des champs simples (\lstinline{DataField.Simple}), des unions (\lstinline{DataField.Union}), et des références vers d'autres groupes (\lstinline{DataField.Composite}).
 
 Contrairement aux références dans les formulaires, il n'est pas possible de modifier les sous-champs.
@@ -93,7 +93,7 @@ Les références peuvent référencer d'autres groupes ou le groupe actuel lui-m
 Les références vers d'autres groupes sont obligatoirement facultatives (sinon, il serait possible de créer un cycle récursif obligatoire, qui serait infini).
 Quand un groupe est ajouté à un formulaire, il est possible de rendre plus stricte son arité (rendre le groupe facultatif obligatoire), donc cela n'a pas d'impact sur les possibilités de création de formulaire.
 
-\subparagraph{Champs dans un formulaire}
+\paragraph{Champs dans un formulaire}
 Les formulaires sont séparés en deux niveaux, dont le code commun est placé dans l'interface \lstinline{FormField} :
 \begin{itemize}
 	\item Le niveau supérieur (proche de la racine), dans lequel les champs sont nouveaux,
