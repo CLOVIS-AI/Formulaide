@@ -31,22 +31,15 @@
 		L'objectif de ce stage est de fournir un outil permettant de collecter les demandes via ce nouveau site, pour éliminer le papier et permettre aux habitants de remplir tous les formulaires en ligne.
 		Pour que cet outil soit utile, il faut qu'il corresponde à un gain de temps significatif pour la majorité des employés concernés, il est donc important que l'outil n'exige pas une seconde saisie par l'employé pour utiliser son logiciel métier.
 
-		La majorité des services ont un fichier Excel qui correspond à leurs demandes métiers.
-		Ces fichiers ne sont pas standardisés, posent des problèmes de sauvegarde, ne peuvent pas être utilisés par plusieurs employés en même temps, et sont difficiles à mettre à jour à cause de la duplication des données.
-		La mise en place d'une base de données réelle peut régler tous ces problèmes, à condition que cela ne demande pas de modification majeure à la manière de travailler des employés.
-
-		Pour les services qui doivent utiliser un logiciel spécialisé, l'objectif est de s'arrêter à l'étape de collecte, en rendant l'import dans leur logiciel le plus simple possible.
-
-		La création et modification de formulaires proposés à la population doit pouvoir être effectuée sans l'intervention d'un développeur.
-
 		\uparagraph
-		Le projet consiste donc en la réalisation d'un serveur, fournissant une base de données
-		et une API pouvant être utilisée par le nouveau site, ainsi qu'un client léger à l'intention des
-		employés.
-		Tout cela doit être entièrement transparent pour les habitants (de leur point de vue,
-		il s'agit simplement de remplir un formulaire en ligne).
+		Le projet consiste en la réalisation d'un serveur Kotlin/JVM s'appuyant sur une base de données MongoDB, fournissant une API REST pouvait être utilisée pour le nouveau site de la ville, un export HTML des formulaires pour le site actuel, ainsi qu'un client léger Kotlin/JS à l'intention des employés.
+
+		Du point de vue des habitants de la ville, le projet doit être complètement invisible (toutes leurs interactions avec le système doivent être perçues comme de simples formulaires web).
+
+		Le logiciel doit permettre aux administrateurs de créer des formulaires sans étape de développement, et aux employés de collecter, trier et traiter les saisies des habitants.
 	\end{abstract}
 
+	\clearpage
 	\tableofcontents
 
 	\mainmatter
