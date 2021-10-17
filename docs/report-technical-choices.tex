@@ -1,1 +1,16 @@
 \section{Retour sur les choix techniques}\label{sec:retour-sur-les-choix-techniques}
+
+\paragraph{Base de données}
+Au début du stage, le choix le plus délicat était le choix de la base de données.
+Je pensais à l'origine utiliser une base de données relationnelle standard comme dans mes projets précédents (MariaDB), puis je me suis rendu compte des difficultés que cela causerait lors de la phase de conception.
+
+En cherchant une alternative qui correspondrait mieux aux besoins du projet, j'ai découvert MongoDB\@.
+En rétrospective, l'utilisation de MongoDB était un très bon choix, qui a permis un grand gain de temps sur ce projet, ainsi qu'un gain de performances (par exemple, la recherche dans les saisies est implémentée directement comme une requête au près de la base de données, ce qui aurait été presque impossible sur ce projet avec une base de données relationnelles).
+
+\paragraph{Langage}
+L'utilisation de Kotlin pour le côté serveur (JVM) ne faisait aucun doute.
+Cette technologie est en forte croissance de popularité, et je l'utilise pour presque tous mes projets depuis 4 ans.
+
+En revanche, l'utilisation de Kotlin pour le côté client (ReactJS) était plus risquée.
+Cette technologie est relativement récente, et tout n'est pas encore aussi bien intégré qu'avec les alternatives : la configuration de certains outils a été compliquée ou impossible (pas de code coverage, pas debugger).
+Puisque j'avais déjà une grande expérience avec Kotlin sur d'autres plateformes et que cela m'a permis de partager les structures compliquées de l'API entre les deux plateformes sans avoir à les implémenter deux fois, je pense que l'utilisation de Kotlin/JS a été bénéfique dans ce projet, mais je ne la conseille actuellement pas aux projets n'étant pas dans la même situation.
