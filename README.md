@@ -2,7 +2,10 @@
 
 Système de gestion publique pour la Mairie d'Arcachon, pour permettre aux habitants de faire des requêtes auprès de la Mairie et les suivre.
 
-Pour contribuer, voir [CONTRIBUTING.md](CONTRIBUTING.md). La documentation du code [est disponible ici](http://clovis-ai.gitlab.io/formulaide/documentation).
+- [Guide de contribution](CONTRIBUTING.md)
+- [Documentation du code](http://clovis-ai.gitlab.io/formulaide/documentation)
+- [Manuel utilisateur](https://clovis-ai.gitlab.io/formulaide/docs/user-guide.pdf) (en cours de rédaction)
+- [Rapport de stage](https://clovis-ai.gitlab.io/formulaide/docs/report.pdf)
 
 ## Déploiement
 
