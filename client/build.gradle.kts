@@ -28,20 +28,20 @@ kotlin {
 
 				api(project(":api"))
 
-				implementation(ktorClient("core"))
-				implementation(ktorClient("serialization"))
-				implementation(ktorClient("json"))
-				implementation(ktorClient("logging"))
-				implementation(ktorClient("auth"))
+				implementation(Ktor.client.core)
+				implementation(Ktor.client.serialization)
+				implementation(Ktor.client.json)
+				implementation(Ktor.client.logging)
+				implementation(Ktor.client.auth)
 
-				implementation(kotlinxSerialization("json"))
+				implementation(KotlinX.serialization.json)
 			}
 		}
 
 		val jvmMain by getting {
 			dependencies {
-				implementation(ktorClient("apache"))
-				implementation(logback("classic"))
+				implementation(Ktor.client.apache)
+				implementation("ch.qos.logback:logback-classic:_")
 			}
 		}
 
