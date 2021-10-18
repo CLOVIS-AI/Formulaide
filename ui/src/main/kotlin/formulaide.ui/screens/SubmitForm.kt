@@ -1,75 +1,128 @@
 package formulaide.ui.screens
 
-import formulaide.api.data.Composite
 import formulaide.api.data.Form
 import formulaide.api.types.Ref
 import formulaide.client.routes.compositesReferencedIn
 import formulaide.client.routes.submitForm
 import formulaide.ui.*
-import formulaide.ui.components.styledCard
-import formulaide.ui.components.styledFormCard
-import formulaide.ui.components.useAsync
+import formulaide.ui.components.*
 import formulaide.ui.fields.field
 import formulaide.ui.utils.parseHtmlForm
 import formulaide.ui.utils.text
-import react.Props
-import react.fc
-import react.useEffectOnce
-import react.useState
+import kotlinx.coroutines.launch
+import react.*
+import react.dom.p
 
 @Suppress("FunctionName")
 fun SubmitForm(formRef: Ref<Form>) = fc<Props> {
 	traceRenders("SubmitForm")
 
 	val forms by useForms()
-	val scope = useAsync()
 	val client by useClient()
 	val composites by useComposites()
 
-	val formRefState by useState(formRef)
+	var failedRef by useState(false)
 
-	if (!formRefState.loaded) {
-		console.info("The current page refers to an unloaded form")
+	useEffect(forms) {
+		if (!formRef.loaded) {
+			console.info("The current page refers to an unloaded form: ${formRef.id}")
 
-		val referencedForm = forms.find { it.id == formRefState.id }
-		if (referencedForm != null)
-			formRefState.load(referencedForm)
+			val referencedForm = forms.find { it.id == formRef.id }
+			if (referencedForm != null)
+				formRef.load(referencedForm)
+			else failedRef = true
+		}
 	}
 
-	if (!formRefState.loaded) {
-		console.info("Couldn't find which form is referenced by the current page")
+	val form = if (formRef.loaded) formRef.obj else null
 
-		styledCard(
-			"Formulaire",
-			null,
-		) { text("Chargement du formulaire…") }
+	/**
+	 * - `null`: first render, no attempts to load have been made
+	 * - `true`: the form is loaded
+	 * - `false`: the form couldn't be loaded using the composite cache
+	 */
+	var formLoadedFromCache by useState<Boolean>()
 
-		return@fc
+	useEffect(form, composites, formLoadedFromCache) {
+		if (form != null && formLoadedFromCache != true) {
+			formLoadedFromCache = try {
+				console.info("Loading composites of this form from the cache")
+				form.load(composites, lazy = true)
+				true
+			} catch (e: Exception) {
+				console.log("Failed to load the form using the composites in the cache.", e)
+				false
+			}
+		}
 	}
 
-	val form = formRef.obj
-	require(form.open) { "Impossible de saisir des données dans un formulaire fermé" }
-	var referencedComposites by useState(emptyList<Composite>())
+	/** Same as [formLoadedFromCache]. */
+	var formLoadedFromServer by useState<Boolean>()
+	val scope = useAsync()
 
-	useEffectOnce {
-		if (referencedComposites.isEmpty())
-			scope.reportExceptions {
-				referencedComposites = client.compositesReferencedIn(form)
+	useEffect(form, formLoadedFromCache) {
+		if (form != null && formLoadedFromCache == false && formLoadedFromServer != true)
+			scope.launch {
+				formLoadedFromServer = try {
+					console.info("Loading composites of this form by asking the server")
+					val referencedComposites = formulaide.ui.reportExceptions {
+						client.compositesReferencedIn(form)
+					}
+					form.load(referencedComposites)
+					true
+				} catch (e: Exception) {
+					console.error("Failed to load the form using referenced composites from the server.",
+					              e)
+					false
+				}
 			}
 	}
 
-	try {
-		form.load(composites + referencedComposites)
-	} catch (e: RuntimeException) {
-		console.warn("Cannot load form submission at the moment", e)
+	// No hooks from here on
 
-		styledCard(
-			"Formulaire",
-			null,
-		) { text("Chargement des données référencées…") }
-
+	if (failedRef) {
+		p { styledErrorText("Formulaire introuvable. Vous n'avez peut-être pas les droits d'y accéder ?") }
 		return@fc
 	}
+
+	if (form == null) {
+		p {
+			text("Chargement du formulaire…")
+			loadingSpinner()
+		}
+		return@fc
+	}
+	traceRenders("SubmitForm … the form is known")
+
+	if (!form.open) {
+		p { styledErrorText("Ce formulaire a été fermé, il ne peut plus être rempli.") }
+		return@fc
+	}
+	traceRenders("SubmitForm … the form is open")
+
+	if (formLoadedFromCache == null) {
+		p {
+			text("Chargement des champs depuis le cache…")
+			loadingSpinner()
+		}
+		return@fc
+	}
+	traceRenders("SubmitForm … the form is not currently loading from the cache")
+
+	if (formLoadedFromCache != true && formLoadedFromServer == null) {
+		p {
+			text("Chargement des champs depuis le serveur…")
+			loadingSpinner()
+		}
+		return@fc
+	}
+	traceRenders("SubmitForm … the form is not currently loading from the server")
+
+	if (formLoadedFromServer == false) {
+		p { styledErrorText("Le chargement des données composées référencées a échoué. Veuillez signaler ce problème à l'administrateur.") }
+		return@fc
+	}
+	traceRenders("SubmitForm … the form is loaded")
 
 	styledFormCard(
 		form.name,
