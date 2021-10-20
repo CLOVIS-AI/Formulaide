@@ -27,7 +27,7 @@ internal external interface ButtonProps : Props {
 	var action: suspend () -> Unit
 }
 
-private val CustomButton = fc<ButtonProps> { props ->
+private val CustomButton = fc<ButtonProps>("CustomButton") { props ->
 	val scope = useAsync()
 
 	var loading by useState(false)

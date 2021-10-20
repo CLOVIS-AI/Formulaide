@@ -19,7 +19,7 @@ import react.fc
 import react.useRef
 import react.useState
 
-val ServiceList = fc<Props> {
+val ServiceList = fc<Props>("ServiceList") {
 	traceRenders("ServiceList")
 
 	val (client) = useClient()

@@ -43,7 +43,7 @@ private data class ReviewSearch(
 )
 
 @Suppress("FunctionName")
-internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record>) = fc<Props> {
+internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record>) = fc<Props>("Review") {
 	traceRenders("Review ${form.name}")
 
 	val scope = useAsync()
@@ -234,7 +234,7 @@ private external interface SearchInputProps : Props {
 	var addCriterion: (ReviewSearch) -> Unit
 }
 
-private val SearchInput = memo(fc<SearchInputProps> { props ->
+private val SearchInput = memo(fc<SearchInputProps>("SearchInput") { props ->
 	val form = props.form
 	var selectedRoot by useState<Action?>(null)
 	val (fields, updateFields) = useState(emptyList<FormField>())
@@ -365,7 +365,7 @@ private external interface SearchInputSelectProps : Props {
 	var select: (FormField?) -> Unit
 }
 
-private val SearchInputSelect = memo(fc<SearchInputSelectProps> { props ->
+private val SearchInputSelect = memo(fc<SearchInputSelectProps>("SearchInputSelect") { props ->
 	val candidates = useMemo(props.candidates) {
 		props.candidates.filter { it !is FormField.Simple || (it.simple !is SimpleField.Message && it.simple !is SimpleField.Upload) }
 	}
@@ -406,7 +406,7 @@ private external interface SearchCriterionSelectProps : Props {
 	var select: (SearchCriterion<*>?) -> Unit
 }
 
-private val SearchCriterionSelect = fc<SearchCriterionSelectProps> { props ->
+private val SearchCriterionSelect = fc<SearchCriterionSelectProps>("SearchCriterionSelect") { props ->
 	val field = props.fields.lastOrNull()
 	val fieldKey = props.fields.joinToString(separator = ":") { it.id }
 
@@ -462,7 +462,7 @@ private external interface CriterionPillProps : Props {
 	var onRemove: () -> Unit
 }
 
-private val CriterionPill = memo(fc<CriterionPillProps> { props ->
+private val CriterionPill = memo(fc<CriterionPillProps>("CriterionPill") { props ->
 	var showFull by useState(false)
 
 	val fields = useMemo(props.fields, props.criterion.fieldKey) {
@@ -540,7 +540,7 @@ private enum class ReviewDecision {
 	REFUSE,
 }
 
-private val ReviewRecord = memo(fc<ReviewRecordProps> { props ->
+private val ReviewRecord = memo(fc<ReviewRecordProps>("ReviewRecord") { props ->
 	traceRenders("ReviewRecord ${props.record.id}")
 	val form = props.form
 	val record = props.record
@@ -654,7 +654,7 @@ private external interface ReviewRecordCollapsedProps : Props {
 	var collapse: (Boolean) -> Unit
 }
 
-private val ReviewRecordCollapsed = fc<ReviewRecordCollapsedProps> { props ->
+private val ReviewRecordCollapsed = fc<ReviewRecordCollapsedProps>("ReviewRecordCollapsed") { props ->
 	traceRenders("ReviewRecordCollapsed")
 	val tdClasses = "first:pl-8 last:pr-8 py-2"
 	val tdDivClasses = "mx-4"
@@ -720,7 +720,7 @@ private external interface ReviewRecordExpandedProps : Props {
 	var updateReason: (String?) -> Unit
 }
 
-private val ReviewRecordExpanded = fc<ReviewRecordExpandedProps> { props ->
+private val ReviewRecordExpanded = fc<ReviewRecordExpandedProps>("ReviewRecordExpanded") { props ->
 	traceRenders("ReviewRecordExpanded")
 
 	val state = props.state
@@ -897,7 +897,7 @@ private external interface ReviewRecordContentsProps : Props {
 	var composites: List<Composite>
 }
 
-private val ReviewRecordContents = fc<ReviewRecordContentsProps> { props ->
+private val ReviewRecordContents = fc<ReviewRecordContentsProps>("ReviewRecordContents") { props ->
 	traceRenders("ReviewRecordCard")
 	var i = 0
 

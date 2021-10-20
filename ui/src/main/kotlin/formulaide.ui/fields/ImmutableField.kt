@@ -40,7 +40,7 @@ private external interface ImmutableFieldProps : Props {
 
 private const val miniNesting = "px-4"
 
-private val ImmutableField: FunctionComponent<ImmutableFieldProps> = fc { props ->
+private val ImmutableField: FunctionComponent<ImmutableFieldProps> = fc("ImmutableField") { props ->
 	traceRenders(props.answer.toString())
 
 	val (client) = useClient()

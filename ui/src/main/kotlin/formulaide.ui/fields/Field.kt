@@ -36,7 +36,7 @@ private external interface FieldProps : Props {
 	var input: ((String, String) -> Unit)?
 }
 
-private val RenderField = fc<FieldProps> { props ->
+private val RenderField = fc<FieldProps>("RenderField") { props ->
 	when (val field = props.field) {
 		is Field.Simple -> child(RenderFieldSimple, props)
 		is FormField.Composite -> child(RenderFieldComposite, props)
@@ -45,7 +45,7 @@ private val RenderField = fc<FieldProps> { props ->
 	}
 }
 
-private val RenderFieldSimple = fc<FieldProps> { props ->
+private val RenderFieldSimple = fc<FieldProps>("RenderFieldSimple") { props ->
 	val field = props.field
 	require(field is Field.Simple) { "Le champ n'est pas simple, mais c'est obligatoire (RenderFieldSimple): $field" }
 
@@ -105,7 +105,7 @@ private val RenderFieldSimple = fc<FieldProps> { props ->
 		}
 }
 
-private val RenderFieldComposite = fc<FieldProps> { props ->
+private val RenderFieldComposite = fc<FieldProps>("RenderFieldComposite") { props ->
 	val field = props.field
 	require(field is FormField.Composite) { "Le champ n'est pas une donnée composée d'un formulaire, mais c'est obligatoire (RenderFieldComposite): $field" }
 
@@ -122,7 +122,7 @@ private val RenderFieldComposite = fc<FieldProps> { props ->
 	}
 }
 
-private val RenderFieldUnion = fc<FieldProps> { props ->
+private val RenderFieldUnion = fc<FieldProps>("RenderFieldUnion") { props ->
 	val field = props.field
 	require(field is Field.Union<*>) { "Le champ n'est pas une union, mais c'est obligatoire (RenderFieldUnion): $field" }
 
@@ -210,7 +210,7 @@ private fun RBuilder.upload(
 	}
 }
 
-private val Field: FunctionComponent<FieldProps> = fc { props ->
+private val Field: FunctionComponent<FieldProps> = fc("Field") { props ->
 	traceRenders("Field ${props.fieldKey}")
 	if (props.field.arity.max == 1) {
 		styledField(props.id, props.field.name) {

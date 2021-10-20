@@ -27,7 +27,7 @@ external interface ErrorProps : Props {
 	var error: Throwable
 }
 
-val ErrorCard = fc<ErrorProps> { props ->
+val ErrorCard = fc<ErrorProps>("ErrorCard") { props ->
 	traceRenders("ErrorCard")
 
 	var errors by useGlobalState(errors)
