@@ -82,7 +82,7 @@ private external interface FormCardProps : Props {
 	var contents: (RBuilder) -> Unit
 }
 
-private val FormCard = fc<FormCardProps> { props ->
+private val FormCard = fc<FormCardProps>("FormCard") { props ->
 	val (submitText, submitAction) = props.submit
 	val scope = useAsync()
 

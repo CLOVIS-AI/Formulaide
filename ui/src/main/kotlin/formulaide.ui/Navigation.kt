@@ -117,7 +117,7 @@ abstract class Screen(
 	}
 }
 
-private val CannotAccessThisPage = fc<Props> {
+private val CannotAccessThisPage = fc<Props>("CannotAccessThisPage") {
 	traceRenders("CannotAccessThisPage")
 
 	styledCard(
@@ -130,7 +130,7 @@ private val CannotAccessThisPage = fc<Props> {
 	}
 }
 
-private val Navigation = fc<Props> {
+private val Navigation = fc<Props>("Navigation") {
 	val user by useUser()
 	var currentScreen by useNavigation()
 
@@ -150,7 +150,7 @@ private fun getScreenFromWindow(): Screen? =
 		.get("d")
 		?.let { Screen.routeDecoder(it) }
 
-val Window = memo(fc {
+val Window = memo(fc("Window") {
 	var screen by useNavigation()
 	val user by useUser()
 

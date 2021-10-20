@@ -111,7 +111,7 @@ private val bottomText = GlobalState("")
 /**
  * The main app screen.
  */
-val App = fc<Props> {
+val App = fc<Props>("App") {
 	//region User fix
 	/*
 	 * For some reason, without this unused hook, the 'App' component doesn't re-render when:
@@ -206,7 +206,7 @@ val App = fc<Props> {
 
 private const val errorSectionClass = "mt-2"
 
-val CrashReporter = fc<PropsWithChildren> { props ->
+val CrashReporter = fc<PropsWithChildren>("CrashReporter") { props ->
 	val (boundary, didCatch, error) = useErrorBoundary()
 
 	if (didCatch) {

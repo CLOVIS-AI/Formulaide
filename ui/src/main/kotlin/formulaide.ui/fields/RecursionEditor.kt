@@ -13,7 +13,7 @@ import react.fc
 import react.key
 import react.useMemo
 
-val RecursionEditor: FunctionComponent<EditableFieldProps> = fc { props ->
+val RecursionEditor: FunctionComponent<EditableFieldProps> = fc("RecursionEditor") { props ->
 	val parent = props.field
 	val fields = (parent as? Field.Union<*>)?.options?.sortedBy { it.order }
 		?: (parent as? Field.Container<*>)?.fields?.sortedBy { it.order }

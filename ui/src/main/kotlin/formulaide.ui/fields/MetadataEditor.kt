@@ -18,7 +18,7 @@ import react.dom.div
 import react.fc
 import react.useMemo
 
-val MetadataEditor = fc<EditableFieldProps> { props ->
+val MetadataEditor = fc<EditableFieldProps>("MetadataEditor") { props ->
 	val field = props.field
 	val defaultField =
 		useMemo(field) { field.requestCopy(name = "Valeur par défaut", arity = Arity.optional()) }

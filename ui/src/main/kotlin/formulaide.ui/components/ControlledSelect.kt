@@ -39,7 +39,7 @@ private external interface ControlledSelectProps : Props {
 	var selected: ControlledSelectOption?
 }
 
-private val ControlledSelect = fc<ControlledSelectProps> { props ->
+private val ControlledSelect = fc<ControlledSelectProps>("ControlledSelect") { props ->
 	styledSelect(
 		onSelect = { select ->
 			props.options

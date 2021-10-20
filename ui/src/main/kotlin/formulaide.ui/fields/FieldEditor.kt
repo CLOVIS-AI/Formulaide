@@ -39,7 +39,7 @@ fun EditableFieldProps.inheritFrom(props: EditableFieldProps) {
 	switch = props.switch
 }
 
-val FieldEditor = memo(fc<EditableFieldProps> { props ->
+val FieldEditor = memo(fc<EditableFieldProps>("FieldEditor") { props ->
 	val onDeletion = suspend { props.remove() }.takeIf { props.field !is DeepFormField }
 	val onMoveUp =
 		suspend { props.switch(SwitchDirection.UP) }.takeIf { props.field !is DeepFormField }

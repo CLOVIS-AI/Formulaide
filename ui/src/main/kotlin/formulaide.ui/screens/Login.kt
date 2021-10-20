@@ -25,7 +25,7 @@ import react.dom.p
  * @see Client
  * @see login
  */
-val Login = fc<Props> {
+val Login = fc<Props>("Login") {
 	traceRenders("Login")
 
 	val email = useRef<HTMLInputElement>(null)
@@ -63,7 +63,7 @@ val Login = fc<Props> {
 }
 
 @Suppress("FunctionName")
-fun PasswordModification(user: Email, previousScreen: Screen) = fc<Props> {
+fun PasswordModification(user: Email, previousScreen: Screen) = fc<Props>("PasswordModification") {
 	traceRenders("PasswordModification")
 
 	val oldPassword = useRef<HTMLInputElement>()
@@ -136,7 +136,7 @@ fun PasswordModification(user: Email, previousScreen: Screen) = fc<Props> {
 	}
 }
 
-val LoginAccess = fc<Props> {
+val LoginAccess = fc<Props>("LoginAccess") {
 	traceRenders("LoginAccess")
 
 	val (user) = useUser("LoginAccess")
@@ -166,7 +166,7 @@ val LoginAccess = fc<Props> {
 	}
 }
 
-val FormsToReview = fc<Props> {
+val FormsToReview = fc<Props>("FormsToReview") {
 	val scope = useAsync()
 	val allForms by useForms()
 

@@ -14,7 +14,7 @@ import react.*
 import react.dom.p
 
 @Suppress("FunctionName")
-fun SubmitForm(formRef: Ref<Form>) = fc<Props> {
+fun SubmitForm(formRef: Ref<Form>) = fc<Props>("SubmitForm") {
 	traceRenders("SubmitForm")
 
 	val forms by useForms()

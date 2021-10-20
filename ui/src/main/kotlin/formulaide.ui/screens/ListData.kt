@@ -15,7 +15,7 @@ import react.Props
 import react.fc
 import react.useState
 
-val DataList = fc<Props> {
+val DataList = fc<Props>("DataList") {
 	traceRenders("DataList")
 
 	val (client) = useClient()
