@@ -17,7 +17,7 @@ import react.fc
 import kotlin.math.max
 import kotlin.math.min
 
-val ArityEditor = fc<EditableFieldProps> { props ->
+val ArityEditor = fc<EditableFieldProps>("ArityEditor") { props ->
 	val field = props.field
 	val arity = field.arity
 

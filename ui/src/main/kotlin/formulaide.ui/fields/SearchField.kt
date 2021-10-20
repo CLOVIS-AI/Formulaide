@@ -56,7 +56,7 @@ private val SearchFieldProps.fullKey: String get() = keyList.joinToString(separa
 private fun SearchFieldProps.create(criterion: SearchCriterion<*>) = update(null, criterion)
 private fun SearchFieldProps.remove(criterion: SearchCriterion<*>) = update(criterion, null)
 
-private val SearchField = fc<SearchFieldProps> { props ->
+private val SearchField = fc<SearchFieldProps>("SearchField") { props ->
 	val fieldKey = props.keyList.joinToString(separator = ":")
 	traceRenders("SearchField $fieldKey")
 	val field = props.field

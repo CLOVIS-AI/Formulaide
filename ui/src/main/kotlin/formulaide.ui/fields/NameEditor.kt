@@ -9,7 +9,7 @@ import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
 import react.fc
 
-val NameEditor = fc<EditableFieldProps> { props ->
+val NameEditor = fc<EditableFieldProps>("NameEditor") { props ->
 	val field = props.field
 	val allowModification = field is DataField || field is ShallowFormField
 

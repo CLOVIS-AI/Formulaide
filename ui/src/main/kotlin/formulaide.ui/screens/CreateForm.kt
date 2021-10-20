@@ -33,7 +33,7 @@ import react.dom.div
 import react.dom.option
 import react.dom.p
 
-fun CreateForm(original: Form?, copy: Boolean) = fc<Props> {
+fun CreateForm(original: Form?, copy: Boolean) = fc<Props>("CreateForm") {
 	traceRenders("CreateForm")
 
 	val (client) = useClient()
@@ -296,7 +296,7 @@ private external interface ActionFieldProps : Props {
 	var maxFieldId: Int
 }
 
-private val ActionFields = memo(fc<ActionFieldProps> { props ->
+private val ActionFields = memo(fc<ActionFieldProps>("ActionFields") { props ->
 	traceRenders("ActionFields")
 
 	val action = props.action
