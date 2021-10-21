@@ -614,8 +614,8 @@ private val ReviewRecord = memo(fc<ReviewRecordProps>("ReviewRecord") { props ->
 				this.collapse = props.collapse
 				this.history = history
 				this.state = state
-				this.windowState = windowState
-				this.columnsToDisplay = columnsToDisplay
+				this.windowState = props.windowState
+				this.columnsToDisplay = props.columnsToDisplay
 			}
 		}
 	} else tr {
