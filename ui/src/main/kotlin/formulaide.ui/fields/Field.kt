@@ -91,7 +91,9 @@ private val RenderFieldSimple = fc<FieldProps>("RenderFieldSimple") { props ->
 				       props.id,
 				       props.fieldKey,
 				       simpleInputState,
-				       onChange = { key, id -> props.input?.invoke(key, id); simpleInputState = id })
+				       onChange = { key, id ->
+					       props.input?.invoke(key, id); simpleInputState = id
+				       })
 			else
 				styledErrorText("Ce champ ne correspond à aucun formulaire, il n'est pas possible d'envoyer un fichier.")
 		}
