@@ -136,7 +136,7 @@ private val RenderFieldUnion = fc<FieldProps>("RenderFieldUnion") { props ->
 			for (subField in subFields.sortedBy { it.order }) {
 				styledRadioButton(
 					radioId = props.id,
-					buttonId = "${props.id}-${subField.id}",
+					buttonId = "${props.fieldKey}-${subField.id}",
 					value = subField.id,
 					text = subField.name,
 					checked = subField == selected,
@@ -222,7 +222,7 @@ private val Field: FunctionComponent<FieldProps> = fc("Field") { props ->
 					this.root = props.root
 					this.field = props.field
 					this.id = props.id
-					this.fieldKey = props.id
+					this.fieldKey = "${props.fieldKey}:${props.id}"
 					this.input = props.input
 				}
 			}
