@@ -91,7 +91,9 @@ private val RenderFieldSimple = fc<FieldProps>("RenderFieldSimple") { props ->
 				       props.id,
 				       props.fieldKey,
 				       simpleInputState,
-				       onChange = { key, id -> props.input?.invoke(key, id); simpleInputState = id })
+				       onChange = { key, id ->
+					       props.input?.invoke(key, id); simpleInputState = id
+				       })
 			else
 				styledErrorText("Ce champ ne correspond à aucun formulaire, il n'est pas possible d'envoyer un fichier.")
 		}
@@ -134,7 +136,7 @@ private val RenderFieldUnion = fc<FieldProps>("RenderFieldUnion") { props ->
 			for (subField in subFields.sortedBy { it.order }) {
 				styledRadioButton(
 					radioId = props.id,
-					buttonId = "${props.id}-${subField.id}",
+					buttonId = "${props.fieldKey}-${subField.id}",
 					value = subField.id,
 					text = subField.name,
 					checked = subField == selected,
@@ -220,7 +222,7 @@ private val Field: FunctionComponent<FieldProps> = fc("Field") { props ->
 					this.root = props.root
 					this.field = props.field
 					this.id = props.id
-					this.fieldKey = props.id
+					this.fieldKey = "${props.fieldKey}:${props.id}"
 					this.input = props.input
 				}
 			}
