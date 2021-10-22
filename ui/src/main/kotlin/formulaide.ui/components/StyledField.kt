@@ -93,10 +93,10 @@ fun RBuilder.styledRadioButton(
 		attrs {
 			this.id = buttonId
 			this.value = value
-			this.checked = checked
 
 			onChangeFunction = { onClick() }
 		}
+		attrs["checked"] = checked
 	}
 
 	label(classes = "mr-2") {

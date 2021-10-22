@@ -784,11 +784,13 @@ private val ReviewRecordExpanded = fc<ReviewRecordExpandedProps>("ReviewRecordEx
 			child(ReviewRecordContents) {
 				attrs {
 					this.form = props.form
+					this.record = props.record
 					this.state = state
 					this.formLoaded = props.formLoaded
 					this.showFullHistory = props.showFullHistory
 					this.history = props.history
 					this.composites = props.composites
+					this.windowState = props.windowState
 				}
 			}
 
@@ -871,11 +873,13 @@ private val ReviewRecordExpanded = fc<ReviewRecordExpandedProps>("ReviewRecordEx
 			child(ReviewRecordContents) {
 				attrs {
 					this.form = props.form
+					this.record = props.record
 					this.state = state
 					this.formLoaded = props.formLoaded
 					this.showFullHistory = props.showFullHistory
 					this.history = props.history
 					this.composites = props.composites
+					this.windowState = props.windowState
 				}
 			}
 		}
@@ -893,6 +897,8 @@ private external interface ReviewRecordContentsProps : Props {
 
 	var form: Form
 	var state: RecordState
+	var windowState: RecordState?
+	var record: Record
 
 	var composites: List<Composite>
 }
@@ -965,14 +971,14 @@ private val ReviewRecordContents = fc<ReviewRecordContentsProps>("ReviewRecordCo
 	}
 
 	val state = props.state
-	if (state is RecordState.Action) {
+	if (state is RecordState.Action && props.windowState != null) {
 		val action = state.current.obj
 
 		val root = action.fields
 		if (root != null) {
 			styledNesting(depth = 0, fieldNumber = i) {
 				for (field in root.fields) {
-					field(props.form, action, field)
+					field(props.form, action, field, key = "${props.record.id}_${field.id}")
 				}
 				i++
 			}
