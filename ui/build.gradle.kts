@@ -60,10 +60,14 @@ tasks.named("compileKotlinJs") {
 	dependsOn(copyPostcssConfig)
 }
 
-// Fix for https://youtrack.jetbrains.com/issue/KT-48273
 rootProject.plugins.withType<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootPlugin> {
-	rootProject.the<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootExtension>().versions.webpackDevServer.version =
-		"4.0.0-rc.0"
+	rootProject.the<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootExtension>().versions.apply {
+		// Fix for https://youtrack.jetbrains.com/issue/KT-48273
+		webpackDevServer.version = "4.0.0"
+
+		// Fix for https://github.com/webpack/webpack-cli/issues/2990
+		webpackCli.version = "4.9.0"
+	}
 }
 
 val jsMinify by tasks.creating(org.gradlewebtools.minify.JsMinifyTask::class.java) {
