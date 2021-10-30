@@ -17,6 +17,7 @@ import formulaide.ui.utils.replace
 import formulaide.ui.utils.switchOrder
 import formulaide.ui.utils.text
 import kotlinx.html.InputType
+import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
 import react.*
 
@@ -25,12 +26,13 @@ fun CreateData(original: Composite? = null) = fc<Props>("CreateData") {
 
 	val (client) = useClient()
 	if (client !is Client.Authenticated) {
-		styledCard("Créer un groupe",
-		           failed = true) { text("Seuls les administrateurs peuvent créer un groupe.") }
+		styledCard("Créer un groupe", failed = true) {
+			text("Seuls les administrateurs peuvent créer un groupe.")
+		}
 		return@fc
 	}
 
-	val formName = useRef<HTMLInputElement>()
+	var formName by useLocalStorage("data-name", "")
 	val (fields, updateFields) = useLocalStorage<List<DataField>>("data-fields", emptyList())
 	val maxId = useMemo(fields) { fields.maxOfOrNull { it.id.toInt() }?.plus(1) ?: 0 }
 
@@ -38,6 +40,7 @@ fun CreateData(original: Composite? = null) = fc<Props>("CreateData") {
 	useEffect(original) {
 		if (original != null) {
 			updateFields { original.fields }
+			formName = original.name
 		}
 	}
 
@@ -49,13 +52,14 @@ fun CreateData(original: Composite? = null) = fc<Props>("CreateData") {
 		"Créer ce groupe" to {
 			val data = Composite(
 				id = Ref.SPECIAL_TOKEN_NEW,
-				name = formName.current?.value ?: error("Ce groupe n'a pas de nom"),
+				name = formName,
 				fields = fields
 			)
 
 			launch {
 				client.createData(data)
 				clearLocalStorage("data-fields")
+				clearLocalStorage("data-name")
 				refreshComposites()
 				navigateTo(Screen.ShowData)
 			}
@@ -65,8 +69,12 @@ fun CreateData(original: Composite? = null) = fc<Props>("CreateData") {
 		},
 	) {
 		styledField("new-data-name", "Nom") {
-			styledInput(InputType.text, "new-data-name", required = true, ref = formName) {
+			styledInput(InputType.text, "new-data-name", required = true) {
 				autoFocus = true
+				value = formName
+				onChangeFunction = {
+					formName = (it.target as HTMLInputElement).value
+				}
 			}
 		}
 
