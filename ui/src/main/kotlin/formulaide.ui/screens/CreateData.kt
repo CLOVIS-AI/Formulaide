@@ -32,7 +32,7 @@ fun CreateData(original: Composite? = null) = fc<Props>("CreateData") {
 
 	val formName = useRef<HTMLInputElement>()
 	val (fields, updateFields) = useLocalStorage<List<DataField>>("data-fields", emptyList())
-	val maxId = useMemo(fields) { fields.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0 }
+	val maxId = useMemo(fields) { fields.maxOfOrNull { it.id.toInt() }?.plus(1) ?: 0 }
 
 	// Copy from 'original' if it exists
 	useEffect(original) {

@@ -47,12 +47,10 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props>("CreateForm") {
 	val (fields, updateFields) = useLocalStorage("form-fields", emptyList<ShallowFormField>())
 	val (actions, updateActions) = useLocalStorage("form-actions", emptyList<Action>())
 
-	val maxFieldId = useMemo(fields) { fields.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0 }
-	val maxActionId = useMemo(actions) { actions.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0 }
+	val maxFieldId = useMemo(fields) { fields.maxOfOrNull { it.id.toInt() }?.plus(1) ?: 0 }
+	val maxActionId = useMemo(actions) { actions.maxOfOrNull { it.id.toInt() }?.plus(1) ?: 0 }
 	val maxActionFieldId = useMemo(actions) {
-		actions.flatMap { it.fields?.fields ?: emptyList() }
-			.map { it.id.toInt() }
-			.maxOrNull()
+		actions.flatMap { it.fields?.fields ?: emptyList() }.maxOfOrNull { it.id.toInt() }
 			?.plus(1)
 			?: 0
 	}
