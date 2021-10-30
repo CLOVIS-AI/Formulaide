@@ -39,7 +39,7 @@ val MetadataEditor = fc<EditableFieldProps>("MetadataEditor") { props ->
 					props.replace(
 						field.requestCopy(
 							field.simple.requestCopy(defaultValue = value)
-						)
+						).requestCopy(name = "Valeur par défaut")
 					)
 				}
 			)
