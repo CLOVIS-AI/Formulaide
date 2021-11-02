@@ -160,8 +160,7 @@ suspend fun Database.searchSubmission(
 	filter += DbSubmission::root eq root?.id
 
 	for (criterion in criteria) {
-		val ids = criterion.fieldKey
-			.split(":")
+		val ids = criterion.fieldKey.split(":")
 		require(ids.isNotEmpty()) { "Un critère de recherche doit obligatoirement préciser la clef d'un champ, trouvé: '${criterion.fieldKey}'" }
 
 		val value = DbSubmissionData::value

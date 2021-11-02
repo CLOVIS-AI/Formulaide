@@ -41,18 +41,16 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props>("CreateForm") {
 
 	val services = useServices().value.filter { it.open }
 
-	val formName = useRef<HTMLInputElement>()
-	val public = useRef<HTMLInputElement>()
+	var formName by useLocalStorage("form-name", "")
+	var public by useLocalStorage("form-public", false)
 
 	val (fields, updateFields) = useLocalStorage("form-fields", emptyList<ShallowFormField>())
 	val (actions, updateActions) = useLocalStorage("form-actions", emptyList<Action>())
 
-	val maxFieldId = useMemo(fields) { fields.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0 }
-	val maxActionId = useMemo(actions) { actions.map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0 }
+	val maxFieldId = useMemo(fields) { fields.maxOfOrNull { it.id.toInt() }?.plus(1) ?: 0 }
+	val maxActionId = useMemo(actions) { actions.maxOfOrNull { it.id.toInt() }?.plus(1) ?: 0 }
 	val maxActionFieldId = useMemo(actions) {
-		actions.flatMap { it.fields?.fields ?: emptyList() }
-			.map { it.id.toInt() }
-			.maxOrNull()
+		actions.flatMap { it.fields?.fields ?: emptyList() }.maxOfOrNull { it.id.toInt() }
 			?.plus(1)
 			?: 0
 	}
@@ -71,8 +69,8 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props>("CreateForm") {
 				action.reviewer.loadFrom(services)
 				action.fields?.load(mentionedComposites)
 			}
-			formName.current?.let { it.value = original.name }
-			public.current?.let { it.checked = original.public }
+			formName = original.name
+			public = original.public
 			updateFields { original.mainFields.fields }
 			updateActions { original.actions }
 		} else {
@@ -101,10 +99,9 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props>("CreateForm") {
 		title, null,
 		buttonName to {
 			val form = Form(
-				name = formName.current?.value ?: error("Le formulaire n'a pas de nom"),
+				name = formName,
 				id = Ref.SPECIAL_TOKEN_NEW,
-				public = public.current?.checked
-					?: error("Le formulaire ne précise pas s'il est public ou interne"),
+				public = public,
 				open = true,
 				mainFields = FormRoot(fields),
 				actions = actions
@@ -118,11 +115,13 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props>("CreateForm") {
 				else
 					client.editForm(FormMetadata(
 						original.createRef(),
-						public = public.current?.checked,
+						public = public,
 						mainFields = FormRoot(fields),
 						actions = actions,
 					))
 
+				clearLocalStorage("form-name")
+				clearLocalStorage("form-public")
 				clearLocalStorage("form-fields")
 				clearLocalStorage("form-actions")
 
@@ -146,15 +145,22 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props>("CreateForm") {
 		}
 
 		styledField("new-form-name", "Nom") {
-			styledInput(InputType.text, "new-form-name", required = true, ref = formName) {
+			styledInput(InputType.text, "new-form-name", required = true) {
 				autoFocus = true
+				value = formName
+				onChangeFunction = {
+					formName = (it.target as HTMLInputElement).value
+				}
 			}
 		}
 
 		styledField("new-form-visibility", "Est-il public ?") {
-			styledCheckbox("new-form-visilibity",
-			               "Ce formulaire est visible par les administrés",
-			               ref = public)
+			styledCheckbox("new-form-visilibity", "Ce formulaire est visible par les administrés") {
+				checked = public
+				onChangeFunction = {
+					public = (it.target as HTMLInputElement).checked
+				}
+			}
 		}
 
 		traceRenders("CreateForm Fields")
