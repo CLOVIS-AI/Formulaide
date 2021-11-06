@@ -215,8 +215,13 @@ internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record
 						}
 					}
 					if (records.isEmpty()) {
-						div("flex w-full justify-center items-center h-full") {
-							p("my-8") { text("Aucun résultat") }
+						td {
+							attrs {
+								colSpan = form.mainFields.asSequence().count().toString()
+							}
+							div("flex justify-center items-center w-full h-full") {
+								p("my-8") { text("Aucun résultat") }
+							}
 						}
 					}
 				}
