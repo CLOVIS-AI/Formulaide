@@ -1,0 +1,44 @@
+issues:
+  title: "Issues and bugs"
+  charts:
+    - title: "Priority of new issues (monthly)"
+      description: "Issues created per month"
+      type: stacked-bar
+      query:
+        issuable_type: issue
+        issuable_state: opened
+        group_by: month
+        collection_labels:
+          - priority::urgent
+          - priority::high
+          - priority::medium
+          - priority::low
+    - title: "Priority of new bugs (monthly)"
+      description: "Bugs created per month, by priority"
+      type: stacked-bar
+      query:
+        issuable_type: issue
+        issuable_state: opened
+        group_by: month
+        filter_labels:
+          - bug
+        collection_labels:
+          - priority::urgent
+          - priority::high
+          - priority::medium
+          - priority::low
+    - title: "Monthly new bugs"
+      description: "Bugs created per month, by severity"
+      type: stacked-bar
+      query:
+        issuable_type: issue
+        issuable_state: opened
+        group_by: month
+        filter_labels:
+          - bug
+        collection_labels:
+          - severity::critical
+          - severity::major
+          - severity::moderate
+          - severity::minor
+          - severity::cosmetic
