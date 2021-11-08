@@ -115,6 +115,7 @@ fun Routing.formRoutes() {
 						// This div is only displayed when the form submission is a failure
 						div("alert alert-error") {
 							id = "error"
+							style = "display: none"
 							+"Le message d'erreur est affiché ici (remplacé dynamiquement quand une erreur a lieu)"
 						}
 
@@ -123,6 +124,8 @@ fun Routing.formRoutes() {
 							method = FormMethod.post,
 							encType = FormEncType.multipartFormData,
 						) {
+							id = "form"
+
 							for (field in form.mainFields.fields) {
 								generateFieldHtml(field, field.id)
 							}
@@ -143,6 +146,40 @@ fun Routing.formRoutes() {
 									id = "alert-success"
 									+"Votre demande a bien été prise en compte."
 								}
+							}
+						}
+
+						script {
+							unsafe {
+								//language=JavaScript
+								+"""
+									const form = document.querySelector('#form');
+									const success = document.querySelector('#success');
+									const error = document.querySelector('#error');
+									
+									form.addEventListener('submit', async e => {
+									    e.preventDefault();
+									    const formData = new FormData(form);
+									    const response = await fetch(form.action, {
+									        method: 'POST',
+									        body: formData
+									    });
+									    if (response.ok) {
+									        form.style.display = 'none';
+									        success.style.display = 'block';
+									    } else {
+									        response.text().then(t => {
+									            error.innerText = t;
+									            error.style.display = 'block';
+									        }).catch(e => {
+									            console.error(e);
+									            error.innerText = 'Échec lors de la connexion au serveur.';
+									            error.style.display = 'block';
+									        });
+									    }
+									});
+								""".trimIndent()
+									.replace("\n", "")
 							}
 						}
 					}
