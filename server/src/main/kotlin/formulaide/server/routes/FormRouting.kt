@@ -112,6 +112,12 @@ fun Routing.formRoutes() {
 					div(formGroupClass) {
 						h1(formTitleClass) { form.name }
 
+						// This div is only displayed when the form submission is a failure
+						div("alert alert-error") {
+							id = "error"
+							+"Le message d'erreur est affiché ici (remplacé dynamiquement quand une erreur a lieu)"
+						}
+
 						form(
 							action = "$apiUrl/submissions/nativeCreate/${form.id}",
 							method = FormMethod.post,
