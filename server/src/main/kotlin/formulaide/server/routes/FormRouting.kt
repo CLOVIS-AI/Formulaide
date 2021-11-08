@@ -126,6 +126,19 @@ fun Routing.formRoutes() {
 							}
 							input(InputType.reset, classes = buttonClass) { value = "Effacer" }
 						}
+
+						// This div is only displayed when the form submission is a success
+						div("caldera-grid") {
+							id = "success"
+							style = "display: none"
+							div {
+								attributes["data-spinner"] = "https://www.ville-arcachon.fr/wp-admin/images/spinner.gif"
+								div("alert alert-success") {
+									id = "alert-success"
+									+"Votre demande a bien été prise en compte."
+								}
+							}
+						}
 					}
 				}
 			}
