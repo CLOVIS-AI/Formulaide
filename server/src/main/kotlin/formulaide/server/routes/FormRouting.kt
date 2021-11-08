@@ -110,12 +110,21 @@ fun Routing.formRoutes() {
 
 				body {
 					div(formGroupClass) {
+						h1(formTitleClass) { form.name }
+
+						// This div is only displayed when the form submission is a failure
+						div("alert alert-error") {
+							id = "error"
+							style = "display: none"
+							+"Le message d'erreur est affiché ici (remplacé dynamiquement quand une erreur a lieu)"
+						}
+
 						form(
 							action = "$apiUrl/submissions/nativeCreate/${form.id}",
 							method = FormMethod.post,
 							encType = FormEncType.multipartFormData,
 						) {
-							h1(formTitleClass) { form.name }
+							id = "form"
 
 							for (field in form.mainFields.fields) {
 								generateFieldHtml(field, field.id)
@@ -125,6 +134,53 @@ fun Routing.formRoutes() {
 								value = "Envoyer"
 							}
 							input(InputType.reset, classes = buttonClass) { value = "Effacer" }
+						}
+
+						// This div is only displayed when the form submission is a success
+						div("caldera-grid") {
+							id = "success"
+							style = "display: none"
+							div {
+								attributes["data-spinner"] = "https://www.ville-arcachon.fr/wp-admin/images/spinner.gif"
+								div("alert alert-success") {
+									id = "alert-success"
+									+"Votre demande a bien été prise en compte."
+								}
+							}
+						}
+
+						script {
+							unsafe {
+								//language=JavaScript
+								+"""
+									const form = document.querySelector('#form');
+									const success = document.querySelector('#success');
+									const error = document.querySelector('#error');
+									
+									form.addEventListener('submit', async e => {
+									    e.preventDefault();
+									    const formData = new FormData(form);
+									    const response = await fetch(form.action, {
+									        method: 'POST',
+									        body: formData
+									    });
+									    if (response.ok) {
+									        form.style.display = 'none';
+									        success.style.display = 'block';
+									    } else {
+									        response.text().then(t => {
+									            error.innerText = t;
+									            error.style.display = 'block';
+									        }).catch(e => {
+									            console.error(e);
+									            error.innerText = 'Échec lors de la connexion au serveur.';
+									            error.style.display = 'block';
+									        });
+									    }
+									});
+								""".trimIndent()
+									.replace("\n", "")
+							}
 						}
 					}
 				}
@@ -276,14 +332,14 @@ private fun FlowContent.generateFieldHtml(
 
 				//language=JavaScript
 				onChange = """
-					const me = document.getElementById($self)
-					me.disabled = false
-                    me.hidden = false
+					const me = document.getElementById($self);
+					me.disabled = false;
+                    me.hidden = false;
                     $others.forEach(id => {
-                  		const o = document.getElementById(id)
-						o.disabled = true
-						o.hidden = true
-					})
+                  		const o = document.getElementById(id);
+						o.disabled = true;
+						o.hidden = true;
+					});
 				""".trimIndent()
 					.replace("\n", "")
 			}
