@@ -110,13 +110,13 @@ fun Routing.formRoutes() {
 
 				body {
 					div(formGroupClass) {
+						h1(formTitleClass) { form.name }
+
 						form(
 							action = "$apiUrl/submissions/nativeCreate/${form.id}",
 							method = FormMethod.post,
 							encType = FormEncType.multipartFormData,
 						) {
-							h1(formTitleClass) { form.name }
-
 							for (field in form.mainFields.fields) {
 								generateFieldHtml(field, field.id)
 							}
