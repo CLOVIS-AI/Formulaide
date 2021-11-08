@@ -215,8 +215,14 @@ internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record
 						}
 					}
 					if (records.isEmpty()) {
-						div("flex w-full justify-center items-center h-full") {
-							p("my-8") { text("Aucun résultat") }
+						td {
+							attrs {
+								colSpan = form.mainFields.asSequence().count().toString() +
+										(if (state == null) 1 else 0)
+							}
+							div("flex justify-center items-center w-full h-full") {
+								p("my-8") { text("Aucun résultat") }
+							}
 						}
 					}
 				}
@@ -750,7 +756,8 @@ private val ReviewRecordExpanded = fc<ReviewRecordExpandedProps>("ReviewRecordEx
 
 	td {
 		attrs {
-			colSpan = props.form.mainFields.asSequence().count().toString()
+			colSpan = props.form.mainFields.asSequence().count().toString() +
+					(if (props.windowState == null) 1 else 0)
 		}
 
 		if (props.windowState != null) styledFormCard(
