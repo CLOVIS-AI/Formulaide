@@ -295,14 +295,14 @@ private fun FlowContent.generateFieldHtml(
 
 				//language=JavaScript
 				onChange = """
-					const me = document.getElementById($self)
-					me.disabled = false
-                    me.hidden = false
+					const me = document.getElementById($self);
+					me.disabled = false;
+                    me.hidden = false;
                     $others.forEach(id => {
-                  		const o = document.getElementById(id)
-						o.disabled = true
-						o.hidden = true
-					})
+                  		const o = document.getElementById(id);
+						o.disabled = true;
+						o.hidden = true;
+					});
 				""".trimIndent()
 					.replace("\n", "")
 			}
