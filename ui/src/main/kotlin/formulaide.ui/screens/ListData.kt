@@ -9,6 +9,7 @@ import formulaide.ui.components.styledButton
 import formulaide.ui.components.styledCard
 import formulaide.ui.components.styledCheckbox
 import formulaide.ui.components.styledField
+import formulaide.ui.utils.map
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
 import react.Props
@@ -21,6 +22,7 @@ val DataList = fc<Props>("DataList") {
 	val (client) = useClient()
 	val user by useUser()
 	val composites by useAllComposites()
+		.map { composites -> composites.sortedBy { it.name } }
 
 	var showArchived by useState(false)
 
