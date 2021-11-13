@@ -69,6 +69,7 @@ val FormList = fc<Props>("FormList") {
 	val user by useUser("FormList user")
 
 	val forms by useForms()
+		.map { forms -> forms.sortedBy { it.name } }
 	val scope = useAsync()
 
 	useEffectOnce {
