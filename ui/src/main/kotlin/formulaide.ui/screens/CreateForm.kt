@@ -28,10 +28,7 @@ import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
 import react.*
-import react.dom.attrs
-import react.dom.div
-import react.dom.option
-import react.dom.p
+import react.dom.*
 
 fun CreateForm(original: Form?, copy: Boolean) = fc<Props>("CreateForm") {
 	traceRenders("CreateForm")
@@ -140,8 +137,32 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props>("CreateForm") {
 			text("Vous êtes en train de copier ce formulaire. Vous allez créer un nouveau formulaire n'ayant aucun lien avec l'ancien. Les dossiers remplis pour le formulaire précédent ne seront pas visible pour celui-ci.")
 		}
 		if (original != null && !copy) {
-			text("Vous êtes en train de modifier un formulaire. Vous pouvez effectuer n'importe quelle modification, mais le système devra ensuite vérifier si elle est compatible avec les dossiers remplis précédemment. Il est possible que le système refuse certaines modifications.")
-			styledErrorText(" La modification d'un formulaire est EXPÉRIMENTALE. Il est possible que des données soient perdues.")
+			text("Vous êtes en train de modifier un formulaire. Vous pouvez effectuer n'importe quelle modification, mais le système devra ensuite vérifier si elle est compatible avec les dossiers remplis précédemment.")
+			styledErrorText(" Il est possible que le système refuse certaines modifications. Il est possible que le système autorise des modifications qui amènent à l'inaccessibilité de certaines données.")
+			text(" Aucune garantie n'est donnée pour les modifications non listées ci-dessous.")
+
+			p("pt-2") { text("Modifications qui ne peuvent pas causer de problèmes :") }
+			ul("list-disc") {
+				li { text("Renommer le formulaire") }
+				li { text("Renommer un champ ou une étape") }
+				li { text("Modifier l'ordre de plusieurs champs") }
+				li { text("Modifier la valeur par défaut d'un champ") }
+				li { text("Modifier le service responsable d'une étape") }
+				li { text("Créer un champ facultatif (si aucun champ n'a été supprimé)") }
+			}
+
+			p("pt-2") { text("Modifications qui peuvent être refusées :") }
+			ul("list-disc") {
+				li { text("Modifier les restrictions des champs (obligatoire, facultatif, longueur maximale…)") }
+				li { text("Modifier le type d'un champ (dans certains cas, il n'est pas possible d'annuler la modification)") }
+				li { text("Créer un champ facultatif (si un champ avait été supprimé précédemment)") }
+			}
+
+			p("pt-2") { text("Modifications qui peuvent amener à une perte de données :") }
+			ul("list-disc pb-4") {
+				li { text("Modifier le type d'un champ") }
+				li { text("Supprimer un champ") }
+			}
 		}
 
 		styledField("new-form-name", "Nom") {
