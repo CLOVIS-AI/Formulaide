@@ -13,7 +13,7 @@ import kotlinx.browser.window
 import org.w3c.dom.url.URL
 import org.w3c.files.Blob
 import org.w3c.files.BlobPropertyBag
-import react.FunctionComponent
+import react.FC
 import react.Props
 import react.RBuilder
 import react.dom.div
@@ -40,7 +40,7 @@ private external interface ImmutableFieldProps : Props {
 
 private const val miniNesting = "px-4"
 
-private val ImmutableField: FunctionComponent<ImmutableFieldProps> = fc("ImmutableField") { props ->
+private val ImmutableField: FC<ImmutableFieldProps> = fc("ImmutableField") { props ->
 	traceRenders(props.answer.toString())
 
 	val (client) = useClient()
