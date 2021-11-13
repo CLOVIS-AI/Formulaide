@@ -9,6 +9,7 @@ import formulaide.ui.refreshServices
 import formulaide.ui.traceRenders
 import formulaide.ui.useClient
 import formulaide.ui.useServices
+import formulaide.ui.utils.map
 import formulaide.ui.utils.text
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
@@ -30,6 +31,7 @@ val ServiceList = fc<Props>("ServiceList") {
 	}
 
 	val services by useServices()
+		.map { services -> services.sortedBy { it.name } }
 
 	styledCard(
 		"Services",
