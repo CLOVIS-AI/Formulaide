@@ -38,7 +38,7 @@ val UserList = fc<Props>("UserList") {
 	var users by useState(emptyList<User>())
 	useEffect(client, listDisabledUsers) {
 		scope.reportExceptions {
-			users = client.listUsers(listDisabledUsers)
+			users = client.listUsers(listDisabledUsers).sortedBy { it.fullName }
 		}
 	}
 
