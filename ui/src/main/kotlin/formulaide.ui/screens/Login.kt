@@ -176,7 +176,8 @@ val FormsToReview = fc<Props>("FormsToReview") {
 		return@fc
 	}
 
-	var forms by useState(emptyList<Form>()).asDelegated()
+	var forms by useState(emptyList<Form>())
+		.asDelegated()
 		.useListEquality()
 	var loadingMessage by useState("Chargement des formulaires en cours…")
 	if (forms.isEmpty())
@@ -189,7 +190,7 @@ val FormsToReview = fc<Props>("FormsToReview") {
 		}
 	}
 
-	for (form in forms) {
+	for (form in forms.sortedBy { it.name }) {
 		child(FormDescription) {
 			attrs {
 				this.form = form
