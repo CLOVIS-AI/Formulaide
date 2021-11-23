@@ -195,7 +195,7 @@ private fun RBuilder.upload(
 						UploadRequest(
 							form = form.createRef(),
 							root = root?.createRef(),
-							field = fieldKey
+							field = id
 						),
 						file = FileUploadJS(file, file.name)
 					)
