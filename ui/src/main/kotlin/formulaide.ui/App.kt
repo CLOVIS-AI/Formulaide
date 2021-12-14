@@ -10,7 +10,7 @@ import formulaide.ui.components.*
 import formulaide.ui.screens.clearRecords
 import formulaide.ui.utils.*
 import io.ktor.client.fetch.*
-import kotlinext.js.jsObject
+import kotlinext.js.jso
 import kotlinx.browser.window
 import kotlinx.coroutines.await
 import kotlinx.coroutines.delay
@@ -273,7 +273,7 @@ val CrashReporter = fc<PropsWithChildren>("CrashReporter") { props ->
 		}
 	} else {
 		child(boundary(
-			jsObject<ErrorBoundaryProps>()
+			jso<ErrorBoundaryProps>()
 				.apply { children = props.children }
 		))
 	}

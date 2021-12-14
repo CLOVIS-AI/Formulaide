@@ -28,6 +28,9 @@ val MetadataEditor = fc<EditableFieldProps>("MetadataEditor") { props ->
 			is SimpleField.Text -> textMetadata(field, simple, props)
 			is SimpleField.Integer -> integerMetadata(field, simple, props)
 			is SimpleField.Upload -> uploadMetadata(field, simple, props)
+
+			// Fields that do not have metadata
+			is SimpleField.Decimal, is SimpleField.Boolean, is SimpleField.Email, is SimpleField.Phone, is SimpleField.Date, is SimpleField.Time, is SimpleField.Message -> Unit
 		}
 
 		if (field.simple !is SimpleField.Upload && field.simple != SimpleField.Message) {

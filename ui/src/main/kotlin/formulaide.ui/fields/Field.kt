@@ -11,7 +11,6 @@ import formulaide.api.types.UploadRequest
 import formulaide.client.Client
 import formulaide.client.files.FileUploadJS
 import formulaide.client.routes.uploadFile
-import formulaide.ui.CrashReporter
 import formulaide.ui.components.*
 import formulaide.ui.reportExceptions
 import formulaide.ui.traceRenders
@@ -212,7 +211,7 @@ private fun RBuilder.upload(
 	}
 }
 
-private val Field: FunctionComponent<FieldProps> = fc("Field") { props ->
+private val Field: FC<FieldProps> = fc("Field") { props ->
 	traceRenders("Field ${props.fieldKey}")
 	if (props.field.arity.max == 1) {
 		styledField(props.id, props.field.name) {

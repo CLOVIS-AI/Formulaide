@@ -33,10 +33,10 @@ dependencies {
 	implementation(npm("react-dom", "17.0.2"))
 	implementation(npm("use-error-boundary", "2.0.6"))
 
-	implementation(npm("postcss", "8.3.9"))
-	implementation(npm("postcss-loader", "6.1.1"))
-	implementation(npm("autoprefixer", "10.3.7"))
-	implementation(npm("tailwindcss", "2.2.16"))
+	implementation(npm("postcss", "8.3.11"))
+	implementation(npm("postcss-loader", "6.2.0"))
+	implementation(npm("autoprefixer", "10.4.0"))
+	implementation(npm("tailwindcss", "2.2.19"))
 
 	implementation(KotlinX.coroutines.coreJs)
 }
@@ -63,10 +63,10 @@ tasks.named("compileKotlinJs") {
 rootProject.plugins.withType<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootPlugin> {
 	rootProject.the<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootExtension>().versions.apply {
 		// Fix for https://youtrack.jetbrains.com/issue/KT-48273
-		webpackDevServer.version = "4.0.0"
+		webpackDevServer.version = "4.6.0"
 
 		// Fix for https://github.com/webpack/webpack-cli/issues/2990
-		webpackCli.version = "4.9.0"
+		webpackCli.version = "4.9.1"
 	}
 }
 
