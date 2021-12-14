@@ -84,7 +84,7 @@ dokka:
     - *prepare_gradle
   script:
     # ui:assemble is needed because of https://github.com/Kotlin/dokka/issues/1455
-    - "./gradlew ui:assemble dokkaHtmlMultiModule"
+    - "./gradlew ui:mainClasses dokkaHtmlMultiModule"
   artifacts:
     paths:
       - build/dokka/htmlMultiModule/

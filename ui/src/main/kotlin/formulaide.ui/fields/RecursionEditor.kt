@@ -8,12 +8,12 @@ import formulaide.ui.utils.remove
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.switchOrder
 import formulaide.ui.utils.text
-import react.FunctionComponent
+import react.FC
 import react.fc
 import react.key
 import react.useMemo
 
-val RecursionEditor: FunctionComponent<EditableFieldProps> = fc("RecursionEditor") { props ->
+val RecursionEditor: FC<EditableFieldProps> = fc("RecursionEditor") { props ->
 	val parent = props.field
 	val fields = (parent as? Field.Union<*>)?.options?.sortedBy { it.order }
 		?: (parent as? Field.Container<*>)?.fields?.sortedBy { it.order }
