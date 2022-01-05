@@ -16,8 +16,8 @@ import kotlinx.coroutines.await
 import kotlinx.coroutines.delay
 import org.w3c.dom.get
 import react.*
-import react.dom.br
-import react.dom.p
+import react.dom.html.ReactHTML.br
+import react.dom.html.ReactHTML.p
 
 //region Production / development environments
 internal var inProduction = true
@@ -41,7 +41,7 @@ private val client = GlobalState<Client>(defaultClient)
 		subscribers.add("clear records" to { clearRecords() })
 	}
 
-fun RBuilder.useClient(name: String? = null) = useGlobalState(client, name = name)
+fun ChildrenBuilder.useClient(name: String? = null) = useGlobalState(client, name = name)
 
 suspend fun logout() {
 	val authenticated = client.value as? Client.Authenticated
@@ -51,7 +51,7 @@ suspend fun logout() {
 	client.value = defaultClient
 }
 
-fun RBuilder.useUser(name: String? = null) = useGlobalState(client, name = name)
+fun ChildrenBuilder.useUser(name: String? = null) = useGlobalState(client, name = name)
 	.filterIs<Client.Authenticated>()
 	.map { it.me }
 
@@ -61,10 +61,10 @@ private val compositesDelegate = composites.asDelegated()
 	.useListEquality()
 	.useEquals()
 
-fun RBuilder.useComposites() = useGlobalState(composites, compositesDelegate)
+fun ChildrenBuilder.useComposites() = useGlobalState(composites, compositesDelegate)
 	.map { composite -> composite.filter { it.open } }
 
-fun RBuilder.useAllComposites() = useGlobalState(composites, compositesDelegate)
+fun ChildrenBuilder.useAllComposites() = useGlobalState(composites, compositesDelegate)
 
 suspend fun refreshComposites() = (client.value as? Client.Authenticated)
 	?.let { c -> compositesDelegate.value = c.listData() }
@@ -76,7 +76,7 @@ private val formsDelegate = forms.asDelegated()
 	.useListEquality()
 	.useEquals()
 
-fun RBuilder.useForms() = useGlobalState(forms, formsDelegate)
+fun ChildrenBuilder.useForms() = useGlobalState(forms, formsDelegate)
 suspend fun refreshForms() {
 	formsDelegate.value = (client.value as? Client.Authenticated)
 		?.listAllForms()
@@ -93,7 +93,7 @@ suspend fun refreshForms() {
 private val services = GlobalState(emptyList<Service>())
 	.apply { subscribers.add("services console" to { println("The services have been updated: ${it.size} are stored") }) }
 
-fun RBuilder.useServices() = useGlobalState(services)
+fun ChildrenBuilder.useServices() = useGlobalState(services)
 suspend fun refreshServices() {
 	services.value = (
 			(client.value as? Client.Authenticated)
@@ -111,7 +111,7 @@ private val bottomText = GlobalState("")
 /**
  * The main app screen.
  */
-val App = fc<Props>("App") {
+val App = FC<Props>("App") {
 	//region User fix
 	/*
 	 * For some reason, without this unused hook, the 'App' component doesn't re-render when:
@@ -168,19 +168,17 @@ val App = fc<Props>("App") {
 		}
 	}
 
-	useAsyncEffectOnce() {
+	useAsyncEffectOnce {
 		bottomText.value = fetch("version.txt").await().text().await()
 			.takeIf { "DOCTYPE" !in it } ?: "Les informations de version ne sont pas disponibles."
 	}
 
-	child(Window)
+	Window()
 
 	for (error in errors) {
-		child(ErrorCard) {
+		ErrorCard {
 			key = error.hashCode().toString()
-			attrs {
-				this.error = error
-			}
+			this.error = error
 		}
 	}
 
@@ -202,11 +200,19 @@ val App = fc<Props>("App") {
 			.forEach { br {}; styledFooterText(it) }
 }
 
+val StyledAppFrame = FC<Props>("StyledFrame") {
+	StrictMode {
+		styledFrame {
+			App()
+		}
+	}
+}
+
 //region Crash reporter
 
 private const val errorSectionClass = "mt-2"
 
-val CrashReporter = fc<PropsWithChildren>("CrashReporter") { props ->
+val CrashReporter = FC<PropsWithChildren>("CrashReporter") { props ->
 	val (boundary, didCatch, error) = useErrorBoundary()
 
 	if (didCatch) {
@@ -217,19 +223,25 @@ val CrashReporter = fc<PropsWithChildren>("CrashReporter") { props ->
 		) {
 			p { text("Veuillez signaler cette erreur à l'administrateur, en lui envoyant les informations ci-dessous, à l'adresse incoming+arcachon-ville-formulaide-27105418-issue-@incoming.gitlab.com :") }
 
-			p(errorSectionClass) {
+			p {
+				className = errorSectionClass
+
 				text("Ce que j'étais en train de faire : ")
 				br {}
 				styledLightText("Ici, expliquez ce que vous étiez en train de faire quand le problème a eu lieu.")
 			}
 
-			p(errorSectionClass) {
+			p {
+				className = errorSectionClass
+
 				text("Error type : ")
 				br {}
 				styledLightText("Plantage de l'application, capturé par CrashReporter")
 			}
 
-			p(errorSectionClass) {
+			p {
+				className = errorSectionClass
+
 				text("Throwable : ")
 				error?.stackTraceToString()
 					?.removeSurrounding("\n")
@@ -242,14 +254,18 @@ val CrashReporter = fc<PropsWithChildren>("CrashReporter") { props ->
 			}
 
 			for (local in listOf("form-fields", "form-actions", "data-fields")) {
-				p(errorSectionClass) {
+				p {
+					className = errorSectionClass
+
 					text("Local storage : $local")
 					br {}
 					styledLightText(window.localStorage[local].toString())
 				}
 			}
 
-			p(errorSectionClass) {
+			p {
+				className = errorSectionClass
+
 				text("Client : ")
 				br {}
 				styledLightText(client.value.hostUrl)
@@ -262,7 +278,9 @@ val CrashReporter = fc<PropsWithChildren>("CrashReporter") { props ->
 				"Formulaires" to forms,
 				"Services" to services,
 			)) {
-				p(errorSectionClass) {
+				p {
+					className = errorSectionClass
+
 					text("Cache : $globalName")
 					global.value.forEach {
 						br {}

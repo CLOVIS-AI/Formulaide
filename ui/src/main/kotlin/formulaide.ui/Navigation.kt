@@ -33,7 +33,7 @@ private val currentScreen = GlobalState(getScreenFromWindow() ?: Screen.Home)
 		})
 	}
 
-fun RBuilder.useNavigation() = useGlobalState(currentScreen)
+fun ChildrenBuilder.useNavigation() = useGlobalState(currentScreen)
 fun navigateTo(screen: Screen) {
 	currentScreen.value = screen
 }
@@ -82,7 +82,7 @@ abstract class Screen(
 		       "review")
 
 	companion object {
-		val regularScreens =
+		private val regularScreens =
 			sequenceOf(Home,
 			           ShowData,
 			           NewData(null),
@@ -117,7 +117,7 @@ abstract class Screen(
 	}
 }
 
-private val CannotAccessThisPage = fc<Props>("CannotAccessThisPage") {
+private val CannotAccessThisPage = FC<Props>("CannotAccessThisPage") {
 	traceRenders("CannotAccessThisPage")
 
 	styledCard(
@@ -130,7 +130,7 @@ private val CannotAccessThisPage = fc<Props>("CannotAccessThisPage") {
 	}
 }
 
-private val Navigation = fc<Props>("Navigation") {
+private val Navigation = FC<Props>("Navigation") {
 	val user by useUser()
 	var currentScreen by useNavigation()
 
@@ -150,7 +150,7 @@ private fun getScreenFromWindow(): Screen? =
 		.get("d")
 		?.let { Screen.routeDecoder(it) }
 
-val Window = memo(fc("Window") {
+val Window = memo(FC("Window") {
 	var screen by useNavigation()
 	val user by useUser()
 
@@ -182,15 +182,15 @@ val Window = memo(fc("Window") {
 			})
 		},
 		actions = {
-			child(Navigation)
+			Navigation()
 		}
 	)
 
 	if (user.role >= screen.requiredRole) {
-		child(CrashReporter) {
-			child(screen.component())
+		CrashReporter {
+			screen.component()()
 		}
 	} else {
-		child(CannotAccessThisPage)
+		CannotAccessThisPage()
 	}
 })

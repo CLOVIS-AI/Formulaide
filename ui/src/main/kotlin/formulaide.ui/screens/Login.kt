@@ -14,10 +14,10 @@ import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
 import formulaide.ui.utils.text
 import formulaide.ui.utils.useListEquality
 import kotlinx.browser.window
-import kotlinx.html.InputType
 import org.w3c.dom.HTMLInputElement
 import react.*
-import react.dom.p
+import react.dom.html.InputType
+import react.dom.html.ReactHTML.p
 
 /**
  * A login widget that requests an email and a password, and then updates the application's [client][client] by connecting to the server.
@@ -25,7 +25,7 @@ import react.dom.p
  * @see Client
  * @see login
  */
-val Login = fc<Props>("Login") {
+val Login = FC<Props>("Login") {
 	traceRenders("Login")
 
 	val email = useRef<HTMLInputElement>(null)
@@ -63,7 +63,7 @@ val Login = fc<Props>("Login") {
 }
 
 @Suppress("FunctionName")
-fun PasswordModification(user: Email, previousScreen: Screen) = fc<Props>("PasswordModification") {
+fun PasswordModification(user: Email, previousScreen: Screen) = FC<Props>("PasswordModification") {
 	traceRenders("PasswordModification")
 
 	val oldPassword = useRef<HTMLInputElement>()
@@ -77,14 +77,14 @@ fun PasswordModification(user: Email, previousScreen: Screen) = fc<Props>("Passw
 		styledCard("Modifier le mot de passe") {
 			text("Chargement de l'utilisateur…")
 		}
-		return@fc
+		return@FC
 	}
 
 	if (client !is Client.Authenticated) {
 		styledCard("Modifier le mot de passe", failed = true) {
 			text("Impossible de modifier le mot de passe sans être connecté")
 		}
-		return@fc
+		return@FC
 	}
 
 	styledFormCard(
@@ -136,14 +136,14 @@ fun PasswordModification(user: Email, previousScreen: Screen) = fc<Props>("Passw
 	}
 }
 
-val LoginAccess = fc<Props>("LoginAccess") {
+val LoginAccess = FC<Props>("LoginAccess") {
 	traceRenders("LoginAccess")
 
 	val (user) = useUser("LoginAccess")
 	val scope = useAsync()
 
 	if (user == null) {
-		child(Login)
+		Login()
 	} else {
 		styledCard(
 			"Espace employé",
@@ -161,19 +161,19 @@ val LoginAccess = fc<Props>("LoginAccess") {
 				window.open("https://arcachon-ville.gitlab.io/formulaide/docs/user-guide.pdf")
 			}
 		) {
-			child(FormsToReview)
+			FormsToReview()
 		}
 	}
 }
 
-val FormsToReview = fc<Props>("FormsToReview") {
+val FormsToReview = FC<Props>("FormsToReview") {
 	val scope = useAsync()
 	val allForms by useForms()
 
 	val (client) = useClient()
 	if (client !is Client.Authenticated) {
 		p { text("Seuls les utilisateurs connectés peuvent voir la liste des formulaires qui les attendent") }
-		return@fc
+		return@FC
 	}
 
 	var forms by useState(emptyList<Form>())
@@ -191,10 +191,8 @@ val FormsToReview = fc<Props>("FormsToReview") {
 	}
 
 	for (form in forms.sortedBy { it.name }) {
-		child(FormDescription) {
-			attrs {
-				this.form = form
-			}
+		FormDescription {
+			this.form = form
 		}
 	}
 }

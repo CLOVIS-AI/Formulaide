@@ -1,9 +1,9 @@
 package formulaide.ui
 
-import formulaide.ui.components.styledFrame
 import formulaide.ui.utils.detectTests
 import kotlinext.js.require
 import kotlinx.browser.document
+import react.createElement
 import react.dom.render
 
 fun main() {
@@ -12,11 +12,9 @@ fun main() {
 
 	require("./styles.css")
 
-	render(document.getElementById("root") ?: error("Could not find the 'root' element.")) {
-		traceRenders("root")
+	val app = createElement(StyledAppFrame)
 
-		styledFrame {
-			child(App)
-		}
+	render(app, document.getElementById("root") ?: error("Could not find the 'root' element.")) {
+		traceRenders("root")
 	}
 }

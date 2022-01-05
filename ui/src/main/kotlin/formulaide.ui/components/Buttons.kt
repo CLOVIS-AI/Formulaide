@@ -4,14 +4,14 @@ import formulaide.ui.reportExceptions
 import formulaide.ui.utils.text
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.html.DIV
-import kotlinx.html.InputType
-import kotlinx.html.SPAN
-import kotlinx.html.js.onClickFunction
+import react.ChildrenBuilder
+import react.FC
 import react.Props
-import react.RBuilder
-import react.dom.*
-import react.fc
+import react.dom.html.InputType
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.span
 import react.useState
 
 private const val buttonShapeClasses = "rounded-full py-1 px-3 mx-1"
@@ -27,94 +27,92 @@ internal external interface ButtonProps : Props {
 	var action: suspend () -> Unit
 }
 
-private val CustomButton = fc<ButtonProps>("CustomButton") { props ->
+private val CustomButton = FC<ButtonProps>("CustomButton") { props ->
 	val scope = useAsync()
 
 	var loading by useState(false)
 
-	val classes =
-		if (props.default) buttonDefaultClasses
-		else buttonNonDefaultClasses
+	val classes = if (props.default) buttonDefaultClasses
+	else buttonNonDefaultClasses
 
-	button(classes = classes) {
+	button {
 		if (loading) {
 			loadingSpinner()
 		} else {
 			text(props.text)
 		}
 
-		attrs {
-			disabled = loading
+		className = classes
+		disabled = loading
 
-			onClickFunction = {
-				it.preventDefault()
+		onClick = {
+			it.preventDefault()
 
-				val startLoading = scope.launch {
-					delay(10)
-					loading = true
-				}
+			val startLoading = scope.launch {
+				delay(10)
+				loading = true
+			}
 
-				scope.reportExceptions(onFailure = { loading = false }) {
-					props.action()
-					startLoading.cancel()
+			scope.reportExceptions(onFailure = { loading = false }) {
+				props.action()
+				startLoading.cancel()
 
-					loading = false
-				}
+				loading = false
 			}
 		}
 	}
 }
 
-fun RBuilder.styledButton(
+fun ChildrenBuilder.styledButton(
 	text: String,
 	default: Boolean = false,
 	enabled: Boolean = true,
 	action: suspend () -> Unit,
 ) {
-	if (enabled)
-		child(CustomButton) {
-			attrs {
-				this.text = text
-				this.default = default
-				this.action = action
-			}
+	if (enabled) {
+		CustomButton {
+			this.text = text
+			this.default = default
+			this.action = action
 		}
-	else
+	} else
 		styledDisabledButton(text)
 }
 
-fun RBuilder.styledDisabledButton(
+fun ChildrenBuilder.styledDisabledButton(
 	text: String,
 ) {
-	span("$buttonShapeClasses font-bold") {
+	span {
 		text(text)
+		className = "$buttonShapeClasses font-bold"
 	}
 }
 
-fun RBuilder.styledSubmitButton(
+fun ChildrenBuilder.styledSubmitButton(
 	text: String,
 	default: Boolean = true,
 ) {
-	input(InputType.submit,
-	      classes = if (default) buttonDefaultClasses else buttonNonDefaultClasses) {
-		attrs {
-			value = text
-		}
+	input {
+		type = InputType.submit
+		className = if (default) buttonDefaultClasses else buttonNonDefaultClasses
+		value = text
 	}
 }
 
-fun RBuilder.styledPill(
-	contents: RDOMBuilder<SPAN>.() -> Unit,
+fun ChildrenBuilder.styledPill(
+	contents: ChildrenBuilder.() -> Unit,
 ) {
-	span("$buttonShapeClasses bg-blue-200 flex flex-shrink justify-between items-center gap-x-2 max-w-max pr-0 pl-0") {
+	span {
+		className = "$buttonShapeClasses bg-blue-200 flex flex-shrink justify-between items-center gap-x-2 max-w-max pr-0 pl-0"
 		contents()
 	}
 }
 
-fun RBuilder.styledPillContainer(
-	contents: RDOMBuilder<DIV>.() -> Unit,
+fun ChildrenBuilder.styledPillContainer(
+	contents: ChildrenBuilder.() -> Unit,
 ) {
-	div("flex flex-row flex-wrap gap-2") {
+	div {
+		className = "flex flex-row flex-wrap gap-2"
 		contents()
 	}
 }

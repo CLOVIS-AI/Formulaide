@@ -10,13 +10,11 @@ import formulaide.ui.components.styledCard
 import formulaide.ui.components.styledCheckbox
 import formulaide.ui.components.styledField
 import formulaide.ui.utils.map
-import kotlinx.html.js.onChangeFunction
-import org.w3c.dom.HTMLInputElement
+import react.FC
 import react.Props
-import react.fc
 import react.useState
 
-val DataList = fc<Props>("DataList") {
+val DataList = FC<Props>("DataList") {
 	traceRenders("DataList")
 
 	val (client) = useClient()
@@ -32,8 +30,7 @@ val DataList = fc<Props>("DataList") {
 		contents = {
 			if (user.role >= Role.EMPLOYEE) styledField("hide-disabled", "Groupes archivés") {
 				styledCheckbox("hide-disabled", "Afficher les groupes archivés") {
-					onChangeFunction =
-						{ showArchived = (it.target as HTMLInputElement).checked }
+					onChange = { showArchived = it.target.checked }
 				}
 			}
 

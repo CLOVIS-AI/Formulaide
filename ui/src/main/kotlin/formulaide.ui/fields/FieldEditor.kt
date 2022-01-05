@@ -7,10 +7,10 @@ import formulaide.api.types.Arity
 import formulaide.ui.components.styledFormField
 import formulaide.ui.components.styledNesting
 import formulaide.ui.utils.text
+import react.FC
 import react.Props
-import react.dom.div
-import react.dom.p
-import react.fc
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.p
 import react.memo
 
 enum class SwitchDirection(val offset: Int) {
@@ -29,17 +29,7 @@ external interface EditableFieldProps : Props {
 	var fieldNumber: Int
 }
 
-fun EditableFieldProps.inheritFrom(props: EditableFieldProps) {
-	field = props.field
-	uniqueId = props.uniqueId
-	replace = props.replace
-	remove = props.remove
-	depth = props.depth
-	fieldNumber = props.fieldNumber
-	switch = props.switch
-}
-
-val FieldEditor = memo(fc<EditableFieldProps>("FieldEditor") { props ->
+val FieldEditor = memo(FC<EditableFieldProps>("FieldEditor") { props ->
 	val onDeletion = suspend { props.remove() }.takeIf { props.field !is DeepFormField }
 	val onMoveUp =
 		suspend { props.switch(SwitchDirection.UP) }.takeIf { props.field !is DeepFormField }
@@ -53,33 +43,26 @@ val FieldEditor = memo(fc<EditableFieldProps>("FieldEditor") { props ->
 		onMoveDown = onMoveDown,
 	) {
 
-		div("flex gap-x-16 flex-wrap") {
+		div {
+			className = "flex gap-x-16 flex-wrap"
+
 			div {
-				child(NameEditor) {
-					attrs { inheritFrom(props) }
-				}
-
-				child(TypeEditor) {
-					attrs { inheritFrom(props) }
-				}
+				NameEditor { +props }
+				TypeEditor { +props }
 			}
 
-			div("mr-32") {
-				child(MetadataEditor) {
-					attrs { inheritFrom(props) }
-				}
+			div {
+				className = "mr-32"
+
+				MetadataEditor { +props }
 			}
 		}
 
-		child(ArityEditor) {
-			attrs { inheritFrom(props) }
-		}
+		ArityEditor { +props }
 
 		if (props.field is Field.Union<*> || props.field is Field.Container<*>) {
 			if (props.field.arity != Arity.forbidden()) {
-				child(RecursionEditor) {
-					attrs { inheritFrom(props) }
-				}
+				RecursionEditor { +props }
 			} else {
 				styledFormField { text("Les sous-champs ne sont pas affichés, parce que cette donnée est cachée.") }
 			}

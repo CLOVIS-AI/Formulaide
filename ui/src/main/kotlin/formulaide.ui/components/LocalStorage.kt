@@ -9,7 +9,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.w3c.dom.get
 import org.w3c.dom.set
-import react.RBuilder
+import react.ChildrenBuilder
 import react.useState
 
 val localStorageSerializer = Json.Default
@@ -24,7 +24,7 @@ val localStorageSerializer = Json.Default
  * @see clearLocalStorage
  */
 @Suppress("unused") // Type safety: only call in an FC
-inline fun <reified T : Any> RBuilder.useLocalStorage(
+inline fun <reified T : Any> ChildrenBuilder.useLocalStorage(
 	id: String,
 	defaultValue: T,
 ): WriteDelegatedProperty<T> {

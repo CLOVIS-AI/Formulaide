@@ -9,16 +9,15 @@ import formulaide.ui.components.styledButton
 import formulaide.ui.components.styledCheckbox
 import formulaide.ui.components.styledField
 import formulaide.ui.components.styledInput
-import kotlinx.html.INPUT
-import kotlinx.html.InputType
-import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
-import react.RBuilder
-import react.dom.div
-import react.fc
+import react.ChildrenBuilder
+import react.FC
+import react.dom.html.InputHTMLAttributes
+import react.dom.html.InputType
+import react.dom.html.ReactHTML.div
 import react.useMemo
 
-val MetadataEditor = fc<EditableFieldProps>("MetadataEditor") { props ->
+val MetadataEditor = FC<EditableFieldProps>("MetadataEditor") { props ->
 	val field = props.field
 	val defaultField =
 		useMemo(field) { field.requestCopy(name = "Valeur par défaut", arity = Arity.optional()) }
@@ -50,7 +49,7 @@ val MetadataEditor = fc<EditableFieldProps>("MetadataEditor") { props ->
 	}
 }
 
-private fun RBuilder.uploadMetadata(
+private fun ChildrenBuilder.uploadMetadata(
 	field: Field.Simple,
 	simple: SimpleField.Upload,
 	props: EditableFieldProps,
@@ -87,8 +86,8 @@ private fun RBuilder.uploadMetadata(
 	val idSize = idOf(props.uniqueId, "size")
 	styledField(idSize, "Taille maximale (Mo)") {
 		styledInput(InputType.number, idSize) {
-			min = "1"
-			max = "10"
+			min = 1.0
+			max = 10.0
 			setHandler(simple.maxSizeMB,
 			           simple.effectiveMaxSizeMB,
 			           props,
@@ -106,8 +105,8 @@ private fun RBuilder.uploadMetadata(
 	val idExpiration = idOf(props.uniqueId, "expiration")
 	styledField(idExpiration, "Durée de vie avant suppression (jours)") {
 		styledInput(InputType.number, idExpiration) {
-			min = "1"
-			max = "5000"
+			min = 1.0
+			max = 5000.0
 			setHandler(simple.expiresAfterDays,
 			           simple.effectiveExpiresAfterDays,
 			           props,
@@ -124,7 +123,7 @@ private fun RBuilder.uploadMetadata(
 	}
 }
 
-private fun RBuilder.integerMetadata(
+private fun ChildrenBuilder.integerMetadata(
 	field: Field.Simple,
 	simple: SimpleField.Integer,
 	props: EditableFieldProps,
@@ -158,7 +157,7 @@ private fun RBuilder.integerMetadata(
 	}
 }
 
-private fun RBuilder.textMetadata(
+private fun ChildrenBuilder.textMetadata(
 	field: Field.Simple,
 	simple: SimpleField.Text,
 	props: EditableFieldProps,
@@ -173,7 +172,7 @@ private fun RBuilder.textMetadata(
 			           update = {
 				           it.value.toIntOrNull()?.let { simple.copy(maxLength = it) }
 			           })
-			min = "0"
+			min = 0.0
 		}
 		cancelButton(simple.maxLength,
 		             props,
@@ -185,7 +184,7 @@ private fun RBuilder.textMetadata(
 private fun idOf(uniqueId: String, attributeName: String) =
 	"field-editor-metadata-${uniqueId}-$attributeName"
 
-private fun RBuilder.cancelButton(
+private fun ChildrenBuilder.cancelButton(
 	value: Any?,
 	props: EditableFieldProps,
 	field: Field.Simple,
@@ -195,7 +194,7 @@ private fun RBuilder.cancelButton(
 		styledButton("×", action = { props.replace(field.requestCopy(update())) })
 }
 
-private fun INPUT.setHandler(
+private fun InputHTMLAttributes<HTMLInputElement>.setHandler(
 	value: Any?,
 	defaultValue: Any?,
 	props: EditableFieldProps,
@@ -204,9 +203,9 @@ private fun INPUT.setHandler(
 ) {
 	this.value = value?.toString() ?: ""
 	if (defaultValue != null)
-		this.placeholder = defaultValue.toString()
-	this.onChangeFunction = {
-		val target = it.target as HTMLInputElement
+		placeholder = defaultValue.toString()
+	onChange = {
+		val target = it.target
 		val updated = update(target)
 		if (updated != null)
 			props.replace(field.requestCopy(updated))

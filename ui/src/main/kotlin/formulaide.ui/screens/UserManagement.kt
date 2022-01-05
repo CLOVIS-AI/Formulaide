@@ -12,15 +12,13 @@ import formulaide.ui.*
 import formulaide.ui.components.*
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.text
-import kotlinx.html.InputType
-import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
 import react.*
-import react.dom.attrs
-import react.dom.div
-import react.dom.option
+import react.dom.html.InputType
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.option
 
-val UserList = fc<Props>("UserList") {
+val UserList = FC<Props>("UserList") {
 	traceRenders("UserList")
 
 	val scope = useAsync()
@@ -31,7 +29,7 @@ val UserList = fc<Props>("UserList") {
 
 	if (me == null) {
 		styledCard("Employés", contents = { text("Récupération de l'utilisateur…") })
-		return@fc
+		return@FC
 	}
 
 	var listDisabledUsers by useState(false)
@@ -50,7 +48,7 @@ val UserList = fc<Props>("UserList") {
 	) {
 		styledField("hide-disabled", "Utilisateurs désactivés") {
 			styledCheckbox("hide-disabled", "Afficher les comptes désactivés") {
-				onChangeFunction = { listDisabledUsers = (it.target as HTMLInputElement).checked }
+				onChange = { listDisabledUsers = it.target.checked }
 			}
 		}
 
@@ -106,7 +104,7 @@ private suspend fun editUser(
 	onChange(newUser)
 }
 
-val CreateUser = fc<Props>("CreateUser") {
+val CreateUser = FC<Props>("CreateUser") {
 	val services by useServices()
 
 	val email = useRef<HTMLInputElement>()
@@ -179,9 +177,7 @@ val CreateUser = fc<Props>("CreateUser") {
 				for (service in services) {
 					option {
 						text(service.name)
-						attrs {
 							value = service.id
-						}
 					}
 				}
 			}
@@ -198,7 +194,7 @@ val CreateUser = fc<Props>("CreateUser") {
 			            "employee-password-1",
 			            required = true,
 			            ref = password1) {
-				minLength = "5"
+				minLength = 5
 			}
 		}
 
@@ -207,7 +203,7 @@ val CreateUser = fc<Props>("CreateUser") {
 			            "employee-password-2",
 			            required = true,
 			            ref = password2) {
-				minLength = "5"
+				minLength = 5
 			}
 		}
 	}

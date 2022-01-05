@@ -9,11 +9,10 @@ import formulaide.ui.utils.replace
 import formulaide.ui.utils.switchOrder
 import formulaide.ui.utils.text
 import react.FC
-import react.fc
 import react.key
 import react.useMemo
 
-val RecursionEditor: FC<EditableFieldProps> = fc("RecursionEditor") { props ->
+val RecursionEditor: FC<EditableFieldProps> = FC("RecursionEditor") { props ->
 	val parent = props.field
 	val fields = (parent as? Field.Union<*>)?.options?.sortedBy { it.order }
 		?: (parent as? Field.Container<*>)?.fields?.sortedBy { it.order }
@@ -30,70 +29,68 @@ val RecursionEditor: FC<EditableFieldProps> = fc("RecursionEditor") { props ->
 		}
 
 		for ((i, field) in fields.withIndex()) {
-			child(FieldEditor) {
-				attrs {
-					this.field = field
-					key = field.id
-					uniqueId = "${props.uniqueId}:${field.id}"
+			FieldEditor {
+				this.field = field
+				key = field.id
+				uniqueId = "${props.uniqueId}:${field.id}"
 
-					depth = props.depth + 1
-					fieldNumber = i
+				depth = props.depth + 1
+				fieldNumber = i
 
-					replace = { newField ->
-						@Suppress("UNCHECKED_CAST")
-						val newParent = when (parent) {
-							is DataField.Union -> parent.copy(options = (fields as List<DataField>)
-								.replace(i, newField as DataField))
-							is ShallowFormField.Union -> parent.copy(options = (fields as List<ShallowFormField>)
-								.replace(i, newField as ShallowFormField))
-							is DeepFormField.Union -> parent.copy(options = (fields as List<DeepFormField>)
-								.replace(i, newField as DeepFormField))
-							is ShallowFormField.Composite -> parent.copy(fields = (fields as List<DeepFormField>)
-								.replace(i, newField as DeepFormField))
-							is DeepFormField.Composite -> parent.copy(fields = (fields as List<DeepFormField>)
-								.replace(i, newField as DeepFormField))
-							else -> error("Impossible de modifier les sous-champs de $parent")
-						}
-
-						props.replace(newParent)
+				replace = { newField ->
+					@Suppress("UNCHECKED_CAST")
+					val newParent = when (parent) {
+						is DataField.Union -> parent.copy(options = (fields as List<DataField>)
+							.replace(i, newField as DataField))
+						is ShallowFormField.Union -> parent.copy(options = (fields as List<ShallowFormField>)
+							.replace(i, newField as ShallowFormField))
+						is DeepFormField.Union -> parent.copy(options = (fields as List<DeepFormField>)
+							.replace(i, newField as DeepFormField))
+						is ShallowFormField.Composite -> parent.copy(fields = (fields as List<DeepFormField>)
+							.replace(i, newField as DeepFormField))
+						is DeepFormField.Composite -> parent.copy(fields = (fields as List<DeepFormField>)
+							.replace(i, newField as DeepFormField))
+						else -> error("Impossible de modifier les sous-champs de $parent")
 					}
 
-					remove = {
+					props.replace(newParent)
+				}
+
+				remove = {
+					val newParent = when (parent) {
+						is DataField.Union ->
+							parent.copy(options = parent.options.remove(i))
+						is ShallowFormField.Union ->
+							parent.copy(options = parent.options.remove(i))
+						is DeepFormField.Union ->
+							parent.copy(options = parent.options.remove(i))
+						is ShallowFormField.Composite ->
+							parent.copy(fields = parent.fields.remove(i))
+						is DeepFormField.Composite ->
+							parent.copy(fields = parent.fields.remove(i))
+						else -> error("Impossible de modifier les sous-champs de $parent")
+					}
+
+					props.replace(newParent)
+				}
+
+				if (parent is DataField.Union || parent is ShallowFormField.Union) {
+					switch = { direction ->
 						val newParent = when (parent) {
 							is DataField.Union ->
-								parent.copy(options = parent.options.remove(i))
+								parent.copy(options = parent.options.switchOrder(i, direction))
 							is ShallowFormField.Union ->
-								parent.copy(options = parent.options.remove(i))
+								parent.copy(options = parent.options.switchOrder(i, direction))
 							is DeepFormField.Union ->
-								parent.copy(options = parent.options.remove(i))
+								parent.copy(options = parent.options.switchOrder(i, direction))
 							is ShallowFormField.Composite ->
-								parent.copy(fields = parent.fields.remove(i))
+								parent.copy(fields = parent.fields.switchOrder(i, direction))
 							is DeepFormField.Composite ->
-								parent.copy(fields = parent.fields.remove(i))
+								parent.copy(fields = parent.fields.switchOrder(i, direction))
 							else -> error("Impossible de modifier les sous-champs de $parent")
 						}
 
 						props.replace(newParent)
-					}
-
-					if (parent is DataField.Union || parent is ShallowFormField.Union) {
-						switch = { direction ->
-							val newParent = when (parent) {
-								is DataField.Union ->
-									parent.copy(options = parent.options.switchOrder(i, direction))
-								is ShallowFormField.Union ->
-									parent.copy(options = parent.options.switchOrder(i, direction))
-								is DeepFormField.Union ->
-									parent.copy(options = parent.options.switchOrder(i, direction))
-								is ShallowFormField.Composite ->
-									parent.copy(fields = parent.fields.switchOrder(i, direction))
-								is DeepFormField.Composite ->
-									parent.copy(fields = parent.fields.switchOrder(i, direction))
-								else -> error("Impossible de modifier les sous-champs de $parent")
-							}
-
-							props.replace(newParent)
-						}
 					}
 				}
 			}

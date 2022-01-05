@@ -1,11 +1,10 @@
 package formulaide.ui.components
 
 import formulaide.ui.utils.text
+import react.ChildrenBuilder
+import react.FC
 import react.Props
-import react.RBuilder
-import react.dom.attrs
-import react.dom.option
-import react.fc
+import react.dom.html.ReactHTML.option
 
 data class ControlledSelectOption(
 	val text: String,
@@ -39,7 +38,7 @@ private external interface ControlledSelectProps : Props {
 	var selected: ControlledSelectOption?
 }
 
-private val ControlledSelect = fc<ControlledSelectProps>("ControlledSelect") { props ->
+private val ControlledSelect = FC<ControlledSelectProps>("ControlledSelect") { props ->
 	styledSelect(
 		onSelect = { select ->
 			props.options
@@ -50,24 +49,20 @@ private val ControlledSelect = fc<ControlledSelectProps>("ControlledSelect") { p
 		for (option in props.options) {
 			option {
 				text(option.text)
-				attrs {
-					value = option.value
-					selected = option == props.selected
-				}
+				value = option.value
+				selected = option == props.selected
 			}
 		}
 	}
 }
 
-fun RBuilder.controlledSelect(
+fun ChildrenBuilder.controlledSelect(
 	builder: ControlledSelectOptionBuilder.() -> Unit,
 ) {
 	val b = ControlledSelectOptionBuilder().apply(builder)
 
-	child(ControlledSelect) {
-		attrs {
-			options = b.options
-			selected = b.selected ?: b.options.firstOrNull()
-		}
+	ControlledSelect {
+		options = b.options
+		selected = b.selected ?: b.options.firstOrNull()
 	}
 }

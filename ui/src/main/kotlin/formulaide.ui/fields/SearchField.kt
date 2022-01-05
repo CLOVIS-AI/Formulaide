@@ -7,16 +7,13 @@ import formulaide.api.search.SearchCriterion
 import formulaide.ui.components.*
 import formulaide.ui.traceRenders
 import formulaide.ui.utils.text
-import kotlinx.html.InputType
-import kotlinx.html.js.onChangeFunction
-import org.w3c.dom.HTMLInputElement
+import react.ChildrenBuilder
+import react.FC
 import react.Props
-import react.RBuilder
-import react.dom.attrs
-import react.dom.option
-import react.fc
+import react.dom.html.InputType
+import react.dom.html.ReactHTML.option
 
-fun RBuilder.searchFields(
+fun ChildrenBuilder.searchFields(
 	root: FormRoot,
 	criteria: List<SearchCriterion<*>>,
 	update: (SearchCriterion<*>?, SearchCriterion<*>?) -> Unit,
@@ -25,21 +22,19 @@ fun RBuilder.searchFields(
 		searchField(field, listOf(field.id), depth = 1, criteria = criteria, update = update)
 }
 
-private fun RBuilder.searchField(
+private fun ChildrenBuilder.searchField(
 	field: FormField,
 	key: List<String>,
 	depth: Int = 1,
 	criteria: List<SearchCriterion<*>>,
 	update: (SearchCriterion<*>?, SearchCriterion<*>?) -> Unit,
 ) {
-	child(SearchField) {
-		attrs {
-			this.field = field
-			this.keyList = key
-			this.depth = depth
-			this.criteria = criteria
-			this.update = update
-		}
+	SearchField {
+		this.field = field
+		this.keyList = key
+		this.depth = depth
+		this.criteria = criteria
+		this.update = update
 	}
 }
 
@@ -56,7 +51,7 @@ private val SearchFieldProps.fullKey: String get() = keyList.joinToString(separa
 private fun SearchFieldProps.create(criterion: SearchCriterion<*>) = update(null, criterion)
 private fun SearchFieldProps.remove(criterion: SearchCriterion<*>) = update(criterion, null)
 
-private val SearchField = fc<SearchFieldProps>("SearchField") { props ->
+private val SearchField = FC<SearchFieldProps>("SearchField") { props ->
 	val fieldKey = props.keyList.joinToString(separator = ":")
 	traceRenders("SearchField $fieldKey")
 	val field = props.field
@@ -142,7 +137,7 @@ private val SearchField = fc<SearchFieldProps>("SearchField") { props ->
 	}
 }
 
-private fun <C : SearchCriterion<*>> RBuilder.genericCriteria(
+private fun <C : SearchCriterion<*>> ChildrenBuilder.genericCriteria(
 	text: String,
 	criterion: C?,
 	props: SearchFieldProps,
@@ -154,9 +149,8 @@ private fun <C : SearchCriterion<*>> RBuilder.genericCriteria(
 		val id = idOf(criterion)
 		styledField(id, "$text :") {
 			styledInput(inputType, id, required = true) {
-				onChangeFunction = { event ->
-					val target = event.target as HTMLInputElement
-					props.update(criterion, update(criterion, target.value))
+				onChange = { event ->
+					props.update(criterion, update(criterion, event.target.value))
 				}
 			}
 			cancelSearchButton(criterion, props)
@@ -166,7 +160,7 @@ private fun <C : SearchCriterion<*>> RBuilder.genericCriteria(
 	}
 }
 
-private fun RBuilder.textEqualsChoice(
+private fun ChildrenBuilder.textEqualsChoice(
 	options: List<Pair<String, String>>,
 	text: String,
 	criterion: SearchCriterion.TextEquals?,
@@ -179,9 +173,7 @@ private fun RBuilder.textEqualsChoice(
 				for (option in options) {
 					option {
 						text(option.first)
-						attrs {
 							value = option.second
-						}
 					}
 				}
 			}
@@ -197,7 +189,7 @@ private fun RBuilder.textEqualsChoice(
 	}
 }
 
-private fun RBuilder.fieldExists(
+private fun ChildrenBuilder.fieldExists(
 	text: String,
 	criterion: SearchCriterion.Exists?,
 	props: SearchFieldProps,
@@ -212,11 +204,11 @@ private fun RBuilder.fieldExists(
 	}
 }
 
-private fun RBuilder.cancelSearchButton(criterion: SearchCriterion<*>, props: SearchFieldProps) {
+private fun ChildrenBuilder.cancelSearchButton(criterion: SearchCriterion<*>, props: SearchFieldProps) {
 	styledButton("Annuler", action = { props.remove(criterion) })
 }
 
-private fun RBuilder.enableSearchButton(
+private fun ChildrenBuilder.enableSearchButton(
 	text: String,
 	props: SearchFieldProps,
 	create: () -> SearchCriterion<*>,

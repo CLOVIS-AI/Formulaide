@@ -1,12 +1,8 @@
 package formulaide.ui.components
 
 import formulaide.ui.reportExceptions
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
-import react.RBuilder
+import kotlinx.coroutines.*
+import react.ChildrenBuilder
 import react.useEffect
 import react.useEffectOnce
 import react.useState
@@ -16,8 +12,8 @@ import react.useState
  *
  * Use this hook to launch code that should be cancelled if the component that started it is unmounted.
  */
-@Suppress("unused") // RBuilder is used for type safety
-fun RBuilder.useAsync(): CoroutineScope {
+@Suppress("unused") // ChildrenBuilder is used for type safety
+fun ChildrenBuilder.useAsync(): CoroutineScope {
 	val job by useState(SupervisorJob())
 
 	useEffectOnce {
@@ -29,8 +25,8 @@ fun RBuilder.useAsync(): CoroutineScope {
 	return CoroutineScope(job)
 }
 
-@Suppress("unused") // RBuilder is used for type safety
-fun RBuilder.useAsyncEffect(vararg dependencies: dynamic, effect: suspend () -> Unit) {
+@Suppress("unused") // ChildrenBuilder is used for type safety
+fun ChildrenBuilder.useAsyncEffect(vararg dependencies: dynamic, effect: suspend () -> Unit) {
 	useEffect(dependencies) {
 		val job = Job()
 
@@ -44,8 +40,8 @@ fun RBuilder.useAsyncEffect(vararg dependencies: dynamic, effect: suspend () -> 
 	}
 }
 
-@Suppress("unused") // RBuilder is used for type safety
-fun RBuilder.useAsyncEffectOnce(effect: suspend () -> Unit) {
+@Suppress("unused") // ChildrenBuilder is used for type safety
+fun ChildrenBuilder.useAsyncEffectOnce(effect: suspend () -> Unit) {
 	useEffectOnce {
 		val job = Job()
 

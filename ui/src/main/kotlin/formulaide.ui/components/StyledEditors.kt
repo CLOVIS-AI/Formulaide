@@ -1,11 +1,11 @@
 package formulaide.ui.components
 
-import react.RBuilder
+import react.ChildrenBuilder
 
-fun RBuilder.styledFieldEditorShell(
+fun ChildrenBuilder.styledFieldEditorShell(
 	id: String,
 	displayName: String,
-	contents: RBuilder.() -> Unit,
+	contents: ChildrenBuilder.() -> Unit,
 ) {
 	styledField(id, displayName) {
 		styledNesting {

@@ -1,5 +1,5 @@
 package formulaide.ui.utils
 
-import react.RBuilder
+import react.ChildrenBuilder
 
-fun RBuilder.text(text: String) = +text
+fun ChildrenBuilder.text(text: String) = +text

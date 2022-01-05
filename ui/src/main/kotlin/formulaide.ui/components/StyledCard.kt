@@ -2,24 +2,27 @@ package formulaide.ui.components
 
 import formulaide.ui.reportExceptions
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.html.DIV
-import kotlinx.html.js.onSubmitFunction
+import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLFormElement
+import react.ChildrenBuilder
+import react.FC
 import react.Props
-import react.RBuilder
-import react.dom.*
-import react.fc
+import react.dom.html.HTMLAttributes
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.form
+import react.dom.html.ReactHTML.p
+import react.dom.html.ReactHTML.span
 import react.useState
 
-private fun RBuilder.styledCardTitle(title: String, secondary: String?, loading: Boolean = false) {
+private fun ChildrenBuilder.styledCardTitle(title: String, secondary: String?, loading: Boolean = false) {
 	styledTitle(title, loading)
 	if (secondary != null) p { styledLightText(secondary) }
 }
 
-fun RBuilder.styledCardShell(
+fun ChildrenBuilder.styledCardShell(
 	failed: Boolean = false,
 	mini: Boolean = false,
-	contents: RDOMBuilder<DIV>.() -> Unit,
+	contents: HTMLAttributes<HTMLDivElement>.() -> Unit,
 ) {
 	var classes = "m-4 px-8 shadow-lg rounded-lg z-10 relative bg-white " +
 			if (mini) "py-4" else "py-8"
@@ -27,27 +30,30 @@ fun RBuilder.styledCardShell(
 	if (failed)
 		classes += " bg-red-200"
 
-	div(classes) {
+	div {
+		className = classes
 		contents()
 	}
 }
 
-fun RBuilder.styledCard(
+fun ChildrenBuilder.styledCard(
 	title: String,
 	secondary: String? = null,
 	vararg actions: Pair<String, suspend () -> Unit>,
 	failed: Boolean = false,
 	loading: Boolean = false,
-	contents: RBuilder.() -> Unit,
+	contents: ChildrenBuilder.() -> Unit,
 ) {
 	styledCardShell(failed) {
 		styledCardTitle(title, secondary, loading)
 
-		div("pt-4") {
+		div {
+			className = "pt-4"
 			contents()
 		}
 
-		if (actions.isNotEmpty()) div("pt-4") {
+		if (actions.isNotEmpty()) div {
+			className = "pt-4"
 			for (action in actions) {
 				styledButton(action.first,
 				             default = action == actions.first()) { action.second() }
@@ -56,17 +62,20 @@ fun RBuilder.styledCard(
 	}
 }
 
-fun RBuilder.styledTitleCard(
-	title: RBuilder.() -> Unit,
-	actions: RBuilder.() -> Unit,
+fun ChildrenBuilder.styledTitleCard(
+	title: ChildrenBuilder.() -> Unit,
+	actions: ChildrenBuilder.() -> Unit,
 ) {
 	styledCardShell {
-		div("flex flex-col-reverse justify-center md:flex-row md:justify-between md:items-center") {
+		div {
+			className = "flex flex-col-reverse justify-center md:flex-row md:justify-between md:items-center"
+
 			div {
 				actions()
 			}
 
-			div("mb-2 md:mb-0") {
+			div {
+				className = "mb-2 md:mb-0"
 				title()
 			}
 		}
@@ -79,10 +88,10 @@ private external interface FormCardProps : Props {
 	var submit: Pair<String, SubmitAction.(HTMLFormElement) -> Unit>
 	var actions: List<Pair<String, suspend () -> Unit>>
 	var loading: Boolean
-	var contents: (RBuilder) -> Unit
+	var contents: (ChildrenBuilder) -> Unit
 }
 
-private val FormCard = fc<FormCardProps>("FormCard") { props ->
+private val FormCard = FC<FormCardProps>("FormCard") { props ->
 	val (submitText, submitAction) = props.submit
 	val scope = useAsync()
 
@@ -92,50 +101,50 @@ private val FormCard = fc<FormCardProps>("FormCard") { props ->
 		form {
 			styledCardTitle(props.title, props.secondary, loading)
 
-			div("py-4") {
+			div {
+				className = "py-4"
 				props.contents(this)
 			}
 
 			if (!loading)
 				styledSubmitButton(submitText, default = true)
 			else
-				span(classes = buttonNonDefaultClasses) { loadingSpinner() }
+				span {
+					className = buttonNonDefaultClasses
+					loadingSpinner()
+				}
 
 			for (action in props.actions) {
 				styledButton(action.first, default = false) { action.second() }
 			}
 
-			attrs {
-				onSubmitFunction = { event ->
-					event.preventDefault()
+			onSubmit = { event ->
+				event.preventDefault()
 
-					val submitActionDsl = SubmitAction(scope, setLoading = { loading = it })
-					reportExceptions {
-						submitActionDsl.submitAction(event.target as HTMLFormElement)
-					}
+				val submitActionDsl = SubmitAction(scope, setLoading = { loading = it })
+				reportExceptions {
+					submitActionDsl.submitAction(event.target as HTMLFormElement)
 				}
 			}
 		}
 	}
 }
 
-fun RBuilder.styledFormCard(
+fun ChildrenBuilder.styledFormCard(
 	title: String,
 	secondary: String?,
 	submit: Pair<String, SubmitAction.(HTMLFormElement) -> Unit>,
 	vararg actions: Pair<String, suspend () -> Unit>,
 	loading: Boolean = false,
-	contents: RBuilder.() -> Unit,
+	contents: ChildrenBuilder.() -> Unit,
 ) {
-	child(FormCard) {
-		attrs {
-			this.title = title
-			this.secondary = secondary
-			this.submit = submit
-			this.actions = actions.asList()
-			this.loading = loading
-			this.contents = contents
-		}
+	FormCard {
+		this.title = title
+		this.secondary = secondary
+		this.submit = submit
+		this.actions = actions.asList()
+		this.loading = loading
+		this.contents = contents
 	}
 }
 
@@ -151,10 +160,13 @@ class SubmitAction(private val scope: CoroutineScope, private val setLoading: (B
 
 }
 
-fun RBuilder.styledFrame(block: RBuilder.() -> Unit) {
-	div("lg:grid lg:grid-cols-9 xl:grid-cols-7") {
+fun ChildrenBuilder.styledFrame(block: ChildrenBuilder.() -> Unit) {
+	div {
+		className = "lg:grid lg:grid-cols-9 xl:grid-cols-7"
+
 		div {}
-		div("lg:col-span-7 xl:col-span-5") {
+		div {
+			className = "lg:col-span-7 xl:col-span-5"
 			block()
 		}
 		div {}

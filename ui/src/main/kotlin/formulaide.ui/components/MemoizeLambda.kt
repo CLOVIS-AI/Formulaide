@@ -1,6 +1,6 @@
 package formulaide.ui.components
 
-import react.RBuilder
+import react.ChildrenBuilder
 import react.useMemo
 
 class LambdaStorage {
@@ -9,8 +9,8 @@ class LambdaStorage {
 
 class StoredLambda<T>(var lambda: T, var dependencies: List<Any?>)
 
-@Suppress("unused") // RBuilder to force the call to be in an FC
-fun RBuilder.useLambdas() = useMemo { LambdaStorage() }
+@Suppress("unused") // ChildrenBuilder to force the call to be in an FC
+fun ChildrenBuilder.useLambdas() = useMemo { LambdaStorage() }
 
 /**
  * Stores a lambda identified by a [key], and its [dependencies], to reuse the same reference if no dependency was modified.

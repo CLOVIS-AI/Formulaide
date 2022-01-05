@@ -4,12 +4,10 @@ import formulaide.api.fields.DataField
 import formulaide.api.fields.ShallowFormField
 import formulaide.ui.components.styledField
 import formulaide.ui.components.styledInput
-import kotlinx.html.InputType
-import kotlinx.html.js.onChangeFunction
-import org.w3c.dom.HTMLInputElement
-import react.fc
+import react.FC
+import react.dom.html.InputType
 
-val NameEditor = fc<EditableFieldProps>("NameEditor") { props ->
+val NameEditor = FC<EditableFieldProps>("NameEditor") { props ->
 	val field = props.field
 	val allowModification = field is DataField || field is ShallowFormField
 
@@ -20,9 +18,9 @@ val NameEditor = fc<EditableFieldProps>("NameEditor") { props ->
 			styledInput(InputType.text, id, required = true) {
 				placeholder = "Nom du champ"
 				value = field.name
-				onChangeFunction = {
+				onChange = {
 					props.replace(
-						props.field.requestCopy(name = (it.target as HTMLInputElement).value))
+						props.field.requestCopy(name = it.target.value))
 				}
 			}
 		}

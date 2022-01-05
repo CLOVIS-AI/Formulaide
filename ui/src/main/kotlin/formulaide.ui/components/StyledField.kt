@@ -1,15 +1,16 @@
 package formulaide.ui.components
 
 import formulaide.ui.utils.text
-import kotlinx.html.INPUT
-import kotlinx.html.InputType
-import kotlinx.html.SELECT
-import kotlinx.html.id
-import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
-import react.RBuilder
-import react.dom.*
+import react.ChildrenBuilder
+import react.dom.html.InputHTMLAttributes
+import react.dom.html.InputType
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.label
+import react.dom.html.ReactHTML.select
+import react.dom.html.SelectHTMLAttributes
 import react.Ref as RRef
 
 private const val commonInputStyle =
@@ -17,14 +18,15 @@ private const val commonInputStyle =
 private const val largeInputStyle = "$commonInputStyle w-60 max-w-full mr-3"
 private const val smallInputStyle = "$commonInputStyle w-10 max-w-full"
 
-fun RBuilder.styledField(
+fun ChildrenBuilder.styledField(
 	id: String,
 	displayName: String,
-	contents: RBuilder.() -> Unit,
+	contents: ChildrenBuilder.() -> Unit,
 ) {
 	styledFormField {
-		label("block") {
-			attrs["htmlFor"] = id
+		label {
+			className = "block"
+			htmlFor = id
 
 			text(displayName)
 		}
@@ -33,21 +35,21 @@ fun RBuilder.styledField(
 	}
 }
 
-fun RBuilder.styledInput(
+private fun ChildrenBuilder.styledInputCommon(
 	type: InputType,
+	className: String,
 	id: String,
 	required: Boolean = false,
 	ref: RRef<HTMLInputElement>? = null,
-	handler: INPUT.() -> Unit = {},
+	handler: InputHTMLAttributes<HTMLInputElement>.() -> Unit = {},
 ) {
-	input(type, classes = largeInputStyle) {
-		attrs {
-			this.id = id
-			this.name = id
-			this.required = required
-
-			handler()
-		}
+	input {
+		this.type = type
+		this.className = className
+		this.id = id
+		this.name = id
+		this.required = required
+		handler()
 
 		if (ref != null) this.ref = ref
 	}
@@ -55,33 +57,30 @@ fun RBuilder.styledInput(
 		text(" *")
 }
 
-fun RBuilder.styledSmallInput(
+fun ChildrenBuilder.styledInput(
 	type: InputType,
 	id: String,
 	required: Boolean = false,
 	ref: RRef<HTMLInputElement>? = null,
-	handler: INPUT.() -> Unit = {},
-) {
-	input(type, classes = smallInputStyle) {
-		attrs {
-			this.id = id
-			this.name = id
-			this.required = required
+	handler: InputHTMLAttributes<HTMLInputElement>.() -> Unit = {},
+) = styledInputCommon(type, largeInputStyle, id, required, ref, handler)
 
-			handler()
-		}
+fun ChildrenBuilder.styledSmallInput(
+	type: InputType,
+	id: String,
+	required: Boolean = false,
+	ref: RRef<HTMLInputElement>? = null,
+	handler: InputHTMLAttributes<HTMLInputElement>.() -> Unit = {},
+) = styledInputCommon(type, smallInputStyle, id, required, ref, handler)
 
-		if (ref != null) this.ref = ref
-	}
-}
-
-fun RBuilder.styledFormField(contents: RBuilder.() -> Unit) {
-	div("mb-2") {
+fun ChildrenBuilder.styledFormField(contents: ChildrenBuilder.() -> Unit) {
+	div {
+		className = "mb-2"
 		contents()
 	}
 }
 
-fun RBuilder.styledRadioButton(
+fun ChildrenBuilder.styledRadioButton(
 	radioId: String,
 	buttonId: String,
 	value: String,
@@ -89,54 +88,58 @@ fun RBuilder.styledRadioButton(
 	checked: Boolean = false,
 	onClick: () -> Unit = {},
 ) {
-	input(InputType.radio, name = radioId, classes = "mr-1") {
-		attrs {
-			this.id = buttonId
-			this.value = value
+	input {
+		this.type = InputType.radio
+		name = radioId
+		className = "mr-1"
+		id = buttonId
+		this.value = value
 
-			onChangeFunction = { onClick() }
-		}
-		attrs["checked"] = checked
+		onChange = { onClick() }
+		this.checked = checked
 	}
 
-	label(classes = "mr-2") {
+	label {
+		className = "mr-2"
+
 		text(text)
-		attrs["htmlFor"] = buttonId
+		htmlFor = buttonId
 	}
 }
 
-fun RBuilder.styledCheckbox(
+fun ChildrenBuilder.styledCheckbox(
 	id: String,
 	message: String,
 	required: Boolean = false,
 	ref: RRef<HTMLInputElement>? = null,
-	handler: INPUT.() -> Unit = {},
+	handler: InputHTMLAttributes<HTMLInputElement>.() -> Unit = {},
 ) {
-	input(InputType.hidden, name = id) {
-		attrs { value = "false" }
+	input {
+		type = InputType.hidden
+		name = id
+		value = "false"
 	}
 
-	styledSmallInput(InputType.checkBox, id, required, ref) {
+	styledSmallInput(InputType.checkbox, id, required, ref) {
 		value = "true"
 		handler()
 	}
 	label {
 		text(message)
-		attrs["htmlFor"] = id
+		htmlFor = id
 	}
 }
 
-fun RBuilder.styledSelect(
-	handler: SELECT.() -> Unit = {},
+fun ChildrenBuilder.styledSelect(
+	handler: SelectHTMLAttributes<HTMLSelectElement>.() -> Unit = {},
 	onSelect: (HTMLSelectElement) -> Unit = {},
-	contents: RDOMBuilder<SELECT>.() -> Unit,
+	contents: SelectHTMLAttributes<HTMLSelectElement>.() -> Unit,
 ) {
-	select(largeInputStyle) {
-		attrs {
-			onChangeFunction = { onSelect(it.target as HTMLSelectElement) }
+	select {
+		className = largeInputStyle
+		onChange = { onSelect(it.target) }
 
-			handler()
-		}
+		handler()
 
 		contents()
 	}
