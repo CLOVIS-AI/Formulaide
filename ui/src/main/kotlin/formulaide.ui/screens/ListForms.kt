@@ -18,10 +18,8 @@ import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.html.js.onChangeFunction
-import org.w3c.dom.HTMLInputElement
 import react.*
-import react.dom.div
+import react.dom.html.ReactHTML.div
 
 private typealias RecordKey = Pair<Form, RecordState>
 
@@ -62,7 +60,7 @@ private fun CoroutineScope.getRecords(
 	.map { getRecords(client, form, it) }
 	.flatMap { it.value }
 
-val FormList = fc<Props>("FormList") {
+val FormList = FC<Props>("FormList") {
 	traceRenders("FormList")
 
 	val (client) = useClient("FormList client")
@@ -109,17 +107,14 @@ val FormList = fc<Props>("FormList") {
 		contents = {
 			if (user.role >= Role.EMPLOYEE) styledField("hide-disabled", "Formulaires archivés") {
 				styledCheckbox("hide-disabled", "Afficher les formulaires archivés") {
-					onChangeFunction =
-						{ showArchivedForms = (it.target as HTMLInputElement).checked }
+					onChange = { showArchivedForms = it.target.checked }
 				}
 			}
 
 			for (form in shownForms) {
-				child(FormDescription) {
-					attrs {
-						key = form.id
-						this.form = form
-					}
+				FormDescription {
+					key = form.id
+					this.form = form
 				}
 			}
 		}
@@ -131,7 +126,7 @@ internal external interface FormDescriptionProps : Props {
 	var form: Form
 }
 
-internal val FormDescription = memo(fc<FormDescriptionProps>("FormDescription") { props ->
+internal val FormDescription = memo(FC<FormDescriptionProps>("FormDescription") { props ->
 	val form = props.form
 	val user by useUser()
 
@@ -160,27 +155,21 @@ internal val FormDescription = memo(fc<FormDescriptionProps>("FormDescription") 
 		text("Dossiers :")
 
 		for (action in form.actions.sortedBy { it.order }) {
-			child(ActionDescription) {
-				attrs {
-					key = form.id + "-" + action.id
-					this.form = form
-					this.state = RecordState.Action(action.createRef())
-				}
+			ActionDescription {
+				key = form.id + "-" + action.id
+				this.form = form
+				this.state = RecordState.Action(action.createRef())
 			}
 		}
 
-		child(ActionDescription) {
-			attrs {
-				this.form = form
-				this.state = RecordState.Refused
-			}
+		ActionDescription {
+			this.form = form
+			this.state = RecordState.Refused
 		}
 
-		child(ActionDescription) {
-			attrs {
-				this.form = form
-				this.state = null
-			}
+		ActionDescription {
+			this.form = form
+			this.state = null
 		}
 	}
 
@@ -217,7 +206,7 @@ internal external interface ActionDescriptionProps : Props {
 	var state: RecordState?
 }
 
-internal val ActionDescription = fc<ActionDescriptionProps>("ActionDescription") { props ->
+internal val ActionDescription = FC<ActionDescriptionProps>("ActionDescription") { props ->
 	val form = props.form
 	val state = props.state
 

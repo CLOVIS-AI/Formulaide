@@ -1,10 +1,10 @@
 package formulaide.ui.components
 
 import formulaide.ui.traceRenders
-import kotlinx.html.DIV
-import react.RBuilder
-import react.dom.RDOMBuilder
-import react.dom.div
+import org.w3c.dom.HTMLDivElement
+import react.ChildrenBuilder
+import react.dom.html.HTMLAttributes
+import react.dom.html.ReactHTML.div
 
 private val colorPerDepth = listOf(
 	listOf("bg-blue-100", "bg-blue-200"),
@@ -20,13 +20,13 @@ private const val hover = "hover:shadow hover:mb-2"
 private const val layout = "relative"
 private const val nestingStyle = "$spacing $shape $hover $layout"
 
-fun RBuilder.styledNesting(
+fun ChildrenBuilder.styledNesting(
 	depth: Int? = null,
 	fieldNumber: Int? = null,
 	onDeletion: (suspend () -> Unit)? = null,
 	onMoveUp: (suspend () -> Unit)? = null,
 	onMoveDown: (suspend () -> Unit)? = null,
-	block: RDOMBuilder<DIV>.() -> Unit,
+	block: HTMLAttributes<HTMLDivElement>.() -> Unit,
 ) {
 	traceRenders("styledNesting … depth $depth, number $fieldNumber")
 	val selectedBackground = if (depth != null && fieldNumber != null) {
@@ -34,10 +34,14 @@ fun RBuilder.styledNesting(
 		backgroundColors[fieldNumber % backgroundColors.size]
 	} else ""
 
-	div("$nestingStyle $selectedBackground") {
+	div {
+		className = "$nestingStyle $selectedBackground"
+
 		block()
 
-		div("m-2 absolute top-0 right-0") {
+		div {
+			className = "m-2 absolute top-0 right-0"
+
 			if (onMoveUp != null)
 				styledButton("▲", action = onMoveUp)
 

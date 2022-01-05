@@ -13,24 +13,21 @@ import kotlinx.browser.window
 import org.w3c.dom.url.URL
 import org.w3c.files.Blob
 import org.w3c.files.BlobPropertyBag
+import react.ChildrenBuilder
 import react.FC
 import react.Props
-import react.RBuilder
-import react.dom.div
-import react.fc
+import react.dom.html.ReactHTML.div
 import kotlin.js.Date
 
-fun RBuilder.immutableFields(answers: ParsedSubmission) {
+fun ChildrenBuilder.immutableFields(answers: ParsedSubmission) {
 	for (answer in answers.fields) {
 		immutableField(answer)
 	}
 }
 
-private fun RBuilder.immutableField(answer: ParsedField<*>) {
-	child(ImmutableField) {
-		attrs {
-			this.answer = answer
-		}
+private fun ChildrenBuilder.immutableField(answer: ParsedField<*>) {
+	ImmutableField {
+		this.answer = answer
 	}
 }
 
@@ -40,7 +37,7 @@ private external interface ImmutableFieldProps : Props {
 
 private const val miniNesting = "px-4"
 
-private val ImmutableField: FC<ImmutableFieldProps> = fc("ImmutableField") { props ->
+private val ImmutableField: FC<ImmutableFieldProps> = FC("ImmutableField") { props ->
 	traceRenders(props.answer.toString())
 
 	val (client) = useClient()
@@ -81,7 +78,8 @@ private val ImmutableField: FC<ImmutableFieldProps> = fc("ImmutableField") { pro
 					text(answer.constraint.name + " : " + value.name)
 				} else {
 					text(answer.constraint.name)
-					div(miniNesting) {
+					div {
+						className = miniNesting
 						immutableField(answer.children.first())
 					}
 				}
@@ -96,7 +94,8 @@ private val ImmutableField: FC<ImmutableFieldProps> = fc("ImmutableField") { pro
 
 				text(compositeField.name)
 				for (child in answer.children) {
-					div(miniNesting) {
+					div {
+						className = miniNesting
 						immutableField(child)
 					}
 				}

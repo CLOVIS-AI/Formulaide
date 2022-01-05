@@ -20,14 +20,20 @@ import kotlinx.browser.document
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.html.InputType
-import kotlinx.html.js.onChangeFunction
-import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.url.URL
 import org.w3c.files.Blob
 import org.w3c.files.BlobPropertyBag
 import react.*
-import react.dom.*
+import react.dom.html.InputType
+import react.dom.html.ReactHTML.br
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.p
+import react.dom.html.ReactHTML.table
+import react.dom.html.ReactHTML.tbody
+import react.dom.html.ReactHTML.td
+import react.dom.html.ReactHTML.th
+import react.dom.html.ReactHTML.thead
+import react.dom.html.ReactHTML.tr
 import kotlin.js.Date
 
 internal fun RecordState?.displayName() = when (this) {
@@ -43,16 +49,14 @@ private data class ReviewSearch(
 )
 
 @Suppress("FunctionName")
-internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record>) = fc<Props>("Review") {
+internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record>) = FC<Props>("Review") {
 	traceRenders("Review ${form.name}")
 
 	val scope = useAsync()
 	val (client) = useClient()
 	require(client is Client.Authenticated) { "Seuls les employés peuvent accéder à cette page." }
 
-	val (records, updateRecords) = useState(initialRecords).asDelegated()
-		.useListEquality()
-		.useEquals()
+	val (records, updateRecords) = useState(initialRecords).asDelegated().useListEquality().useEquals()
 	val (searches, updateSearches) = useState(emptyList<ReviewSearch>()).asDelegated()
 	var loading by useState(false)
 
@@ -106,20 +110,22 @@ internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record
 	}
 
 	//region Full page
-	div("lg:grid lg:grid-cols-3 lg:gap-y-0") {
+	div {
 		traceRenders("Review … page")
+		className = "lg:grid lg:grid-cols-3 lg:gap-y-0"
+
 		//region Search bar
-		div("lg:order-2") {
+		div {
 			traceRenders("Review … search bar")
+			className = "lg:order-2"
+
 			styledCard(
 				state.displayName(),
 				form.name,
 				"Actualiser" to { refresh() },
 				"Exporter" to {
 					val file = client.downloadCsv(form, state, allCriteria)
-					val blob = Blob(arrayOf(file), BlobPropertyBag(
-						type = "text/csv"
-					))
+					val blob = Blob(arrayOf(file), BlobPropertyBag(type = "text/csv"))
 
 					document.createElement("a").run {
 						setAttribute("href", URL.createObjectURL(blob))
@@ -139,55 +145,63 @@ internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record
 				p { text("${records.size} dossiers sont chargés. Pour des raisons de performance, il n'est pas possible de charger plus de ${Record.MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION} dossiers à la fois.") }
 
 				div {
-					child(SearchInput) {
-						attrs {
-							this.form = form
-							this.formLoaded = formLoaded
-							this.addCriterion = { updateSearches { this + it } }
-						}
+					SearchInput {
+						this.form = form
+						this.formLoaded = formLoaded
+						this.addCriterion = { updateSearches { this + it } }
 					}
 				}
 
 				styledPillContainer {
-					for ((root, criteria) in allCriteria)
-						for (criterion in criteria)
-							child(CriterionPill) {
-								attrs {
-									this.root = root
-									this.fields = root?.fields ?: form.mainFields
-									this.criterion = criterion
-									this.onRemove = {
-										updateSearches {
-											reportExceptions {
-												val reviewSearch =
-													indexOfFirst { it.action == root && it.criterion == criterion }
-														.takeUnless { it == -1 }
-														?: error("Impossible de trouver le critère $criterion dans la racine $root, ce n'est pas possible !")
+					for ((root, criteria) in allCriteria) for (criterion in criteria) CriterionPill {
+						this.root = root
+						this.fields = root?.fields ?: form.mainFields
+						this.criterion = criterion
+						this.onRemove = {
+							updateSearches {
+								reportExceptions {
+									val reviewSearch =
+										indexOfFirst { it.action == root && it.criterion == criterion }.takeUnless { it == -1 }
+											?: error("Impossible de trouver le critère $criterion dans la racine $root, ce n'est pas possible !")
 
-												remove(reviewSearch)
-											}
-										}
-									}.memoIn(lambdas, "pill-$criterion", criterion, root, searches)
+									remove(reviewSearch)
 								}
 							}
+						}.memoIn(lambdas, "pill-$criterion", criterion, root, searches)
+					}
 				}
 			}
 		}
 		//endregion
 		//region Reviews
-		div("lg:col-span-2 lg:order-1 w-full overflow-x-auto") {
+		div {
 			traceRenders("Review … main contents")
-			table("table-auto w-full") {
+			className = "lg:col-span-2 lg:order-1 w-full overflow-x-auto"
+
+			table {
+				className = "table-auto w-full"
+
 				thead {
 					tr {
 						val thClasses = "first:pl-8 last:pr-8 py-2"
 
-						if (state == null)
-							th(classes = thClasses) { div("mx-4") { text("Étape") } }
+						if (state == null) th {
+							className = thClasses
+							div {
+								className = "mx-4"
+								text("Étape")
+							}
+						}
 
 						if (formLoaded) {
 							columnsToDisplay.forEach { (_, it) ->
-								th(classes = thClasses) { div("mx-4") { text(it.name) } }
+								th {
+									className = thClasses
+									div {
+										className = "mx-4"
+										text(it.name)
+									}
+								}
 							}
 						}
 					}
@@ -195,33 +209,32 @@ internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record
 
 				tbody {
 					for (record in records) {
-						child(ReviewRecord) {
-							attrs {
-								this.form = form
-								this.windowState = state
-								this.composites = composites
-								this.formLoaded = formLoaded
-								this.record = record
+						ReviewRecord {
+							this.form = form
+							this.windowState = state
+							this.composites = composites
+							this.formLoaded = formLoaded
+							this.record = record
 
-								this.refresh = memoizedRefresh
-								this.columnsToDisplay = columnsToDisplay
+							this.refresh = memoizedRefresh
+							this.columnsToDisplay = columnsToDisplay
 
-								this.collapsed = !(openedRecords[record] ?: true)
-								this.collapse =
-									{ it: Boolean -> setOpenedRecords { this + (record to !it) } }
-										.memoIn(lambdas, "record-${record.id}-collapse")
-								key = record.id
-							}
+							this.collapsed = !(openedRecords[record] ?: true)
+							this.collapse = { it: Boolean -> setOpenedRecords { this + (record to !it) } }.memoIn(
+								lambdas,
+								"record-${record.id}-collapse")
+							key = record.id
 						}
 					}
 					if (records.isEmpty()) {
 						td {
-							attrs {
-								colSpan = form.mainFields.asSequence().count().toString() +
-										(if (state == null) 1 else 0)
-							}
-							div("flex justify-center items-center w-full h-full") {
-								p("my-8") { text("Aucun résultat") }
+							colSpan = form.mainFields.asSequence().count() + (if (state == null) 1 else 0)
+							div {
+								className = "flex justify-center items-center w-full h-full"
+								p {
+									className = "my-8"
+									text("Aucun résultat")
+								}
 							}
 						}
 					}
@@ -240,11 +253,10 @@ private external interface SearchInputProps : Props {
 	var addCriterion: (ReviewSearch) -> Unit
 }
 
-private val SearchInput = memo(fc<SearchInputProps>("SearchInput") { props ->
+private val SearchInput = memo(FC<SearchInputProps>("SearchInput") { props ->
 	val form = props.form
 	var selectedRoot by useState<Action?>(null)
-	val (fields, updateFields) = useState(emptyList<FormField>())
-		.asDelegated()
+	val (fields, updateFields) = useState(emptyList<FormField>()).asDelegated()
 	var criterion by useState<SearchCriterion<*>?>(null)
 
 	val lambdas = useLambdas()
@@ -252,7 +264,7 @@ private val SearchInput = memo(fc<SearchInputProps>("SearchInput") { props ->
 	if (!props.formLoaded) {
 		text("Chargement du formulaire en cours…")
 		loadingSpinner()
-		return@fc
+		return@FC
 	}
 
 	styledField("search-field", "Rechercher dans :") {
@@ -275,46 +287,36 @@ private val SearchInput = memo(fc<SearchInputProps>("SearchInput") { props ->
 		//endregion
 		//region Select the current field
 		for (i in 0..fields.size) { // fields.size+1 loops on purpose
-			val allCandidates: List<FormField> =
-				if (i == 0)
-					if (selectedRoot == null) form.mainFields.fields
-					else selectedRoot!!.fields!!.fields
-				else when (val lastParent = fields[i - 1]) {
-					is FormField.Simple -> emptyList()
-					is FormField.Union<*> -> lastParent.options
-					is FormField.Composite -> lastParent.fields
-				}
+			val allCandidates: List<FormField> = if (i == 0) if (selectedRoot == null) form.mainFields.fields
+			else selectedRoot!!.fields!!.fields
+			else when (val lastParent = fields[i - 1]) {
+				is FormField.Simple -> emptyList()
+				is FormField.Union<*> -> lastParent.options
+				is FormField.Composite -> lastParent.fields
+			}
 
-			child(SearchInputSelect) {
-				attrs {
-					key = i.toString() // Safe, because the order cannot change
-					this.field = fields.getOrNull(i)
-					this.candidates = allCandidates
-					this.allowEmpty = i != 0
-					this.select = { it: FormField? ->
-						updateFields {
-							if (it != null)
-								subList(0, i) + it
-							else
-								subList(0, i)
-						}
-					}.memoIn(lambdas, "input-select-$i", i)
-				}
+			SearchInputSelect {
+				key = i.toString() // Safe, because the order cannot change
+				this.field = fields.getOrNull(i)
+				this.candidates = allCandidates
+				this.allowEmpty = i != 0
+				this.select = { it: FormField? ->
+					updateFields {
+						if (it != null) subList(0, i) + it
+						else subList(0, i)
+					}
+				}.memoIn(lambdas, "input-select-$i", i)
 			}
 		}
 		//endregion
 	}
 
 	val field = fields.lastOrNull()
-	if (field != null) styledField("search-criterion", "Critère :") {
-		//region Select the criterion type
-		child(SearchCriterionSelect) {
-			attrs {
-				this.fields = fields
-				this.select = { criterion = it }
-			}
-		}
-		//endregion
+	if (field != null) styledField("search-criterion", "Critère :") {        //region Select the criterion type
+		SearchCriterionSelect {
+			this.fields = fields
+			this.select = { criterion = it }
+		}        //endregion
 		//region Select the criterion data
 		if (criterion !is SearchCriterion.Exists && criterion != undefined) {
 			val inputType = when {
@@ -332,8 +334,8 @@ private val SearchInput = memo(fc<SearchInputProps>("SearchInput") { props ->
 					is SearchCriterion.OrderAfter -> c.min
 					else -> error("Aucune donnée connue pour le critère $c")
 				}
-				onChangeFunction = {
-					val target = it.target as HTMLInputElement
+				onChange = {
+					val target = it.target
 					val text = target.value
 					criterion = when (val c = criterion) {
 						is SearchCriterion.TextContains -> c.copy(text = text)
@@ -371,17 +373,15 @@ private external interface SearchInputSelectProps : Props {
 	var select: (FormField?) -> Unit
 }
 
-private val SearchInputSelect = memo(fc<SearchInputSelectProps>("SearchInputSelect") { props ->
+private val SearchInputSelect = memo(FC<SearchInputSelectProps>("SearchInputSelect") { props ->
 	val candidates = useMemo(props.candidates) {
 		props.candidates.filter { it !is FormField.Simple || (it.simple !is SimpleField.Message && it.simple !is SimpleField.Upload) }
 	}
 
-	fun reSelect() =
-		if (props.allowEmpty) null
-		else candidates.firstOrNull()
+	fun reSelect() = if (props.allowEmpty) null
+	else candidates.firstOrNull()
 
-	var selected by useState(
-		reSelect()
+	var selected by useState(reSelect()
 	)
 	useEffect(selected) { props.select(selected) }
 	useEffect(candidates) { selected = reSelect() }
@@ -412,7 +412,7 @@ private external interface SearchCriterionSelectProps : Props {
 	var select: (SearchCriterion<*>?) -> Unit
 }
 
-private val SearchCriterionSelect = fc<SearchCriterionSelectProps>("SearchCriterionSelect") { props ->
+private val SearchCriterionSelect = FC<SearchCriterionSelectProps>("SearchCriterionSelect") { props ->
 	val field = props.fields.lastOrNull()
 	val fieldKey = props.fields.joinToString(separator = ":") { it.id }
 
@@ -468,15 +468,14 @@ private external interface CriterionPillProps : Props {
 	var onRemove: () -> Unit
 }
 
-private val CriterionPill = memo(fc<CriterionPillProps>("CriterionPill") { props ->
+private val CriterionPill = memo(FC<CriterionPillProps>("CriterionPill") { props ->
 	var showFull by useState(false)
 
 	val fields = useMemo(props.fields, props.criterion.fieldKey) {
 		val fieldKeys = props.criterion.fieldKey.split(":")
 		val fields = ArrayList<FormField>(fieldKeys.size)
 
-		fields.add(props.fields.fields.find { it.id == fieldKeys[0] }
-			           ?: error("Aucun champ n'a l'ID ${fieldKeys[0]}"))
+		fields.add(props.fields.fields.find { it.id == fieldKeys[0] } ?: error("Aucun champ n'a l'ID ${fieldKeys[0]}"))
 
 		for ((i, key) in fieldKeys.withIndex().drop(1)) {
 			fields.add(when (val current = fields[i - 1]) {
@@ -546,7 +545,7 @@ private enum class ReviewDecision {
 	REFUSE,
 }
 
-private val ReviewRecord = memo(fc<ReviewRecordProps>("ReviewRecord") { props ->
+private val ReviewRecord = memo(FC<ReviewRecordProps>("ReviewRecord") { props ->
 	traceRenders("ReviewRecord ${props.record.id}")
 	val form = props.form
 	val record = props.record
@@ -607,7 +606,7 @@ private val ReviewRecord = memo(fc<ReviewRecordProps>("ReviewRecord") { props ->
 	if (user == null) {
 		traceRenders("ReviewRecord … cancelled")
 		styledCard("Dossier", loading = true) { text("Chargement de l'utilisateur…") }
-		return@fc
+		return@FC
 	}
 
 	var reason by useState<String>()
@@ -615,35 +614,31 @@ private val ReviewRecord = memo(fc<ReviewRecordProps>("ReviewRecord") { props ->
 	val collapsed = props.collapsed
 
 	if (collapsed) tr {
-		child(ReviewRecordCollapsed) {
-			attrs {
-				this.collapse = props.collapse
-				this.history = history
-				this.state = state
-				this.windowState = props.windowState
-				this.columnsToDisplay = props.columnsToDisplay
-			}
+		ReviewRecordCollapsed {
+			this.collapse = props.collapse
+			this.history = history
+			this.state = state
+			this.windowState = props.windowState
+			this.columnsToDisplay = props.columnsToDisplay
 		}
 	} else tr {
-		child(ReviewRecordExpanded) {
-			attrs {
-				this.form = form
-				this.formLoaded = props.formLoaded
-				this.composites = props.composites
-				this.windowState = props.windowState
-				this.state = state
-				this.record = props.record
-				this.refresh = props.refresh
-				this.collapse = props.collapse
-				this.history = history
-				this.showFullHistory = showFullHistory
-				this.updateShowFullHistory = { showFullHistory = it }
-				this.nextAction = nextAction
-				this.selectedDestination = selectedDestination
-				this.updateDestination = updateDestination
-				this.reason = reason
-				this.updateReason = { reason = it }
-			}
+		ReviewRecordExpanded {
+			this.form = form
+			this.formLoaded = props.formLoaded
+			this.composites = props.composites
+			this.windowState = props.windowState
+			this.state = state
+			this.record = props.record
+			this.refresh = props.refresh
+			this.collapse = props.collapse
+			this.history = history
+			this.showFullHistory = showFullHistory
+			this.updateShowFullHistory = { showFullHistory = it }
+			this.nextAction = nextAction
+			this.selectedDestination = selectedDestination
+			this.updateDestination = updateDestination
+			this.reason = reason
+			this.updateReason = { reason = it }
 		}
 	}
 
@@ -660,13 +655,16 @@ private external interface ReviewRecordCollapsedProps : Props {
 	var collapse: (Boolean) -> Unit
 }
 
-private val ReviewRecordCollapsed = fc<ReviewRecordCollapsedProps>("ReviewRecordCollapsed") { props ->
+private val ReviewRecordCollapsed = FC<ReviewRecordCollapsedProps>("ReviewRecordCollapsed") { props ->
 	traceRenders("ReviewRecordCollapsed")
 	val tdClasses = "first:pl-8 last:pr-8 py-2"
 	val tdDivClasses = "mx-4"
 
-	if (props.windowState == null) td(tdClasses) {
-		div(tdDivClasses) {
+	if (props.windowState == null) td {
+		className = tdClasses
+
+		div {
+			className = tdDivClasses
 			text(props.state.displayName())
 		}
 	}
@@ -685,8 +683,11 @@ private val ReviewRecordCollapsed = fc<ReviewRecordCollapsedProps>("ReviewRecord
 			.flatMap { parsedAsSequence(it) }
 			.firstOrNull { it.fullKeyString == key }
 
-		td(tdClasses) {
-			div(tdDivClasses) {
+		td {
+			className = tdClasses
+			div {
+				className = tdDivClasses
+
 				if (parsedField is ParsedList<*>) {
 					text(parsedField.children.mapNotNull { it.rawValue }
 						     .joinToString(separator = ", "))
@@ -726,7 +727,7 @@ private external interface ReviewRecordExpandedProps : Props {
 	var updateReason: (String?) -> Unit
 }
 
-private val ReviewRecordExpanded = fc<ReviewRecordExpandedProps>("ReviewRecordExpanded") { props ->
+private val ReviewRecordExpanded = FC<ReviewRecordExpandedProps>("ReviewRecordExpanded") { props ->
 	traceRenders("ReviewRecordExpanded")
 
 	val state = props.state
@@ -755,10 +756,8 @@ private val ReviewRecordExpanded = fc<ReviewRecordExpandedProps>("ReviewRecordEx
 	}
 
 	td {
-		attrs {
-			colSpan = props.form.mainFields.asSequence().count().toString() +
-					(if (props.windowState == null) 1 else 0)
-		}
+		colSpan = props.form.mainFields.asSequence().count() +
+				(if (props.windowState == null) 1 else 0)
 
 		if (props.windowState != null) styledFormCard(
 			"Dossier",
@@ -788,17 +787,15 @@ private val ReviewRecordExpanded = fc<ReviewRecordExpandedProps>("ReviewRecordEx
 			}
 		) {
 			traceRenders("ReviewRecordExpanded … card with decisions")
-			child(ReviewRecordContents) {
-				attrs {
-					this.form = props.form
-					this.record = props.record
-					this.state = state
-					this.formLoaded = props.formLoaded
-					this.showFullHistory = props.showFullHistory
-					this.history = props.history
-					this.composites = props.composites
-					this.windowState = props.windowState
-				}
+			ReviewRecordContents {
+				this.form = props.form
+				this.record = props.record
+				this.state = state
+				this.formLoaded = props.formLoaded
+				this.showFullHistory = props.showFullHistory
+				this.history = props.history
+				this.composites = props.composites
+				this.windowState = props.windowState
 			}
 
 			traceRenders("ReviewRecordExpanded … decision area")
@@ -811,7 +808,8 @@ private val ReviewRecordExpanded = fc<ReviewRecordExpandedProps>("ReviewRecordEx
 				else -> ReviewDecision.PREVIOUS
 			}
 
-			div("mt-4") {
+			div {
+				className = "mt-4"
 				text("Votre décision :")
 
 				traceRenders("ReviewRecordExpanded … Previous action")
@@ -865,8 +863,8 @@ private val ReviewRecordExpanded = fc<ReviewRecordExpandedProps>("ReviewRecordEx
 					            "record-${props.record.id}-reason",
 					            required = decision == ReviewDecision.REFUSE) {
 						value = props.reason ?: ""
-						onChangeFunction = {
-							props.updateReason((it.target as HTMLInputElement).value)
+						onChange = {
+							props.updateReason(it.target.value)
 						}
 					}
 				}
@@ -877,17 +875,15 @@ private val ReviewRecordExpanded = fc<ReviewRecordExpandedProps>("ReviewRecordEx
 			"Réduire" to { props.collapse(true) },
 		) {
 			traceRenders("ReviewRecordExpanded … card without decisions")
-			child(ReviewRecordContents) {
-				attrs {
-					this.form = props.form
-					this.record = props.record
-					this.state = state
-					this.formLoaded = props.formLoaded
-					this.showFullHistory = props.showFullHistory
-					this.history = props.history
-					this.composites = props.composites
-					this.windowState = props.windowState
-				}
+			ReviewRecordContents {
+				this.form = props.form
+				this.record = props.record
+				this.state = state
+				this.formLoaded = props.formLoaded
+				this.showFullHistory = props.showFullHistory
+				this.history = props.history
+				this.composites = props.composites
+				this.windowState = props.windowState
 			}
 		}
 	}
@@ -910,7 +906,7 @@ private external interface ReviewRecordContentsProps : Props {
 	var composites: List<Composite>
 }
 
-private val ReviewRecordContents = fc<ReviewRecordContentsProps>("ReviewRecordContents") { props ->
+private val ReviewRecordContents = FC<ReviewRecordContentsProps>("ReviewRecordContents") { props ->
 	traceRenders("ReviewRecordCard")
 	var i = 0
 
@@ -933,13 +929,13 @@ private val ReviewRecordContents = fc<ReviewRecordContentsProps>("ReviewRecordCo
 		traceRenders("ReviewRecordCard … cancelled because the form is not loaded")
 		text("Chargement du formulaide…")
 		loadingSpinner()
-		return@fc
+		return@FC
 	}
 	if (!loaded) {
 		traceRenders("ReviewRecordCard … cancelled because the action fields are not loaded")
 		text("Chargement des champs…")
 		loadingSpinner()
-		return@fc
+		return@FC
 	}
 
 	for (parsed in props.history) {

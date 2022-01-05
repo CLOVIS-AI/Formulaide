@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 import react.*
 
 private val errors = GlobalState(listOf<Throwable>())
-fun RBuilder.useErrors(): List<Throwable> {
+fun ChildrenBuilder.useErrors(): List<Throwable> {
 	val (local, _) = useGlobalState(errors)
 
 	return local
@@ -27,7 +27,7 @@ external interface ErrorProps : Props {
 	var error: Throwable
 }
 
-val ErrorCard = fc<ErrorProps>("ErrorCard") { props ->
+val ErrorCard = FC<ErrorProps>("ErrorCard") { props ->
 	traceRenders("ErrorCard")
 
 	var errors by useGlobalState(errors)

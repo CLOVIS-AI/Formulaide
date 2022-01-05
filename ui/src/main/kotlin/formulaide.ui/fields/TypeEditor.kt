@@ -12,13 +12,10 @@ import formulaide.ui.components.styledSelect
 import formulaide.ui.fields.SimpleFieldEnum.Companion.asEnum
 import formulaide.ui.useComposites
 import formulaide.ui.utils.text
-import kotlinx.html.id
-import react.child
-import react.dom.attrs
-import react.dom.option
-import react.fc
+import react.FC
+import react.dom.html.ReactHTML.option
 
-val TypeEditor = fc<EditableFieldProps>("TypeEditor") { props ->
+val TypeEditor = FC<EditableFieldProps>("TypeEditor") { props ->
 	val composites by useComposites()
 
 	val field = props.field
@@ -32,27 +29,17 @@ val TypeEditor = fc<EditableFieldProps>("TypeEditor") { props ->
 			styledSelect(
 				onSelect = { onSelect(it.value, field, props, composites) }
 			) {
-				child(SimpleOptions) {
-					attrs { inheritFrom(props) }
-				}
+				SimpleOptions { +props }
 
-				child(UnionOptions) {
-					attrs { inheritFrom(props) }
-				}
+				UnionOptions { +props }
 
-				child(CompositeOptions) {
-					attrs { inheritFrom(props) }
-				}
+				CompositeOptions { +props }
 
 				// Select itself
-				child(RecursiveCompositeOptions) {
-					attrs { inheritFrom(props) }
-				}
+				RecursiveCompositeOptions { +props }
 
-				attrs {
-					id = typeId
-					required = true
-				}
+				id = typeId
+				required = true
 			}
 		}
 	} else {
@@ -146,59 +133,50 @@ private enum class SimpleFieldEnum(val displayName: String, val build: (Arity) -
 	}
 }
 
-private val SimpleOptions = fc<EditableFieldProps>("SimpleOptions") { props ->
+private val SimpleOptions = FC<EditableFieldProps>("SimpleOptions") { props ->
 	val field = props.field
 
-	val current = ((field as? DataField.Simple)?.simple
-		?: (field as? ShallowFormField.Simple)?.simple)
-		?.asEnum()
+	val current = ((field as? DataField.Simple)?.simple ?: (field as? ShallowFormField.Simple)?.simple)?.asEnum()
 
 	for (simple in SimpleFieldEnum.values()) {
 		option {
 			text(simple.displayName)
-			attrs {
-				value = "simple:$simple"
+			value = "simple:$simple"
 
-				selected = simple == current
-			}
+			selected = simple == current
 		}
 	}
 }
 
-private val UnionOptions = fc<EditableFieldProps>("UnionOptions") { props ->
+private val UnionOptions = FC<EditableFieldProps>("UnionOptions") { props ->
 	val field = props.field
 
 	option {
 		text("Choix")
-		attrs {
-			value = "union"
+		value = "union"
 
-			selected = field is Field.Union<*>
-		}
+		selected = field is Field.Union<*>
 	}
 }
 
-private val CompositeOptions = fc<EditableFieldProps>("CompositeOptions") { props ->
+private val CompositeOptions = FC<EditableFieldProps>("CompositeOptions") { props ->
 	val composites by useComposites()
 
 	val field = props.field
 
-	val current = (field as? DataField.Composite)?.ref
-		?: (field as? ShallowFormField.Composite)?.ref
+	val current = (field as? DataField.Composite)?.ref ?: (field as? ShallowFormField.Composite)?.ref
 
 	for (composite in composites) {
 		option {
 			text(composite.name)
-			attrs {
-				value = "composite:${composite.id}"
+			value = "composite:${composite.id}"
 
-				selected = current?.id == composite.id
-			}
+			selected = current?.id == composite.id
 		}
 	}
 }
 
-private val RecursiveCompositeOptions = fc<EditableFieldProps>("RecursiveCompositeOptions") { props ->
+private val RecursiveCompositeOptions = FC<EditableFieldProps>("RecursiveCompositeOptions") { props ->
 	val field = props.field
 
 	// Only data can be recursive, forms cannot
@@ -209,11 +187,9 @@ private val RecursiveCompositeOptions = fc<EditableFieldProps>("RecursiveComposi
 
 		option {
 			text("La donnée qui est en train de se faire créer")
-			attrs {
-				value = "composite:$SPECIAL_TOKEN_RECURSION"
+			value = "composite:$SPECIAL_TOKEN_RECURSION"
 
-				selected = current?.id == SPECIAL_TOKEN_RECURSION
-			}
+			selected = current?.id == SPECIAL_TOKEN_RECURSION
 		}
 	}
 }

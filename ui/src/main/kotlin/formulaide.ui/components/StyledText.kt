@@ -1,25 +1,36 @@
 package formulaide.ui.components
 
 import formulaide.ui.utils.text
-import react.RBuilder
-import react.dom.h2
-import react.dom.span
+import react.ChildrenBuilder
+import react.dom.html.ReactHTML.h2
+import react.dom.html.ReactHTML.span
 
-fun RBuilder.styledTitle(text: String, loading: Boolean = false) {
-	h2("text-xl") {
+fun ChildrenBuilder.styledTitle(text: String, loading: Boolean = false) {
+	h2 {
+		className = "text-xl"
+
 		text(text)
 		if (loading) loadingSpinner()
 	}
 }
 
-fun RBuilder.styledLightText(text: String) {
-	span("text-gray-600") { text(text) }
+fun ChildrenBuilder.styledLightText(text: String) {
+	span {
+		className = "text-gray-600"
+		text(text)
+	}
 }
 
-fun RBuilder.styledErrorText(text: String) {
-	span("text-red-600") { text(text) }
+fun ChildrenBuilder.styledErrorText(text: String) {
+	span {
+		className = "text-red-600"
+		text(text)
+	}
 }
 
-fun RBuilder.styledFooterText(text: String) {
-	span("text-sm text-gray-600 mx-4") { text(text) }
+fun ChildrenBuilder.styledFooterText(text: String) {
+	span {
+		className = "text-sm text-gray-600 mx-4"
+		text(text)
+	}
 }

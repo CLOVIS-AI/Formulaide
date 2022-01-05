@@ -11,23 +11,22 @@ import formulaide.ui.useClient
 import formulaide.ui.useServices
 import formulaide.ui.utils.map
 import formulaide.ui.utils.text
-import kotlinx.html.InputType
-import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
+import react.FC
 import react.Props
-import react.dom.div
-import react.fc
+import react.dom.html.InputType
+import react.dom.html.ReactHTML.div
 import react.useRef
 import react.useState
 
-val ServiceList = fc<Props>("ServiceList") {
+val ServiceList = FC<Props>("ServiceList") {
 	traceRenders("ServiceList")
 
 	val (client) = useClient()
 	if (client !is Client.Authenticated) {
 		styledCard("Liste des services",
 		           failed = true) { text("Seul un employé peut modifier les services") }
-		return@fc
+		return@FC
 	}
 
 	val services by useServices()
@@ -41,7 +40,7 @@ val ServiceList = fc<Props>("ServiceList") {
 
 		styledField("hide-disabled", "Services désactivés") {
 			styledCheckbox("hide-disabled", "Afficher les services désactivés") {
-				onChangeFunction = { listClosedServices = (it.target as HTMLInputElement).checked }
+				onChange = { listClosedServices = it.target.checked }
 			}
 		}
 

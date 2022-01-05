@@ -23,14 +23,15 @@ import formulaide.ui.utils.remove
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.switchOrder
 import formulaide.ui.utils.text
-import kotlinx.html.InputType
-import kotlinx.html.js.onChangeFunction
-import org.w3c.dom.HTMLInputElement
-import org.w3c.dom.HTMLSelectElement
 import react.*
-import react.dom.*
+import react.dom.html.InputType
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.li
+import react.dom.html.ReactHTML.option
+import react.dom.html.ReactHTML.p
+import react.dom.html.ReactHTML.ul
 
-fun CreateForm(original: Form?, copy: Boolean) = fc<Props>("CreateForm") {
+fun CreateForm(original: Form?, copy: Boolean) = FC<Props>("CreateForm") {
 	traceRenders("CreateForm")
 
 	val (client) = useClient()
@@ -85,7 +86,7 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props>("CreateForm") {
 	if (!formLoaded) {
 		text("Chargement des champs…")
 		loadingSpinner()
-		return@fc
+		return@FC
 	}
 
 	val (title, buttonName) =
@@ -141,8 +142,14 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props>("CreateForm") {
 			styledErrorText(" Il est possible que le système refuse certaines modifications. Il est possible que le système autorise des modifications qui amènent à l'inaccessibilité de certaines données.")
 			text(" Aucune garantie n'est donnée pour les modifications non listées ci-dessous.")
 
-			p("pt-2") { text("Modifications qui ne peuvent pas causer de problèmes :") }
-			ul("list-disc") {
+			p {
+				className = "pt-2"
+
+				text("Modifications qui ne peuvent pas causer de problèmes :")
+			}
+			ul {
+				className = "list-disc"
+
 				li { text("Renommer le formulaire") }
 				li { text("Renommer un champ ou une étape") }
 				li { text("Modifier l'ordre de plusieurs champs") }
@@ -151,15 +158,27 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props>("CreateForm") {
 				li { text("Créer un champ facultatif (si aucun champ n'a été supprimé)") }
 			}
 
-			p("pt-2") { text("Modifications qui peuvent être refusées :") }
-			ul("list-disc") {
+			p {
+				className = "pt-2"
+
+				text("Modifications qui peuvent être refusées :")
+			}
+			ul {
+				className = "list-disc"
+
 				li { text("Modifier les restrictions des champs (obligatoire, facultatif, longueur maximale…)") }
 				li { text("Modifier le type d'un champ (dans certains cas, il n'est pas possible d'annuler la modification)") }
 				li { text("Créer un champ facultatif (si un champ avait été supprimé précédemment)") }
 			}
 
-			p("pt-2") { text("Modifications qui peuvent amener à une perte de données :") }
-			ul("list-disc pb-4") {
+			p {
+				className = "pt-2"
+
+				text("Modifications qui peuvent amener à une perte de données :")
+			}
+			ul {
+				className = "list-disc pb-4"
+
 				li { text("Modifier le type d'un champ") }
 				li { text("Supprimer un champ") }
 			}
@@ -169,8 +188,8 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props>("CreateForm") {
 			styledInput(InputType.text, "new-form-name", required = true) {
 				autoFocus = true
 				value = formName
-				onChangeFunction = {
-					formName = (it.target as HTMLInputElement).value
+				onChange = {
+					formName = it.target.value
 				}
 			}
 		}
@@ -178,8 +197,8 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props>("CreateForm") {
 		styledField("new-form-visibility", "Est-il public ?") {
 			styledCheckbox("new-form-visilibity", "Ce formulaire est visible par les administrés") {
 				checked = public
-				onChangeFunction = {
-					public = (it.target as HTMLInputElement).checked
+				onChange = {
+					public = it.target.checked
 				}
 			}
 		}
@@ -187,24 +206,25 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props>("CreateForm") {
 		traceRenders("CreateForm Fields")
 		styledField("new-form-fields", "Champs") {
 			for ((i, field) in fields.withIndex()) {
-				child(FieldEditor) {
-					attrs {
-						this.field = field
-						key = field.id
-						uniqueId = "initial:${field.id}"
-						this.replace = { it: Field ->
-							updateFields { replace(i, it as ShallowFormField) }
-						}.memoIn(lambdas, "replace-${field.id}", i)
-						this.remove = {
-							updateFields { remove(i) }
-						}.memoIn(lambdas, "remove-${field.id}", i)
-						switch = { direction: SwitchDirection ->
-							updateFields { switchOrder(i, direction) }
-						}.memoIn(lambdas, "switch-${field.id}", i)
+				FieldEditor {
+					this.field = field
+					key = field.id
+					uniqueId = "initial:${field.id}"
 
-						depth = 0
-						fieldNumber = i
-					}
+					replace = { it: Field ->
+						updateFields { replace(i, it as ShallowFormField) }
+					}.memoIn(lambdas, "replace-${field.id}", i)
+
+					this.remove = {
+						updateFields { remove(i) }
+					}.memoIn(lambdas, "remove-${field.id}", i)
+
+					switch = { direction: SwitchDirection ->
+						updateFields { switchOrder(i, direction) }
+					}.memoIn(lambdas, "switch-${field.id}", i)
+
+					depth = 0
+					fieldNumber = i
 				}
 			}
 
@@ -224,9 +244,8 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props>("CreateForm") {
 		styledField("new-form-actions", "Étapes") {
 			for ((i, action) in actions.sortedBy { it.order }.withIndex()) {
 				div {
-					attrs {
-						key = action.id
-					}
+					key = action.id
+
 					styledNesting(
 						depth = 0, fieldNumber = i,
 						onDeletion = { updateActions { remove(i) } },
@@ -239,14 +258,12 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props>("CreateForm") {
 							                        updateActions { replace(i, it) }
 						                        })
 
-						child(ActionFields) {
-							attrs {
+						ActionFields {
 								this.action = action
 								this.replace = { newAction: Action ->
 									updateActions { replace(i, newAction) }
 								}.memoIn(lambdas, "action-${action.id}-fields", i)
 								this.maxFieldId = maxActionFieldId
-							}
 						}
 					}
 				}
@@ -270,22 +287,22 @@ fun CreateForm(original: Form?, copy: Boolean) = fc<Props>("CreateForm") {
 	traceRenders("CreateForm … done")
 }
 
-private fun RBuilder.actionName(
+private fun ChildrenBuilder.actionName(
 	action: Action,
 	replace: (Action) -> Unit,
 ) {
 	styledField("new-form-action-${action.id}-name", "Nom de l'étape") {
 		styledInput(InputType.text, "new-form-action-${action.id}-name", required = true) {
 			value = action.name
-			onChangeFunction = { event ->
-				val target = event.target as HTMLInputElement
+			onChange = { event ->
+				val target = event.target
 				replace(action.copy(name = target.value))
 			}
 		}
 	}
 }
 
-private fun RBuilder.actionReviewerSelection(
+private fun ChildrenBuilder.actionReviewerSelection(
 	action: Action,
 	services: List<Service>,
 	replace: (Action) -> Unit,
@@ -297,21 +314,17 @@ private fun RBuilder.actionReviewerSelection(
 				option {
 					text(service.name)
 
-					attrs {
-						value = service.id
-						selected = action.reviewer.id == service.id
-					}
+					value = service.id
+					selected = action.reviewer.id == service.id
 				}
 			}
 
-			attrs {
-				onChangeFunction = { event ->
-					val serviceId = (event.target as HTMLSelectElement).value
-					val service = services.find { it.id == serviceId }
-						?: error("Impossible de trouver le service '$serviceId'")
+			onChange = { event ->
+				val serviceId = event.target.value
+				val service = services.find { it.id == serviceId }
+					?: error("Impossible de trouver le service '$serviceId'")
 
-					replace(action.copy(reviewer = service.createRef()))
-				}
+				replace(action.copy(reviewer = service.createRef()))
 			}
 		}
 	}
@@ -323,7 +336,7 @@ private external interface ActionFieldProps : Props {
 	var maxFieldId: Int
 }
 
-private val ActionFields = memo(fc<ActionFieldProps>("ActionFields") { props ->
+private val ActionFields = memo(FC<ActionFieldProps>("ActionFields") { props ->
 	traceRenders("ActionFields")
 
 	val action = props.action
@@ -335,27 +348,28 @@ private val ActionFields = memo(fc<ActionFieldProps>("ActionFields") { props ->
 
 	styledField("new-form-action-${action.id}-fields", "Champs réservés à l'administration") {
 		for ((i, field) in root.fields.withIndex()) {
-			child(FieldEditor) {
-				attrs {
-					this.field = field
-					key = field.id
-					uniqueId = "action-${action.id}:${field.id}"
-					this.replace = { it: Field ->
-						val newFields = root.fields.replace(i, it as ShallowFormField)
-						replace(action.copy(fields = FormRoot(newFields)))
-					}.memoIn(lambdas, "action-fields-replace-${field.id}", i, root)
-					this.remove = {
-						val newFields = root.fields.remove(i)
-						replace(action.copy(fields = FormRoot(newFields)))
-					}.memoIn(lambdas, "action-fields-remove-${field.id}", i, root)
-					this.switch = { direction: SwitchDirection ->
-						val newFields = root.fields.switchOrder(i, direction)
-						replace(action.copy(fields = FormRoot(newFields)))
-					}.memoIn(lambdas, "action-fields-switch-${field.id}", i, root)
+			FieldEditor {
+				this.field = field
+				key = field.id
+				uniqueId = "action-${action.id}:${field.id}"
 
-					depth = 1
-					fieldNumber = i
-				}
+				this.replace = { it: Field ->
+					val newFields = root.fields.replace(i, it as ShallowFormField)
+					replace(action.copy(fields = FormRoot(newFields)))
+				}.memoIn(lambdas, "action-fields-replace-${field.id}", i, root)
+
+				this.remove = {
+					val newFields = root.fields.remove(i)
+					replace(action.copy(fields = FormRoot(newFields)))
+				}.memoIn(lambdas, "action-fields-remove-${field.id}", i, root)
+
+				this.switch = { direction: SwitchDirection ->
+					val newFields = root.fields.switchOrder(i, direction)
+					replace(action.copy(fields = FormRoot(newFields)))
+				}.memoIn(lambdas, "action-fields-switch-${field.id}", i, root)
+
+				depth = 1
+				fieldNumber = i
 			}
 		}
 

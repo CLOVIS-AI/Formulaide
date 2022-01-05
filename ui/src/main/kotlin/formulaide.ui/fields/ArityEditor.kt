@@ -10,14 +10,12 @@ import formulaide.ui.components.styledDisabledButton
 import formulaide.ui.components.styledSmallInput
 import formulaide.ui.useComposites
 import formulaide.ui.utils.text
-import kotlinx.html.InputType
-import kotlinx.html.js.onChangeFunction
-import org.w3c.dom.HTMLInputElement
-import react.fc
+import react.FC
+import react.dom.html.InputType
 import kotlin.math.max
 import kotlin.math.min
 
-val ArityEditor = fc<EditableFieldProps>("ArityEditor") { props ->
+val ArityEditor = FC<EditableFieldProps>("ArityEditor") { props ->
 	val field = props.field
 	val arity = field.arity
 
@@ -71,10 +69,10 @@ val ArityEditor = fc<EditableFieldProps>("ArityEditor") { props ->
 				                 "item-arity-min-${props.uniqueId}",
 				                 required = true) {
 					value = arity.min.toString()
-					min = minAllowedRange.first.toString()
-					max = min(arity.max, minAllowedRange.last).toString()
-					onChangeFunction = {
-						val value = (it.target as HTMLInputElement).value.toInt()
+					min = minAllowedRange.first.toDouble()
+					max = min(arity.max, minAllowedRange.last).toDouble()
+					onChange = {
+						val value = it.target.value.toInt()
 						props.replace(
 							props.field.requestCopy(arity = Arity(value, arity.max))
 						)
@@ -88,10 +86,10 @@ val ArityEditor = fc<EditableFieldProps>("ArityEditor") { props ->
 			                 "item-arity-min-${props.uniqueId}",
 			                 required = true) {
 				value = arity.max.toString()
-				min = max(arity.min, max(maxAllowedRange.first, 2)).toString()
-				max = maxAllowedRange.last.toString()
-				onChangeFunction = {
-					val value = (it.target as HTMLInputElement).value.toInt()
+				min = max(arity.min, max(maxAllowedRange.first, 2)).toDouble()
+				max = maxAllowedRange.last.toDouble()
+				onChange = {
+					val value = it.target.value.toInt()
 					updateSubFieldsOnMaxArityChange(props, Arity(arity.min, value), composites)
 				}
 			}

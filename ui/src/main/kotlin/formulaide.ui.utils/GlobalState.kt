@@ -1,7 +1,7 @@
 package formulaide.ui.utils
 
 import formulaide.ui.utils.DelegatedProperty.Companion.DelegatedProperty
-import react.RBuilder
+import react.ChildrenBuilder
 import react.useEffectOnce
 import react.useState
 
@@ -30,8 +30,8 @@ class GlobalState<T>(initialValue: T) {
  *
  * This hook can be used with the same syntax as [useState], and will handle all the machinery for the component to be updated at the right time.
  */
-@Suppress("unused") // RBuilder for type safety
-fun <T> RBuilder.useGlobalState(
+@Suppress("unused") // ChildrenBuilder for type safety
+fun <T> ChildrenBuilder.useGlobalState(
 	globalState: GlobalState<T>,
 	interceptor: WriteDelegatedProperty<T>? = null,
 	name: String? = null,

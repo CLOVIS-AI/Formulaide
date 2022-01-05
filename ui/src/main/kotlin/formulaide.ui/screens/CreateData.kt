@@ -16,12 +16,10 @@ import formulaide.ui.utils.remove
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.switchOrder
 import formulaide.ui.utils.text
-import kotlinx.html.InputType
-import kotlinx.html.js.onChangeFunction
-import org.w3c.dom.HTMLInputElement
 import react.*
+import react.dom.html.InputType
 
-fun CreateData(original: Composite? = null) = fc<Props>("CreateData") {
+fun CreateData(original: Composite? = null) = FC<Props>("CreateData") {
 	traceRenders("CreateData")
 
 	val (client) = useClient()
@@ -29,7 +27,7 @@ fun CreateData(original: Composite? = null) = fc<Props>("CreateData") {
 		styledCard("Créer un groupe", failed = true) {
 			text("Seuls les administrateurs peuvent créer un groupe.")
 		}
-		return@fc
+		return@FC
 	}
 
 	var formName by useLocalStorage("data-name", "")
@@ -72,32 +70,33 @@ fun CreateData(original: Composite? = null) = fc<Props>("CreateData") {
 			styledInput(InputType.text, "new-data-name", required = true) {
 				autoFocus = true
 				value = formName
-				onChangeFunction = {
-					formName = (it.target as HTMLInputElement).value
+				onChange = {
+					formName = it.target.value
 				}
 			}
 		}
 
 		styledField("data-fields", "Champs") {
 			for ((i, field) in fields.withIndex()) {
-				child(FieldEditor) {
-					attrs {
-						this.field = field
-						key = field.id
-						uniqueId = "field:${field.id}"
-						replace = { it: Field ->
-							updateFields { replace(i, it as DataField) }
-						}.memoIn(lambdas, "replace-${field.id}", i)
-						remove = {
-							updateFields { remove(i) }
-						}.memoIn(lambdas, "remove-${field.id}", i)
-						switch = { direction: SwitchDirection ->
-							updateFields { switchOrder(i, direction) }
-						}.memoIn(lambdas, "switch-${field.id}", i)
+				FieldEditor {
+					this.field = field
+					key = field.id
+					uniqueId = "field:${field.id}"
 
-						depth = 0
-						fieldNumber = i
-					}
+					replace = { it: Field ->
+						updateFields { replace(i, it as DataField) }
+					}.memoIn(lambdas, "replace-${field.id}", i)
+
+					remove = {
+						updateFields { remove(i) }
+					}.memoIn(lambdas, "remove-${field.id}", i)
+
+					switch = { direction: SwitchDirection ->
+						updateFields { switchOrder(i, direction) }
+					}.memoIn(lambdas, "switch-${field.id}", i)
+
+					depth = 0
+					fieldNumber = i
 				}
 			}
 
