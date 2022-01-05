@@ -86,9 +86,8 @@ fun Routing.userRoutes(auth: Auth) {
 					else database.findUser(data.user.email)
 						?: error("Aucun utilisateur ne correspond à l'adresse mail ${data.user.email}")
 
-				if (data.oldPassword != null) {
-					val oldPassword = data.oldPassword!!
-
+				val oldPassword = data.oldPassword
+				if (!oldPassword.isNullOrBlank()) {
 					try {
 						auth.login(PasswordLogin(email = user.email, password = oldPassword))
 					} catch (e: Exception) {
