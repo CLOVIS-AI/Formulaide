@@ -60,33 +60,32 @@ val UserList = FC<Props>("UserList") {
 				div { // buttons
 
 					if (user != me) {
-						styledButton(
-							if (user.enabled) "Désactiver" else "Activer",
-							default = false,
+						StyledButton {
+							text = if (user.enabled) "Désactiver" else "Activer"
 							action = {
 								editUser(user, client, enabled = !user.enabled) {
 									users = users.replace(i, it)
 								}
 							}
-						)
+						}
 
-						styledButton(
-							if (user.administrator) "Enlever le droit d'administration" else "Donner le droit d'administration",
-							default = false,
+						StyledButton {
+							text =
+								if (user.administrator) "Enlever le droit d'administration" else "Donner le droit d'administration"
 							action = {
 								editUser(user, client, administrator = !user.administrator) {
 									users = users.replace(i, it)
 								}
 							}
-						)
-					}
-
-					styledButton("Modifier le mot de passe") {
-						reportExceptions {
-							navigateTo(Screen.EditPassword(user.email, Screen.ShowUsers))
 						}
 					}
 
+					StyledButton {
+						text = "Modifier le mot de passe"
+						action = {
+							navigateTo(Screen.EditPassword(user.email, Screen.ShowUsers))
+						}
+					}
 				}
 			}
 		}

@@ -5,7 +5,7 @@ import formulaide.api.fields.FormField
 import formulaide.api.fields.SimpleField
 import formulaide.client.Client
 import formulaide.client.routes.downloadFile
-import formulaide.ui.components.styledButton
+import formulaide.ui.components.StyledButton
 import formulaide.ui.traceRenders
 import formulaide.ui.useClient
 import formulaide.ui.utils.text
@@ -57,17 +57,20 @@ private val ImmutableField: FC<ImmutableFieldProps> = FC("ImmutableField") { pro
 							val value = answer.value ?: error("Cette date n'a pas de valeur")
 							text(Date(value).toLocaleDateString())
 						}
-						is SimpleField.Upload -> styledButton("Ouvrir", action = {
-							val fileId = answer.value ?: error("Ce fichier n'a pas d'identifiants")
-							val file = client.downloadFile(fileId)
+						is SimpleField.Upload -> StyledButton {
+							text = "Ouvrir"
+							action = {
+								val fileId = answer.value ?: error("Ce fichier n'a pas d'identifiants")
+								val file = client.downloadFile(fileId)
 
-							val blob = Blob(arrayOf(file.data), BlobPropertyBag(
-								type = file.mime
-							))
+								val blob = Blob(arrayOf(file.data), BlobPropertyBag(
+									type = file.mime
+								))
 
-							val url = URL.createObjectURL(blob)
-							window.open(url, target = "_blank", features = "noopener,noreferrer")
-						})
+								val url = URL.createObjectURL(blob)
+								window.open(url, target = "_blank", features = "noopener,noreferrer")
+							}
+						}
 						else -> text(answer.value.toString())
 					}
 				} // else: don't display messages here

@@ -43,13 +43,22 @@ fun ChildrenBuilder.styledNesting(
 			className = "m-2 absolute top-0 right-0"
 
 			if (onMoveUp != null)
-				styledButton("▲", action = onMoveUp)
+				StyledButton {
+					text = "▲"
+					action = onMoveUp
+				}
 
 			if (onMoveDown != null)
-				styledButton("▼", action = onMoveDown)
+				StyledButton {
+					text = "▼"
+					action = onMoveDown
+				}
 
 			if (onDeletion != null)
-				styledButton("×", action = onDeletion)
+				StyledButton {
+					text = "×"
+					action = onDeletion
+				}
 		}
 	}
 }

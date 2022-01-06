@@ -5,7 +5,7 @@ import formulaide.client.Client
 import formulaide.client.routes.editData
 import formulaide.ui.*
 import formulaide.ui.Role.Companion.role
-import formulaide.ui.components.styledButton
+import formulaide.ui.components.StyledButton
 import formulaide.ui.components.styledCard
 import formulaide.ui.components.styledCheckbox
 import formulaide.ui.components.styledField
@@ -39,10 +39,13 @@ val DataList = FC<Props>("DataList") {
 					if (user.role >= Role.ADMINISTRATOR) {
 						require(client is Client.Authenticated) { "Le client devrait être connecté." }
 
-						styledButton("Copier", action = { navigateTo(Screen.NewData(composite)) })
+						StyledButton {
+							text = "Copier"
+							action = { navigateTo(Screen.NewData(composite)) }
+						}
 
-						styledButton(
-							if (composite.open) "Archiver" else "Désarchiver",
+						StyledButton {
+							text = if (composite.open) "Archiver" else "Désarchiver"
 							action = {
 								client.editData(CompositeMetadata(
 									composite.id,
@@ -50,7 +53,7 @@ val DataList = FC<Props>("DataList") {
 								))
 								refreshComposites()
 							}
-						)
+						}
 					}
 				}
 			}

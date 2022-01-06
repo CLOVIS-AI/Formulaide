@@ -228,16 +228,19 @@ fun CreateForm(original: Form?, copy: Boolean) = FC<Props>("CreateForm") {
 				}
 			}
 
-			styledButton("Ajouter un champ", action = {
-				updateFields {
-					this + ShallowFormField.Simple(
-						order = size,
-						id = maxFieldId.toString(),
-						name = "",
-						simple = SimpleField.Text(Arity.optional())
-					)
+			StyledButton {
+				text = "Ajouter un champ"
+				action = {
+					updateFields {
+						this + ShallowFormField.Simple(
+							order = size,
+							id = maxFieldId.toString(),
+							name = "",
+							simple = SimpleField.Text(Arity.optional())
+						)
+					}
 				}
-			})
+			}
 		}
 
 		traceRenders("CreateForm Actions")
@@ -259,26 +262,29 @@ fun CreateForm(original: Form?, copy: Boolean) = FC<Props>("CreateForm") {
 						                        })
 
 						ActionFields {
-								this.action = action
-								this.replace = { newAction: Action ->
-									updateActions { replace(i, newAction) }
-								}.memoIn(lambdas, "action-${action.id}-fields", i)
-								this.maxFieldId = maxActionFieldId
+							this.action = action
+							this.replace = { newAction: Action ->
+								updateActions { replace(i, newAction) }
+							}.memoIn(lambdas, "action-${action.id}-fields", i)
+							this.maxFieldId = maxActionFieldId
 						}
 					}
 				}
 			}
-			styledButton("Ajouter une étape", action = {
-				updateActions {
-					this + Action(
-						id = maxActionId.toString(),
-						order = size,
-						services.getOrNull(0)?.createRef()
-							?: error("Aucun service n'a été trouvé"),
-						name = "",
-					)
+			StyledButton {
+				text = "Ajouter une étape"
+				action = {
+					updateActions {
+						this + Action(
+							id = maxActionId.toString(),
+							order = size,
+							services.getOrNull(0)?.createRef()
+								?: error("Aucun service n'a été trouvé"),
+							name = "",
+						)
+					}
 				}
-			})
+			}
 			if (actions.isEmpty())
 				p { styledErrorText("Un formulaire doit avoir au moins une étape.") }
 		}
@@ -373,15 +379,18 @@ private val ActionFields = memo(FC<ActionFieldProps>("ActionFields") { props ->
 			}
 		}
 
-		styledButton("Ajouter un champ", action = {
-			val newFields = root.fields + ShallowFormField.Simple(
-				maxFieldId.toString(),
-				root.fields.size,
-				"",
-				SimpleField.Text(Arity.mandatory()),
-			)
+		StyledButton {
+			text = "Ajouter un champ"
+			this.action = {
+				val newFields = root.fields + ShallowFormField.Simple(
+					maxFieldId.toString(),
+					root.fields.size,
+					"",
+					SimpleField.Text(Arity.mandatory()),
+				)
 
-			replace(action.copy(fields = FormRoot(newFields)))
-		})
+				replace(action.copy(fields = FormRoot(newFields)))
+			}
+		}
 	}
 })

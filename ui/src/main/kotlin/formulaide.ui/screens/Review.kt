@@ -152,7 +152,7 @@ internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record
 					}
 				}
 
-				styledPillContainer {
+				StyledPillContainer {
 					for ((root, criteria) in allCriteria) for (criterion in criteria) CriterionPill {
 						this.root = root
 						this.fields = root?.fields ?: form.mainFields
@@ -351,17 +351,19 @@ private val SearchInput = memo(FC<SearchInputProps>("SearchInput") { props ->
 	}
 
 	if (criterion != null) {
-		styledButton("Rechercher",
-		             action = {
-			             props.addCriterion(ReviewSearch(
-				             action = selectedRoot,
-				             enabled = true,
-				             criterion = criterion!!
-			             ))
-			             selectedRoot = null
-			             updateFields { emptyList() }
-			             criterion = null
-		             })
+		StyledButton {
+			text = "Rechercher"
+			action = {
+				props.addCriterion(ReviewSearch(
+					action = selectedRoot,
+					enabled = true,
+					criterion = criterion!!
+				))
+				selectedRoot = null
+				updateFields { emptyList() }
+				criterion = null
+			}
+		}
 	} else
 		p { text("Choisissez une option pour activer la recherche.") }
 })
@@ -490,12 +492,11 @@ private val CriterionPill = memo(FC<CriterionPillProps>("CriterionPill") { props
 		fields
 	}
 
-	styledPill {
-		styledButton(
-			if (showFull) "▲"
-			else "▼",
+	StyledPill {
+		StyledButton {
+			text = if (showFull) "▲" else "▼"
 			action = { showFull = !showFull }
-		)
+		}
 		if (showFull) {
 			text(props.root?.name ?: "Saisie originelle")
 
@@ -514,7 +515,10 @@ private val CriterionPill = memo(FC<CriterionPillProps>("CriterionPill") { props
 			     is SearchCriterion.OrderBefore -> "est avant ${criterion.max}"
 			     is SearchCriterion.OrderAfter -> "est après ${criterion.min}"
 		     })
-		styledButton("×", action = { props.onRemove() })
+		StyledButton {
+			text = "×"
+			action = { props.onRemove() }
+		}
 	}
 })
 
@@ -698,8 +702,13 @@ private val ReviewRecordCollapsed = FC<ReviewRecordCollapsedProps>("ReviewRecord
 		}
 	}
 
-	td { styledButton("▼", action = { props.collapse(false) }) }
-	traceRenders("ReviewRecordCollapsed … done")
+	td {
+		StyledButton {
+			text = "▼"
+			action = { props.collapse(false) }
+		}
+		traceRenders("ReviewRecordCollapsed … done")
+	}
 }
 
 //endregion
@@ -814,31 +823,39 @@ private val ReviewRecordExpanded = FC<ReviewRecordExpandedProps>("ReviewRecordEx
 
 				traceRenders("ReviewRecordExpanded … Previous action")
 				if ((state as? RecordState.Action)?.current?.obj != props.form.actions.firstOrNull())
-					styledButton("Renvoyer à une étape précédente",
-					             enabled = decision != ReviewDecision.PREVIOUS,
-					             action = {
-						             props.updateDestination {
-							             RecordState.Action(props.form.actions.first().createRef())
-						             }
-					             })
+					StyledButton {
+						text = "Renvoyer à une étape précédente"
+						enabled = decision != ReviewDecision.PREVIOUS
+						action = {
+							props.updateDestination {
+								RecordState.Action(props.form.actions.first().createRef())
+							}
+						}
+					}
 
 				traceRenders("ReviewRecordExpanded … Keep")
-				styledButton("Conserver",
-				             enabled = decision != ReviewDecision.NO_CHANGE,
-				             action = { props.updateDestination { state }; props.updateReason(null) })
+				StyledButton {
+					text = "Conserver"
+					enabled = decision != ReviewDecision.NO_CHANGE
+					action = { props.updateDestination { state }; props.updateReason(null) }
+				}
 
 				traceRenders("ReviewRecordExpanded … Accept")
 				val nextAction = props.nextAction
 				if (nextAction != null)
-					styledButton("Accepter",
-					             enabled = decision != ReviewDecision.NEXT,
-					             action = { props.updateDestination { nextAction } })
+					StyledButton {
+						text = "Accepter"
+						enabled = decision != ReviewDecision.NEXT
+						action = { props.updateDestination { nextAction } }
+					}
 
 				traceRenders("ReviewRecordExpanded … Refuse")
 				if (state != RecordState.Refused)
-					styledButton("Refuser",
-					             enabled = decision != ReviewDecision.REFUSE,
-					             action = { props.updateDestination { RecordState.Refused } })
+					StyledButton {
+						text = "Refuser"
+						enabled = decision != ReviewDecision.REFUSE
+						action = { props.updateDestination { RecordState.Refused } }
+					}
 			}
 
 			if (decision == ReviewDecision.PREVIOUS)
@@ -850,9 +867,11 @@ private val ReviewRecordExpanded = FC<ReviewRecordExpandedProps>("ReviewRecordEx
 						if (previousState == state)
 							break
 
-						styledButton(previousState.current.obj.name,
-						             enabled = selectedDestination != previousState,
-						             action = { props.updateDestination { previousState } })
+						StyledButton {
+							text = previousState.current.obj.name
+							enabled = selectedDestination != previousState
+							action = { props.updateDestination { previousState } }
+						}
 					}
 				}
 

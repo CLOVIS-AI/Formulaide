@@ -137,10 +137,11 @@ private val Navigation = FC<Props>("Navigation") {
 	traceRenders("Navigation bar")
 
 	for (screen in Screen.availableScreens(user)) {
-		if (screen != currentScreen)
-			styledButton(screen.displayName) { currentScreen = screen }
-		else
-			styledDisabledButton(screen.displayName)
+		StyledButton {
+			text = screen.displayName
+			action = { currentScreen = screen }
+			enabled = screen != currentScreen
+		}
 	}
 }
 
@@ -176,10 +177,15 @@ val Window = memo(FC("Window") {
 		title = {
 			styledTitle("Formulaide")
 			styledLightText(subtitle)
-			if (user != null) styledButton("×", action = {
-				logout()
-				screen = Screen.Home
-			})
+
+			if (user != null)
+				StyledButton {
+					text = "×"
+					action = {
+						logout()
+						screen = Screen.Home
+					}
+				}
 		},
 		actions = {
 			Navigation()

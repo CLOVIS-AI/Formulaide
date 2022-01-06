@@ -52,15 +52,16 @@ val ServiceList = FC<Props>("ServiceList") {
 					styledLightText(" Désactivé")
 
 				div {
-
-					styledButton(if (service.open) "Désactiver" else "Activer", default = false) {
-						if (service.open)
-							client.closeService(service)
-						else
-							client.reopenService(service)
-						refreshServices()
+					StyledButton {
+						text = if (service.open) "Désactiver" else "Activer"
+						action = {
+							if (service.open)
+								client.closeService(service)
+							else
+								client.reopenService(service)
+							refreshServices()
+						}
 					}
-
 				}
 			}
 		}

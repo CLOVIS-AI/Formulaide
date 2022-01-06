@@ -100,16 +100,19 @@ fun CreateData(original: Composite? = null) = FC<Props>("CreateData") {
 				}
 			}
 
-			styledButton("Ajouter un champ", action = {
-				updateFields {
-					this + DataField.Simple(
-						order = this.size,
-						id = maxId.toString(),
-						name = "",
-						simple = SimpleField.Text(Arity.optional())
-					)
+			StyledButton {
+				text = "Ajouter un champ"
+				action = {
+					updateFields {
+						this + DataField.Simple(
+							order = this.size,
+							id = maxId.toString(),
+							name = "",
+							simple = SimpleField.Text(Arity.optional())
+						)
+					}
 				}
-			})
+			}
 		}
 	}
 }
