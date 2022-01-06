@@ -205,7 +205,10 @@ private fun ChildrenBuilder.fieldExists(
 }
 
 private fun ChildrenBuilder.cancelSearchButton(criterion: SearchCriterion<*>, props: SearchFieldProps) {
-	styledButton("Annuler", action = { props.remove(criterion) })
+	StyledButton {
+		text = "Annuler"
+		action = { props.remove(criterion) }
+	}
 }
 
 private fun ChildrenBuilder.enableSearchButton(
@@ -213,7 +216,10 @@ private fun ChildrenBuilder.enableSearchButton(
 	props: SearchFieldProps,
 	create: () -> SearchCriterion<*>,
 ) {
-	styledButton(text, action = { props.create(create()) })
+	StyledButton {
+		this.text = text
+		action = { props.create(create()) }
+	}
 }
 
 private fun idOf(criterion: SearchCriterion<*>) = "search-${criterion.fieldKey}-${criterion::class}"

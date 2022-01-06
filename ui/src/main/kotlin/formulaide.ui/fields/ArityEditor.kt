@@ -5,8 +5,7 @@ import formulaide.api.fields.*
 import formulaide.api.fields.DeepFormField.Companion.createMatchingFormField
 import formulaide.api.types.*
 import formulaide.api.types.Ref.Companion.loadIfNecessary
-import formulaide.ui.components.styledButton
-import formulaide.ui.components.styledDisabledButton
+import formulaide.ui.components.StyledButton
 import formulaide.ui.components.styledSmallInput
 import formulaide.ui.useComposites
 import formulaide.ui.utils.text
@@ -54,10 +53,14 @@ val ArityEditor = FC<EditableFieldProps>("ArityEditor") { props ->
 
 		for ((modelArity, arityName) in modelArities) {
 			if (modelArity == arity) {
-				styledDisabledButton(arityName)
+				StyledButton {
+					text = arityName
+					enabled = false
+				}
 			} else {
-				styledButton(arityName) {
-					updateSubFieldsOnMaxArityChange(props, modelArity, composites)
+				StyledButton {
+					text = arityName
+					action = { updateSubFieldsOnMaxArityChange(props, modelArity, composites) }
 				}
 			}
 		}
@@ -95,22 +98,30 @@ val ArityEditor = FC<EditableFieldProps>("ArityEditor") { props ->
 			}
 			text(" réponses")
 		} else if (maxAllowedRange.last > 1) {
-			styledButton("Plusieurs réponses") {
-				props.replace(props.field.requestCopy(
-					arity = Arity.list(0, 5)
-						.expandMin(minAllowedRange.last)
-						.truncateMin(minAllowedRange.first)
-						.expandMax(maxAllowedRange.first)
-						.truncateMax(maxAllowedRange.last)
-				))
+			StyledButton {
+				text = "Plusieurs réponses"
+				action = {
+					props.replace(props.field.requestCopy(
+						arity = Arity.list(0, 5)
+							.expandMin(minAllowedRange.last)
+							.truncateMin(minAllowedRange.first)
+							.expandMax(maxAllowedRange.first)
+							.truncateMax(maxAllowedRange.last)
+					))
+				}
 			}
 		}
 	} else {
-		when (arity) {
-			Arity.mandatory() -> styledDisabledButton("Obligatoire")
-			Arity.optional() -> styledDisabledButton("Facultatif")
-			Arity.forbidden() -> styledDisabledButton("Caché")
-			else -> styledDisabledButton("De ${arity.min} à ${arity.max} réponses")
+		val message = when (arity) {
+			Arity.mandatory() -> "Obligatoire"
+			Arity.optional() -> "Facultatif"
+			Arity.forbidden() -> "Caché"
+			else -> "De ${arity.min} à ${arity.max} réponses"
+		}
+
+		StyledButton {
+			text = message
+			enabled = false
 		}
 	}
 }

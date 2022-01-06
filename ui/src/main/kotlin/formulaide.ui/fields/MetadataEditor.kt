@@ -5,7 +5,7 @@ import formulaide.api.fields.SimpleField
 import formulaide.api.fields.SimpleField.Upload.Format
 import formulaide.api.fields.SimpleField.Upload.Format.*
 import formulaide.api.types.Arity
-import formulaide.ui.components.styledButton
+import formulaide.ui.components.StyledButton
 import formulaide.ui.components.styledCheckbox
 import formulaide.ui.components.styledField
 import formulaide.ui.components.styledInput
@@ -191,7 +191,10 @@ private fun ChildrenBuilder.cancelButton(
 	update: () -> SimpleField,
 ) {
 	if (value != null)
-		styledButton("×", action = { props.replace(field.requestCopy(update())) })
+		StyledButton {
+			text = "×"
+			action = { props.replace(field.requestCopy(update())) }
+		}
 }
 
 private fun InputHTMLAttributes<HTMLInputElement>.setHandler(

@@ -2,7 +2,7 @@ package formulaide.ui.fields
 
 import formulaide.api.fields.*
 import formulaide.api.types.Arity
-import formulaide.ui.components.styledButton
+import formulaide.ui.components.StyledButton
 import formulaide.ui.components.styledFormField
 import formulaide.ui.utils.remove
 import formulaide.ui.utils.replace
@@ -97,21 +97,24 @@ val RecursionEditor: FC<EditableFieldProps> = FC("RecursionEditor") { props ->
 		}
 
 		if (parent is DataField.Union || parent is ShallowFormField.Union) {
-			styledButton("Ajouter une option") {
-				val id = maxId.toString()
-				val order = fields.size
-				val name = ""
-				val simple = SimpleField.Text(Arity.optional())
+			StyledButton {
+				text = "Ajouter une option"
+				action = {
+					val id = maxId.toString()
+					val order = fields.size
+					val name = ""
+					val simple = SimpleField.Text(Arity.optional())
 
-				val newParent = when (parent) {
-					is DataField.Union -> parent.copy(options = parent.options +
-							DataField.Simple(id, order, name, simple))
-					is ShallowFormField.Union -> parent.copy(options = parent.options +
-							ShallowFormField.Simple(id, order, name, simple))
-					else -> error("Impossible d'ajouter un sous-champ à $parent")
+					val newParent = when (parent) {
+						is DataField.Union -> parent.copy(options = parent.options +
+								DataField.Simple(id, order, name, simple))
+						is ShallowFormField.Union -> parent.copy(options = parent.options +
+								ShallowFormField.Simple(id, order, name, simple))
+						else -> error("Impossible d'ajouter un sous-champ à $parent")
+					}
+
+					props.replace(newParent)
 				}
-
-				props.replace(newParent)
 			}
 		}
 	}

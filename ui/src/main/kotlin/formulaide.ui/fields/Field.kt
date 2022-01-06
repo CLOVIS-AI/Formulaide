@@ -241,11 +241,14 @@ private val Field: FC<FieldProps> = FC("Field") { props ->
 					}
 
 					if (fieldIds.size > props.field.arity.min) {
-						styledButton("×") {
-							setFieldIds(
-								fieldIds.subList(0, i) +
-										fieldIds.subList(i + 1, fieldIds.size)
-							)
+						StyledButton {
+							text = "×"
+							action = {
+								setFieldIds(
+									fieldIds.subList(0, i) +
+											fieldIds.subList(i + 1, fieldIds.size)
+								)
+							}
 						}
 					}
 
@@ -253,8 +256,9 @@ private val Field: FC<FieldProps> = FC("Field") { props ->
 				}
 			}
 			if (fieldIds.size < props.field.arity.max) {
-				styledButton("Ajouter une réponse") {
-					setFieldIds(fieldIds + ((fieldIds.maxOrNull() ?: 0) + 1))
+				StyledButton {
+					text = "Ajouter une réponse"
+					action = { setFieldIds(fieldIds + ((fieldIds.maxOrNull() ?: 0) + 1)) }
 				}
 			}
 		}

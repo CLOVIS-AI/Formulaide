@@ -55,8 +55,11 @@ fun ChildrenBuilder.styledCard(
 		if (actions.isNotEmpty()) div {
 			className = "pt-4"
 			for (action in actions) {
-				styledButton(action.first,
-				             default = action == actions.first()) { action.second() }
+				StyledButton {
+					text = action.first
+					emphasize = action == actions.first()
+					this.action = action.second
+				}
 			}
 		}
 	}
@@ -107,7 +110,10 @@ private val FormCard = FC<FormCardProps>("FormCard") { props ->
 			}
 
 			if (!loading)
-				styledSubmitButton(submitText, default = true)
+				StyledSubmitButton {
+					text = submitText
+					emphasize = true
+				}
 			else
 				span {
 					className = buttonNonDefaultClasses
@@ -115,7 +121,10 @@ private val FormCard = FC<FormCardProps>("FormCard") { props ->
 				}
 
 			for (action in props.actions) {
-				styledButton(action.first, default = false) { action.second() }
+				StyledButton {
+					text = action.first
+					this.action = action.second
+				}
 			}
 
 			onSubmit = { event ->
