@@ -6,7 +6,7 @@ import formulaide.api.users.Service
 import formulaide.client.Client
 import formulaide.client.refreshToken
 import formulaide.client.routes.*
-import formulaide.ui.components.StyledFrame
+import formulaide.ui.components.WindowFrame
 import formulaide.ui.components.cards.Card
 import formulaide.ui.components.text.FooterText
 import formulaide.ui.components.text.LightText
@@ -213,7 +213,7 @@ val App = FC<Props>("App") {
 
 val StyledAppFrame = FC<Props>("StyledFrame") {
 	StrictMode {
-		StyledFrame {
+		WindowFrame {
 			App()
 		}
 	}
