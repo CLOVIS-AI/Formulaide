@@ -1,5 +1,6 @@
 package formulaide.ui.components
 
+import formulaide.ui.components.cards.StyledCardTitle
 import formulaide.ui.reportExceptions
 import kotlinx.coroutines.CoroutineScope
 import org.w3c.dom.HTMLDivElement
@@ -8,13 +9,7 @@ import react.*
 import react.dom.html.HTMLAttributes
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.form
-import react.dom.html.ReactHTML.p
 import react.dom.html.ReactHTML.span
-
-private fun ChildrenBuilder.styledCardTitle(title: String, secondary: String?, loading: Boolean = false) {
-	styledTitle(title, loading)
-	if (secondary != null) p { styledLightText(secondary) }
-}
 
 fun ChildrenBuilder.styledCardShell(
 	failed: Boolean = false,
@@ -42,7 +37,11 @@ fun ChildrenBuilder.styledCard(
 	contents: ChildrenBuilder.() -> Unit,
 ) {
 	styledCardShell(failed) {
-		styledCardTitle(title, secondary, loading)
+		StyledCardTitle {
+			this.title = title
+			this.secondary = secondary
+			this.loading = loading
+		}
 
 		div {
 			className = "pt-4"
@@ -99,7 +98,11 @@ private val FormCard = FC<FormCardProps>("FormCard") { props ->
 
 	styledCardShell {
 		form {
-			styledCardTitle(props.title, props.secondary, loading)
+			StyledCardTitle {
+				this.title = props.title
+				this.secondary = props.secondary
+				this.loading = loading
+			}
 
 			div {
 				className = "py-4"

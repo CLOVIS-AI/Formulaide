@@ -1,6 +1,6 @@
 package formulaide.ui.components
 
-import formulaide.ui.utils.text
+import formulaide.ui.components.text.Text
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
 import react.ChildrenBuilder
@@ -28,7 +28,7 @@ fun ChildrenBuilder.styledField(
 			className = "block"
 			htmlFor = id
 
-			text(displayName)
+			Text { text = displayName }
 		}
 
 		contents()
@@ -54,7 +54,7 @@ private fun ChildrenBuilder.styledInputCommon(
 		if (ref != null) this.ref = ref
 	}
 	if (required)
-		text(" *")
+		Text { text = " *" }
 }
 
 fun ChildrenBuilder.styledInput(
@@ -102,7 +102,7 @@ fun ChildrenBuilder.styledRadioButton(
 	label {
 		className = "mr-2"
 
-		text(text)
+		Text { this.text = text }
 		htmlFor = buttonId
 	}
 }
@@ -125,7 +125,7 @@ fun ChildrenBuilder.styledCheckbox(
 		handler()
 	}
 	label {
-		text(message)
+		Text { text = message }
 		htmlFor = id
 	}
 }

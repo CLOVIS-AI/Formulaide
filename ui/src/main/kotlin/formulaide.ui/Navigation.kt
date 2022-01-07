@@ -8,10 +8,14 @@ import formulaide.api.types.Email
 import formulaide.api.types.Ref
 import formulaide.api.users.User
 import formulaide.ui.Role.Companion.role
-import formulaide.ui.components.*
+import formulaide.ui.components.StyledButton
+import formulaide.ui.components.styledCard
+import formulaide.ui.components.styledTitleCard
+import formulaide.ui.components.text.LightText
+import formulaide.ui.components.text.Text
+import formulaide.ui.components.text.Title
 import formulaide.ui.screens.*
 import formulaide.ui.utils.GlobalState
-import formulaide.ui.utils.text
 import formulaide.ui.utils.useGlobalState
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -126,7 +130,7 @@ private val CannotAccessThisPage = FC<Props>("CannotAccessThisPage") {
 		"Retourner à la page d'accueil" to { navigateTo(Screen.Home) },
 		failed = true
 	) {
-		text("Si vous pensez que c'est anormal, veuillez contacter l'administrateur.")
+		Text { text = "Si vous pensez que c'est anormal, veuillez contacter l'administrateur." }
 	}
 }
 
@@ -175,8 +179,8 @@ val Window = memo(FC("Window") {
 
 	styledTitleCard(
 		title = {
-			styledTitle("Formulaide")
-			styledLightText(subtitle)
+			Title { title = "Formulaide" }
+			LightText { text = subtitle }
 
 			if (user != null)
 				StyledButton {

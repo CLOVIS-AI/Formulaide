@@ -1,9 +1,9 @@
 package formulaide.ui
 
 import formulaide.ui.components.styledCard
+import formulaide.ui.components.text.Text
 import formulaide.ui.components.useAsync
 import formulaide.ui.utils.GlobalState
-import formulaide.ui.utils.text
 import formulaide.ui.utils.useGlobalState
 import io.ktor.client.call.*
 import io.ktor.client.features.*
@@ -66,7 +66,7 @@ val ErrorCard = FC<ErrorProps>("ErrorCard") { props ->
 			errors = errors.subList(0, index) + errors.subList(index + 1, errors.size)
 		},
 		failed = true,
-	) { body?.let { text(it) } }
+	) { body?.let { Text { text = it } } }
 }
 
 inline fun <R> reportExceptions(finally: (e: Exception) -> Unit = {}, block: () -> R): R = try {

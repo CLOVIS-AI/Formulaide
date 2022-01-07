@@ -7,6 +7,9 @@ import formulaide.client.Client
 import formulaide.client.refreshToken
 import formulaide.client.routes.*
 import formulaide.ui.components.*
+import formulaide.ui.components.text.FooterText
+import formulaide.ui.components.text.LightText
+import formulaide.ui.components.text.Text
 import formulaide.ui.screens.clearRecords
 import formulaide.ui.utils.*
 import io.ktor.client.fetch.*
@@ -188,16 +191,26 @@ val App = FC<Props>("App") {
 			"Alerte de sécurité",
 			failed = true
 		) {
-			p { text("Formulaide est connecté à l'API via l'URL ${client.hostUrl}. Cette URL ne commence pas par 'https://'.") }
+			p {
+				Text {
+					text =
+						"Formulaide est connecté à l'API via l'URL ${client.hostUrl}. Cette URL ne commence pas par 'https://'."
+				}
+			}
 
-			p { text("Actuellement, il est possible d'accéder à tout ce que vous faites, dont votre compte et les mots de passes tapés. Veuillez contacter l'administrateur du site.") }
+			p {
+				Text {
+					text =
+						"Actuellement, il est possible d'accéder à tout ce que vous faites, dont votre compte et les mots de passes tapés. Veuillez contacter l'administrateur du site."
+				}
+			}
 		}
 	}
 
 	val footerText by useGlobalState(bottomText)
 	if (footerText.isNotBlank())
 		footerText.split("\n")
-			.forEach { br {}; styledFooterText(it) }
+			.forEach { br {}; FooterText { text = it } }
 }
 
 val StyledAppFrame = FC<Props>("StyledFrame") {
@@ -221,56 +234,61 @@ val CrashReporter = FC<PropsWithChildren>("CrashReporter") { props ->
 			"Le site a rencontré un échec fatal",
 			failed = true,
 		) {
-			p { text("Veuillez signaler cette erreur à l'administrateur, en lui envoyant les informations ci-dessous, à l'adresse incoming+arcachon-ville-formulaide-27105418-issue-@incoming.gitlab.com :") }
-
 			p {
-				className = errorSectionClass
-
-				text("Ce que j'étais en train de faire : ")
-				br {}
-				styledLightText("Ici, expliquez ce que vous étiez en train de faire quand le problème a eu lieu.")
-			}
-
-			p {
-				className = errorSectionClass
-
-				text("Error type : ")
-				br {}
-				styledLightText("Plantage de l'application, capturé par CrashReporter")
-			}
-
-			p {
-				className = errorSectionClass
-
-				text("Throwable : ")
-				error?.stackTraceToString()
-					?.removeSurrounding("\n")
-					?.split("\n")
-					?.forEach {
-						br {}
-						styledLightText(it.trim())
-					}
-					?: run { styledLightText("No stacktrace available") }
-			}
-
-			for (local in listOf("form-fields", "form-actions", "data-fields")) {
-				p {
-					className = errorSectionClass
-
-					text("Local storage : $local")
-					br {}
-					styledLightText(window.localStorage[local].toString())
+				Text {
+					text =
+						"Veuillez signaler cette erreur à l'administrateur, en lui envoyant les informations ci-dessous, à l'adresse incoming+arcachon-ville-formulaide-27105418-issue-@incoming.gitlab.com :"
 				}
 			}
 
 			p {
 				className = errorSectionClass
 
-				text("Client : ")
+				Text { text = "Ce que j'étais en train de faire : " }
 				br {}
-				styledLightText(client.value.hostUrl)
+				LightText { text = "Ici, expliquez ce que vous étiez en train de faire quand le problème a eu lieu." }
+			}
+
+			p {
+				className = errorSectionClass
+
+				Text { text = "Error type : " }
 				br {}
-				styledLightText((client.value as? Client.Authenticated)?.me.toString())
+				LightText { text = "Plantage de l'application, capturé par CrashReporter" }
+			}
+
+			p {
+				className = errorSectionClass
+
+				Text { text = "Throwable : " }
+				error?.stackTraceToString()
+					?.removeSurrounding("\n")
+					?.split("\n")
+					?.forEach {
+						br {}
+						LightText { text = it.trim() }
+					}
+					?: LightText { text = "No stacktrace available" }
+			}
+
+			for (local in listOf("form-fields", "form-actions", "data-fields")) {
+				p {
+					className = errorSectionClass
+
+					Text { text = "Local storage : $local" }
+					br {}
+					LightText { text = window.localStorage[local].toString() }
+				}
+			}
+
+			p {
+				className = errorSectionClass
+
+				Text { text = "Client : " }
+				br {}
+				LightText { text = client.value.hostUrl }
+				br {}
+				LightText { text = (client.value as? Client.Authenticated)?.me.toString() }
 			}
 
 			for ((globalName, global) in mapOf(
@@ -281,10 +299,10 @@ val CrashReporter = FC<PropsWithChildren>("CrashReporter") { props ->
 				p {
 					className = errorSectionClass
 
-					text("Cache : $globalName")
+					Text { text = "Cache : $globalName" }
 					global.value.forEach {
 						br {}
-						styledLightText(it.toString())
+						LightText { text = it.toString() }
 					}
 				}
 			}

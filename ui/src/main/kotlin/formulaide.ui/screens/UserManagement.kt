@@ -10,8 +10,9 @@ import formulaide.client.routes.editUser
 import formulaide.client.routes.listUsers
 import formulaide.ui.*
 import formulaide.ui.components.*
+import formulaide.ui.components.text.LightText
+import formulaide.ui.components.text.Text
 import formulaide.ui.utils.replace
-import formulaide.ui.utils.text
 import org.w3c.dom.HTMLInputElement
 import react.*
 import react.dom.html.InputType
@@ -28,7 +29,7 @@ val UserList = FC<Props>("UserList") {
 	val (me) = useUser()
 
 	if (me == null) {
-		styledCard("Employés", contents = { text("Récupération de l'utilisateur…") })
+		styledCard("Employés", contents = { Text { text = "Récupération de l'utilisateur…" } })
 		return@FC
 	}
 
@@ -54,8 +55,8 @@ val UserList = FC<Props>("UserList") {
 
 		for ((i, user) in users.withIndex()) {
 			styledFormField {
-				text(user.fullName + " ")
-				styledLightText(user.email.email)
+				Text { text = user.fullName + " " }
+				LightText { text = user.email.email }
 
 				div { // buttons
 
@@ -175,8 +176,8 @@ val CreateUser = FC<Props>("CreateUser") {
 			}) {
 				for (service in services) {
 					option {
-						text(service.name)
-							value = service.id
+						Text { text = service.name }
+						value = service.id
 					}
 				}
 			}

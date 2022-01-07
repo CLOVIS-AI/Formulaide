@@ -7,8 +7,8 @@ import formulaide.api.types.*
 import formulaide.api.types.Ref.Companion.loadIfNecessary
 import formulaide.ui.components.StyledButton
 import formulaide.ui.components.styledSmallInput
+import formulaide.ui.components.text.Text
 import formulaide.ui.useComposites
-import formulaide.ui.utils.text
 import react.FC
 import react.dom.html.InputType
 import kotlin.math.max
@@ -66,7 +66,7 @@ val ArityEditor = FC<EditableFieldProps>("ArityEditor") { props ->
 		}
 
 		if (arity.max > 1) {
-			text("De ")
+			Text { text = "De " }
 			if (field !is DataField.Composite) {
 				styledSmallInput(InputType.number,
 				                 "item-arity-min-${props.uniqueId}",
@@ -82,9 +82,9 @@ val ArityEditor = FC<EditableFieldProps>("ArityEditor") { props ->
 					}
 				}
 			} else {
-				text(arity.min.toString())
+				Text { text = arity.min.toString() }
 			}
-			text(" à ")
+			Text { text = " à " }
 			styledSmallInput(InputType.number,
 			                 "item-arity-min-${props.uniqueId}",
 			                 required = true) {
@@ -96,7 +96,7 @@ val ArityEditor = FC<EditableFieldProps>("ArityEditor") { props ->
 					updateSubFieldsOnMaxArityChange(props, Arity(arity.min, value), composites)
 				}
 			}
-			text(" réponses")
+			Text { text = " réponses" }
 		} else if (maxAllowedRange.last > 1) {
 			StyledButton {
 				text = "Plusieurs réponses"

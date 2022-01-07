@@ -8,6 +8,8 @@ import formulaide.api.types.Ref.Companion.load
 import formulaide.client.Client
 import formulaide.client.routes.*
 import formulaide.ui.components.*
+import formulaide.ui.components.text.Text
+import formulaide.ui.components.text.Title
 import formulaide.ui.fields.field
 import formulaide.ui.fields.immutableFields
 import formulaide.ui.reportExceptions
@@ -142,7 +144,12 @@ internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record
 				"Tout réduire" to { setOpenedRecords { mapValues { false } } },
 				loading = loading,
 			) {
-				p { text("${records.size} dossiers sont chargés. Pour des raisons de performance, il n'est pas possible de charger plus de ${Record.MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION} dossiers à la fois.") }
+				p {
+					Text {
+						text =
+							"${records.size} dossiers sont chargés. Pour des raisons de performance, il n'est pas possible de charger plus de ${Record.MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION} dossiers à la fois."
+					}
+				}
 
 				div {
 					SearchInput {
@@ -189,7 +196,7 @@ internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record
 							className = thClasses
 							div {
 								className = "mx-4"
-								text("Étape")
+								Text { text = "Étape" }
 							}
 						}
 
@@ -199,7 +206,7 @@ internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record
 									className = thClasses
 									div {
 										className = "mx-4"
-										text(it.name)
+										Text { text = it.name }
 									}
 								}
 							}
@@ -233,7 +240,7 @@ internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record
 								className = "flex justify-center items-center w-full h-full"
 								p {
 									className = "my-8"
-									text("Aucun résultat")
+									Text { text = "Aucun résultat" }
 								}
 							}
 						}
@@ -262,7 +269,7 @@ private val SearchInput = memo(FC<SearchInputProps>("SearchInput") { props ->
 	val lambdas = useLambdas()
 
 	if (!props.formLoaded) {
-		text("Chargement du formulaire en cours…")
+		Text { text = "Chargement du formulaire en cours…" }
 		LoadingSpinner()
 		return@FC
 	}
@@ -365,7 +372,7 @@ private val SearchInput = memo(FC<SearchInputProps>("SearchInput") { props ->
 			}
 		}
 	} else
-		p { text("Choisissez une option pour activer la recherche.") }
+		p { Text { text = "Choisissez une option pour activer la recherche." } }
 })
 
 private external interface SearchInputSelectProps : Props {
@@ -498,23 +505,25 @@ private val CriterionPill = memo(FC<CriterionPillProps>("CriterionPill") { props
 			action = { showFull = !showFull }
 		}
 		if (showFull) {
-			text(props.root?.name ?: "Saisie originelle")
+			Text { text = props.root?.name ?: "Saisie originelle" }
 
 			for (field in fields) {
 				br {}
-				text("→ ${field.name}")
+				Text { text = "→ ${field.name}" }
 			}
 		} else {
-			text(fields.last().name)
+			Text { text = fields.last().name }
 		}
-		text(" ")
-		text(when (val criterion = props.criterion) {
-			     is SearchCriterion.Exists -> "a été rempli"
-			     is SearchCriterion.TextContains -> "contient « ${criterion.text} »"
-			     is SearchCriterion.TextEquals -> "est exactement « ${criterion.text} »"
-			     is SearchCriterion.OrderBefore -> "est avant ${criterion.max}"
-			     is SearchCriterion.OrderAfter -> "est après ${criterion.min}"
-		     })
+		Text { text = " " }
+		Text {
+			text = when (val criterion = props.criterion) {
+				is SearchCriterion.Exists -> "a été rempli"
+				is SearchCriterion.TextContains -> "contient « ${criterion.text} »"
+				is SearchCriterion.TextEquals -> "est exactement « ${criterion.text} »"
+				is SearchCriterion.OrderBefore -> "est avant ${criterion.max}"
+				is SearchCriterion.OrderAfter -> "est après ${criterion.min}"
+			}
+		}
 		StyledButton {
 			text = "×"
 			action = { props.onRemove() }
@@ -609,7 +618,7 @@ private val ReviewRecord = memo(FC<ReviewRecordProps>("ReviewRecord") { props ->
 
 	if (user == null) {
 		traceRenders("ReviewRecord … cancelled")
-		styledCard("Dossier", loading = true) { text("Chargement de l'utilisateur…") }
+		styledCard("Dossier", loading = true) { Text { text = "Chargement de l'utilisateur…" } }
 		return@FC
 	}
 
@@ -669,7 +678,7 @@ private val ReviewRecordCollapsed = FC<ReviewRecordCollapsedProps>("ReviewRecord
 
 		div {
 			className = tdDivClasses
-			text(props.state.displayName())
+			Text { text = props.state.displayName() }
 		}
 	}
 
@@ -693,10 +702,12 @@ private val ReviewRecordCollapsed = FC<ReviewRecordCollapsedProps>("ReviewRecord
 				className = tdDivClasses
 
 				if (parsedField is ParsedList<*>) {
-					text(parsedField.children.mapNotNull { it.rawValue }
-						     .joinToString(separator = ", "))
+					Text {
+						text = parsedField.children.mapNotNull { it.rawValue }
+							.joinToString(separator = ", ")
+					}
 				} else {
-					text(parsedField?.rawValue ?: "")
+					Text { text = parsedField?.rawValue ?: "" }
 				}
 			}
 		}
@@ -819,7 +830,7 @@ private val ReviewRecordExpanded = FC<ReviewRecordExpandedProps>("ReviewRecordEx
 
 			div {
 				className = "mt-4"
-				text("Votre décision :")
+				Text { text = "Votre décision :" }
 
 				traceRenders("ReviewRecordExpanded … Previous action")
 				if ((state as? RecordState.Action)?.current?.obj != props.form.actions.firstOrNull())
@@ -861,7 +872,7 @@ private val ReviewRecordExpanded = FC<ReviewRecordExpandedProps>("ReviewRecordEx
 			if (decision == ReviewDecision.PREVIOUS)
 				div {
 					traceRenders("ReviewRecordExpanded … Display previous actions")
-					text("Étapes précédentes :")
+					Text { text = "Étapes précédentes :" }
 
 					for (previousState in props.form.actions.map { RecordState.Action(it.createRef()) }) {
 						if (previousState == state)
@@ -946,13 +957,13 @@ private val ReviewRecordContents = FC<ReviewRecordContentsProps>("ReviewRecordCo
 	}
 	if (!props.formLoaded) {
 		traceRenders("ReviewRecordCard … cancelled because the form is not loaded")
-		text("Chargement du formulaide…")
+		Text { text = "Chargement du formulaide…" }
 		LoadingSpinner()
 		return@FC
 	}
 	if (!loaded) {
 		traceRenders("ReviewRecordCard … cancelled because the action fields are not loaded")
-		text("Chargement des champs…")
+		Text { text = "Chargement des champs…" }
 		LoadingSpinner()
 		return@FC
 	}
@@ -962,27 +973,27 @@ private val ReviewRecordContents = FC<ReviewRecordContentsProps>("ReviewRecordCo
 			val transition = parsed.transition
 			val title = transition.previousState?.displayName() ?: "Saisie originelle"
 			if (props.showFullHistory) {
-				styledTitle("$title → ${transition.nextState.displayName()}")
+				Title { this.title = "$title → ${transition.nextState.displayName()}" }
 			} else {
-				styledTitle(title)
+				Title { this.title = title }
 			}
 			val timestamp = Date(transition.timestamp * 1000)
 			if (transition.previousState != null) {
 				p {
-					text("Par ${transition.assignee?.id}")
+					Text { text = "Par ${transition.assignee?.id}" }
 					if (transition.reason != null)
-						text(" parce que \"${transition.reason}\"")
-					text(", le ${timestamp.toLocaleString()}.")
+						Text { text = " parce que \"${transition.reason}\"" }
+					Text { text = ", le ${timestamp.toLocaleString()}." }
 				}
 			} else {
-				p { text("Le ${timestamp.toLocaleString()}.") }
+				p { Text { text = "Le ${timestamp.toLocaleString()}." } }
 			}
 
 			if (transition.fields != null) {
 				if (!props.formLoaded) {
-					p { text("Chargement du formulaire…"); LoadingSpinner() }
+					p { Text { text = "Chargement du formulaire…" }; LoadingSpinner() }
 				} else if (parsed.submission == null) {
-					p { text("Chargement de la saisie…"); LoadingSpinner() }
+					p { Text { text = "Chargement de la saisie…" }; LoadingSpinner() }
 				} else {
 					br {}
 					immutableFields(parsed.submission)

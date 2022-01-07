@@ -6,12 +6,12 @@ import formulaide.client.routes.compositesReferencedIn
 import formulaide.client.routes.submitForm
 import formulaide.ui.*
 import formulaide.ui.components.LoadingSpinner
-import formulaide.ui.components.styledErrorText
 import formulaide.ui.components.styledFormCard
+import formulaide.ui.components.text.ErrorText
+import formulaide.ui.components.text.Text
 import formulaide.ui.components.useAsync
 import formulaide.ui.fields.field
 import formulaide.ui.utils.parseHtmlForm
-import formulaide.ui.utils.text
 import kotlinx.coroutines.launch
 import react.FC
 import react.Props
@@ -87,13 +87,13 @@ fun SubmitForm(formRef: Ref<Form>) = FC<Props>("SubmitForm") {
 	// No hooks from here on
 
 	if (failedRef) {
-		p { styledErrorText("Formulaire introuvable. Vous n'avez peut-être pas les droits d'y accéder ?") }
+		ErrorText { text = "Formulaire introuvable. Vous n'avez peut-être pas les droits d'y accéder ?" }
 		return@FC
 	}
 
 	if (form == null) {
 		p {
-			text("Chargement du formulaire…")
+			Text { text = "Chargement du formulaire…" }
 			LoadingSpinner()
 		}
 		return@FC
@@ -101,14 +101,14 @@ fun SubmitForm(formRef: Ref<Form>) = FC<Props>("SubmitForm") {
 	traceRenders("SubmitForm … the form is known")
 
 	if (!form.open) {
-		p { styledErrorText("Ce formulaire a été fermé, il ne peut plus être rempli.") }
+		ErrorText { text = "Ce formulaire a été fermé, il ne peut plus être rempli." }
 		return@FC
 	}
 	traceRenders("SubmitForm … the form is open")
 
 	if (formLoadedFromCache == null) {
 		p {
-			text("Chargement des champs depuis le cache…")
+			Text { text = "Chargement des champs depuis le cache…" }
 			LoadingSpinner()
 		}
 		return@FC
@@ -117,7 +117,7 @@ fun SubmitForm(formRef: Ref<Form>) = FC<Props>("SubmitForm") {
 
 	if (formLoadedFromCache != true && formLoadedFromServer == null) {
 		p {
-			text("Chargement des champs depuis le serveur…")
+			Text { text = "Chargement des champs depuis le serveur…" }
 			LoadingSpinner()
 		}
 		return@FC
@@ -125,7 +125,10 @@ fun SubmitForm(formRef: Ref<Form>) = FC<Props>("SubmitForm") {
 	traceRenders("SubmitForm … the form is not currently loading from the server")
 
 	if (formLoadedFromServer == false) {
-		p { styledErrorText("Le chargement des données composées référencées a échoué. Veuillez signaler ce problème à l'administrateur.") }
+		ErrorText {
+			text =
+				"Le chargement des données composées référencées a échoué. Veuillez signaler ce problème à l'administrateur."
+		}
 		return@FC
 	}
 	traceRenders("SubmitForm … the form is loaded")

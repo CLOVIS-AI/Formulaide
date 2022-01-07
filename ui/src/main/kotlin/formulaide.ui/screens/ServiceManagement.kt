@@ -5,12 +5,13 @@ import formulaide.client.routes.closeService
 import formulaide.client.routes.createService
 import formulaide.client.routes.reopenService
 import formulaide.ui.components.*
+import formulaide.ui.components.text.LightText
+import formulaide.ui.components.text.Text
 import formulaide.ui.refreshServices
 import formulaide.ui.traceRenders
 import formulaide.ui.useClient
 import formulaide.ui.useServices
 import formulaide.ui.utils.map
-import formulaide.ui.utils.text
 import org.w3c.dom.HTMLInputElement
 import react.FC
 import react.Props
@@ -25,7 +26,7 @@ val ServiceList = FC<Props>("ServiceList") {
 	val (client) = useClient()
 	if (client !is Client.Authenticated) {
 		styledCard("Liste des services",
-		           failed = true) { text("Seul un employé peut modifier les services") }
+		           failed = true) { Text { text = "Seul un employé peut modifier les services" } }
 		return@FC
 	}
 
@@ -46,10 +47,10 @@ val ServiceList = FC<Props>("ServiceList") {
 
 		for (service in services.filter { it.open || listClosedServices }) {
 			styledFormField {
-				text(service.name)
+				Text { text = service.name }
 
 				if (!service.open)
-					styledLightText(" Désactivé")
+					LightText { text = " Désactivé" }
 
 				div {
 					StyledButton {
