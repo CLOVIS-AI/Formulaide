@@ -11,7 +11,9 @@ import formulaide.client.routes.listUsers
 import formulaide.ui.*
 import formulaide.ui.components.*
 import formulaide.ui.components.cards.Card
+import formulaide.ui.components.cards.FormCard
 import formulaide.ui.components.cards.action
+import formulaide.ui.components.cards.submit
 import formulaide.ui.components.text.LightText
 import formulaide.ui.components.text.Text
 import formulaide.ui.utils.replace
@@ -124,10 +126,10 @@ val CreateUser = FC<Props>("CreateUser") {
 	val (client) = useClient()
 	require(client is Client.Authenticated) { "Un employé anonyme ne peut pas créer d'utilisateurs" }
 
-	styledFormCard(
-		"Ajouter un employé",
-		null,
-		"Créer" to {
+	FormCard {
+		title = "Ajouter un employé"
+
+		submit("Créer") {
 			val password1Value = password1.current?.value
 			val password2Value = password2.current?.value
 
@@ -163,7 +165,7 @@ val CreateUser = FC<Props>("CreateUser") {
 				navigateTo(Screen.ShowUsers)
 			}
 		}
-	) {
+
 		styledField("employee-email", "Adresse mail") {
 			styledInput(InputType.email,
 			            "employee-email",

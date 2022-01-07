@@ -11,6 +11,9 @@ import formulaide.client.routes.createData
 import formulaide.ui.*
 import formulaide.ui.components.*
 import formulaide.ui.components.cards.Card
+import formulaide.ui.components.cards.FormCard
+import formulaide.ui.components.cards.action
+import formulaide.ui.components.cards.submit
 import formulaide.ui.components.text.Text
 import formulaide.ui.fields.FieldEditor
 import formulaide.ui.fields.SwitchDirection
@@ -47,10 +50,10 @@ fun CreateData(original: Composite? = null) = FC<Props>("CreateData") {
 
 	val lambdas = useLambdas()
 
-	styledFormCard(
-		if (original == null) "Créer un groupe" else "Copier un groupe",
-		null,
-		"Créer ce groupe" to {
+	FormCard {
+		title = if (original == null) "Créer un groupe" else "Copier un groupe"
+
+		submit("Créer") {
 			val data = Composite(
 				id = Ref.SPECIAL_TOKEN_NEW,
 				name = formName,
@@ -64,11 +67,9 @@ fun CreateData(original: Composite? = null) = FC<Props>("CreateData") {
 				refreshComposites()
 				navigateTo(Screen.ShowData)
 			}
-		},
-		"Effacer" to {
-			updateFields { emptyList() }
-		},
-	) {
+		}
+		action("Effacer") { updateFields { emptyList() } }
+
 		styledField("new-data-name", "Nom") {
 			styledInput(InputType.text, "new-data-name", required = true) {
 				autoFocus = true

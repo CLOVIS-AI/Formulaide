@@ -17,6 +17,9 @@ import formulaide.client.routes.createForm
 import formulaide.client.routes.editForm
 import formulaide.ui.*
 import formulaide.ui.components.*
+import formulaide.ui.components.cards.FormCard
+import formulaide.ui.components.cards.action
+import formulaide.ui.components.cards.submit
 import formulaide.ui.components.text.ErrorText
 import formulaide.ui.components.text.Text
 import formulaide.ui.fields.FieldEditor
@@ -94,9 +97,10 @@ fun CreateForm(original: Form?, copy: Boolean) = FC<Props>("CreateForm") {
 		if (original == null || copy) "Créer un formulaire" to "Créer ce formulaire"
 		else "Modifier un formulaire" to "Modifier ce formulaire"
 
-	styledFormCard(
-		title, null,
-		buttonName to {
+	FormCard {
+		this.title = title
+
+		submit(buttonName) {
 			val form = Form(
 				name = formName,
 				id = Ref.SPECIAL_TOKEN_NEW,
@@ -127,12 +131,12 @@ fun CreateForm(original: Form?, copy: Boolean) = FC<Props>("CreateForm") {
 				refreshForms()
 				navigateTo(Screen.ShowForms)
 			}
-		},
-		"Effacer" to {
+		}
+		action("Effacer") {
 			updateFields { emptyList() }
 			updateActions { emptyList() }
 		}
-	) {
+
 		traceRenders("CreateForm Main card (loaded)")
 
 		if (original != null && copy) {

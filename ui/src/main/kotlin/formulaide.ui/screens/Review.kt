@@ -9,7 +9,9 @@ import formulaide.client.Client
 import formulaide.client.routes.*
 import formulaide.ui.components.*
 import formulaide.ui.components.cards.Card
+import formulaide.ui.components.cards.FormCard
 import formulaide.ui.components.cards.action
+import formulaide.ui.components.cards.submit
 import formulaide.ui.components.text.Text
 import formulaide.ui.components.text.Title
 import formulaide.ui.fields.field
@@ -787,10 +789,10 @@ private val ReviewRecordExpanded = FC<ReviewRecordExpandedProps>("ReviewRecordEx
 		colSpan = props.form.mainFields.asSequence().count() +
 				(if (props.windowState == null) 1 else 0)
 
-		if (props.windowState != null) styledFormCard(
-			"Dossier",
-			null,
-			submit = "Confirmer" to { htmlForm ->
+		if (props.windowState != null) FormCard {
+			title = "Dossier"
+
+			submit("Confirmer") { htmlForm ->
 				val submission =
 					if (state is RecordState.Action && state.current.obj.fields?.fields?.isNotEmpty() == true)
 						parseHtmlForm(
@@ -808,12 +810,12 @@ private val ReviewRecordExpanded = FC<ReviewRecordExpandedProps>("ReviewRecordEx
 						sendFields = true,
 					)
 				}
-			},
-			"Réduire" to { props.collapse(true) },
-			(if (props.showFullHistory) "Valeurs les plus récentes" else "Historique") to {
+			}
+			action("Réduire") { props.collapse(true) }
+			action(if (props.showFullHistory) "Valeurs les plus récentes" else "Historique") {
 				props.updateShowFullHistory(!props.showFullHistory)
 			}
-		) {
+
 			traceRenders("ReviewRecordExpanded … card with decisions")
 			ReviewRecordContents {
 				this.form = props.form

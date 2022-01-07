@@ -10,9 +10,10 @@ import formulaide.client.routes.login
 import formulaide.client.routes.todoList
 import formulaide.ui.*
 import formulaide.ui.components.cards.Card
+import formulaide.ui.components.cards.FormCard
 import formulaide.ui.components.cards.action
+import formulaide.ui.components.cards.submit
 import formulaide.ui.components.styledField
-import formulaide.ui.components.styledFormCard
 import formulaide.ui.components.styledInput
 import formulaide.ui.components.text.Text
 import formulaide.ui.components.useAsync
@@ -38,10 +39,11 @@ val Login = FC<Props>("Login") {
 
 	var client by useClient("Login")
 
-	styledFormCard(
-		"Espace employé",
-		"Connectez-vous pour avoir accès à l'espace réservé aux employés.",
-		"Se connecter" to {
+	FormCard {
+		title = "Espace employé"
+		subtitle = "Connectez-vous pour avoir accès à l'espace réservé aux employés"
+
+		submit("Se connecter") {
 			val credentials = PasswordLogin(
 				email = email.current?.value ?: error("Email manquant"),
 				password = password.current?.value ?: error("Mot de passe manquant")
@@ -56,7 +58,7 @@ val Login = FC<Props>("Login") {
 				)
 			}
 		}
-	) {
+
 		styledField("login-email", "Email") {
 			styledInput(InputType.email, "login-email", required = true, ref = email)
 		}
@@ -94,10 +96,11 @@ fun PasswordModification(user: Email, previousScreen: Screen) = FC<Props>("Passw
 		return@FC
 	}
 
-	styledFormCard(
-		"Modifier le mot de passe du compte ${user.email}",
-		"Par sécurité, modifier le mot de passe va déconnecter tous vos appareils connectés.",
-		"Modifier le mot de passe" to {
+	FormCard {
+		title = "Modifier le mot de passe du compte ${user.email}"
+		subtitle = "Par sécurité, modifier le mot de passe va déconnecter tous vos appareils."
+
+		submit("Modifier le mot de passe") {
 			val oldPasswordValue = oldPassword.current?.value
 			val newPassword1Value = newPassword1.current?.value
 			val newPassword2Value = newPassword2.current?.value
@@ -119,7 +122,7 @@ fun PasswordModification(user: Email, previousScreen: Screen) = FC<Props>("Passw
 				navigateTo(previousScreen)
 			}
 		}
-	) {
+
 		styledField("old-password", "Mot de passe actuel") {
 			styledInput(InputType.password,
 			            "old-password",
