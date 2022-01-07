@@ -10,6 +10,8 @@ import formulaide.client.routes.editUser
 import formulaide.client.routes.listUsers
 import formulaide.ui.*
 import formulaide.ui.components.*
+import formulaide.ui.components.cards.Card
+import formulaide.ui.components.cards.action
 import formulaide.ui.components.text.LightText
 import formulaide.ui.components.text.Text
 import formulaide.ui.utils.replace
@@ -29,7 +31,11 @@ val UserList = FC<Props>("UserList") {
 	val (me) = useUser()
 
 	if (me == null) {
-		styledCard("Employés", contents = { Text { text = "Récupération de l'utilisateur…" } })
+		Card {
+			title = "Employés"
+			loading = true
+			Text { text = "Récupération de l'utilisateur…" }
+		}
 		return@FC
 	}
 
@@ -41,12 +47,11 @@ val UserList = FC<Props>("UserList") {
 		}
 	}
 
-	styledCard(
-		"Employés",
-		null,
-		"Créer un employé" to { navigateTo(Screen.NewUser) },
-		loading = users.isEmpty(),
-	) {
+	Card {
+		title = "Employés"
+		action("Créer un employé") { navigateTo(Screen.NewUser) }
+		loading = users.isEmpty()
+
 		styledField("hide-disabled", "Utilisateurs désactivés") {
 			styledCheckbox("hide-disabled", "Afficher les comptes désactivés") {
 				onChange = { listDisabledUsers = it.target.checked }

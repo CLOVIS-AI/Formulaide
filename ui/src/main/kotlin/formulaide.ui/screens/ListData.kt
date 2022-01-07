@@ -6,7 +6,7 @@ import formulaide.client.routes.editData
 import formulaide.ui.*
 import formulaide.ui.Role.Companion.role
 import formulaide.ui.components.StyledButton
-import formulaide.ui.components.styledCard
+import formulaide.ui.components.cards.Card
 import formulaide.ui.components.styledCheckbox
 import formulaide.ui.components.styledField
 import formulaide.ui.utils.map
@@ -24,40 +24,37 @@ val DataList = FC<Props>("DataList") {
 
 	var showArchived by useState(false)
 
-	styledCard(
-		"Groupes",
-		null,
-		contents = {
-			if (user.role >= Role.EMPLOYEE) styledField("hide-disabled", "Groupes archivés") {
-				styledCheckbox("hide-disabled", "Afficher les groupes archivés") {
-					onChange = { showArchived = it.target.checked }
-				}
+	Card {
+		title = "Groupes"
+
+		if (user.role >= Role.EMPLOYEE) styledField("hide-disabled", "Groupes archivés") {
+			styledCheckbox("hide-disabled", "Afficher les groupes archivés") {
+				onChange = { showArchived = it.target.checked }
 			}
+		}
 
-			for (composite in composites.filter { showArchived || it.open }) {
-				styledField("composite-${composite.id}", composite.name) {
-					if (user.role >= Role.ADMINISTRATOR) {
-						require(client is Client.Authenticated) { "Le client devrait être connecté." }
+		for (composite in composites.filter { showArchived || it.open }) {
+			styledField("composite-${composite.id}", composite.name) {
+				if (user.role >= Role.ADMINISTRATOR) {
+					require(client is Client.Authenticated) { "Le client devrait être connecté." }
 
-						StyledButton {
-							text = "Copier"
-							action = { navigateTo(Screen.NewData(composite)) }
-						}
+					StyledButton {
+						text = "Copier"
+						action = { navigateTo(Screen.NewData(composite)) }
+					}
 
-						StyledButton {
-							text = if (composite.open) "Archiver" else "Désarchiver"
-							action = {
-								client.editData(CompositeMetadata(
-									composite.id,
-									!composite.open,
-								))
-								refreshComposites()
-							}
+					StyledButton {
+						text = if (composite.open) "Archiver" else "Désarchiver"
+						action = {
+							client.editData(CompositeMetadata(
+								composite.id,
+								!composite.open,
+							))
+							refreshComposites()
 						}
 					}
 				}
 			}
 		}
-	)
-
+	}
 }

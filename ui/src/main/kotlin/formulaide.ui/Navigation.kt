@@ -9,11 +9,10 @@ import formulaide.api.types.Ref
 import formulaide.api.users.User
 import formulaide.ui.Role.Companion.role
 import formulaide.ui.components.StyledButton
-import formulaide.ui.components.styledCard
-import formulaide.ui.components.styledTitleCard
-import formulaide.ui.components.text.LightText
+import formulaide.ui.components.TopBar
+import formulaide.ui.components.cards.Card
+import formulaide.ui.components.cards.action
 import formulaide.ui.components.text.Text
-import formulaide.ui.components.text.Title
 import formulaide.ui.screens.*
 import formulaide.ui.utils.GlobalState
 import formulaide.ui.utils.useGlobalState
@@ -124,17 +123,16 @@ abstract class Screen(
 private val CannotAccessThisPage = FC<Props>("CannotAccessThisPage") {
 	traceRenders("CannotAccessThisPage")
 
-	styledCard(
-		"Vous n'avez pas l'autorisation d'accéder à cette page",
-		null,
-		"Retourner à la page d'accueil" to { navigateTo(Screen.Home) },
+	Card {
+		title = "Vous n'avez pas l'autorisation d'accéder à cette page"
 		failed = true
-	) {
+		action("Retourner à la page d'accueil") { navigateTo(Screen.Home) }
+
 		Text { text = "Si vous pensez que c'est anormal, veuillez contacter l'administrateur." }
 	}
 }
 
-private val Navigation = FC<Props>("Navigation") {
+val Navigation = FC<Props>("Navigation") {
 	val user by useUser()
 	var currentScreen by useNavigation()
 
@@ -172,29 +170,7 @@ val Window = memo(FC("Window") {
 		}
 	}
 
-	val subtitle = when (user) {
-		null -> "Accès anonyme"
-		else -> "Bonjour ${user!!.fullName}"
-	}
-
-	styledTitleCard(
-		title = {
-			Title { title = "Formulaide" }
-			LightText { text = subtitle }
-
-			if (user != null)
-				StyledButton {
-					text = "×"
-					action = {
-						logout()
-						screen = Screen.Home
-					}
-				}
-		},
-		actions = {
-			Navigation()
-		}
-	)
+	TopBar()
 
 	if (user.role >= screen.requiredRole) {
 		CrashReporter {

@@ -5,14 +5,14 @@ import formulaide.ui.components.text.Title
 import formulaide.ui.components.text.TitleProps
 import react.FC
 
-external interface StyledCardTitleProps : TitleProps {
-	var secondary: String?
+external interface CardTitleProps : TitleProps {
+	var subtitle: String?
 }
 
-val StyledCardTitle = FC<StyledCardTitleProps>("CardTitle") { props ->
+val CardTitle = FC<CardTitleProps>("CardTitle") { props ->
 	Title { +props }
 
-	val secondary = props.secondary
+	val secondary = props.subtitle
 	if (secondary != null)
 		LightText { text = secondary }
 }

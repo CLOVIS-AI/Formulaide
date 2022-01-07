@@ -9,8 +9,13 @@ import formulaide.client.routes.editPassword
 import formulaide.client.routes.login
 import formulaide.client.routes.todoList
 import formulaide.ui.*
-import formulaide.ui.components.*
+import formulaide.ui.components.cards.Card
+import formulaide.ui.components.cards.action
+import formulaide.ui.components.styledField
+import formulaide.ui.components.styledFormCard
+import formulaide.ui.components.styledInput
 import formulaide.ui.components.text.Text
+import formulaide.ui.components.useAsync
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
 import formulaide.ui.utils.useListEquality
 import kotlinx.browser.window
@@ -74,15 +79,17 @@ fun PasswordModification(user: Email, previousScreen: Screen) = FC<Props>("Passw
 	val (me) = useUser()
 
 	if (me == null) {
-		styledCard("Modifier le mot de passe") {
+		Card {
+			title = "Modifier le mot de passe"
 			Text { text = "Chargement de l'utilisateur…" }
 		}
 		return@FC
 	}
 
 	if (client !is Client.Authenticated) {
-		styledCard("Modifier le mot de passe", failed = true) {
-			Text { text = "Impossible de modifier le mot de passe sans être connecté" }
+		Card {
+			title = "Modifier le mot de passe"
+			Text { text = "impossible de modifier le mot de passe sans être connecté" }
 		}
 		return@FC
 	}
@@ -145,22 +152,13 @@ val LoginAccess = FC<Props>("LoginAccess") {
 	if (user == null) {
 		Login()
 	} else {
-		styledCard(
-			"Espace employé",
-			null,
-			"Déconnexion" to {
-				scope.reportExceptions {
-					logout()
-				}
-			},
-			"Modifier mon mot de passe" to {
-				navigateTo(Screen.EditPassword(user.email,
-				                               Screen.Home))
-			},
-			"Aide" to {
-				window.open("https://clovis-ai.gitlab.io/formulaide/docs/user-guide.pdf")
-			}
-		) {
+		Card {
+			title = "Espace employé"
+
+			action("Déconnexion") { logout() }
+			action("Modifier mon mot de passe") { navigateTo(Screen.EditPassword(user.email, Screen.Home)) }
+			action("Aide") { window.open("https://clovis-ai.gitlab.io/formulaide/docs/user-guide.pdf") }
+
 			FormsToReview()
 		}
 	}

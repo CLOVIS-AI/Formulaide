@@ -5,6 +5,7 @@ import formulaide.client.routes.closeService
 import formulaide.client.routes.createService
 import formulaide.client.routes.reopenService
 import formulaide.ui.components.*
+import formulaide.ui.components.cards.Card
 import formulaide.ui.components.text.LightText
 import formulaide.ui.components.text.Text
 import formulaide.ui.refreshServices
@@ -25,18 +26,20 @@ val ServiceList = FC<Props>("ServiceList") {
 
 	val (client) = useClient()
 	if (client !is Client.Authenticated) {
-		styledCard("Liste des services",
-		           failed = true) { Text { text = "Seul un employé peut modifier les services" } }
+		Card {
+			title = "Liste des services"
+			failed = true
+			Text { text = "Seul un employé peut modifier les services" }
+		}
 		return@FC
 	}
 
 	val services by useServices()
 		.map { services -> services.sortedBy { it.name } }
 
-	styledCard(
-		"Services",
-		null
-	) {
+	Card {
+		title = "Services"
+
 		var listClosedServices by useState(false)
 
 		styledField("hide-disabled", "Services désactivés") {

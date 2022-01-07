@@ -6,10 +6,14 @@ import formulaide.api.users.Service
 import formulaide.client.Client
 import formulaide.client.refreshToken
 import formulaide.client.routes.*
-import formulaide.ui.components.*
+import formulaide.ui.components.StyledFrame
+import formulaide.ui.components.cards.Card
 import formulaide.ui.components.text.FooterText
 import formulaide.ui.components.text.LightText
 import formulaide.ui.components.text.Text
+import formulaide.ui.components.useAsync
+import formulaide.ui.components.useAsyncEffect
+import formulaide.ui.components.useAsyncEffectOnce
 import formulaide.ui.screens.clearRecords
 import formulaide.ui.utils.*
 import io.ktor.client.fetch.*
@@ -186,23 +190,17 @@ val App = FC<Props>("App") {
 	}
 
 	if (!client.hostUrl.startsWith("https://")) {
-		styledCard(
-			"Votre accès n'est pas sécurisé",
-			"Alerte de sécurité",
+		Card {
+			title = "Votre accès n'est pas sécurisé"
+			subtitle = "Alerte de sécurité"
 			failed = true
-		) {
+
 			p {
-				Text {
-					text =
-						"Formulaide est connecté à l'API via l'URL ${client.hostUrl}. Cette URL ne commence pas par 'https://'."
-				}
+				+"Formulaide est connecté à l'API via l'URL ${client.hostUrl}. Cette URL ne commence pas par 'https://'."
 			}
 
 			p {
-				Text {
-					text =
-						"Actuellement, il est possible d'accéder à tout ce que vous faites, dont votre compte et les mots de passes tapés. Veuillez contacter l'administrateur du site."
-				}
+				+"Actuellement, il est possible d'accéder à tout ce que vous faites, dont votre compte et les mots de passes tapés. Veuillez contacter l'administrateur du site."
 			}
 		}
 	}
@@ -229,11 +227,11 @@ val CrashReporter = FC<PropsWithChildren>("CrashReporter") { props ->
 	val (boundary, didCatch, error) = useErrorBoundary()
 
 	if (didCatch) {
-		styledCard(
-			"Erreur",
-			"Le site a rencontré un échec fatal",
-			failed = true,
-		) {
+		Card {
+			title = "Erreur"
+			subtitle = "Le site a rencontré un échec fatal"
+			failed = true
+
 			p {
 				Text {
 					text =

@@ -12,6 +12,8 @@ import formulaide.client.routes.todoListFor
 import formulaide.ui.*
 import formulaide.ui.Role.Companion.role
 import formulaide.ui.components.*
+import formulaide.ui.components.cards.Card
+import formulaide.ui.components.cards.action
 import formulaide.ui.components.text.Text
 import formulaide.ui.utils.*
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
@@ -98,29 +100,27 @@ val FormList = FC<Props>("FormList") {
 			forms
 	}
 
-	styledCard(
-		"Formulaires",
-		null,
-		"Actualiser" to {
+	Card {
+		title = "Formulaires"
+
+		action("Actualiser") {
 			refreshForms()
 			clearRecords()
-		},
-		contents = {
-			if (user.role >= Role.EMPLOYEE) styledField("hide-disabled", "Formulaires archivés") {
-				styledCheckbox("hide-disabled", "Afficher les formulaires archivés") {
-					onChange = { showArchivedForms = it.target.checked }
-				}
-			}
+		}
 
-			for (form in shownForms) {
-				FormDescription {
-					key = form.id
-					this.form = form
-				}
+		if (user.role >= Role.EMPLOYEE) styledField("hide-disabled", "Formulaires archivés") {
+			styledCheckbox("hide-disabled", "Afficher les formulaires archivés") {
+				onChange = { showArchivedForms = it.target.checked }
 			}
 		}
-	)
 
+		for (form in shownForms) {
+			FormDescription {
+				key = form.id
+				this.form = form
+			}
+		}
+	}
 }
 
 internal external interface FormDescriptionProps : Props {

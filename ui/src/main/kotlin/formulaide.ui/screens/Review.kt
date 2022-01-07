@@ -8,6 +8,8 @@ import formulaide.api.types.Ref.Companion.load
 import formulaide.client.Client
 import formulaide.client.routes.*
 import formulaide.ui.components.*
+import formulaide.ui.components.cards.Card
+import formulaide.ui.components.cards.action
 import formulaide.ui.components.text.Text
 import formulaide.ui.components.text.Title
 import formulaide.ui.fields.field
@@ -121,11 +123,12 @@ internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record
 			traceRenders("Review … search bar")
 			className = "lg:order-2"
 
-			styledCard(
-				state.displayName(),
-				form.name,
-				"Actualiser" to { refresh() },
-				"Exporter" to {
+			Card {
+				title = state.displayName()
+				subtitle = form.name
+
+				action("Actualiser", refresh)
+				action("Exporter") {
 					val file = client.downloadCsv(form, state, allCriteria)
 					val blob = Blob(arrayOf(file), BlobPropertyBag(type = "text/csv"))
 
@@ -139,11 +142,12 @@ internal fun Review(form: Form, state: RecordState?, initialRecords: List<Record
 						asDynamic().click()
 						Unit
 					}
-				},
-				"Tout ouvrir" to { setOpenedRecords { mapValues { true } } },
-				"Tout réduire" to { setOpenedRecords { mapValues { false } } },
-				loading = loading,
-			) {
+				}
+				action("Tout ouvrir") { setOpenedRecords { mapValues { true } } }
+				action("Tout réduire") { setOpenedRecords { mapValues { false } } }
+
+				this.loading = loading
+
 				p {
 					Text {
 						text =
@@ -618,7 +622,11 @@ private val ReviewRecord = memo(FC<ReviewRecordProps>("ReviewRecord") { props ->
 
 	if (user == null) {
 		traceRenders("ReviewRecord … cancelled")
-		styledCard("Dossier", loading = true) { Text { text = "Chargement de l'utilisateur…" } }
+		Card {
+			title = "Dossier"
+			loading = true
+			Text { text = "Chargement de l'utilisateur…" }
+		}
 		return@FC
 	}
 
@@ -899,11 +907,11 @@ private val ReviewRecordExpanded = FC<ReviewRecordExpandedProps>("ReviewRecordEx
 					}
 				}
 			traceRenders("ReviewRecordExpanded … end of card")
-		} else styledCard(
-			"Dossier",
-			state.displayName(),
-			"Réduire" to { props.collapse(true) },
-		) {
+		} else Card {
+			title = "Dossiers"
+			subtitle = state.displayName()
+			action("Réduire") { props.collapse(true) }
+
 			traceRenders("ReviewRecordExpanded … card without decisions")
 			ReviewRecordContents {
 				this.form = props.form
