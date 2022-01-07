@@ -4,8 +4,8 @@ import formulaide.api.fields.DataField
 import formulaide.api.fields.DeepFormField
 import formulaide.api.fields.Field
 import formulaide.api.types.Arity
+import formulaide.ui.components.fields.Nesting
 import formulaide.ui.components.styledFormField
-import formulaide.ui.components.styledNesting
 import formulaide.ui.components.text.Text
 import react.FC
 import react.Props
@@ -30,18 +30,16 @@ external interface EditableFieldProps : Props {
 }
 
 val FieldEditor = memo(FC<EditableFieldProps>("FieldEditor") { props ->
-	val onDeletion = suspend { props.remove() }.takeIf { props.field !is DeepFormField }
-	val onMoveUp =
-		suspend { props.switch(SwitchDirection.UP) }.takeIf { props.field !is DeepFormField }
-	val onMoveDown =
-		suspend { props.switch(SwitchDirection.DOWN) }.takeIf { props.field !is DeepFormField }
+	Nesting {
+		depth = props.depth
+		fieldNumber = props.fieldNumber
 
-	styledNesting(
-		props.depth, props.fieldNumber,
-		onDeletion = onDeletion,
-		onMoveUp = onMoveUp,
-		onMoveDown = onMoveDown,
-	) {
+		onDeletion = suspend { props.remove() }
+			.takeIf { props.field !is DeepFormField }
+		onMoveUp = suspend { props.switch(SwitchDirection.UP) }
+			.takeIf { props.field !is DeepFormField }
+		onMoveDown = suspend { props.switch(SwitchDirection.DOWN) }
+			.takeIf { props.field !is DeepFormField }
 
 		div {
 			className = "flex gap-x-16 flex-wrap"

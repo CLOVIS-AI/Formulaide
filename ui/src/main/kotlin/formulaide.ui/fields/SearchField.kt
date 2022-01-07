@@ -4,7 +4,11 @@ import formulaide.api.fields.FormField
 import formulaide.api.fields.FormRoot
 import formulaide.api.fields.SimpleField
 import formulaide.api.search.SearchCriterion
-import formulaide.ui.components.*
+import formulaide.ui.components.StyledButton
+import formulaide.ui.components.fields.Nesting
+import formulaide.ui.components.styledField
+import formulaide.ui.components.styledInput
+import formulaide.ui.components.styledSelect
 import formulaide.ui.components.text.Text
 import formulaide.ui.traceRenders
 import react.ChildrenBuilder
@@ -64,7 +68,10 @@ private val SearchField = FC<SearchFieldProps>("SearchField") { props ->
 	val textEquals = criteria.findInstance<SearchCriterion.TextEquals>()
 	val exists = criteria.findInstance<SearchCriterion.Exists>()
 
-	styledNesting(depth = props.depth, field.order) {
+	Nesting {
+		depth = props.depth
+		fieldNumber = field.order
+
 		styledField("field-search-${field.id}", field.name) {
 			if (field.arity.min == 0)
 				fieldExists("Ce champ a été rempli", exists, props)

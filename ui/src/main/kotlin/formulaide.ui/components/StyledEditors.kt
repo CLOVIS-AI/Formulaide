@@ -1,5 +1,6 @@
 package formulaide.ui.components
 
+import formulaide.ui.components.fields.Nesting
 import react.ChildrenBuilder
 
 fun ChildrenBuilder.styledFieldEditorShell(
@@ -8,7 +9,7 @@ fun ChildrenBuilder.styledFieldEditorShell(
 	contents: ChildrenBuilder.() -> Unit,
 ) {
 	styledField(id, displayName) {
-		styledNesting {
+		Nesting {
 			contents()
 		}
 	}

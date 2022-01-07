@@ -1,9 +1,9 @@
-package formulaide.ui.components
+package formulaide.ui.components.fields
 
+import formulaide.ui.components.StyledButton
 import formulaide.ui.traceRenders
-import org.w3c.dom.HTMLDivElement
-import react.ChildrenBuilder
-import react.dom.html.HTMLAttributes
+import react.FC
+import react.PropsWithChildren
 import react.dom.html.ReactHTML.div
 
 private val colorPerDepth = listOf(
@@ -20,16 +20,22 @@ private const val hover = "hover:shadow hover:mb-2"
 private const val layout = "relative"
 private const val nestingStyle = "$spacing $shape $hover $layout"
 
-fun ChildrenBuilder.styledNesting(
-	depth: Int? = null,
-	fieldNumber: Int? = null,
-	onDeletion: (suspend () -> Unit)? = null,
-	onMoveUp: (suspend () -> Unit)? = null,
-	onMoveDown: (suspend () -> Unit)? = null,
-	block: HTMLAttributes<HTMLDivElement>.() -> Unit,
-) {
-	traceRenders("styledNesting … depth $depth, number $fieldNumber")
-	val selectedBackground = if (depth != null && fieldNumber != null) {
+external interface NestingProps : PropsWithChildren {
+	var depth: Int?
+	var fieldNumber: Int?
+
+	var onDeletion: (suspend () -> Unit)?
+	var onMoveUp: (suspend () -> Unit)?
+	var onMoveDown: (suspend () -> Unit)?
+}
+
+val Nesting = FC<NestingProps>("Nesting") { props ->
+	traceRenders("styledNesting … depth ${props.depth}, number ${props.fieldNumber}")
+
+	val depth = props.depth ?: 0
+	val fieldNumber = props.fieldNumber ?: 0
+
+	val selectedBackground = if (props.depth != null && props.fieldNumber != null) {
 		val backgroundColors = colorPerDepth[depth % colorPerDepth.size]
 		backgroundColors[fieldNumber % backgroundColors.size]
 	} else ""
@@ -37,27 +43,27 @@ fun ChildrenBuilder.styledNesting(
 	div {
 		className = "$nestingStyle $selectedBackground"
 
-		block()
+		props.children()
 
 		div {
 			className = "m-2 absolute top-0 right-0"
 
-			if (onMoveUp != null)
+			if (props.onMoveUp != null)
 				StyledButton {
 					text = "▲"
-					action = onMoveUp
+					action = props.onMoveUp
 				}
 
-			if (onMoveDown != null)
+			if (props.onMoveDown != null)
 				StyledButton {
 					text = "▼"
-					action = onMoveDown
+					action = props.onMoveDown
 				}
 
-			if (onDeletion != null)
+			if (props.onDeletion != null)
 				StyledButton {
 					text = "×"
-					action = onDeletion
+					action = props.onDeletion
 				}
 		}
 	}
