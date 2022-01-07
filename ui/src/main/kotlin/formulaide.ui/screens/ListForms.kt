@@ -12,6 +12,7 @@ import formulaide.client.routes.todoListFor
 import formulaide.ui.*
 import formulaide.ui.Role.Companion.role
 import formulaide.ui.components.*
+import formulaide.ui.components.text.Text
 import formulaide.ui.utils.*
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
 import kotlinx.browser.window
@@ -138,7 +139,7 @@ internal val FormDescription = memo(FC<FormDescriptionProps>("FormDescription") 
 	fun toggle(bool: Boolean) = if (!bool) "▼" else "▲"
 
 	div {
-		text(form.name)
+		Text { text = form.name }
 
 		StyledButton {
 			text = "Remplir"
@@ -159,7 +160,7 @@ internal val FormDescription = memo(FC<FormDescriptionProps>("FormDescription") 
 	}
 
 	if (showRecords) styledNesting {
-		text("Dossiers :")
+		Text { text = "Dossiers :" }
 
 		for (action in form.actions.sortedBy { it.order }) {
 			ActionDescription {
@@ -181,7 +182,7 @@ internal val FormDescription = memo(FC<FormDescriptionProps>("FormDescription") 
 	}
 
 	if (showAdministration) styledNesting {
-		text("Gestion :")
+		Text { text = "Gestion :" }
 
 		if (user.role >= Role.ADMINISTRATOR) {
 			require(client is Client.Authenticated) // not possible otherwise

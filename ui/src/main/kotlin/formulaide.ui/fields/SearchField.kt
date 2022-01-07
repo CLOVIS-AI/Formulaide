@@ -5,8 +5,8 @@ import formulaide.api.fields.FormRoot
 import formulaide.api.fields.SimpleField
 import formulaide.api.search.SearchCriterion
 import formulaide.ui.components.*
+import formulaide.ui.components.text.Text
 import formulaide.ui.traceRenders
-import formulaide.ui.utils.text
 import react.ChildrenBuilder
 import react.FC
 import react.Props
@@ -172,8 +172,8 @@ private fun ChildrenBuilder.textEqualsChoice(
 			styledSelect(onSelect = { props.update(criterion, criterion.copy(text = it.value)) }) {
 				for (option in options) {
 					option {
-						text(option.first)
-							value = option.second
+						Text { this.text = option.first }
+						value = option.second
 					}
 				}
 			}

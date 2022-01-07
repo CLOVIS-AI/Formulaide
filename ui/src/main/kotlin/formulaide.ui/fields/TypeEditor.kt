@@ -7,11 +7,11 @@ import formulaide.api.types.Arity
 import formulaide.api.types.Ref
 import formulaide.ui.components.styledField
 import formulaide.ui.components.styledFormField
-import formulaide.ui.components.styledLightText
 import formulaide.ui.components.styledSelect
+import formulaide.ui.components.text.LightText
+import formulaide.ui.components.text.Text
 import formulaide.ui.fields.SimpleFieldEnum.Companion.asEnum
 import formulaide.ui.useComposites
-import formulaide.ui.utils.text
 import react.FC
 import react.dom.html.ReactHTML.option
 
@@ -54,7 +54,7 @@ val TypeEditor = FC<EditableFieldProps>("TypeEditor") { props ->
 			else -> error("Impossible d'afficher le type du champ $field")
 		}
 
-		styledFormField { text(field.name + " "); styledLightText(typeName) }
+		styledFormField { Text { text = field.name + " " }; LightText { text = typeName } }
 	}
 }
 
@@ -140,7 +140,7 @@ private val SimpleOptions = FC<EditableFieldProps>("SimpleOptions") { props ->
 
 	for (simple in SimpleFieldEnum.values()) {
 		option {
-			text(simple.displayName)
+			Text { text = simple.displayName }
 			value = "simple:$simple"
 
 			selected = simple == current
@@ -152,7 +152,7 @@ private val UnionOptions = FC<EditableFieldProps>("UnionOptions") { props ->
 	val field = props.field
 
 	option {
-		text("Choix")
+		Text { text = "Choix" }
 		value = "union"
 
 		selected = field is Field.Union<*>
@@ -168,7 +168,7 @@ private val CompositeOptions = FC<EditableFieldProps>("CompositeOptions") { prop
 
 	for (composite in composites) {
 		option {
-			text(composite.name)
+			Text { text = composite.name }
 			value = "composite:${composite.id}"
 
 			selected = current?.id == composite.id
@@ -186,7 +186,7 @@ private val RecursiveCompositeOptions = FC<EditableFieldProps>("RecursiveComposi
 		val current = (field as? DataField.Composite)?.ref
 
 		option {
-			text("La donnée qui est en train de se faire créer")
+			Text { text = "La donnée qui est en train de se faire créer" }
 			value = "composite:$SPECIAL_TOKEN_RECURSION"
 
 			selected = current?.id == SPECIAL_TOKEN_RECURSION

@@ -6,9 +6,9 @@ import formulaide.api.fields.SimpleField
 import formulaide.client.Client
 import formulaide.client.routes.downloadFile
 import formulaide.ui.components.StyledButton
+import formulaide.ui.components.text.Text
 import formulaide.ui.traceRenders
 import formulaide.ui.useClient
-import formulaide.ui.utils.text
 import kotlinx.browser.window
 import org.w3c.dom.url.URL
 import org.w3c.files.Blob
@@ -49,17 +49,17 @@ private val ImmutableField: FC<ImmutableFieldProps> = FC("ImmutableField") { pro
 			is ParsedSimple<*> -> {
 				val field = answer.constraint
 				if (field.simple !is SimpleField.Message) {
-					text("${answer.constraint.name} : ")
+					Text { text = "${answer.constraint.name} : " }
 
 					when (field.simple) {
-						is SimpleField.Boolean -> text(if (answer.value.toBoolean()) "✓" else "✗")
+						is SimpleField.Boolean -> Text { text = if (answer.value.toBoolean()) "✓" else "✗" }
 						is SimpleField.Date -> {
 							val value = answer.value ?: error("Cette date n'a pas de valeur")
-							text(Date(value).toLocaleDateString())
+							Text { text = Date(value).toLocaleDateString() }
 						}
 						is SimpleField.Upload -> StyledButton {
 							text = "Ouvrir"
-							action = {
+							this.action = {
 								val fileId = answer.value ?: error("Ce fichier n'a pas d'identifiants")
 								val file = client.downloadFile(fileId)
 
@@ -71,16 +71,16 @@ private val ImmutableField: FC<ImmutableFieldProps> = FC("ImmutableField") { pro
 								window.open(url, target = "_blank", features = "noopener,noreferrer")
 							}
 						}
-						else -> text(answer.value.toString())
+						else -> Text { text = answer.value.toString() }
 					}
 				} // else: don't display messages here
 			}
 			is ParsedUnion<*, *> -> {
 				val value = answer.value
 				if (value is FormField.Simple && value.simple is SimpleField.Message) {
-					text(answer.constraint.name + " : " + value.name)
+					Text { text = answer.constraint.name + " : " + value.name }
 				} else {
-					text(answer.constraint.name)
+					Text { text = answer.constraint.name }
 					div {
 						className = miniNesting
 						immutableField(answer.children.first())
@@ -95,7 +95,7 @@ private val ImmutableField: FC<ImmutableFieldProps> = FC("ImmutableField") { pro
 			is ParsedComposite<*> -> {
 				val compositeField = answer.constraint
 
-				text(compositeField.name)
+				Text { text = compositeField.name }
 				for (child in answer.children) {
 					div {
 						className = miniNesting

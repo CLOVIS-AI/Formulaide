@@ -1,7 +1,7 @@
 package formulaide.ui.components
 
+import formulaide.ui.components.text.Text
 import formulaide.ui.reportExceptions
-import formulaide.ui.utils.text
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import react.FC
@@ -53,7 +53,7 @@ val StyledButton = FC<StyledButtonProps>("StyledButton") { props ->
 			if (loading)
 				LoadingSpinner()
 			else
-				text(props.text ?: "")
+				Text { text = props.text ?: "" }
 
 			onClick = {
 				it.preventDefault()
@@ -73,7 +73,7 @@ val StyledButton = FC<StyledButtonProps>("StyledButton") { props ->
 		}
 	} else {
 		span {
-			text(props.text ?: "")
+			Text { text = props.text ?: "" }
 			className = "$buttonShapeClasses font-bold"
 		}
 	}

@@ -12,10 +12,11 @@ import formulaide.client.Client
 import formulaide.client.files.FileUploadJS
 import formulaide.client.routes.uploadFile
 import formulaide.ui.components.*
+import formulaide.ui.components.text.ErrorText
+import formulaide.ui.components.text.Text
 import formulaide.ui.reportExceptions
 import formulaide.ui.traceRenders
 import formulaide.ui.useClient
-import formulaide.ui.utils.text
 import kotlinx.coroutines.CoroutineScope
 import org.w3c.dom.HTMLInputElement
 import org.w3c.files.get
@@ -95,7 +96,9 @@ private val RenderFieldSimple = FC<FieldProps>("RenderFieldSimple") { props ->
 					       props.input?.invoke(key, id); simpleInputState = id
 				       })
 			else
-				styledErrorText("Ce champ ne correspond à aucun formulaire, il n'est pas possible d'envoyer un fichier.")
+				ErrorText {
+					text = "Ce champ ne correspond à aucun formulaire, il n'est pas possible d'envoyer un fichier."
+				}
 		}
 	}
 
@@ -103,7 +106,7 @@ private val RenderFieldSimple = FC<FieldProps>("RenderFieldSimple") { props ->
 		try {
 			field.simple.parse(simpleInputState)
 		} catch (e: Exception) {
-			styledErrorText(" ${e.message}")
+			ErrorText { text = " ${e.message}" }
 		}
 }
 
@@ -168,16 +171,18 @@ private fun ChildrenBuilder.upload(
 ) {
 	ul {
 		li {
-			text("Formats autorisés : ${
-				simple.allowedFormats.flatMap { it.extensions }
-					.joinToString(separator = ", ")
-			}")
+			Text {
+				text = "Formats autorisés : ${
+					simple.allowedFormats.flatMap { it.extensions }
+						.joinToString(separator = ", ")
+				}"
+			}
 		}
 		li {
-			text("Taille maximale : ${simple.effectiveMaxSizeMB} Mo")
+			Text { text = "Taille maximale : ${simple.effectiveMaxSizeMB} Mo" }
 		}
 		li {
-			text("RGPD : Ce fichier sera conservé ${simple.effectiveExpiresAfterDays} jours")
+			Text { text = "RGPD : Ce fichier sera conservé ${simple.effectiveExpiresAfterDays} jours" }
 		}
 	}
 	styledInput(InputType.file, "", simple.arity.min > 0) {

@@ -10,8 +10,8 @@ import formulaide.client.routes.login
 import formulaide.client.routes.todoList
 import formulaide.ui.*
 import formulaide.ui.components.*
+import formulaide.ui.components.text.Text
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
-import formulaide.ui.utils.text
 import formulaide.ui.utils.useListEquality
 import kotlinx.browser.window
 import org.w3c.dom.HTMLInputElement
@@ -75,14 +75,14 @@ fun PasswordModification(user: Email, previousScreen: Screen) = FC<Props>("Passw
 
 	if (me == null) {
 		styledCard("Modifier le mot de passe") {
-			text("Chargement de l'utilisateur…")
+			Text { text = "Chargement de l'utilisateur…" }
 		}
 		return@FC
 	}
 
 	if (client !is Client.Authenticated) {
 		styledCard("Modifier le mot de passe", failed = true) {
-			text("Impossible de modifier le mot de passe sans être connecté")
+			Text { text = "Impossible de modifier le mot de passe sans être connecté" }
 		}
 		return@FC
 	}
@@ -172,7 +172,7 @@ val FormsToReview = FC<Props>("FormsToReview") {
 
 	val (client) = useClient()
 	if (client !is Client.Authenticated) {
-		p { text("Seuls les utilisateurs connectés peuvent voir la liste des formulaires qui les attendent") }
+		p { Text { text = "Seuls les utilisateurs connectés peuvent voir la liste des formulaires qui les attendent" } }
 		return@FC
 	}
 
@@ -181,7 +181,7 @@ val FormsToReview = FC<Props>("FormsToReview") {
 		.useListEquality()
 	var loadingMessage by useState("Chargement des formulaires en cours…")
 	if (forms.isEmpty())
-		p { text(loadingMessage) }
+		p { Text { text = loadingMessage } }
 
 	useEffect(client, allForms) {
 		scope.reportExceptions {

@@ -1,6 +1,6 @@
 package formulaide.ui.components
 
-import formulaide.ui.utils.text
+import formulaide.ui.components.text.Text
 import react.ChildrenBuilder
 import react.FC
 import react.Props
@@ -48,7 +48,7 @@ private val ControlledSelect = FC<ControlledSelectProps>("ControlledSelect") { p
 	) {
 		for (option in props.options) {
 			option {
-				text(option.text)
+				Text { text = option.text }
 				value = option.value
 				selected = option == props.selected
 			}

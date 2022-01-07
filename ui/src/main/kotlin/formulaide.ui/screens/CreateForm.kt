@@ -17,12 +17,13 @@ import formulaide.client.routes.createForm
 import formulaide.client.routes.editForm
 import formulaide.ui.*
 import formulaide.ui.components.*
+import formulaide.ui.components.text.ErrorText
+import formulaide.ui.components.text.Text
 import formulaide.ui.fields.FieldEditor
 import formulaide.ui.fields.SwitchDirection
 import formulaide.ui.utils.remove
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.switchOrder
-import formulaide.ui.utils.text
 import react.*
 import react.dom.html.InputType
 import react.dom.html.ReactHTML.div
@@ -84,7 +85,7 @@ fun CreateForm(original: Form?, copy: Boolean) = FC<Props>("CreateForm") {
 	val lambdas = useLambdas()
 
 	if (!formLoaded) {
-		text("Chargement des champs…")
+		Text { text = "Chargement des champs…" }
 		LoadingSpinner()
 		return@FC
 	}
@@ -135,52 +136,70 @@ fun CreateForm(original: Form?, copy: Boolean) = FC<Props>("CreateForm") {
 		traceRenders("CreateForm Main card (loaded)")
 
 		if (original != null && copy) {
-			text("Vous êtes en train de copier ce formulaire. Vous allez créer un nouveau formulaire n'ayant aucun lien avec l'ancien. Les dossiers remplis pour le formulaire précédent ne seront pas visible pour celui-ci.")
+			Text {
+				text =
+					"Vous êtes en train de copier ce formulaire. Vous allez créer un nouveau formulaire n'ayant aucun lien avec l'ancien. Les dossiers remplis pour le formulaire précédent ne seront pas visible pour celui-ci."
+			}
 		}
 		if (original != null && !copy) {
-			text("Vous êtes en train de modifier un formulaire. Vous pouvez effectuer n'importe quelle modification, mais le système devra ensuite vérifier si elle est compatible avec les dossiers remplis précédemment.")
-			styledErrorText(" Il est possible que le système refuse certaines modifications. Il est possible que le système autorise des modifications qui amènent à l'inaccessibilité de certaines données.")
-			text(" Aucune garantie n'est donnée pour les modifications non listées ci-dessous.")
+			Text {
+				text =
+					"Vous êtes en train de modifier un formulaire. Vous pouvez effectuer n'importe quelle modification, mais le système devra ensuite vérifier si elle est compatible avec les dossiers remplis précédemment."
+			}
+			ErrorText {
+				text =
+					" Il est possible que le système refuse certaines modifications. Il est possible que le système autorise des modifications qui amènent à l'inaccessibilité de certaines données."
+			}
+			Text { text = " Aucune garantie n'est donnée pour les modifications non listées ci-dessous." }
 
 			p {
 				className = "pt-2"
 
-				text("Modifications qui ne peuvent pas causer de problèmes :")
+				Text { text = "Modifications qui ne peuvent pas causer de problèmes :" }
 			}
 			ul {
 				className = "list-disc"
 
-				li { text("Renommer le formulaire") }
-				li { text("Renommer un champ ou une étape") }
-				li { text("Modifier l'ordre de plusieurs champs") }
-				li { text("Modifier la valeur par défaut d'un champ") }
-				li { text("Modifier le service responsable d'une étape") }
-				li { text("Créer un champ facultatif (si aucun champ n'a été supprimé)") }
+				li { Text { text = "Renommer le formulaire" } }
+				li { Text { text = "Renommer un champ ou une étape" } }
+				li { Text { text = "Modifier l'ordre de plusieurs champs" } }
+				li { Text { text = "Modifier la valeur par défaut d'un champ" } }
+				li { Text { text = "Modifier le service responsable d'une étape" } }
+				li { Text { text = "Créer un champ facultatif (si aucun champ n'a été supprimé)" } }
 			}
 
 			p {
 				className = "pt-2"
 
-				text("Modifications qui peuvent être refusées :")
+				Text { text = "Modifications qui peuvent être refusées :" }
 			}
 			ul {
 				className = "list-disc"
 
-				li { text("Modifier les restrictions des champs (obligatoire, facultatif, longueur maximale…)") }
-				li { text("Modifier le type d'un champ (dans certains cas, il n'est pas possible d'annuler la modification)") }
-				li { text("Créer un champ facultatif (si un champ avait été supprimé précédemment)") }
+				li {
+					Text {
+						text = "Modifier les restrictions des champs (obligatoire, facultatif, longueur maximale…)"
+					}
+				}
+				li {
+					Text {
+						text =
+							"Modifier le type d'un champ (dans certains cas, il n'est pas possible d'annuler la modification)"
+					}
+				}
+				li { Text { text = "Créer un champ facultatif (si un champ avait été supprimé précédemment)" } }
 			}
 
 			p {
 				className = "pt-2"
 
-				text("Modifications qui peuvent amener à une perte de données :")
+				Text { text = "Modifications qui peuvent amener à une perte de données :" }
 			}
 			ul {
 				className = "list-disc pb-4"
 
-				li { text("Modifier le type d'un champ") }
-				li { text("Supprimer un champ") }
+				li { Text { text = "Modifier le type d'un champ" } }
+				li { Text { text = "Supprimer un champ" } }
 			}
 		}
 
@@ -286,7 +305,7 @@ fun CreateForm(original: Form?, copy: Boolean) = FC<Props>("CreateForm") {
 				}
 			}
 			if (actions.isEmpty())
-				p { styledErrorText("Un formulaire doit avoir au moins une étape.") }
+				ErrorText { text = "Un formulaire doit avoir au moins une étape." }
 		}
 	}
 
@@ -318,7 +337,7 @@ private fun ChildrenBuilder.actionReviewerSelection(
 		styledSelect {
 			for (service in services.filter { it.open }) {
 				option {
-					text(service.name)
+					Text { text = service.name }
 
 					value = service.id
 					selected = action.reviewer.id == service.id
