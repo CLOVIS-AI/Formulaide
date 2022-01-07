@@ -12,7 +12,9 @@ import formulaide.ui.components.cards.Card
 import formulaide.ui.components.cards.FormCard
 import formulaide.ui.components.cards.action
 import formulaide.ui.components.cards.submit
+import formulaide.ui.components.inputs.ControlledSelect
 import formulaide.ui.components.inputs.Nesting
+import formulaide.ui.components.inputs.Option
 import formulaide.ui.components.text.Text
 import formulaide.ui.components.text.Title
 import formulaide.ui.fields.field
@@ -294,13 +296,11 @@ private val SearchInput = memo(FC<SearchInputProps>("SearchInput") { props ->
 			criterion = null
 		}
 
-		controlledSelect {
-			option("Saisie originelle", "null") { selectRoot(null) }
-				.selectIf { selectedRoot == null }
+		ControlledSelect {
+			Option("Saisie originelle", "null", selected = selectedRoot == null) { selectRoot(null) }
 
 			for (root in form.actions.filter { it.fields != null && it.fields!!.fields.isNotEmpty() }) {
-				option(root.name, root.id) { selectRoot(root) }
-					.selectIf { selectedRoot == root }
+				Option(root.name, root.id, selected = selectedRoot == root) { selectRoot(root) }
 			}
 		}
 		//endregion
@@ -427,14 +427,12 @@ private val SearchInputSelect = memo(FC<SearchInputSelectProps>("SearchInputSele
 
 	//	text(props.field.toString())
 	if (candidates.isNotEmpty()) {
-		controlledSelect {
+		ControlledSelect {
 			if (props.allowEmpty)
-				option("", "null") { selected = null }
-					.selectIf { selected == null }
+				Option("", "null", selected = selected == null) { selected = null }
 
 			for (candidate in candidates)
-				option(candidate.name, candidate.id) { selected = candidate }
-					.selectIf { selected == candidate }
+				Option(candidate.name, candidate.id, selected = selected == candidate) { selected = candidate }
 		}
 	}
 })
@@ -486,10 +484,9 @@ private val SearchCriterionSelect = FC<SearchCriterionSelectProps>("SearchCriter
 		chosen = available.firstOrNull()
 	}
 
-	controlledSelect {
+	ControlledSelect {
 		for (option in available)
-			option(option, option) { chosen = option }
-				.selectIf { chosen == option }
+			Option(option, option, selected = chosen == option) { chosen = option }
 	}
 }
 
