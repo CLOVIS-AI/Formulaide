@@ -6,6 +6,8 @@ import formulaide.client.routes.createService
 import formulaide.client.routes.reopenService
 import formulaide.ui.components.*
 import formulaide.ui.components.cards.Card
+import formulaide.ui.components.cards.FormCard
+import formulaide.ui.components.cards.submit
 import formulaide.ui.components.text.LightText
 import formulaide.ui.components.text.Text
 import formulaide.ui.refreshServices
@@ -73,10 +75,10 @@ val ServiceList = FC<Props>("ServiceList") {
 
 	val newServiceName = useRef<HTMLInputElement>()
 
-	styledFormCard(
-		"Créer un service",
-		null,
-		"Créer" to {
+	FormCard {
+		title = "Créer un service"
+
+		submit("Créer") {
 			val serviceName = newServiceName.current?.value
 			requireNotNull(serviceName) { "Le nom d'un service ne peut pas être vide" }
 			require(serviceName.isNotBlank()) { "Le nom d'un service ne peut pas être vide : $serviceName" }
@@ -85,8 +87,8 @@ val ServiceList = FC<Props>("ServiceList") {
 				client.createService(serviceName)
 				refreshServices()
 			}
-		},
-	) {
+		}
+
 		styledField("service-name", "Nom") {
 			styledInput(InputType.text, "service-name", required = true, ref = newServiceName)
 		}

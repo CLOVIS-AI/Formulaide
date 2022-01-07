@@ -6,7 +6,8 @@ import formulaide.client.routes.compositesReferencedIn
 import formulaide.client.routes.submitForm
 import formulaide.ui.*
 import formulaide.ui.components.LoadingSpinner
-import formulaide.ui.components.styledFormCard
+import formulaide.ui.components.cards.FormCard
+import formulaide.ui.components.cards.submit
 import formulaide.ui.components.text.ErrorText
 import formulaide.ui.components.text.Text
 import formulaide.ui.components.useAsync
@@ -133,10 +134,12 @@ fun SubmitForm(formRef: Ref<Form>) = FC<Props>("SubmitForm") {
 	}
 	traceRenders("SubmitForm … the form is loaded")
 
-	styledFormCard(
-		form.name,
-		"Ce formulaire est ${if (form.public) "public" else "interne"}, les champs marqués par une * sont obligatoires.",
-		submit = "Envoyer" to { htmlFormElement ->
+	FormCard {
+		title = form.name
+		subtitle =
+			"Ce formulaire est ${if (form.public) "public" else "interne"}, les champs marqués par une * sont obligatoires."
+
+		submit("Envoyer") { htmlFormElement ->
 			val submission = parseHtmlForm(
 				htmlFormElement,
 				form = form,
@@ -148,8 +151,8 @@ fun SubmitForm(formRef: Ref<Form>) = FC<Props>("SubmitForm") {
 
 				navigateTo(Screen.ShowForms)
 			}
-		},
-	) {
+		}
+
 		for (field in form.mainFields.fields.sortedBy { it.order }) {
 			field(form, null, field)
 		}
