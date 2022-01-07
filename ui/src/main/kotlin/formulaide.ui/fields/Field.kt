@@ -12,6 +12,7 @@ import formulaide.client.Client
 import formulaide.client.files.FileUploadJS
 import formulaide.client.routes.uploadFile
 import formulaide.ui.components.*
+import formulaide.ui.components.fields.Nesting
 import formulaide.ui.components.text.ErrorText
 import formulaide.ui.components.text.Text
 import formulaide.ui.reportExceptions
@@ -116,7 +117,7 @@ private val RenderFieldComposite = FC<FieldProps>("RenderFieldComposite") { prop
 
 	val subFields = field.fields
 
-	styledNesting {
+	Nesting {
 		for (subField in subFields) {
 			field(props.form,
 			      props.root,
@@ -134,7 +135,7 @@ private val RenderFieldUnion = FC<FieldProps>("RenderFieldUnion") { props ->
 	val subFields = field.options
 	val (selected, setSelected) = useState(subFields.first())
 
-	styledNesting {
+	Nesting {
 		styledFormField {
 			for (subField in subFields.sortedBy { it.order }) {
 				styledRadioButton(

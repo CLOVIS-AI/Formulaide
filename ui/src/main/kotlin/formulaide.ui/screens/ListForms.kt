@@ -14,6 +14,7 @@ import formulaide.ui.Role.Companion.role
 import formulaide.ui.components.*
 import formulaide.ui.components.cards.Card
 import formulaide.ui.components.cards.action
+import formulaide.ui.components.fields.Nesting
 import formulaide.ui.components.text.Text
 import formulaide.ui.utils.*
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
@@ -159,7 +160,7 @@ internal val FormDescription = memo(FC<FormDescriptionProps>("FormDescription") 
 			}
 	}
 
-	if (showRecords) styledNesting {
+	if (showRecords) Nesting {
 		Text { text = "Dossiers :" }
 
 		for (action in form.actions.sortedBy { it.order }) {
@@ -181,7 +182,7 @@ internal val FormDescription = memo(FC<FormDescriptionProps>("FormDescription") 
 		}
 	}
 
-	if (showAdministration) styledNesting {
+	if (showAdministration) Nesting {
 		Text { text = "Gestion :" }
 
 		if (user.role >= Role.ADMINISTRATOR) {

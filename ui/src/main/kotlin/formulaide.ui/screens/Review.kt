@@ -12,6 +12,7 @@ import formulaide.ui.components.cards.Card
 import formulaide.ui.components.cards.FormCard
 import formulaide.ui.components.cards.action
 import formulaide.ui.components.cards.submit
+import formulaide.ui.components.fields.Nesting
 import formulaide.ui.components.text.Text
 import formulaide.ui.components.text.Title
 import formulaide.ui.fields.field
@@ -979,7 +980,10 @@ private val ReviewRecordContents = FC<ReviewRecordContentsProps>("ReviewRecordCo
 	}
 
 	for (parsed in props.history) {
-		styledNesting(depth = 0, fieldNumber = i) {
+		Nesting {
+			depth = 0
+			fieldNumber = i
+
 			val transition = parsed.transition
 			val title = transition.previousState?.displayName() ?: "Saisie originelle"
 			if (props.showFullHistory) {
@@ -1010,6 +1014,7 @@ private val ReviewRecordContents = FC<ReviewRecordContentsProps>("ReviewRecordCo
 				}
 			}
 		}
+
 		i++
 	}
 
@@ -1019,7 +1024,10 @@ private val ReviewRecordContents = FC<ReviewRecordContentsProps>("ReviewRecordCo
 
 		val root = action.fields
 		if (root != null) {
-			styledNesting(depth = 0, fieldNumber = i) {
+			Nesting {
+				depth = 0
+				fieldNumber = i
+
 				for (field in root.fields) {
 					field(props.form, action, field, key = "${props.record.id}_${field.id}")
 				}

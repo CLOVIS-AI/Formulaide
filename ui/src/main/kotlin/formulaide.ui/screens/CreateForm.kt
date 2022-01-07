@@ -20,6 +20,7 @@ import formulaide.ui.components.*
 import formulaide.ui.components.cards.FormCard
 import formulaide.ui.components.cards.action
 import formulaide.ui.components.cards.submit
+import formulaide.ui.components.fields.Nesting
 import formulaide.ui.components.text.ErrorText
 import formulaide.ui.components.text.Text
 import formulaide.ui.fields.FieldEditor
@@ -272,10 +273,11 @@ fun CreateForm(original: Form?, copy: Boolean) = FC<Props>("CreateForm") {
 				div {
 					key = action.id
 
-					styledNesting(
-						depth = 0, fieldNumber = i,
-						onDeletion = { updateActions { remove(i) } },
-					) {
+					Nesting {
+						depth = 0
+						fieldNumber = i
+						onDeletion = { updateActions { remove(i) } }
+
 						actionName(action,
 						           replace = { updateActions { replace(i, it) } })
 
