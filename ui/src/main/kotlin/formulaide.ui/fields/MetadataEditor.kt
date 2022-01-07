@@ -6,9 +6,8 @@ import formulaide.api.fields.SimpleField.Upload.Format
 import formulaide.api.fields.SimpleField.Upload.Format.*
 import formulaide.api.types.Arity
 import formulaide.ui.components.StyledButton
-import formulaide.ui.components.styledCheckbox
-import formulaide.ui.components.styledField
-import formulaide.ui.components.styledInput
+import formulaide.ui.components.inputs.Checkbox
+import formulaide.ui.components.inputs.Input
 import org.w3c.dom.HTMLInputElement
 import react.ChildrenBuilder
 import react.FC
@@ -16,6 +15,7 @@ import react.dom.html.InputHTMLAttributes
 import react.dom.html.InputType
 import react.dom.html.ReactHTML.div
 import react.useMemo
+import formulaide.ui.components.inputs.Field as UIField
 
 val MetadataEditor = FC<EditableFieldProps>("MetadataEditor") { props ->
 	val field = props.field
@@ -55,15 +55,18 @@ private fun ChildrenBuilder.uploadMetadata(
 	props: EditableFieldProps,
 ) {
 	val id = idOf(props.uniqueId, "files")
-	styledField(id, "Formats autorisés") {
+	UIField {
+		this.id = id
+		text = "Formats autorisés"
+
 		for (format in values()) {
 			val name = format.displayName()
 			val idFormat = idOf(props.uniqueId, name)
 			div {
-				styledCheckbox(
-					idFormat,
-					"$name (${format.extensions.joinToString(separator = ", ")})",
-				) {
+				Checkbox {
+					this.id = idFormat
+					text = "$name (${format.extensions.joinToString(separator = ", ")})"
+
 					checked = simple.allowedFormats.any { it == format }
 
 					setHandler(
@@ -84,8 +87,13 @@ private fun ChildrenBuilder.uploadMetadata(
 	}
 
 	val idSize = idOf(props.uniqueId, "size")
-	styledField(idSize, "Taille maximale (Mo)") {
-		styledInput(InputType.number, idSize) {
+	UIField {
+		this.id = idSize
+		text = "Taille maximale (Mo)"
+
+		Input {
+			type = InputType.number
+			this.id = idSize
 			min = 1.0
 			max = 10.0
 			setHandler(simple.maxSizeMB,
@@ -96,6 +104,7 @@ private fun ChildrenBuilder.uploadMetadata(
 				           it.value.toIntOrNull()?.let { simple.copy(maxSizeMB = it) }
 			           })
 		}
+
 		cancelButton(simple.maxSizeMB,
 		             props,
 		             field,
@@ -103,10 +112,17 @@ private fun ChildrenBuilder.uploadMetadata(
 	}
 
 	val idExpiration = idOf(props.uniqueId, "expiration")
-	styledField(idExpiration, "Durée de vie avant suppression (jours)") {
-		styledInput(InputType.number, idExpiration) {
+	UIField {
+		this.id = idExpiration
+		text = "Durée de vie avant suppression (jours)"
+
+		Input {
+			type = InputType.number
+			this.id = idExpiration
+
 			min = 1.0
 			max = 5000.0
+
 			setHandler(simple.expiresAfterDays,
 			           simple.effectiveExpiresAfterDays,
 			           props,
@@ -116,6 +132,7 @@ private fun ChildrenBuilder.uploadMetadata(
 					           ?.let { simple.copy(expiresAfterDays = it) }
 			           })
 		}
+
 		cancelButton(simple.expiresAfterDays,
 		             props,
 		             field,
@@ -129,8 +146,13 @@ private fun ChildrenBuilder.integerMetadata(
 	props: EditableFieldProps,
 ) {
 	val id = idOf(props.uniqueId, "min")
-	styledField(id, "Valeur minimale") {
-		styledInput(InputType.number, id) {
+	UIField {
+		this.id = id
+		this.text = "Valeur minimale"
+
+		Input {
+			type = InputType.number
+			this.id = id
 			setHandler(simple.min,
 			           null,
 			           props,
@@ -139,12 +161,18 @@ private fun ChildrenBuilder.integerMetadata(
 				           it.value.toLongOrNull()?.let { simple.copy(min = it) }
 			           })
 		}
+
 		cancelButton(simple.min, props, field, update = { simple.copy(min = null) })
 	}
 
 	val id2 = idOf(props.uniqueId, "max")
-	styledField(id2, "Valeur maximale") {
-		styledInput(InputType.number, id2) {
+	UIField {
+		this.id = id2
+		text = "Valeur maximale"
+
+		Input {
+			type = InputType.number
+			this.id = id2
 			setHandler(simple.max,
 			           null,
 			           props,
@@ -153,6 +181,7 @@ private fun ChildrenBuilder.integerMetadata(
 				           it.value.toLongOrNull()?.let { simple.copy(max = it) }
 			           })
 		}
+
 		cancelButton(simple.max, props, field, update = { simple.copy(max = null) })
 	}
 }
@@ -163,8 +192,13 @@ private fun ChildrenBuilder.textMetadata(
 	props: EditableFieldProps,
 ) {
 	val id = idOf(props.uniqueId, "max-length")
-	styledField(id, "Longueur maximale") {
-		styledInput(InputType.number, id) {
+	UIField {
+		this.id = id
+		text = "Longueur maximale"
+
+		Input {
+			type = InputType.number
+			this.id = id
 			setHandler(simple.maxLength,
 			           null,
 			           props,
@@ -174,6 +208,7 @@ private fun ChildrenBuilder.textMetadata(
 			           })
 			min = 0.0
 		}
+
 		cancelButton(simple.maxLength,
 		             props,
 		             field,

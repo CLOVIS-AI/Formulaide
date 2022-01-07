@@ -11,10 +11,11 @@ import formulaide.api.types.UploadRequest
 import formulaide.client.Client
 import formulaide.client.files.FileUploadJS
 import formulaide.client.routes.uploadFile
-import formulaide.ui.components.*
-import formulaide.ui.components.fields.Nesting
+import formulaide.ui.components.StyledButton
+import formulaide.ui.components.inputs.*
 import formulaide.ui.components.text.ErrorText
 import formulaide.ui.components.text.Text
+import formulaide.ui.components.useAsync
 import formulaide.ui.reportExceptions
 import formulaide.ui.traceRenders
 import formulaide.ui.useClient
@@ -28,6 +29,7 @@ import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.input
 import react.dom.html.ReactHTML.li
 import react.dom.html.ReactHTML.ul
+import formulaide.ui.components.inputs.Field as UIField
 
 private external interface FieldProps : Props {
 	var form: Form?
@@ -59,7 +61,10 @@ private val RenderFieldSimple = FC<FieldProps>("RenderFieldSimple") { props ->
 	var simpleInputState by useState<String>()
 	val simpleInput =
 		{ type: InputType, _required: Boolean, simple: SimpleField, handler: InputHTMLAttributes<HTMLInputElement>.() -> Unit ->
-			styledInput(type, props.id, required = _required) {
+			Input {
+				this.type = type
+				this.id = props.id
+				this.required = _required
 				onChange = {
 					val newValue = it.target.value
 					simpleInputState = newValue
@@ -77,7 +82,11 @@ private val RenderFieldSimple = FC<FieldProps>("RenderFieldSimple") { props ->
 		is SimpleField.Decimal -> simpleInput(InputType.number, required, simple) {
 			step = 0.01
 		}
-		is SimpleField.Boolean -> styledCheckbox(props.id, "", required = false)
+		is SimpleField.Boolean -> Checkbox {
+			id = props.id
+			text = ""
+			this.required = false
+		}
 		is SimpleField.Message -> Unit // The message has already been displayed
 		is SimpleField.Email -> simpleInput(InputType.email, required, simple) {}
 		is SimpleField.Phone -> simpleInput(InputType.tel, required, simple) {}
@@ -136,16 +145,16 @@ private val RenderFieldUnion = FC<FieldProps>("RenderFieldUnion") { props ->
 	val (selected, setSelected) = useState(subFields.first())
 
 	Nesting {
-		styledFormField {
+		FormField {
 			for (subField in subFields.sortedBy { it.order }) {
-				styledRadioButton(
-					radioId = props.id,
-					buttonId = "${props.fieldKey}-${subField.id}",
-					value = subField.id,
-					text = subField.name,
-					checked = subField == selected,
+				RadioButton {
+					radioId = props.id
+					buttonId = "${props.fieldKey}-${subField.id}"
+					value = subField.id
+					text = subField.name
+					checked = subField == selected
 					onClick = { setSelected(subField) }
-				)
+				}
 			}
 		}
 
@@ -186,29 +195,30 @@ private fun ChildrenBuilder.upload(
 			Text { text = "RGPD : Ce fichier sera conservé ${simple.effectiveExpiresAfterDays} jours" }
 		}
 	}
-	styledInput(InputType.file, "", simple.arity.min > 0) {
+	Input {
+		type = InputType.file
+		required = simple.arity.min > 0
 		accept = simple.allowedFormats.flatMap { it.mimeTypes }
 			.joinToString(separator = ", ")
 		multiple = false
 		this.onChange = {
-			reportExceptions {
-				val file =
-					requireNotNull(it.target.files?.get(0)) { "Aucun fichier n'a été trouvé : ${it.target}" }
+			val file =
+				requireNotNull(it.target.files?.get(0)) { "Aucun fichier n'a été trouvé : ${it.target}" }
 
-				scope.reportExceptions {
-					val uploaded = client.uploadFile(
-						UploadRequest(
-							form = form.createRef(),
-							root = root?.createRef(),
-							field = id
-						),
-						file = FileUploadJS(file, file.name)
-					)
-					onChange?.let { onChange -> onChange(fieldKey, uploaded.id) }
-				}
+			scope.reportExceptions {
+				val uploaded = client.uploadFile(
+					UploadRequest(
+						form = form.createRef(),
+						root = root?.createRef(),
+						field = id
+					),
+					file = FileUploadJS(file, file.name)
+				)
+				onChange?.let { onChange -> onChange(fieldKey, uploaded.id) }
 			}
 		}
 	}
+
 	input {
 		type = InputType.hidden
 		name = id
@@ -221,7 +231,10 @@ private fun ChildrenBuilder.upload(
 private val Field: FC<FieldProps> = FC("Field") { props ->
 	traceRenders("Field ${props.fieldKey}")
 	if (props.field.arity.max == 1) {
-		styledField(props.id, props.field.name) {
+		UIField {
+			id = props.id
+			text = props.field.name
+
 			RenderField {
 				this.form = props.form
 				this.root = props.root
@@ -234,7 +247,10 @@ private val Field: FC<FieldProps> = FC("Field") { props ->
 	} else if (props.field.arity.max > 1) {
 		val (fieldIds, setFieldIds) = useState(List(props.field.arity.min) { it })
 
-		styledField(props.id, props.field.name) {
+		UIField {
+			id = props.id
+			text = props.field.name
+
 			for ((i, fieldId) in fieldIds.withIndex()) {
 				div {
 					RenderField {

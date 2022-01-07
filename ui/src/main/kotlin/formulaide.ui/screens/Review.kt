@@ -12,7 +12,7 @@ import formulaide.ui.components.cards.Card
 import formulaide.ui.components.cards.FormCard
 import formulaide.ui.components.cards.action
 import formulaide.ui.components.cards.submit
-import formulaide.ui.components.fields.Nesting
+import formulaide.ui.components.inputs.Nesting
 import formulaide.ui.components.text.Text
 import formulaide.ui.components.text.Title
 import formulaide.ui.fields.field
@@ -42,6 +42,8 @@ import react.dom.html.ReactHTML.th
 import react.dom.html.ReactHTML.thead
 import react.dom.html.ReactHTML.tr
 import kotlin.js.Date
+import formulaide.ui.components.inputs.Field as UIField
+import formulaide.ui.components.inputs.Input as UIInput
 
 internal fun RecordState?.displayName() = when (this) {
 	is RecordState.Action -> this.current.obj.name
@@ -281,7 +283,10 @@ private val SearchInput = memo(FC<SearchInputProps>("SearchInput") { props ->
 		return@FC
 	}
 
-	styledField("search-field", "Rechercher dans :") {
+	UIField {
+		id = "search-field"
+		text = "Rechercher dans :"
+
 		//region Select the root
 		fun selectRoot(root: Action?) {
 			selectedRoot = root
@@ -326,11 +331,17 @@ private val SearchInput = memo(FC<SearchInputProps>("SearchInput") { props ->
 	}
 
 	val field = fields.lastOrNull()
-	if (field != null) styledField("search-criterion", "Critère :") {        //region Select the criterion type
+	if (field != null) UIField {
+		id = "search-criterion"
+		text = "Critère :"
+
+		//region Select the criterion type
 		SearchCriterionSelect {
 			this.fields = fields
 			this.select = { criterion = it }
-		}        //endregion
+		}
+		//endregion
+
 		//region Select the criterion data
 		if (criterion !is SearchCriterion.Exists && criterion != undefined) {
 			val inputType = when {
@@ -340,7 +351,11 @@ private val SearchInput = memo(FC<SearchInputProps>("SearchInput") { props ->
 				else -> InputType.text
 			}
 
-			styledInput(inputType, "search-criterion-data", required = true) {
+			UIInput {
+				type = inputType
+				id = "search-criterion-data"
+				required = true
+
 				value = when (val c = criterion) {
 					is SearchCriterion.TextContains -> c.text
 					is SearchCriterion.TextEquals -> c.text
@@ -348,6 +363,7 @@ private val SearchInput = memo(FC<SearchInputProps>("SearchInput") { props ->
 					is SearchCriterion.OrderAfter -> c.min
 					else -> error("Aucune donnée connue pour le critère $c")
 				}
+
 				onChange = {
 					val target = it.target
 					val text = target.value
@@ -899,14 +915,16 @@ private val ReviewRecordExpanded = FC<ReviewRecordExpandedProps>("ReviewRecordEx
 
 			traceRenders("ReviewRecordExpanded … Reason")
 			if (decision != ReviewDecision.NEXT)
-				styledField("record-${props.record.id}-reason", "Pourquoi ce choix ?") {
-					styledInput(InputType.text,
-					            "record-${props.record.id}-reason",
-					            required = decision == ReviewDecision.REFUSE) {
+				UIField {
+					id = "record-${props.record.id}-reason"
+					text = "Pourquoi ce choix ?"
+
+					UIInput {
+						type = InputType.text
+						id = "record-${props.record.id}-reason"
+						required = decision == ReviewDecision.REFUSE
 						value = props.reason ?: ""
-						onChange = {
-							props.updateReason(it.target.value)
-						}
+						onChange = { props.updateReason(it.target.value) }
 					}
 				}
 			traceRenders("ReviewRecordExpanded … end of card")

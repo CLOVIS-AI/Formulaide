@@ -14,6 +14,8 @@ import formulaide.ui.components.cards.Card
 import formulaide.ui.components.cards.FormCard
 import formulaide.ui.components.cards.action
 import formulaide.ui.components.cards.submit
+import formulaide.ui.components.inputs.Field
+import formulaide.ui.components.inputs.Input
 import formulaide.ui.components.text.Text
 import formulaide.ui.fields.FieldEditor
 import formulaide.ui.fields.SwitchDirection
@@ -70,17 +72,24 @@ fun CreateData(original: Composite? = null) = FC<Props>("CreateData") {
 		}
 		action("Effacer") { updateFields { emptyList() } }
 
-		styledField("new-data-name", "Nom") {
-			styledInput(InputType.text, "new-data-name", required = true) {
+		Field {
+			id = "new-data-name"
+			text = "Nom"
+
+			Input {
+				type = InputType.text
+				id = "new-data-name"
+				required = true
 				autoFocus = true
 				value = formName
-				onChange = {
-					formName = it.target.value
-				}
+				onChange = { formName = it.target.value }
 			}
 		}
 
-		styledField("data-fields", "Champs") {
+		Field {
+			id = "data-fields"
+			text = "Champs"
+
 			for ((i, field) in fields.withIndex()) {
 				FieldEditor {
 					this.field = field

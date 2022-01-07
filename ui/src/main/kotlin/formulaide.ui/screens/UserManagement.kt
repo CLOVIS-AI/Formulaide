@@ -9,13 +9,15 @@ import formulaide.client.routes.createUser
 import formulaide.client.routes.editUser
 import formulaide.client.routes.listUsers
 import formulaide.ui.*
-import formulaide.ui.components.*
+import formulaide.ui.components.StyledButton
 import formulaide.ui.components.cards.Card
 import formulaide.ui.components.cards.FormCard
 import formulaide.ui.components.cards.action
 import formulaide.ui.components.cards.submit
+import formulaide.ui.components.inputs.*
 import formulaide.ui.components.text.LightText
 import formulaide.ui.components.text.Text
+import formulaide.ui.components.useAsync
 import formulaide.ui.utils.replace
 import org.w3c.dom.HTMLInputElement
 import react.*
@@ -54,14 +56,19 @@ val UserList = FC<Props>("UserList") {
 		action("Créer un employé") { navigateTo(Screen.NewUser) }
 		loading = users.isEmpty()
 
-		styledField("hide-disabled", "Utilisateurs désactivés") {
-			styledCheckbox("hide-disabled", "Afficher les comptes désactivés") {
+		Field {
+			id = "hide-disabled"
+			text = "Utilisateurs désactivés"
+
+			Checkbox {
+				id = "hide-disabled"
+				text = "Afficher les comptes désactivés"
 				onChange = { listDisabledUsers = it.target.checked }
 			}
 		}
 
 		for ((i, user) in users.withIndex()) {
-			styledFormField {
+			FormField {
 				Text { text = user.fullName + " " }
 				LightText { text = user.email.email }
 
@@ -166,21 +173,37 @@ val CreateUser = FC<Props>("CreateUser") {
 			}
 		}
 
-		styledField("employee-email", "Adresse mail") {
-			styledInput(InputType.email,
-			            "employee-email",
-			            required = true,
-			            ref = email)
+		Field {
+			id = "employee-email"
+			text = "Adresse mail"
+
+			Input {
+				type = InputType.email
+				id = "employee-email"
+				required = true
+				ref = email
+			}
 		}
 
-		styledField("employee-name", "Nom affiché") {
-			styledInput(InputType.text, "employee-name", required = true, ref = fullName)
+		Field {
+			id = "employee-name"
+			text = "Nom affiché"
+
+			Input {
+				type = InputType.text
+				id = "employee-name"
+				required = true
+				ref = fullName
+			}
 		}
 
-		styledField("employee-service", "Service") {
-			styledSelect(onSelect = { option ->
-				selectedService = services.find { it.id == option.value }
-			}) {
+		Field {
+			id = "employee-service"
+			text = "Service"
+
+			Select {
+				onSelection = { option -> selectedService = services.find { it.id == option.value } }
+
 				for (service in services) {
 					option {
 						Text { text = service.name }
@@ -190,26 +213,39 @@ val CreateUser = FC<Props>("CreateUser") {
 			}
 		}
 
-		styledField("employee-is-admin", "Droits") {
-			styledCheckbox("employee-is-admin",
-			               "Cet employé est un administrateur",
-			               ref = admin)
+		Field {
+			id = "employee-is-admin"
+			text = "Droits"
+
+			Checkbox {
+				id = "employee-is-admin"
+				text = "Cet employé est un administrateur"
+				ref = admin
+			}
 		}
 
-		styledField("employee-password-1", "Mot de passe") {
-			styledInput(InputType.password,
-			            "employee-password-1",
-			            required = true,
-			            ref = password1) {
+		Field {
+			id = "employee-password-1"
+			text = "Mot de passe"
+
+			Input {
+				type = InputType.password
+				id = "employee-password-1"
+				required = true
+				ref = password1
 				minLength = 5
 			}
 		}
 
-		styledField("employee-password-2", "Confirmer le mot de passe") {
-			styledInput(InputType.password,
-			            "employee-password-2",
-			            required = true,
-			            ref = password2) {
+		Field {
+			id = "employee-password-2"
+			text = "Confirmer le mot de passe"
+
+			Input {
+				type = InputType.password
+				id = "employee-password-2"
+				required = true
+				ref = password2
 				minLength = 5
 			}
 		}

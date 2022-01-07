@@ -6,7 +6,7 @@ import formulaide.api.fields.DeepFormField.Companion.createMatchingFormField
 import formulaide.api.types.*
 import formulaide.api.types.Ref.Companion.loadIfNecessary
 import formulaide.ui.components.StyledButton
-import formulaide.ui.components.styledSmallInput
+import formulaide.ui.components.inputs.Input
 import formulaide.ui.components.text.Text
 import formulaide.ui.useComposites
 import react.FC
@@ -68,9 +68,10 @@ val ArityEditor = FC<EditableFieldProps>("ArityEditor") { props ->
 		if (arity.max > 1) {
 			Text { text = "De " }
 			if (field !is DataField.Composite) {
-				styledSmallInput(InputType.number,
-				                 "item-arity-min-${props.uniqueId}",
-				                 required = true) {
+				Input {
+					type = InputType.number
+					id = "item-arity-min-${props.uniqueId}"
+					required = true
 					value = arity.min.toString()
 					min = minAllowedRange.first.toDouble()
 					max = min(arity.max, minAllowedRange.last).toDouble()
@@ -85,9 +86,10 @@ val ArityEditor = FC<EditableFieldProps>("ArityEditor") { props ->
 				Text { text = arity.min.toString() }
 			}
 			Text { text = " à " }
-			styledSmallInput(InputType.number,
-			                 "item-arity-min-${props.uniqueId}",
-			                 required = true) {
+			Input {
+				type = InputType.number
+				id = "item-arity-min-${props.uniqueId}"
+				required = true
 				value = arity.max.toString()
 				min = max(arity.min, max(maxAllowedRange.first, 2)).toDouble()
 				max = maxAllowedRange.last.toDouble()

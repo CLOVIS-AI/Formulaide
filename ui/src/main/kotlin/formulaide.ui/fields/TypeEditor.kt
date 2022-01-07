@@ -5,15 +5,15 @@ import formulaide.api.data.SPECIAL_TOKEN_RECURSION
 import formulaide.api.fields.*
 import formulaide.api.types.Arity
 import formulaide.api.types.Ref
-import formulaide.ui.components.styledField
-import formulaide.ui.components.styledFormField
-import formulaide.ui.components.styledSelect
+import formulaide.ui.components.inputs.FormField
+import formulaide.ui.components.inputs.Select
 import formulaide.ui.components.text.LightText
 import formulaide.ui.components.text.Text
 import formulaide.ui.fields.SimpleFieldEnum.Companion.asEnum
 import formulaide.ui.useComposites
 import react.FC
 import react.dom.html.ReactHTML.option
+import formulaide.ui.components.inputs.Field as UIField
 
 val TypeEditor = FC<EditableFieldProps>("TypeEditor") { props ->
 	val composites by useComposites()
@@ -25,10 +25,15 @@ val TypeEditor = FC<EditableFieldProps>("TypeEditor") { props ->
 	if (allowTypeModifications) {
 		val typeId = "item-type-${props.uniqueId}"
 
-		styledField(typeId, "Type") {
-			styledSelect(
-				onSelect = { onSelect(it.value, field, props, composites) }
-			) {
+		UIField {
+			id = typeId
+			text = "Type"
+
+			Select {
+				onSelection = { onSelect(it.value, field, props, composites) }
+				id = typeId
+				required = true
+
 				SimpleOptions { +props }
 
 				UnionOptions { +props }
@@ -37,9 +42,6 @@ val TypeEditor = FC<EditableFieldProps>("TypeEditor") { props ->
 
 				// Select itself
 				RecursiveCompositeOptions { +props }
-
-				id = typeId
-				required = true
 			}
 		}
 	} else {
@@ -54,7 +56,10 @@ val TypeEditor = FC<EditableFieldProps>("TypeEditor") { props ->
 			else -> error("Impossible d'afficher le type du champ $field")
 		}
 
-		styledFormField { Text { text = field.name + " " }; LightText { text = typeName } }
+		FormField {
+			Text { text = field.name + " " }
+			LightText { text = typeName }
+		}
 	}
 }
 

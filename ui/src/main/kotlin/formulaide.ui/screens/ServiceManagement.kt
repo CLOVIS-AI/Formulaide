@@ -4,10 +4,13 @@ import formulaide.client.Client
 import formulaide.client.routes.closeService
 import formulaide.client.routes.createService
 import formulaide.client.routes.reopenService
-import formulaide.ui.components.*
+import formulaide.ui.components.StyledButton
 import formulaide.ui.components.cards.Card
 import formulaide.ui.components.cards.FormCard
 import formulaide.ui.components.cards.submit
+import formulaide.ui.components.inputs.Checkbox
+import formulaide.ui.components.inputs.Field
+import formulaide.ui.components.inputs.FormField
 import formulaide.ui.components.text.LightText
 import formulaide.ui.components.text.Text
 import formulaide.ui.refreshServices
@@ -22,6 +25,7 @@ import react.dom.html.InputType
 import react.dom.html.ReactHTML.div
 import react.useRef
 import react.useState
+import formulaide.ui.components.inputs.Input as UIInput
 
 val ServiceList = FC<Props>("ServiceList") {
 	traceRenders("ServiceList")
@@ -44,14 +48,19 @@ val ServiceList = FC<Props>("ServiceList") {
 
 		var listClosedServices by useState(false)
 
-		styledField("hide-disabled", "Services désactivés") {
-			styledCheckbox("hide-disabled", "Afficher les services désactivés") {
+		Field {
+			id = "hide-disabled"
+			text = "Service désactivés"
+
+			Checkbox {
+				id = "hide-disabled"
+				text = "Afficher les services désactivés"
 				onChange = { listClosedServices = it.target.checked }
 			}
 		}
 
 		for (service in services.filter { it.open || listClosedServices }) {
-			styledFormField {
+			FormField {
 				Text { text = service.name }
 
 				if (!service.open)
@@ -89,8 +98,16 @@ val ServiceList = FC<Props>("ServiceList") {
 			}
 		}
 
-		styledField("service-name", "Nom") {
-			styledInput(InputType.text, "service-name", required = true, ref = newServiceName)
+		Field {
+			id = "service-name"
+			text = "Nom"
+
+			UIInput {
+				type = InputType.text
+				id = "service-name"
+				required = true
+				ref = newServiceName
+			}
 		}
 	}
 }
