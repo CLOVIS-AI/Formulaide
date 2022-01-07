@@ -51,7 +51,7 @@ val StyledButton = FC<StyledButtonProps>("StyledButton") { props ->
 			disabled = loading
 
 			if (loading)
-				loadingSpinner()
+				LoadingSpinner()
 			else
 				text(props.text ?: "")
 

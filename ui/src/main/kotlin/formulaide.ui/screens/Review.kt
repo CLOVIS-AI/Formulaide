@@ -263,7 +263,7 @@ private val SearchInput = memo(FC<SearchInputProps>("SearchInput") { props ->
 
 	if (!props.formLoaded) {
 		text("Chargement du formulaire en cours…")
-		loadingSpinner()
+		LoadingSpinner()
 		return@FC
 	}
 
@@ -947,13 +947,13 @@ private val ReviewRecordContents = FC<ReviewRecordContentsProps>("ReviewRecordCo
 	if (!props.formLoaded) {
 		traceRenders("ReviewRecordCard … cancelled because the form is not loaded")
 		text("Chargement du formulaide…")
-		loadingSpinner()
+		LoadingSpinner()
 		return@FC
 	}
 	if (!loaded) {
 		traceRenders("ReviewRecordCard … cancelled because the action fields are not loaded")
 		text("Chargement des champs…")
-		loadingSpinner()
+		LoadingSpinner()
 		return@FC
 	}
 
@@ -980,9 +980,9 @@ private val ReviewRecordContents = FC<ReviewRecordContentsProps>("ReviewRecordCo
 
 			if (transition.fields != null) {
 				if (!props.formLoaded) {
-					p { text("Chargement du formulaire…"); loadingSpinner() }
+					p { text("Chargement du formulaire…"); LoadingSpinner() }
 				} else if (parsed.submission == null) {
-					p { text("Chargement de la saisie…"); loadingSpinner() }
+					p { text("Chargement de la saisie…"); LoadingSpinner() }
 				} else {
 					br {}
 					immutableFields(parsed.submission)

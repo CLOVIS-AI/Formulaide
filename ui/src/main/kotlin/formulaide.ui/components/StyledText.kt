@@ -10,7 +10,7 @@ fun ChildrenBuilder.styledTitle(text: String, loading: Boolean = false) {
 		className = "text-xl"
 
 		text(text)
-		if (loading) loadingSpinner()
+		if (loading) LoadingSpinner()
 	}
 }
 

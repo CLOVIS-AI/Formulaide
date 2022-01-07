@@ -117,7 +117,7 @@ private val FormCard = FC<FormCardProps>("FormCard") { props ->
 			else
 				span {
 					className = buttonNonDefaultClasses
-					loadingSpinner()
+					LoadingSpinner()
 				}
 
 			for (action in props.actions) {

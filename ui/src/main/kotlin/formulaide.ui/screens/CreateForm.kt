@@ -85,7 +85,7 @@ fun CreateForm(original: Form?, copy: Boolean) = FC<Props>("CreateForm") {
 
 	if (!formLoaded) {
 		text("Chargement des champs…")
-		loadingSpinner()
+		LoadingSpinner()
 		return@FC
 	}
 
