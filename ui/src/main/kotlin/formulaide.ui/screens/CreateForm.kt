@@ -22,7 +22,6 @@ import formulaide.ui.components.cards.action
 import formulaide.ui.components.cards.submit
 import formulaide.ui.components.inputs.*
 import formulaide.ui.components.text.ErrorText
-import formulaide.ui.components.text.Text
 import formulaide.ui.fields.FieldEditor
 import formulaide.ui.fields.SwitchDirection
 import formulaide.ui.utils.remove
@@ -89,7 +88,7 @@ fun CreateForm(original: Form?, copy: Boolean) = FC<Props>("CreateForm") {
 	val lambdas = useLambdas()
 
 	if (!formLoaded) {
-		Text { text = "Chargement des champs…" }
+		+"Chargement des champs…"
 		LoadingSpinner()
 		return@FC
 	}
@@ -141,70 +140,59 @@ fun CreateForm(original: Form?, copy: Boolean) = FC<Props>("CreateForm") {
 		traceRenders("CreateForm Main card (loaded)")
 
 		if (original != null && copy) {
-			Text {
-				text =
-					"Vous êtes en train de copier ce formulaire. Vous allez créer un nouveau formulaire n'ayant aucun lien avec l'ancien. Les dossiers remplis pour le formulaire précédent ne seront pas visible pour celui-ci."
-			}
+			+"Vous êtes en train de copier ce formulaire. Vous allez créer un nouveau formulaire n'ayant aucun lien avec l'ancien. Les dossiers remplis pour le formulaire précédent ne seront pas visible pour celui-ci."
 		}
 		if (original != null && !copy) {
-			Text {
-				text =
-					"Vous êtes en train de modifier un formulaire. Vous pouvez effectuer n'importe quelle modification, mais le système devra ensuite vérifier si elle est compatible avec les dossiers remplis précédemment."
-			}
+			+"Vous êtes en train de modifier un formulaire. Vous pouvez effectuer n'importe quelle modification, mais le système devra ensuite vérifier si elle est compatible avec les dossiers remplis précédemment."
 			ErrorText {
 				text =
 					" Il est possible que le système refuse certaines modifications. Il est possible que le système autorise des modifications qui amènent à l'inaccessibilité de certaines données."
 			}
-			Text { text = " Aucune garantie n'est donnée pour les modifications non listées ci-dessous." }
+			+" Aucune garantie n'est donnée pour les modifications non listées ci-dessous."
 
 			p {
 				className = "pt-2"
 
-				Text { text = "Modifications qui ne peuvent pas causer de problèmes :" }
+				+"Modifications qui ne peuvent pas causer de problèmes :"
 			}
 			ul {
 				className = "list-disc"
 
-				li { Text { text = "Renommer le formulaire" } }
-				li { Text { text = "Renommer un champ ou une étape" } }
-				li { Text { text = "Modifier l'ordre de plusieurs champs" } }
-				li { Text { text = "Modifier la valeur par défaut d'un champ" } }
-				li { Text { text = "Modifier le service responsable d'une étape" } }
-				li { Text { text = "Créer un champ facultatif (si aucun champ n'a été supprimé)" } }
+				li { +"Renommer le formulaire" }
+				li { +"Renommer un champ ou une étape" }
+				li { +"Modifier l'ordre de plusieurs champs" }
+				li { +"Modifier la valeur par défaut d'un champ" }
+				li { +"Modifier le service responsable d'une étape" }
+				li { +"Créer un champ facultatif (si aucun champ n'a été supprimé)" }
 			}
 
 			p {
 				className = "pt-2"
 
-				Text { text = "Modifications qui peuvent être refusées :" }
+				+"Modifications qui peuvent être refusées :"
 			}
 			ul {
 				className = "list-disc"
 
 				li {
-					Text {
-						text = "Modifier les restrictions des champs (obligatoire, facultatif, longueur maximale…)"
-					}
+					+"Modifier les restrictions des champs (obligatoire, facultatif, longueur maximale…)"
 				}
 				li {
-					Text {
-						text =
-							"Modifier le type d'un champ (dans certains cas, il n'est pas possible d'annuler la modification)"
-					}
+					+"Modifier le type d'un champ (dans certains cas, il n'est pas possible d'annuler la modification)"
 				}
-				li { Text { text = "Créer un champ facultatif (si un champ avait été supprimé précédemment)" } }
+				li { +"Créer un champ facultatif (si un champ avait été supprimé précédemment)" }
 			}
 
 			p {
 				className = "pt-2"
 
-				Text { text = "Modifications qui peuvent amener à une perte de données :" }
+				+"Modifications qui peuvent amener à une perte de données :"
 			}
 			ul {
 				className = "list-disc pb-4"
 
-				li { Text { text = "Modifier le type d'un champ" } }
-				li { Text { text = "Supprimer un champ" } }
+				li { +"Modifier le type d'un champ" }
+				li { +"Supprimer un champ" }
 			}
 		}
 
@@ -361,7 +349,7 @@ private fun ChildrenBuilder.actionReviewerSelection(
 		Select {
 			for (service in services.filter { it.open }) {
 				option {
-					Text { text = service.name }
+					+service.name
 
 					value = service.id
 					selected = action.reviewer.id == service.id

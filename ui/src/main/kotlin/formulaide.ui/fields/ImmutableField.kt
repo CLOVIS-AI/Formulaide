@@ -6,7 +6,6 @@ import formulaide.api.fields.SimpleField
 import formulaide.client.Client
 import formulaide.client.routes.downloadFile
 import formulaide.ui.components.StyledButton
-import formulaide.ui.components.text.Text
 import formulaide.ui.traceRenders
 import formulaide.ui.useClient
 import kotlinx.browser.window
@@ -49,13 +48,13 @@ private val ImmutableField: FC<ImmutableFieldProps> = FC("ImmutableField") { pro
 			is ParsedSimple<*> -> {
 				val field = answer.constraint
 				if (field.simple !is SimpleField.Message) {
-					Text { text = "${answer.constraint.name} : " }
+					+"${answer.constraint.name} : "
 
 					when (field.simple) {
-						is SimpleField.Boolean -> Text { text = if (answer.value.toBoolean()) "✓" else "✗" }
+						is SimpleField.Boolean -> +if (answer.value.toBoolean()) "✓" else "✗"
 						is SimpleField.Date -> {
 							val value = answer.value ?: error("Cette date n'a pas de valeur")
-							Text { text = Date(value).toLocaleDateString() }
+							+Date(value).toLocaleDateString()
 						}
 						is SimpleField.Upload -> StyledButton {
 							text = "Ouvrir"
@@ -71,16 +70,16 @@ private val ImmutableField: FC<ImmutableFieldProps> = FC("ImmutableField") { pro
 								window.open(url, target = "_blank", features = "noopener,noreferrer")
 							}
 						}
-						else -> Text { text = answer.value.toString() }
+						else -> +answer.value.toString()
 					}
 				} // else: don't display messages here
 			}
 			is ParsedUnion<*, *> -> {
 				val value = answer.value
 				if (value is FormField.Simple && value.simple is SimpleField.Message) {
-					Text { text = answer.constraint.name + " : " + value.name }
+					+(answer.constraint.name + " : " + value.name)
 				} else {
-					Text { text = answer.constraint.name }
+					+answer.constraint.name
 					div {
 						className = miniNesting
 						immutableField(answer.children.first())
@@ -95,7 +94,7 @@ private val ImmutableField: FC<ImmutableFieldProps> = FC("ImmutableField") { pro
 			is ParsedComposite<*> -> {
 				val compositeField = answer.constraint
 
-				Text { text = compositeField.name }
+				+compositeField.name
 				for (child in answer.children) {
 					div {
 						className = miniNesting

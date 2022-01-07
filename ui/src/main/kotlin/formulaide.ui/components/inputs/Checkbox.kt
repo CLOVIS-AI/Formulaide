@@ -1,6 +1,5 @@
 package formulaide.ui.components.inputs
 
-import formulaide.ui.components.text.Text
 import react.FC
 import react.dom.html.InputType
 import react.dom.html.ReactHTML.input
@@ -24,7 +23,7 @@ val Checkbox = FC<CheckboxProps>("Checkbox") { props ->
 	}
 
 	label {
-		Text { text = props.text }
+		+props.text
 		htmlFor = props.id
 	}
 }

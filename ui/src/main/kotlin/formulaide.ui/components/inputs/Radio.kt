@@ -1,6 +1,5 @@
 package formulaide.ui.components.inputs
 
-import formulaide.ui.components.text.Text
 import react.FC
 import react.Props
 import react.dom.html.InputType
@@ -50,7 +49,7 @@ val RadioButton = FC<RadioButtonProps>("RadioButton") { props ->
 	label {
 		className = "mr-2"
 
-		Text { this.text = text }
+		+props.text
 		htmlFor = props.buttonId
 	}
 }

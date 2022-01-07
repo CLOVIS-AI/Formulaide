@@ -15,7 +15,6 @@ import formulaide.ui.components.cards.action
 import formulaide.ui.components.cards.submit
 import formulaide.ui.components.inputs.Field
 import formulaide.ui.components.inputs.Input
-import formulaide.ui.components.text.Text
 import formulaide.ui.components.useAsync
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
 import formulaide.ui.utils.useListEquality
@@ -104,7 +103,7 @@ fun PasswordModification(user: Email, previousScreen: Screen) = FC<Props>("Passw
 	if (me == null) {
 		Card {
 			title = "Modifier le mot de passe"
-			Text { text = "Chargement de l'utilisateur…" }
+			+"Chargement de l'utilisateur…"
 		}
 		return@FC
 	}
@@ -112,7 +111,7 @@ fun PasswordModification(user: Email, previousScreen: Screen) = FC<Props>("Passw
 	if (client !is Client.Authenticated) {
 		Card {
 			title = "Modifier le mot de passe"
-			Text { text = "impossible de modifier le mot de passe sans être connecté" }
+			+"impossible de modifier le mot de passe sans être connecté"
 		}
 		return@FC
 	}
@@ -207,7 +206,7 @@ val FormsToReview = FC<Props>("FormsToReview") {
 
 	val (client) = useClient()
 	if (client !is Client.Authenticated) {
-		p { Text { text = "Seuls les utilisateurs connectés peuvent voir la liste des formulaires qui les attendent" } }
+		p { +"Seuls les utilisateurs connectés peuvent voir la liste des formulaires qui les attendent" }
 		return@FC
 	}
 
@@ -216,7 +215,7 @@ val FormsToReview = FC<Props>("FormsToReview") {
 		.useListEquality()
 	var loadingMessage by useState("Chargement des formulaires en cours…")
 	if (forms.isEmpty())
-		p { Text { text = loadingMessage } }
+		p { +loadingMessage }
 
 	useEffect(client, allForms) {
 		scope.reportExceptions {

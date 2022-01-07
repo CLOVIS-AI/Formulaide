@@ -8,10 +8,6 @@ external interface TextProps : Props {
 	var text: String
 }
 
-val Text = FC<TextProps>("Text") { props ->
-	+props.text
-}
-
 /**
  * Grey text for information that is not too important.
  */

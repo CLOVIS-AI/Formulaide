@@ -2,7 +2,6 @@ package formulaide.ui
 
 import formulaide.ui.components.cards.Card
 import formulaide.ui.components.cards.action
-import formulaide.ui.components.text.Text
 import formulaide.ui.components.useAsync
 import formulaide.ui.utils.GlobalState
 import formulaide.ui.utils.useGlobalState
@@ -70,7 +69,7 @@ val ErrorCard = FC<ErrorProps>("ErrorCard") { props ->
 		}
 
 		body?.let {
-			Text { text = it }
+			+it
 		}
 	}
 }

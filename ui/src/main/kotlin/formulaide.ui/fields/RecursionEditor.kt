@@ -4,7 +4,6 @@ import formulaide.api.fields.*
 import formulaide.api.types.Arity
 import formulaide.ui.components.StyledButton
 import formulaide.ui.components.inputs.FormField
-import formulaide.ui.components.text.Text
 import formulaide.ui.utils.remove
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.switchOrder
@@ -23,8 +22,8 @@ val RecursionEditor: FC<EditableFieldProps> = FC("RecursionEditor") { props ->
 	if (fields != null) {
 		FormField {
 			when (parent) {
-				is Field.Union<*> -> Text { text = "L'utilisateur doit choisir entre :" }
-				is Field.Container<*> -> Text { text = "L'utilisateur doit remplir :" }
+				is Field.Union<*> -> +"L'utilisateur doit choisir entre :"
+				is Field.Container<*> -> +"L'utilisateur doit remplir :"
 			}
 		}
 

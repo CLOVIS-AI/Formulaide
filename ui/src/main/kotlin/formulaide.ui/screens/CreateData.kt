@@ -16,7 +16,6 @@ import formulaide.ui.components.cards.action
 import formulaide.ui.components.cards.submit
 import formulaide.ui.components.inputs.Field
 import formulaide.ui.components.inputs.Input
-import formulaide.ui.components.text.Text
 import formulaide.ui.fields.FieldEditor
 import formulaide.ui.fields.SwitchDirection
 import formulaide.ui.utils.remove
@@ -33,7 +32,7 @@ fun CreateData(original: Composite? = null) = FC<Props>("CreateData") {
 		Card {
 			title = "Créer un groupe"
 			failed = true
-			Text { text = "Seuls les administrateurs peuvent créer un groupe." }
+			+"Seuls les administrateurs peuvent créer un groupe."
 		}
 		return@FC
 	}

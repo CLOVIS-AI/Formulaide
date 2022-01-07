@@ -1,6 +1,5 @@
 package formulaide.ui.components.inputs
 
-import formulaide.ui.components.text.Text
 import org.w3c.dom.HTMLInputElement
 import react.FC
 import react.dom.html.InputHTMLAttributes
@@ -21,7 +20,7 @@ val CommonInput = FC<InputProps>("CommonInput") { props ->
 	}
 
 	if (props.required == true)
-		Text { text = " *" }
+		+" *"
 }
 
 val Input = FC<InputProps>("Input") { props ->

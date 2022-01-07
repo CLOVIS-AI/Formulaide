@@ -6,7 +6,6 @@ import formulaide.api.fields.Field
 import formulaide.api.types.Arity
 import formulaide.ui.components.inputs.FormField
 import formulaide.ui.components.inputs.Nesting
-import formulaide.ui.components.text.Text
 import react.FC
 import react.Props
 import react.dom.html.ReactHTML.div
@@ -63,15 +62,13 @@ val FieldEditor = memo(FC<EditableFieldProps>("FieldEditor") { props ->
 				RecursionEditor { +props }
 			} else {
 				FormField {
-					Text {
-						text = "Les sous-champs ne sont pas affichés, parce que cette donnée est cachée."
-					}
+					+"Les sous-champs ne sont pas affichés, parce que cette donnée est cachée."
 				}
 			}
 		} else if (props.field is DataField.Composite) {
 			FormField {
-				p { Text { text = "Les sous-champs ne sont modifiables que pendant la création d'un formulaire." } }
-				p { Text { text = "Un groupe à l'intérieur d'un autre groupe ne peut pas être obligatoire." } }
+				p { +"Les sous-champs ne sont modifiables que pendant la création d'un formulaire." }
+				p { +"Un groupe à l'intérieur d'un autre groupe ne peut pas être obligatoire." }
 			}
 		}
 	}

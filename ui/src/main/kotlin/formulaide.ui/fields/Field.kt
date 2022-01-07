@@ -14,7 +14,6 @@ import formulaide.client.routes.uploadFile
 import formulaide.ui.components.StyledButton
 import formulaide.ui.components.inputs.*
 import formulaide.ui.components.text.ErrorText
-import formulaide.ui.components.text.Text
 import formulaide.ui.components.useAsync
 import formulaide.ui.reportExceptions
 import formulaide.ui.traceRenders
@@ -181,18 +180,16 @@ private fun ChildrenBuilder.upload(
 ) {
 	ul {
 		li {
-			Text {
-				text = "Formats autorisés : ${
-					simple.allowedFormats.flatMap { it.extensions }
-						.joinToString(separator = ", ")
-				}"
-			}
+			+"Formats autorisés : ${
+				simple.allowedFormats.flatMap { it.extensions }
+					.joinToString(separator = ", ")
+			}"
 		}
 		li {
-			Text { text = "Taille maximale : ${simple.effectiveMaxSizeMB} Mo" }
+			+"Taille maximale : ${simple.effectiveMaxSizeMB} Mo"
 		}
 		li {
-			Text { text = "RGPD : Ce fichier sera conservé ${simple.effectiveExpiresAfterDays} jours" }
+			+"RGPD : Ce fichier sera conservé ${simple.effectiveExpiresAfterDays} jours"
 		}
 	}
 	Input {
