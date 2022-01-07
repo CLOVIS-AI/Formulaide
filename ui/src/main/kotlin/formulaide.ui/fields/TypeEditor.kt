@@ -8,7 +8,6 @@ import formulaide.api.types.Ref
 import formulaide.ui.components.inputs.FormField
 import formulaide.ui.components.inputs.Select
 import formulaide.ui.components.text.LightText
-import formulaide.ui.components.text.Text
 import formulaide.ui.fields.SimpleFieldEnum.Companion.asEnum
 import formulaide.ui.useComposites
 import react.FC
@@ -57,7 +56,7 @@ val TypeEditor = FC<EditableFieldProps>("TypeEditor") { props ->
 		}
 
 		FormField {
-			Text { text = field.name + " " }
+			+(field.name + " ")
 			LightText { text = typeName }
 		}
 	}
@@ -145,7 +144,7 @@ private val SimpleOptions = FC<EditableFieldProps>("SimpleOptions") { props ->
 
 	for (simple in SimpleFieldEnum.values()) {
 		option {
-			Text { text = simple.displayName }
+			+simple.displayName
 			value = "simple:$simple"
 
 			selected = simple == current
@@ -157,7 +156,7 @@ private val UnionOptions = FC<EditableFieldProps>("UnionOptions") { props ->
 	val field = props.field
 
 	option {
-		Text { text = "Choix" }
+		+"Choix"
 		value = "union"
 
 		selected = field is Field.Union<*>
@@ -173,7 +172,7 @@ private val CompositeOptions = FC<EditableFieldProps>("CompositeOptions") { prop
 
 	for (composite in composites) {
 		option {
-			Text { text = composite.name }
+			+composite.name
 			value = "composite:${composite.id}"
 
 			selected = current?.id == composite.id
@@ -191,7 +190,7 @@ private val RecursiveCompositeOptions = FC<EditableFieldProps>("RecursiveComposi
 		val current = (field as? DataField.Composite)?.ref
 
 		option {
-			Text { text = "La donnée qui est en train de se faire créer" }
+			+"La donnée qui est en train de se faire créer"
 			value = "composite:$SPECIAL_TOKEN_RECURSION"
 
 			selected = current?.id == SPECIAL_TOKEN_RECURSION

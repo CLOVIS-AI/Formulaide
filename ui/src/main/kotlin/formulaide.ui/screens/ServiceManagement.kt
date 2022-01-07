@@ -12,7 +12,6 @@ import formulaide.ui.components.inputs.Checkbox
 import formulaide.ui.components.inputs.Field
 import formulaide.ui.components.inputs.FormField
 import formulaide.ui.components.text.LightText
-import formulaide.ui.components.text.Text
 import formulaide.ui.refreshServices
 import formulaide.ui.traceRenders
 import formulaide.ui.useClient
@@ -35,7 +34,7 @@ val ServiceList = FC<Props>("ServiceList") {
 		Card {
 			title = "Liste des services"
 			failed = true
-			Text { text = "Seul un employé peut modifier les services" }
+			+"Seul un employé peut modifier les services"
 		}
 		return@FC
 	}
@@ -61,7 +60,7 @@ val ServiceList = FC<Props>("ServiceList") {
 
 		for (service in services.filter { it.open || listClosedServices }) {
 			FormField {
-				Text { text = service.name }
+				+service.name
 
 				if (!service.open)
 					LightText { text = " Désactivé" }

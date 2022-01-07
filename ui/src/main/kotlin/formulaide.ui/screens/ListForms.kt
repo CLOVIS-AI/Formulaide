@@ -17,7 +17,6 @@ import formulaide.ui.components.cards.action
 import formulaide.ui.components.inputs.Checkbox
 import formulaide.ui.components.inputs.Field
 import formulaide.ui.components.inputs.Nesting
-import formulaide.ui.components.text.Text
 import formulaide.ui.components.useAsync
 import formulaide.ui.components.useAsyncEffect
 import formulaide.ui.utils.*
@@ -149,7 +148,7 @@ internal val FormDescription = memo(FC<FormDescriptionProps>("FormDescription") 
 	fun toggle(bool: Boolean) = if (!bool) "▼" else "▲"
 
 	div {
-		Text { text = form.name }
+		+form.name
 
 		StyledButton {
 			text = "Remplir"
@@ -170,7 +169,7 @@ internal val FormDescription = memo(FC<FormDescriptionProps>("FormDescription") 
 	}
 
 	if (showRecords) Nesting {
-		Text { text = "Dossiers :" }
+		+"Dossiers :"
 
 		for (action in form.actions.sortedBy { it.order }) {
 			ActionDescription {
@@ -192,7 +191,7 @@ internal val FormDescription = memo(FC<FormDescriptionProps>("FormDescription") 
 	}
 
 	if (showAdministration) Nesting {
-		Text { text = "Gestion :" }
+		+"Gestion :"
 
 		if (user.role >= Role.ADMINISTRATOR) {
 			require(client is Client.Authenticated) // not possible otherwise

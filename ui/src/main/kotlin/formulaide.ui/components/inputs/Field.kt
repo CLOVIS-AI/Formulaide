@@ -1,6 +1,5 @@
 package formulaide.ui.components.inputs
 
-import formulaide.ui.components.text.Text
 import react.FC
 import react.PropsWithChildren
 import react.dom.html.ReactHTML.label
@@ -16,7 +15,7 @@ val Field = FC<FieldProps>("Field") { props ->
 			className = "block"
 			htmlFor = props.id
 
-			Text { text = props.text }
+			+props.text
 		}
 
 		props.children()

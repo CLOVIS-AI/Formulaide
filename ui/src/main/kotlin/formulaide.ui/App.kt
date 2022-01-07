@@ -10,7 +10,6 @@ import formulaide.ui.components.WindowFrame
 import formulaide.ui.components.cards.Card
 import formulaide.ui.components.text.FooterText
 import formulaide.ui.components.text.LightText
-import formulaide.ui.components.text.Text
 import formulaide.ui.components.useAsync
 import formulaide.ui.components.useAsyncEffect
 import formulaide.ui.components.useAsyncEffectOnce
@@ -233,16 +232,13 @@ val CrashReporter = FC<PropsWithChildren>("CrashReporter") { props ->
 			failed = true
 
 			p {
-				Text {
-					text =
-						"Veuillez signaler cette erreur à l'administrateur, en lui envoyant les informations ci-dessous, à l'adresse incoming+clovis-ai-formulaide-27107472-issue-@incoming.gitlab.com :"
-				}
+				+"Veuillez signaler cette erreur à l'administrateur, en lui envoyant les informations ci-dessous, à l'adresse incoming+clovis-ai-formulaide-27107472-issue-@incoming.gitlab.com :"
 			}
 
 			p {
 				className = errorSectionClass
 
-				Text { text = "Ce que j'étais en train de faire : " }
+				+"Ce que j'étais en train de faire : "
 				br {}
 				LightText { text = "Ici, expliquez ce que vous étiez en train de faire quand le problème a eu lieu." }
 			}
@@ -250,7 +246,7 @@ val CrashReporter = FC<PropsWithChildren>("CrashReporter") { props ->
 			p {
 				className = errorSectionClass
 
-				Text { text = "Error type : " }
+				+"Error type : "
 				br {}
 				LightText { text = "Plantage de l'application, capturé par CrashReporter" }
 			}
@@ -258,7 +254,7 @@ val CrashReporter = FC<PropsWithChildren>("CrashReporter") { props ->
 			p {
 				className = errorSectionClass
 
-				Text { text = "Throwable : " }
+				+"Throwable : "
 				error?.stackTraceToString()
 					?.removeSurrounding("\n")
 					?.split("\n")
@@ -273,7 +269,7 @@ val CrashReporter = FC<PropsWithChildren>("CrashReporter") { props ->
 				p {
 					className = errorSectionClass
 
-					Text { text = "Local storage : $local" }
+					+"Local storage : $local"
 					br {}
 					LightText { text = window.localStorage[local].toString() }
 				}
@@ -282,7 +278,7 @@ val CrashReporter = FC<PropsWithChildren>("CrashReporter") { props ->
 			p {
 				className = errorSectionClass
 
-				Text { text = "Client : " }
+				+"Client : "
 				br {}
 				LightText { text = client.value.hostUrl }
 				br {}
@@ -297,7 +293,7 @@ val CrashReporter = FC<PropsWithChildren>("CrashReporter") { props ->
 				p {
 					className = errorSectionClass
 
-					Text { text = "Cache : $globalName" }
+					+"Cache : $globalName"
 					global.value.forEach {
 						br {}
 						LightText { text = it.toString() }

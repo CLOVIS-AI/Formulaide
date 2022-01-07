@@ -12,7 +12,6 @@ import formulaide.ui.components.StyledButton
 import formulaide.ui.components.TopBar
 import formulaide.ui.components.cards.Card
 import formulaide.ui.components.cards.action
-import formulaide.ui.components.text.Text
 import formulaide.ui.screens.*
 import formulaide.ui.utils.GlobalState
 import formulaide.ui.utils.useGlobalState
@@ -128,7 +127,7 @@ private val CannotAccessThisPage = FC<Props>("CannotAccessThisPage") {
 		failed = true
 		action("Retourner à la page d'accueil") { navigateTo(Screen.Home) }
 
-		Text { text = "Si vous pensez que c'est anormal, veuillez contacter l'administrateur." }
+		+"Si vous pensez que c'est anormal, veuillez contacter l'administrateur."
 	}
 }
 

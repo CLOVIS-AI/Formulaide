@@ -16,7 +16,6 @@ import formulaide.ui.components.cards.action
 import formulaide.ui.components.cards.submit
 import formulaide.ui.components.inputs.*
 import formulaide.ui.components.text.LightText
-import formulaide.ui.components.text.Text
 import formulaide.ui.components.useAsync
 import formulaide.ui.utils.replace
 import org.w3c.dom.HTMLInputElement
@@ -38,7 +37,7 @@ val UserList = FC<Props>("UserList") {
 		Card {
 			title = "Employés"
 			loading = true
-			Text { text = "Récupération de l'utilisateur…" }
+			+"Récupération de l'utilisateur…"
 		}
 		return@FC
 	}
@@ -69,7 +68,7 @@ val UserList = FC<Props>("UserList") {
 
 		for ((i, user) in users.withIndex()) {
 			FormField {
-				Text { text = user.fullName + " " }
+				+"${user.fullName} "
 				LightText { text = user.email.email }
 
 				div { // buttons
@@ -206,7 +205,7 @@ val CreateUser = FC<Props>("CreateUser") {
 
 				for (service in services) {
 					option {
-						Text { text = service.name }
+						+service.name
 						value = service.id
 					}
 				}

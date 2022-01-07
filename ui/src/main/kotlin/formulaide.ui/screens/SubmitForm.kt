@@ -9,7 +9,6 @@ import formulaide.ui.components.LoadingSpinner
 import formulaide.ui.components.cards.FormCard
 import formulaide.ui.components.cards.submit
 import formulaide.ui.components.text.ErrorText
-import formulaide.ui.components.text.Text
 import formulaide.ui.components.useAsync
 import formulaide.ui.fields.field
 import formulaide.ui.utils.parseHtmlForm
@@ -94,7 +93,7 @@ fun SubmitForm(formRef: Ref<Form>) = FC<Props>("SubmitForm") {
 
 	if (form == null) {
 		p {
-			Text { text = "Chargement du formulaire…" }
+			+"Chargement du formulaire…"
 			LoadingSpinner()
 		}
 		return@FC
@@ -109,7 +108,7 @@ fun SubmitForm(formRef: Ref<Form>) = FC<Props>("SubmitForm") {
 
 	if (formLoadedFromCache == null) {
 		p {
-			Text { text = "Chargement des champs depuis le cache…" }
+			+"Chargement des champs depuis le cache…"
 			LoadingSpinner()
 		}
 		return@FC
@@ -118,7 +117,7 @@ fun SubmitForm(formRef: Ref<Form>) = FC<Props>("SubmitForm") {
 
 	if (formLoadedFromCache != true && formLoadedFromServer == null) {
 		p {
-			Text { text = "Chargement des champs depuis le serveur…" }
+			+"Chargement des champs depuis le serveur…"
 			LoadingSpinner()
 		}
 		return@FC

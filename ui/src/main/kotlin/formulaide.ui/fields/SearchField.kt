@@ -9,7 +9,6 @@ import formulaide.ui.components.inputs.Field
 import formulaide.ui.components.inputs.Input
 import formulaide.ui.components.inputs.Nesting
 import formulaide.ui.components.inputs.Select
-import formulaide.ui.components.text.Text
 import formulaide.ui.traceRenders
 import react.ChildrenBuilder
 import react.FC
@@ -192,7 +191,7 @@ private fun ChildrenBuilder.textEqualsChoice(
 
 				for (option in options) {
 					option {
-						Text { this.text = option.first }
+						+option.first
 						value = option.second
 					}
 				}
