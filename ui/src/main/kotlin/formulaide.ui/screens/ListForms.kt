@@ -11,11 +11,15 @@ import formulaide.client.routes.listClosedForms
 import formulaide.client.routes.todoListFor
 import formulaide.ui.*
 import formulaide.ui.Role.Companion.role
-import formulaide.ui.components.*
+import formulaide.ui.components.StyledButton
 import formulaide.ui.components.cards.Card
 import formulaide.ui.components.cards.action
-import formulaide.ui.components.fields.Nesting
+import formulaide.ui.components.inputs.Checkbox
+import formulaide.ui.components.inputs.Field
+import formulaide.ui.components.inputs.Nesting
 import formulaide.ui.components.text.Text
+import formulaide.ui.components.useAsync
+import formulaide.ui.components.useAsyncEffect
 import formulaide.ui.utils.*
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
 import kotlinx.browser.window
@@ -109,8 +113,13 @@ val FormList = FC<Props>("FormList") {
 			clearRecords()
 		}
 
-		if (user.role >= Role.EMPLOYEE) styledField("hide-disabled", "Formulaires archivés") {
-			styledCheckbox("hide-disabled", "Afficher les formulaires archivés") {
+		if (user.role >= Role.EMPLOYEE) Field {
+			id = "hide-disabled"
+			text = "Formulaires archivés"
+
+			Checkbox {
+				id = "hide-disabled"
+				text = "Afficher les formulaires archivés"
 				onChange = { showArchivedForms = it.target.checked }
 			}
 		}

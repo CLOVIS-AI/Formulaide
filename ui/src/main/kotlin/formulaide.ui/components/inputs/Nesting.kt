@@ -1,4 +1,4 @@
-package formulaide.ui.components.fields
+package formulaide.ui.components.inputs
 
 import formulaide.ui.components.StyledButton
 import formulaide.ui.traceRenders

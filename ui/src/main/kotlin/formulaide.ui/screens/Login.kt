@@ -13,8 +13,8 @@ import formulaide.ui.components.cards.Card
 import formulaide.ui.components.cards.FormCard
 import formulaide.ui.components.cards.action
 import formulaide.ui.components.cards.submit
-import formulaide.ui.components.styledField
-import formulaide.ui.components.styledInput
+import formulaide.ui.components.inputs.Field
+import formulaide.ui.components.inputs.Input
 import formulaide.ui.components.text.Text
 import formulaide.ui.components.useAsync
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
@@ -34,8 +34,8 @@ import react.dom.html.ReactHTML.p
 val Login = FC<Props>("Login") {
 	traceRenders("Login")
 
-	val email = useRef<HTMLInputElement>(null)
-	val password = useRef<HTMLInputElement>(null)
+	var email by useState("")
+	var password by useState("")
 
 	var client by useClient("Login")
 
@@ -44,9 +44,12 @@ val Login = FC<Props>("Login") {
 		subtitle = "Connectez-vous pour avoir accès à l'espace réservé aux employés"
 
 		submit("Se connecter") {
+			require(email.isNotBlank()) { "Email manquant" }
+			require(password.isNotBlank()) { "Mot de passe manquant" }
+
 			val credentials = PasswordLogin(
-				email = email.current?.value ?: error("Email manquant"),
-				password = password.current?.value ?: error("Mot de passe manquant")
+				email = email,
+				password = password
 			)
 
 			launch {
@@ -59,12 +62,30 @@ val Login = FC<Props>("Login") {
 			}
 		}
 
-		styledField("login-email", "Email") {
-			styledInput(InputType.email, "login-email", required = true, ref = email)
+		Field {
+			id = "login-email"
+			text = "Email"
+
+			Input {
+				type = InputType.email
+				id = "login-email"
+				required = true
+				value = email
+				onChange = { email = it.target.value }
+			}
 		}
 
-		styledField("login-password", "Mot de passe") {
-			styledInput(InputType.password, "login-password", required = true, ref = password)
+		Field {
+			id = "login-password"
+			text = "Mot de passe"
+
+			Input {
+				type = InputType.password
+				id = "login-password"
+				required = true
+				value = password
+				onChange = { password = it.target.value }
+			}
 		}
 	}
 }
@@ -123,25 +144,40 @@ fun PasswordModification(user: Email, previousScreen: Screen) = FC<Props>("Passw
 			}
 		}
 
-		styledField("old-password", "Mot de passe actuel") {
-			styledInput(InputType.password,
-			            "old-password",
-			            ref = oldPassword,
-			            required = !me.administrator)
+		Field {
+			id = "old-password"
+			text = "Mot de passe actuel"
+
+			Input {
+				type = InputType.password
+				id = "old-password"
+				ref = oldPassword
+				required = !me.administrator
+			}
 		}
 
-		styledField("new-password-1", "Nouveau de mot de passe") {
-			styledInput(InputType.password,
-			            "new-password-1",
-			            required = true,
-			            ref = newPassword1)
+		Field {
+			id = "new-password-1"
+			text = "Nouveau mot de passe"
+
+			Input {
+				type = InputType.password
+				id = "new-password-1"
+				required = true
+				ref = newPassword1
+			}
 		}
 
-		styledField("new-password-2", "Confirmer le nouveau mot de passe") {
-			styledInput(InputType.password,
-			            "new-password-2",
-			            required = true,
-			            ref = newPassword2)
+		Field {
+			id = "new-password-2"
+			text = "Confirmer le nouveau mot de passe"
+
+			Input {
+				type = InputType.password
+				id = "new-password-2"
+				required = true
+				ref = newPassword2
+			}
 		}
 	}
 }
@@ -150,7 +186,6 @@ val LoginAccess = FC<Props>("LoginAccess") {
 	traceRenders("LoginAccess")
 
 	val (user) = useUser("LoginAccess")
-	val scope = useAsync()
 
 	if (user == null) {
 		Login()

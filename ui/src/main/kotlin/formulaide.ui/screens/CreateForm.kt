@@ -20,7 +20,7 @@ import formulaide.ui.components.*
 import formulaide.ui.components.cards.FormCard
 import formulaide.ui.components.cards.action
 import formulaide.ui.components.cards.submit
-import formulaide.ui.components.fields.Nesting
+import formulaide.ui.components.inputs.*
 import formulaide.ui.components.text.ErrorText
 import formulaide.ui.components.text.Text
 import formulaide.ui.fields.FieldEditor
@@ -208,27 +208,37 @@ fun CreateForm(original: Form?, copy: Boolean) = FC<Props>("CreateForm") {
 			}
 		}
 
-		styledField("new-form-name", "Nom") {
-			styledInput(InputType.text, "new-form-name", required = true) {
-				autoFocus = true
+		Field {
+			id = "new-form-name"
+			text = "Nom"
+
+			Input {
+				type = InputType.text
+				id = "new-form-name"
+				required = true
 				value = formName
-				onChange = {
-					formName = it.target.value
-				}
+				autoFocus = true
+				onChange = { formName = it.target.value }
 			}
 		}
 
-		styledField("new-form-visibility", "Est-il public ?") {
-			styledCheckbox("new-form-visilibity", "Ce formulaire est visible par les administrés") {
+		Field {
+			id = "new-form-visibility"
+			text = "Est-il public ?"
+
+			Checkbox {
+				id = "new-form-visibility"
+				text = "Ce formulaire est visible par les administrés"
 				checked = public
-				onChange = {
-					public = it.target.checked
-				}
+				onChange = { public = it.target.checked }
 			}
 		}
 
 		traceRenders("CreateForm Fields")
-		styledField("new-form-fields", "Champs") {
+		Field {
+			id = "new-form-fields"
+			text = "Champs"
+
 			for ((i, field) in fields.withIndex()) {
 				FieldEditor {
 					this.field = field
@@ -268,7 +278,10 @@ fun CreateForm(original: Form?, copy: Boolean) = FC<Props>("CreateForm") {
 		}
 
 		traceRenders("CreateForm Actions")
-		styledField("new-form-actions", "Étapes") {
+		Field {
+			id = "new-form-actions"
+			text = "Étapes"
+
 			for ((i, action) in actions.sortedBy { it.order }.withIndex()) {
 				div {
 					key = action.id
@@ -322,13 +335,16 @@ private fun ChildrenBuilder.actionName(
 	action: Action,
 	replace: (Action) -> Unit,
 ) {
-	styledField("new-form-action-${action.id}-name", "Nom de l'étape") {
-		styledInput(InputType.text, "new-form-action-${action.id}-name", required = true) {
+	Field {
+		id = "new-form-action-${action.id}-name"
+		text = "Nom de l'étape"
+
+		Input {
+			type = InputType.text
+			id = "new-form-action-${action.id}-name"
+			required = true
 			value = action.name
-			onChange = { event ->
-				val target = event.target
-				replace(action.copy(name = target.value))
-			}
+			onChange = { replace(action.copy(name = it.target.value)) }
 		}
 	}
 }
@@ -338,9 +354,11 @@ private fun ChildrenBuilder.actionReviewerSelection(
 	services: List<Service>,
 	replace: (Action) -> Unit,
 ) {
-	styledField("new-form-action-${action.id}-select",
-	            "Choix du service") {
-		styledSelect {
+	Field {
+		id = "new-form-action-${action.id}-select"
+		text = "Choix du service"
+
+		Select {
 			for (service in services.filter { it.open }) {
 				option {
 					Text { text = service.name }
@@ -377,7 +395,10 @@ private val ActionFields = memo(FC<ActionFieldProps>("ActionFields") { props ->
 
 	val lambdas = useLambdas()
 
-	styledField("new-form-action-${action.id}-fields", "Champs réservés à l'administration") {
+	Field {
+		id = "new-form-action-${action.id}-fields"
+		text = "Champs réservés à l'administration"
+
 		for ((i, field) in root.fields.withIndex()) {
 			FieldEditor {
 				this.field = field

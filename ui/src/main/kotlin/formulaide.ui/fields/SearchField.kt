@@ -5,10 +5,10 @@ import formulaide.api.fields.FormRoot
 import formulaide.api.fields.SimpleField
 import formulaide.api.search.SearchCriterion
 import formulaide.ui.components.StyledButton
-import formulaide.ui.components.fields.Nesting
-import formulaide.ui.components.styledField
-import formulaide.ui.components.styledInput
-import formulaide.ui.components.styledSelect
+import formulaide.ui.components.inputs.Field
+import formulaide.ui.components.inputs.Input
+import formulaide.ui.components.inputs.Nesting
+import formulaide.ui.components.inputs.Select
 import formulaide.ui.components.text.Text
 import formulaide.ui.traceRenders
 import react.ChildrenBuilder
@@ -72,7 +72,10 @@ private val SearchField = FC<SearchFieldProps>("SearchField") { props ->
 		depth = props.depth
 		fieldNumber = field.order
 
-		styledField("field-search-${field.id}", field.name) {
+		Field {
+			id = "field-search-${field.id}"
+			text = field.name
+
 			if (field.arity.min == 0)
 				fieldExists("Ce champ a été rempli", exists, props)
 
@@ -154,12 +157,17 @@ private fun <C : SearchCriterion<*>> ChildrenBuilder.genericCriteria(
 ) {
 	if (criterion != null) {
 		val id = idOf(criterion)
-		styledField(id, "$text :") {
-			styledInput(inputType, id, required = true) {
-				onChange = { event ->
-					props.update(criterion, update(criterion, event.target.value))
-				}
+		Field {
+			this.id = id
+			this.text = "$text :"
+
+			Input {
+				this.id = id
+				type = inputType
+				required = true
+				onChange = { props.update(criterion, update(criterion, it.target.value)) }
 			}
+
 			cancelSearchButton(criterion, props)
 		}
 	} else {
@@ -175,8 +183,13 @@ private fun ChildrenBuilder.textEqualsChoice(
 ) {
 	if (criterion != null) {
 		val id = idOf(criterion)
-		styledField(id, "$text :") {
-			styledSelect(onSelect = { props.update(criterion, criterion.copy(text = it.value)) }) {
+		Field {
+			this.id = id
+			this.text = "$text :"
+
+			Select {
+				onSelection = { props.update(criterion, criterion.copy(text = it.value)) }
+
 				for (option in options) {
 					option {
 						Text { this.text = option.first }
@@ -184,6 +197,7 @@ private fun ChildrenBuilder.textEqualsChoice(
 					}
 				}
 			}
+
 			cancelSearchButton(criterion, props)
 		}
 	} else {
@@ -203,7 +217,10 @@ private fun ChildrenBuilder.fieldExists(
 ) {
 	if (criterion != null) {
 		val id = idOf(criterion)
-		styledField(id, text) {
+		Field {
+			this.id = id
+			this.text = text
+
 			cancelSearchButton(criterion, props)
 		}
 	} else {

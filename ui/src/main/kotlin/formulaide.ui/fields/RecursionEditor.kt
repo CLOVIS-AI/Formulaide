@@ -3,7 +3,7 @@ package formulaide.ui.fields
 import formulaide.api.fields.*
 import formulaide.api.types.Arity
 import formulaide.ui.components.StyledButton
-import formulaide.ui.components.styledFormField
+import formulaide.ui.components.inputs.FormField
 import formulaide.ui.components.text.Text
 import formulaide.ui.utils.remove
 import formulaide.ui.utils.replace
@@ -18,10 +18,10 @@ val RecursionEditor: FC<EditableFieldProps> = FC("RecursionEditor") { props ->
 		?: (parent as? Field.Container<*>)?.fields?.sortedBy { it.order }
 
 	val maxId =
-		useMemo(fields) { (fields ?: emptyList()).map { it.id.toInt() }.maxOrNull()?.plus(1) ?: 0 }
+		useMemo(fields) { (fields ?: emptyList()).maxOfOrNull { it.id.toInt() }?.plus(1) ?: 0 }
 
 	if (fields != null) {
-		styledFormField {
+		FormField {
 			when (parent) {
 				is Field.Union<*> -> Text { text = "L'utilisateur doit choisir entre :" }
 				is Field.Container<*> -> Text { text = "L'utilisateur doit remplir :" }
