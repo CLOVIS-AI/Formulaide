@@ -202,7 +202,7 @@ val App = FC<Props>("App") {
 
 val StyledAppFrame = FC<Props>("StyledFrame") {
 	StrictMode {
-		styledFrame {
+		StyledFrame {
 			App()
 		}
 	}

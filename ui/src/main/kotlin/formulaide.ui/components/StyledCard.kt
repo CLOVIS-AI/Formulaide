@@ -4,15 +4,12 @@ import formulaide.ui.reportExceptions
 import kotlinx.coroutines.CoroutineScope
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLFormElement
-import react.ChildrenBuilder
-import react.FC
-import react.Props
+import react.*
 import react.dom.html.HTMLAttributes
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.form
 import react.dom.html.ReactHTML.p
 import react.dom.html.ReactHTML.span
-import react.useState
 
 private fun ChildrenBuilder.styledCardTitle(title: String, secondary: String?, loading: Boolean = false) {
 	styledTitle(title, loading)
@@ -169,14 +166,14 @@ class SubmitAction(private val scope: CoroutineScope, private val setLoading: (B
 
 }
 
-fun ChildrenBuilder.styledFrame(block: ChildrenBuilder.() -> Unit) {
+val StyledFrame = FC<PropsWithChildren> { props ->
 	div {
 		className = "lg:grid lg:grid-cols-9 xl:grid-cols-7"
 
 		div {}
 		div {
 			className = "lg:col-span-7 xl:col-span-5"
-			block()
+			props.children()
 		}
 		div {}
 	}
