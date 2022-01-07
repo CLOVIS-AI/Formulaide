@@ -4,7 +4,7 @@ import react.FC
 import react.PropsWithChildren
 import react.dom.html.ReactHTML.div
 
-val StyledFrame = FC<PropsWithChildren> { props ->
+val WindowFrame = FC<PropsWithChildren> { props ->
 	div {
 		className = "lg:grid lg:grid-cols-9 xl:grid-cols-7"
 
