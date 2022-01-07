@@ -1,6 +1,7 @@
 package formulaide.ui
 
-import formulaide.ui.components.styledCard
+import formulaide.ui.components.cards.Card
+import formulaide.ui.components.cards.action
 import formulaide.ui.components.text.Text
 import formulaide.ui.components.useAsync
 import formulaide.ui.utils.GlobalState
@@ -58,15 +59,20 @@ val ErrorCard = FC<ErrorProps>("ErrorCard") { props ->
 		}
 	}
 
-	styledCard(
-		title,
-		subtitle,
-		"OK" to {
+	Card {
+		this.title = title
+		this.subtitle = subtitle
+		this.failed = true
+
+		action("OK") {
 			val index = errors.indexOf(error)
 			errors = errors.subList(0, index) + errors.subList(index + 1, errors.size)
-		},
-		failed = true,
-	) { body?.let { Text { text = it } } }
+		}
+
+		body?.let {
+			Text { text = it }
+		}
+	}
 }
 
 inline fun <R> reportExceptions(finally: (e: Exception) -> Unit = {}, block: () -> R): R = try {

@@ -10,6 +10,7 @@ import formulaide.client.Client
 import formulaide.client.routes.createData
 import formulaide.ui.*
 import formulaide.ui.components.*
+import formulaide.ui.components.cards.Card
 import formulaide.ui.components.text.Text
 import formulaide.ui.fields.FieldEditor
 import formulaide.ui.fields.SwitchDirection
@@ -24,7 +25,9 @@ fun CreateData(original: Composite? = null) = FC<Props>("CreateData") {
 
 	val (client) = useClient()
 	if (client !is Client.Authenticated) {
-		styledCard("Créer un groupe", failed = true) {
+		Card {
+			title = "Créer un groupe"
+			failed = true
 			Text { text = "Seuls les administrateurs peuvent créer un groupe." }
 		}
 		return@FC
