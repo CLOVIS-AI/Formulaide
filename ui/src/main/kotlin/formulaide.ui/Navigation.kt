@@ -8,10 +8,12 @@ import formulaide.api.types.Email
 import formulaide.api.types.Ref
 import formulaide.api.users.User
 import formulaide.ui.Role.Companion.role
-import formulaide.ui.components.*
+import formulaide.ui.components.StyledButton
+import formulaide.ui.components.TopBar
+import formulaide.ui.components.cards.Card
+import formulaide.ui.components.cards.action
 import formulaide.ui.screens.*
 import formulaide.ui.utils.GlobalState
-import formulaide.ui.utils.text
 import formulaide.ui.utils.useGlobalState
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -33,7 +35,7 @@ private val currentScreen = GlobalState(getScreenFromWindow() ?: Screen.Home)
 		})
 	}
 
-fun RBuilder.useNavigation() = useGlobalState(currentScreen)
+fun ChildrenBuilder.useNavigation() = useGlobalState(currentScreen)
 fun navigateTo(screen: Screen) {
 	currentScreen.value = screen
 }
@@ -82,7 +84,7 @@ abstract class Screen(
 		       "review")
 
 	companion object {
-		val regularScreens =
+		private val regularScreens =
 			sequenceOf(Home,
 			           ShowData,
 			           NewData(null),
@@ -117,30 +119,30 @@ abstract class Screen(
 	}
 }
 
-private val CannotAccessThisPage = fc<Props>("CannotAccessThisPage") {
+private val CannotAccessThisPage = FC<Props>("CannotAccessThisPage") {
 	traceRenders("CannotAccessThisPage")
 
-	styledCard(
-		"Vous n'avez pas l'autorisation d'accéder à cette page",
-		null,
-		"Retourner à la page d'accueil" to { navigateTo(Screen.Home) },
+	Card {
+		title = "Vous n'avez pas l'autorisation d'accéder à cette page"
 		failed = true
-	) {
-		text("Si vous pensez que c'est anormal, veuillez contacter l'administrateur.")
+		action("Retourner à la page d'accueil") { navigateTo(Screen.Home) }
+
+		+"Si vous pensez que c'est anormal, veuillez contacter l'administrateur."
 	}
 }
 
-private val Navigation = fc<Props>("Navigation") {
+val Navigation = FC<Props>("Navigation") {
 	val user by useUser()
 	var currentScreen by useNavigation()
 
 	traceRenders("Navigation bar")
 
 	for (screen in Screen.availableScreens(user)) {
-		if (screen != currentScreen)
-			styledButton(screen.displayName) { currentScreen = screen }
-		else
-			styledDisabledButton(screen.displayName)
+		StyledButton {
+			text = screen.displayName
+			action = { currentScreen = screen }
+			enabled = screen != currentScreen
+		}
 	}
 }
 
@@ -150,7 +152,7 @@ private fun getScreenFromWindow(): Screen? =
 		.get("d")
 		?.let { Screen.routeDecoder(it) }
 
-val Window = memo(fc("Window") {
+val Window = memo(FC("Window") {
 	var screen by useNavigation()
 	val user by useUser()
 
@@ -167,30 +169,13 @@ val Window = memo(fc("Window") {
 		}
 	}
 
-	val subtitle = when (user) {
-		null -> "Accès anonyme"
-		else -> "Bonjour ${user!!.fullName}"
-	}
-
-	styledTitleCard(
-		title = {
-			styledTitle("Formulaide")
-			styledLightText(subtitle)
-			if (user != null) styledButton("×", action = {
-				logout()
-				screen = Screen.Home
-			})
-		},
-		actions = {
-			child(Navigation)
-		}
-	)
+	TopBar()
 
 	if (user.role >= screen.requiredRole) {
-		child(CrashReporter) {
-			child(screen.component())
+		CrashReporter {
+			screen.component()()
 		}
 	} else {
-		child(CannotAccessThisPage)
+		CannotAccessThisPage()
 	}
 })

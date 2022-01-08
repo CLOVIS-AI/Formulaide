@@ -9,15 +9,20 @@ import formulaide.client.routes.editPassword
 import formulaide.client.routes.login
 import formulaide.client.routes.todoList
 import formulaide.ui.*
-import formulaide.ui.components.*
+import formulaide.ui.components.cards.Card
+import formulaide.ui.components.cards.FormCard
+import formulaide.ui.components.cards.action
+import formulaide.ui.components.cards.submit
+import formulaide.ui.components.inputs.Field
+import formulaide.ui.components.inputs.Input
+import formulaide.ui.components.useAsync
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
-import formulaide.ui.utils.text
 import formulaide.ui.utils.useListEquality
 import kotlinx.browser.window
-import kotlinx.html.InputType
 import org.w3c.dom.HTMLInputElement
 import react.*
-import react.dom.p
+import react.dom.html.InputType
+import react.dom.html.ReactHTML.p
 
 /**
  * A login widget that requests an email and a password, and then updates the application's [client][client] by connecting to the server.
@@ -25,21 +30,25 @@ import react.dom.p
  * @see Client
  * @see login
  */
-val Login = fc<Props>("Login") {
+val Login = FC<Props>("Login") {
 	traceRenders("Login")
 
-	val email = useRef<HTMLInputElement>(null)
-	val password = useRef<HTMLInputElement>(null)
+	var email by useState("")
+	var password by useState("")
 
 	var client by useClient("Login")
 
-	styledFormCard(
-		"Espace employé",
-		"Connectez-vous pour avoir accès à l'espace réservé aux employés.",
-		"Se connecter" to {
+	FormCard {
+		title = "Espace employé"
+		subtitle = "Connectez-vous pour avoir accès à l'espace réservé aux employés"
+
+		submit("Se connecter") {
+			require(email.isNotBlank()) { "Email manquant" }
+			require(password.isNotBlank()) { "Mot de passe manquant" }
+
 			val credentials = PasswordLogin(
-				email = email.current?.value ?: error("Email manquant"),
-				password = password.current?.value ?: error("Mot de passe manquant")
+				email = email,
+				password = password
 			)
 
 			launch {
@@ -51,19 +60,37 @@ val Login = fc<Props>("Login") {
 				)
 			}
 		}
-	) {
-		styledField("login-email", "Email") {
-			styledInput(InputType.email, "login-email", required = true, ref = email)
+
+		Field {
+			id = "login-email"
+			text = "Email"
+
+			Input {
+				type = InputType.email
+				id = "login-email"
+				required = true
+				value = email
+				onChange = { email = it.target.value }
+			}
 		}
 
-		styledField("login-password", "Mot de passe") {
-			styledInput(InputType.password, "login-password", required = true, ref = password)
+		Field {
+			id = "login-password"
+			text = "Mot de passe"
+
+			Input {
+				type = InputType.password
+				id = "login-password"
+				required = true
+				value = password
+				onChange = { password = it.target.value }
+			}
 		}
 	}
 }
 
 @Suppress("FunctionName")
-fun PasswordModification(user: Email, previousScreen: Screen) = fc<Props>("PasswordModification") {
+fun PasswordModification(user: Email, previousScreen: Screen) = FC<Props>("PasswordModification") {
 	traceRenders("PasswordModification")
 
 	val oldPassword = useRef<HTMLInputElement>()
@@ -74,23 +101,26 @@ fun PasswordModification(user: Email, previousScreen: Screen) = fc<Props>("Passw
 	val (me) = useUser()
 
 	if (me == null) {
-		styledCard("Modifier le mot de passe") {
-			text("Chargement de l'utilisateur…")
+		Card {
+			title = "Modifier le mot de passe"
+			+"Chargement de l'utilisateur…"
 		}
-		return@fc
+		return@FC
 	}
 
 	if (client !is Client.Authenticated) {
-		styledCard("Modifier le mot de passe", failed = true) {
-			text("Impossible de modifier le mot de passe sans être connecté")
+		Card {
+			title = "Modifier le mot de passe"
+			+"impossible de modifier le mot de passe sans être connecté"
 		}
-		return@fc
+		return@FC
 	}
 
-	styledFormCard(
-		"Modifier le mot de passe du compte ${user.email}",
-		"Par sécurité, modifier le mot de passe va déconnecter tous vos appareils connectés.",
-		"Modifier le mot de passe" to {
+	FormCard {
+		title = "Modifier le mot de passe du compte ${user.email}"
+		subtitle = "Par sécurité, modifier le mot de passe va déconnecter tous vos appareils."
+
+		submit("Modifier le mot de passe") {
 			val oldPasswordValue = oldPassword.current?.value
 			val newPassword1Value = newPassword1.current?.value
 			val newPassword2Value = newPassword2.current?.value
@@ -112,68 +142,73 @@ fun PasswordModification(user: Email, previousScreen: Screen) = fc<Props>("Passw
 				navigateTo(previousScreen)
 			}
 		}
-	) {
-		styledField("old-password", "Mot de passe actuel") {
-			styledInput(InputType.password,
-			            "old-password",
-			            ref = oldPassword,
-			            required = !me.administrator)
+
+		Field {
+			id = "old-password"
+			text = "Mot de passe actuel"
+
+			Input {
+				type = InputType.password
+				id = "old-password"
+				ref = oldPassword
+				required = !me.administrator
+			}
 		}
 
-		styledField("new-password-1", "Nouveau de mot de passe") {
-			styledInput(InputType.password,
-			            "new-password-1",
-			            required = true,
-			            ref = newPassword1)
+		Field {
+			id = "new-password-1"
+			text = "Nouveau mot de passe"
+
+			Input {
+				type = InputType.password
+				id = "new-password-1"
+				required = true
+				ref = newPassword1
+			}
 		}
 
-		styledField("new-password-2", "Confirmer le nouveau mot de passe") {
-			styledInput(InputType.password,
-			            "new-password-2",
-			            required = true,
-			            ref = newPassword2)
+		Field {
+			id = "new-password-2"
+			text = "Confirmer le nouveau mot de passe"
+
+			Input {
+				type = InputType.password
+				id = "new-password-2"
+				required = true
+				ref = newPassword2
+			}
 		}
 	}
 }
 
-val LoginAccess = fc<Props>("LoginAccess") {
+val LoginAccess = FC<Props>("LoginAccess") {
 	traceRenders("LoginAccess")
 
 	val (user) = useUser("LoginAccess")
-	val scope = useAsync()
 
 	if (user == null) {
-		child(Login)
+		Login()
 	} else {
-		styledCard(
-			"Espace employé",
-			null,
-			"Déconnexion" to {
-				scope.reportExceptions {
-					logout()
-				}
-			},
-			"Modifier mon mot de passe" to {
-				navigateTo(Screen.EditPassword(user.email,
-				                               Screen.Home))
-			},
-			"Aide" to {
-				window.open("https://clovis-ai.gitlab.io/formulaide/docs/user-guide.pdf")
-			}
-		) {
-			child(FormsToReview)
+		Card {
+			title = "Espace employé"
+
+			action("Déconnexion") { logout() }
+			action("Modifier mon mot de passe") { navigateTo(Screen.EditPassword(user.email, Screen.Home)) }
+			action("Aide") { window.open("https://clovis-ai.gitlab.io/formulaide/docs/user-guide.pdf") }
+
+			FormsToReview()
 		}
 	}
 }
 
-val FormsToReview = fc<Props>("FormsToReview") {
+val FormsToReview = FC<Props>("FormsToReview") {
 	val scope = useAsync()
 	val allForms by useForms()
 
 	val (client) = useClient()
 	if (client !is Client.Authenticated) {
-		p { text("Seuls les utilisateurs connectés peuvent voir la liste des formulaires qui les attendent") }
-		return@fc
+		p { +"Seuls les utilisateurs connectés peuvent voir la liste des formulaires qui les attendent" }
+		return@FC
 	}
 
 	var forms by useState(emptyList<Form>())
@@ -181,7 +216,7 @@ val FormsToReview = fc<Props>("FormsToReview") {
 		.useListEquality()
 	var loadingMessage by useState("Chargement des formulaires en cours…")
 	if (forms.isEmpty())
-		p { text(loadingMessage) }
+		p { +loadingMessage }
 
 	useEffect(client, allForms) {
 		scope.reportExceptions {
@@ -191,10 +226,8 @@ val FormsToReview = fc<Props>("FormsToReview") {
 	}
 
 	for (form in forms.sortedBy { it.name }) {
-		child(FormDescription) {
-			attrs {
-				this.form = form
-			}
+		FormDescription {
+			this.form = form
 		}
 	}
 }

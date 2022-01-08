@@ -1,52 +1,60 @@
 package formulaide.ui.components
 
 import formulaide.ui.reportExceptions
-import formulaide.ui.utils.text
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.html.DIV
-import kotlinx.html.InputType
-import kotlinx.html.SPAN
-import kotlinx.html.js.onClickFunction
+import react.FC
 import react.Props
-import react.RBuilder
-import react.dom.*
-import react.fc
+import react.dom.html.InputType
+import react.dom.html.ReactHTML.button
+import react.dom.html.ReactHTML.input
+import react.dom.html.ReactHTML.span
 import react.useState
 
-private const val buttonShapeClasses = "rounded-full py-1 px-3 mx-1"
-private const val buttonClasses = "$buttonShapeClasses hover:bg-purple-500"
+internal const val buttonShapeClasses = "rounded-full py-1 px-3 mx-1"
+internal const val buttonClasses = "$buttonShapeClasses hover:bg-purple-500"
 internal const val buttonDefaultClasses = "$buttonClasses bg-purple-800 text-white"
 internal const val buttonNonDefaultClasses =
 	"$buttonClasses text-purple-800 border-1 border-purple-800 hover:text-white"
 
-internal external interface ButtonProps : Props {
-	var text: String
-	var default: Boolean
+external interface StyledButtonProps : Props {
+	/**
+	 * The text displayed by the button.
+	 */
+	var text: String?
 
-	var action: suspend () -> Unit
+	/**
+	 * `true` if this button is the emphasized option.
+	 */
+	var emphasize: Boolean?
+
+	/**
+	 * `true` if this button can be interacted with.
+	 */
+	var enabled: Boolean?
+
+	/**
+	 * The action executed when the button is pressed.
+	 */
+	var action: (suspend () -> Unit)?
 }
 
-private val CustomButton = fc<ButtonProps>("CustomButton") { props ->
+val StyledButton = FC<StyledButtonProps>("StyledButton") { props ->
 	val scope = useAsync()
 
 	var loading by useState(false)
 
-	val classes =
-		if (props.default) buttonDefaultClasses
-		else buttonNonDefaultClasses
-
-	button(classes = classes) {
-		if (loading) {
-			loadingSpinner()
-		} else {
-			text(props.text)
-		}
-
-		attrs {
+	if (props.enabled != false) {
+		button {
+			className = if (props.emphasize == true) buttonDefaultClasses else buttonNonDefaultClasses
 			disabled = loading
 
-			onClickFunction = {
+			if (loading)
+				LoadingSpinner()
+			else
+				+(props.text ?: "")
+
+			onClick = {
 				it.preventDefault()
 
 				val startLoading = scope.launch {
@@ -55,66 +63,30 @@ private val CustomButton = fc<ButtonProps>("CustomButton") { props ->
 				}
 
 				scope.reportExceptions(onFailure = { loading = false }) {
-					props.action()
+					props.action?.invoke()
 					startLoading.cancel()
 
 					loading = false
 				}
 			}
 		}
-	}
-}
-
-fun RBuilder.styledButton(
-	text: String,
-	default: Boolean = false,
-	enabled: Boolean = true,
-	action: suspend () -> Unit,
-) {
-	if (enabled)
-		child(CustomButton) {
-			attrs {
-				this.text = text
-				this.default = default
-				this.action = action
-			}
-		}
-	else
-		styledDisabledButton(text)
-}
-
-fun RBuilder.styledDisabledButton(
-	text: String,
-) {
-	span("$buttonShapeClasses font-bold") {
-		text(text)
-	}
-}
-
-fun RBuilder.styledSubmitButton(
-	text: String,
-	default: Boolean = true,
-) {
-	input(InputType.submit,
-	      classes = if (default) buttonDefaultClasses else buttonNonDefaultClasses) {
-		attrs {
-			value = text
+	} else {
+		span {
+			+(props.text ?: "")
+			className = "$buttonShapeClasses font-bold"
 		}
 	}
 }
 
-fun RBuilder.styledPill(
-	contents: RDOMBuilder<SPAN>.() -> Unit,
-) {
-	span("$buttonShapeClasses bg-blue-200 flex flex-shrink justify-between items-center gap-x-2 max-w-max pr-0 pl-0") {
-		contents()
-	}
-}
+val StyledSubmitButton = FC<StyledButtonProps>("StyledSubmitButton") { props ->
+	if (props.action != null)
+		console.warn("A StyledSubmitButton was provided an 'action', but it is ignored, as the form's action will be executed instead.",
+		             props)
 
-fun RBuilder.styledPillContainer(
-	contents: RDOMBuilder<DIV>.() -> Unit,
-) {
-	div("flex flex-row flex-wrap gap-2") {
-		contents()
+	input {
+		type = InputType.submit
+		className = if (props.emphasize == true) buttonDefaultClasses else buttonNonDefaultClasses
+		value = props.text
+		disabled = !(props.enabled ?: true)
 	}
 }

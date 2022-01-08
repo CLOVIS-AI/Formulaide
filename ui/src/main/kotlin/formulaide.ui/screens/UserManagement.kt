@@ -9,18 +9,22 @@ import formulaide.client.routes.createUser
 import formulaide.client.routes.editUser
 import formulaide.client.routes.listUsers
 import formulaide.ui.*
-import formulaide.ui.components.*
+import formulaide.ui.components.StyledButton
+import formulaide.ui.components.cards.Card
+import formulaide.ui.components.cards.FormCard
+import formulaide.ui.components.cards.action
+import formulaide.ui.components.cards.submit
+import formulaide.ui.components.inputs.*
+import formulaide.ui.components.text.LightText
+import formulaide.ui.components.useAsync
 import formulaide.ui.utils.replace
-import formulaide.ui.utils.text
-import kotlinx.html.InputType
-import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
 import react.*
-import react.dom.attrs
-import react.dom.div
-import react.dom.option
+import react.dom.html.InputType
+import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.option
 
-val UserList = fc<Props>("UserList") {
+val UserList = FC<Props>("UserList") {
 	traceRenders("UserList")
 
 	val scope = useAsync()
@@ -30,8 +34,12 @@ val UserList = fc<Props>("UserList") {
 	val (me) = useUser()
 
 	if (me == null) {
-		styledCard("Employés", contents = { text("Récupération de l'utilisateur…") })
-		return@fc
+		Card {
+			title = "Employés"
+			loading = true
+			+"Récupération de l'utilisateur…"
+		}
+		return@FC
 	}
 
 	var listDisabledUsers by useState(false)
@@ -42,53 +50,56 @@ val UserList = fc<Props>("UserList") {
 		}
 	}
 
-	styledCard(
-		"Employés",
-		null,
-		"Créer un employé" to { navigateTo(Screen.NewUser) },
-		loading = users.isEmpty(),
-	) {
-		styledField("hide-disabled", "Utilisateurs désactivés") {
-			styledCheckbox("hide-disabled", "Afficher les comptes désactivés") {
-				onChangeFunction = { listDisabledUsers = (it.target as HTMLInputElement).checked }
+	Card {
+		title = "Employés"
+		action("Créer un employé") { navigateTo(Screen.NewUser) }
+		loading = users.isEmpty()
+
+		Field {
+			id = "hide-disabled"
+			text = "Utilisateurs désactivés"
+
+			Checkbox {
+				id = "hide-disabled"
+				text = "Afficher les comptes désactivés"
+				onChange = { listDisabledUsers = it.target.checked }
 			}
 		}
 
 		for ((i, user) in users.withIndex()) {
-			styledFormField {
-				text(user.fullName + " ")
-				styledLightText(user.email.email)
+			FormField {
+				+"${user.fullName} "
+				LightText { text = user.email.email }
 
 				div { // buttons
 
 					if (user != me) {
-						styledButton(
-							if (user.enabled) "Désactiver" else "Activer",
-							default = false,
+						StyledButton {
+							text = if (user.enabled) "Désactiver" else "Activer"
 							action = {
 								editUser(user, client, enabled = !user.enabled) {
 									users = users.replace(i, it)
 								}
 							}
-						)
+						}
 
-						styledButton(
-							if (user.administrator) "Enlever le droit d'administration" else "Donner le droit d'administration",
-							default = false,
+						StyledButton {
+							text =
+								if (user.administrator) "Enlever le droit d'administration" else "Donner le droit d'administration"
 							action = {
 								editUser(user, client, administrator = !user.administrator) {
 									users = users.replace(i, it)
 								}
 							}
-						)
-					}
-
-					styledButton("Modifier le mot de passe") {
-						reportExceptions {
-							navigateTo(Screen.EditPassword(user.email, Screen.ShowUsers))
 						}
 					}
 
+					StyledButton {
+						text = "Modifier le mot de passe"
+						action = {
+							navigateTo(Screen.EditPassword(user.email, Screen.ShowUsers))
+						}
+					}
 				}
 			}
 		}
@@ -106,7 +117,7 @@ private suspend fun editUser(
 	onChange(newUser)
 }
 
-val CreateUser = fc<Props>("CreateUser") {
+val CreateUser = FC<Props>("CreateUser") {
 	val services by useServices()
 
 	val email = useRef<HTMLInputElement>()
@@ -121,10 +132,10 @@ val CreateUser = fc<Props>("CreateUser") {
 	val (client) = useClient()
 	require(client is Client.Authenticated) { "Un employé anonyme ne peut pas créer d'utilisateurs" }
 
-	styledFormCard(
-		"Ajouter un employé",
-		null,
-		"Créer" to {
+	FormCard {
+		title = "Ajouter un employé"
+
+		submit("Créer") {
 			val password1Value = password1.current?.value
 			val password2Value = password2.current?.value
 
@@ -160,54 +171,81 @@ val CreateUser = fc<Props>("CreateUser") {
 				navigateTo(Screen.ShowUsers)
 			}
 		}
-	) {
-		styledField("employee-email", "Adresse mail") {
-			styledInput(InputType.email,
-			            "employee-email",
-			            required = true,
-			            ref = email)
+
+		Field {
+			id = "employee-email"
+			text = "Adresse mail"
+
+			Input {
+				type = InputType.email
+				id = "employee-email"
+				required = true
+				ref = email
+			}
 		}
 
-		styledField("employee-name", "Nom affiché") {
-			styledInput(InputType.text, "employee-name", required = true, ref = fullName)
+		Field {
+			id = "employee-name"
+			text = "Nom affiché"
+
+			Input {
+				type = InputType.text
+				id = "employee-name"
+				required = true
+				ref = fullName
+			}
 		}
 
-		styledField("employee-service", "Service") {
-			styledSelect(onSelect = { option ->
-				selectedService = services.find { it.id == option.value }
-			}) {
+		Field {
+			id = "employee-service"
+			text = "Service"
+
+			Select {
+				onSelection = { option -> selectedService = services.find { it.id == option.value } }
+
 				for (service in services) {
 					option {
-						text(service.name)
-						attrs {
-							value = service.id
-						}
+						+service.name
+						value = service.id
 					}
 				}
 			}
 		}
 
-		styledField("employee-is-admin", "Droits") {
-			styledCheckbox("employee-is-admin",
-			               "Cet employé est un administrateur",
-			               ref = admin)
-		}
+		Field {
+			id = "employee-is-admin"
+			text = "Droits"
 
-		styledField("employee-password-1", "Mot de passe") {
-			styledInput(InputType.password,
-			            "employee-password-1",
-			            required = true,
-			            ref = password1) {
-				minLength = "5"
+			Checkbox {
+				id = "employee-is-admin"
+				text = "Cet employé est un administrateur"
+				ref = admin
 			}
 		}
 
-		styledField("employee-password-2", "Confirmer le mot de passe") {
-			styledInput(InputType.password,
-			            "employee-password-2",
-			            required = true,
-			            ref = password2) {
-				minLength = "5"
+		Field {
+			id = "employee-password-1"
+			text = "Mot de passe"
+
+			Input {
+				type = InputType.password
+				id = "employee-password-1"
+				required = true
+				ref = password1
+				minLength = 5
+			}
+		}
+
+		Field {
+			id = "employee-password-2"
+			text = "Confirmer le mot de passe"
+
+			Input {
+				type = InputType.password
+				id = "employee-password-2"
+				required = true
+				ref = password2
+				minLength = 5
 			}
 		}
 	}

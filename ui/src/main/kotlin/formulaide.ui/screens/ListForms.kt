@@ -11,17 +11,22 @@ import formulaide.client.routes.listClosedForms
 import formulaide.client.routes.todoListFor
 import formulaide.ui.*
 import formulaide.ui.Role.Companion.role
-import formulaide.ui.components.*
+import formulaide.ui.components.StyledButton
+import formulaide.ui.components.cards.Card
+import formulaide.ui.components.cards.action
+import formulaide.ui.components.inputs.Checkbox
+import formulaide.ui.components.inputs.Field
+import formulaide.ui.components.inputs.Nesting
+import formulaide.ui.components.useAsync
+import formulaide.ui.components.useAsyncEffect
 import formulaide.ui.utils.*
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
 import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.html.js.onChangeFunction
-import org.w3c.dom.HTMLInputElement
 import react.*
-import react.dom.div
+import react.dom.html.ReactHTML.div
 
 private typealias RecordKey = Pair<Form, RecordState>
 
@@ -62,7 +67,7 @@ private fun CoroutineScope.getRecords(
 	.map { getRecords(client, form, it) }
 	.flatMap { it.value }
 
-val FormList = fc<Props>("FormList") {
+val FormList = FC<Props>("FormList") {
 	traceRenders("FormList")
 
 	val (client) = useClient("FormList client")
@@ -99,39 +104,39 @@ val FormList = fc<Props>("FormList") {
 			forms
 	}
 
-	styledCard(
-		"Formulaires",
-		null,
-		"Actualiser" to {
+	Card {
+		title = "Formulaires"
+
+		action("Actualiser") {
 			refreshForms()
 			clearRecords()
-		},
-		contents = {
-			if (user.role >= Role.EMPLOYEE) styledField("hide-disabled", "Formulaires archivés") {
-				styledCheckbox("hide-disabled", "Afficher les formulaires archivés") {
-					onChangeFunction =
-						{ showArchivedForms = (it.target as HTMLInputElement).checked }
-				}
-			}
+		}
 
-			for (form in shownForms) {
-				child(FormDescription) {
-					attrs {
-						key = form.id
-						this.form = form
-					}
-				}
+		if (user.role >= Role.EMPLOYEE) Field {
+			id = "hide-disabled"
+			text = "Formulaires archivés"
+
+			Checkbox {
+				id = "hide-disabled"
+				text = "Afficher les formulaires archivés"
+				onChange = { showArchivedForms = it.target.checked }
 			}
 		}
-	)
 
+		for (form in shownForms) {
+			FormDescription {
+				key = form.id
+				this.form = form
+			}
+		}
+	}
 }
 
 internal external interface FormDescriptionProps : Props {
 	var form: Form
 }
 
-internal val FormDescription = memo(fc<FormDescriptionProps>("FormDescription") { props ->
+internal val FormDescription = memo(FC<FormDescriptionProps>("FormDescription") { props ->
 	val form = props.form
 	val user by useUser()
 
@@ -143,72 +148,87 @@ internal val FormDescription = memo(fc<FormDescriptionProps>("FormDescription") 
 	fun toggle(bool: Boolean) = if (!bool) "▼" else "▲"
 
 	div {
-		text(form.name)
+		+form.name
 
-		styledButton("Remplir") { navigateTo(Screen.SubmitForm(form.createRef())) }
+		StyledButton {
+			text = "Remplir"
+			action = { navigateTo(Screen.SubmitForm(form.createRef())) }
+		}
 
 		if (user.role >= Role.EMPLOYEE)
-			styledButton("Dossiers ${toggle(showRecords)}") { showRecords = !showRecords }
+			StyledButton {
+				text = "Dossiers ${toggle(showRecords)}"
+				action = { showRecords = !showRecords }
+			}
 
 		if (user.role >= Role.EMPLOYEE)
-			styledButton("Gestion ${toggle(showAdministration)}") {
-				showAdministration = !showAdministration
+			StyledButton {
+				text = "Gestion ${toggle(showAdministration)}"
+				action = { showAdministration = !showAdministration }
 			}
 	}
 
-	if (showRecords) styledNesting {
-		text("Dossiers :")
+	if (showRecords) Nesting {
+		+"Dossiers :"
 
 		for (action in form.actions.sortedBy { it.order }) {
-			child(ActionDescription) {
-				attrs {
-					key = form.id + "-" + action.id
-					this.form = form
-					this.state = RecordState.Action(action.createRef())
-				}
+			ActionDescription {
+				key = form.id + "-" + action.id
+				this.form = form
+				this.state = RecordState.Action(action.createRef())
 			}
 		}
 
-		child(ActionDescription) {
-			attrs {
-				this.form = form
-				this.state = RecordState.Refused
-			}
+		ActionDescription {
+			this.form = form
+			this.state = RecordState.Refused
 		}
 
-		child(ActionDescription) {
-			attrs {
-				this.form = form
-				this.state = null
-			}
+		ActionDescription {
+			this.form = form
+			this.state = null
 		}
 	}
 
-	if (showAdministration) styledNesting {
-		text("Gestion :")
+	if (showAdministration) Nesting {
+		+"Gestion :"
 
 		if (user.role >= Role.ADMINISTRATOR) {
 			require(client is Client.Authenticated) // not possible otherwise
 
-			styledButton("Copier", action = { navigateTo(Screen.NewForm(form, copy = true)) })
-			styledButton("Modifier", action = { navigateTo(Screen.NewForm(form, copy = false)) })
+			StyledButton {
+				text = "Copier"
+				action = { navigateTo(Screen.NewForm(form, copy = true)) }
+			}
 
-			styledButton(if (form.public) "Rendre interne" else "Rendre public", action = {
-				client.editForm(FormMetadata(form.createRef(),
-				                             public = !form.public))
-				refreshForms()
-			})
+			StyledButton {
+				text = "Modifier"
+				action = { navigateTo(Screen.NewForm(form, copy = false)) }
+			}
 
-			styledButton(if (form.open) "Archiver" else "Désarchiver", action = {
-				client.editForm(FormMetadata(form.createRef(),
-				                             open = !form.open))
-				refreshForms()
-			})
+			StyledButton {
+				text = if (form.public) "Rendre interne" else "Rendre public"
+				action = {
+					client.editForm(FormMetadata(form.createRef(), public = !form.public))
+					refreshForms()
+				}
+			}
+
+			StyledButton {
+				text = if (form.open) "Archiver" else "Désarchiver"
+				action = {
+					client.editForm(FormMetadata(form.createRef(), open = !form.open))
+					refreshForms()
+				}
+			}
 		}
 
-		styledButton("Voir HTML", action = {
-			window.open("${client.hostUrl}/forms/html?id=${form.id}&url=${client.hostUrl}")
-		})
+		StyledButton {
+			text = "Voir HTML"
+			action = {
+				window.open("${client.hostUrl}/forms/html?id=${form.id}&url=${client.hostUrl}")
+			}
+		}
 	}
 })
 
@@ -217,7 +237,7 @@ internal external interface ActionDescriptionProps : Props {
 	var state: RecordState?
 }
 
-internal val ActionDescription = fc<ActionDescriptionProps>("ActionDescription") { props ->
+internal val ActionDescription = FC<ActionDescriptionProps>("ActionDescription") { props ->
 	val form = props.form
 	val state = props.state
 
@@ -248,6 +268,9 @@ internal val ActionDescription = fc<ActionDescriptionProps>("ActionDescription")
 					else -> ""
 				}
 
-		styledButton(title, action = { navigateTo(Screen.Review(form, state, records)) })
+		StyledButton {
+			text = title
+			action = { navigateTo(Screen.Review(form, state, records)) }
+		}
 	}
 }
