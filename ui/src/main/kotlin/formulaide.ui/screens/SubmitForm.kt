@@ -5,16 +5,22 @@ import formulaide.api.types.Ref
 import formulaide.client.routes.compositesReferencedIn
 import formulaide.client.routes.submitForm
 import formulaide.ui.*
-import formulaide.ui.components.*
+import formulaide.ui.components.LoadingSpinner
+import formulaide.ui.components.cards.FormCard
+import formulaide.ui.components.cards.submit
+import formulaide.ui.components.text.ErrorText
+import formulaide.ui.components.useAsync
 import formulaide.ui.fields.field
 import formulaide.ui.utils.parseHtmlForm
-import formulaide.ui.utils.text
 import kotlinx.coroutines.launch
-import react.*
-import react.dom.p
+import react.FC
+import react.Props
+import react.dom.html.ReactHTML.p
+import react.useEffect
+import react.useState
 
 @Suppress("FunctionName")
-fun SubmitForm(formRef: Ref<Form>) = fc<Props>("SubmitForm") {
+fun SubmitForm(formRef: Ref<Form>) = FC<Props>("SubmitForm") {
 	traceRenders("SubmitForm")
 
 	val forms by useForms()
@@ -56,7 +62,7 @@ fun SubmitForm(formRef: Ref<Form>) = fc<Props>("SubmitForm") {
 		}
 	}
 
-	/** Same as [formLoadedFromCache]. */
+	/** Same as `formLoadedFromCache`. */
 	var formLoadedFromServer by useState<Boolean>()
 	val scope = useAsync()
 
@@ -81,53 +87,58 @@ fun SubmitForm(formRef: Ref<Form>) = fc<Props>("SubmitForm") {
 	// No hooks from here on
 
 	if (failedRef) {
-		p { styledErrorText("Formulaire introuvable. Vous n'avez peut-être pas les droits d'y accéder ?") }
-		return@fc
+		ErrorText { text = "Formulaire introuvable. Vous n'avez peut-être pas les droits d'y accéder ?" }
+		return@FC
 	}
 
 	if (form == null) {
 		p {
-			text("Chargement du formulaire…")
-			loadingSpinner()
+			+"Chargement du formulaire…"
+			LoadingSpinner()
 		}
-		return@fc
+		return@FC
 	}
 	traceRenders("SubmitForm … the form is known")
 
 	if (!form.open) {
-		p { styledErrorText("Ce formulaire a été fermé, il ne peut plus être rempli.") }
-		return@fc
+		ErrorText { text = "Ce formulaire a été fermé, il ne peut plus être rempli." }
+		return@FC
 	}
 	traceRenders("SubmitForm … the form is open")
 
 	if (formLoadedFromCache == null) {
 		p {
-			text("Chargement des champs depuis le cache…")
-			loadingSpinner()
+			+"Chargement des champs depuis le cache…"
+			LoadingSpinner()
 		}
-		return@fc
+		return@FC
 	}
 	traceRenders("SubmitForm … the form is not currently loading from the cache")
 
 	if (formLoadedFromCache != true && formLoadedFromServer == null) {
 		p {
-			text("Chargement des champs depuis le serveur…")
-			loadingSpinner()
+			+"Chargement des champs depuis le serveur…"
+			LoadingSpinner()
 		}
-		return@fc
+		return@FC
 	}
 	traceRenders("SubmitForm … the form is not currently loading from the server")
 
 	if (formLoadedFromServer == false) {
-		p { styledErrorText("Le chargement des données composées référencées a échoué. Veuillez signaler ce problème à l'administrateur.") }
-		return@fc
+		ErrorText {
+			text =
+				"Le chargement des données composées référencées a échoué. Veuillez signaler ce problème à l'administrateur."
+		}
+		return@FC
 	}
 	traceRenders("SubmitForm … the form is loaded")
 
-	styledFormCard(
-		form.name,
-		"Ce formulaire est ${if (form.public) "public" else "interne"}, les champs marqués par une * sont obligatoires.",
-		submit = "Envoyer" to { htmlFormElement ->
+	FormCard {
+		title = form.name
+		subtitle =
+			"Ce formulaire est ${if (form.public) "public" else "interne"}, les champs marqués par une * sont obligatoires."
+
+		submit("Envoyer") { htmlFormElement ->
 			val submission = parseHtmlForm(
 				htmlFormElement,
 				form = form,
@@ -139,8 +150,8 @@ fun SubmitForm(formRef: Ref<Form>) = fc<Props>("SubmitForm") {
 
 				navigateTo(Screen.ShowForms)
 			}
-		},
-	) {
+		}
+
 		for (field in form.mainFields.fields.sortedBy { it.order }) {
 			field(form, null, field)
 		}

@@ -10,26 +10,31 @@ import formulaide.client.Client
 import formulaide.client.routes.createData
 import formulaide.ui.*
 import formulaide.ui.components.*
+import formulaide.ui.components.cards.Card
+import formulaide.ui.components.cards.FormCard
+import formulaide.ui.components.cards.action
+import formulaide.ui.components.cards.submit
+import formulaide.ui.components.inputs.Field
+import formulaide.ui.components.inputs.Input
 import formulaide.ui.fields.FieldEditor
 import formulaide.ui.fields.SwitchDirection
 import formulaide.ui.utils.remove
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.switchOrder
-import formulaide.ui.utils.text
-import kotlinx.html.InputType
-import kotlinx.html.js.onChangeFunction
-import org.w3c.dom.HTMLInputElement
 import react.*
+import react.dom.html.InputType
 
-fun CreateData(original: Composite? = null) = fc<Props>("CreateData") {
+fun CreateData(original: Composite? = null) = FC<Props>("CreateData") {
 	traceRenders("CreateData")
 
 	val (client) = useClient()
 	if (client !is Client.Authenticated) {
-		styledCard("Créer un groupe", failed = true) {
-			text("Seuls les administrateurs peuvent créer un groupe.")
+		Card {
+			title = "Créer un groupe"
+			failed = true
+			+"Seuls les administrateurs peuvent créer un groupe."
 		}
-		return@fc
+		return@FC
 	}
 
 	var formName by useLocalStorage("data-name", "")
@@ -46,10 +51,10 @@ fun CreateData(original: Composite? = null) = fc<Props>("CreateData") {
 
 	val lambdas = useLambdas()
 
-	styledFormCard(
-		if (original == null) "Créer un groupe" else "Copier un groupe",
-		null,
-		"Créer ce groupe" to {
+	FormCard {
+		title = if (original == null) "Créer un groupe" else "Copier un groupe"
+
+		submit("Créer") {
 			val data = Composite(
 				id = Ref.SPECIAL_TOKEN_NEW,
 				name = formName,
@@ -63,54 +68,63 @@ fun CreateData(original: Composite? = null) = fc<Props>("CreateData") {
 				refreshComposites()
 				navigateTo(Screen.ShowData)
 			}
-		},
-		"Effacer" to {
-			updateFields { emptyList() }
-		},
-	) {
-		styledField("new-data-name", "Nom") {
-			styledInput(InputType.text, "new-data-name", required = true) {
+		}
+		action("Effacer") { updateFields { emptyList() } }
+
+		Field {
+			id = "new-data-name"
+			text = "Nom"
+
+			Input {
+				type = InputType.text
+				id = "new-data-name"
+				required = true
 				autoFocus = true
 				value = formName
-				onChangeFunction = {
-					formName = (it.target as HTMLInputElement).value
-				}
+				onChange = { formName = it.target.value }
 			}
 		}
 
-		styledField("data-fields", "Champs") {
-			for ((i, field) in fields.withIndex()) {
-				child(FieldEditor) {
-					attrs {
-						this.field = field
-						key = field.id
-						uniqueId = "field:${field.id}"
-						replace = { it: Field ->
-							updateFields { replace(i, it as DataField) }
-						}.memoIn(lambdas, "replace-${field.id}", i)
-						remove = {
-							updateFields { remove(i) }
-						}.memoIn(lambdas, "remove-${field.id}", i)
-						switch = { direction: SwitchDirection ->
-							updateFields { switchOrder(i, direction) }
-						}.memoIn(lambdas, "switch-${field.id}", i)
+		Field {
+			id = "data-fields"
+			text = "Champs"
 
-						depth = 0
-						fieldNumber = i
-					}
+			for ((i, field) in fields.withIndex()) {
+				FieldEditor {
+					this.field = field
+					key = field.id
+					uniqueId = "field:${field.id}"
+
+					replace = { it: Field ->
+						updateFields { replace(i, it as DataField) }
+					}.memoIn(lambdas, "replace-${field.id}", i)
+
+					remove = {
+						updateFields { remove(i) }
+					}.memoIn(lambdas, "remove-${field.id}", i)
+
+					switch = { direction: SwitchDirection ->
+						updateFields { switchOrder(i, direction) }
+					}.memoIn(lambdas, "switch-${field.id}", i)
+
+					depth = 0
+					fieldNumber = i
 				}
 			}
 
-			styledButton("Ajouter un champ", action = {
-				updateFields {
-					this + DataField.Simple(
-						order = this.size,
-						id = maxId.toString(),
-						name = "",
-						simple = SimpleField.Text(Arity.optional())
-					)
+			StyledButton {
+				text = "Ajouter un champ"
+				action = {
+					updateFields {
+						this + DataField.Simple(
+							order = this.size,
+							id = maxId.toString(),
+							name = "",
+							simple = SimpleField.Text(Arity.optional())
+						)
+					}
 				}
-			})
+			}
 		}
 	}
 }

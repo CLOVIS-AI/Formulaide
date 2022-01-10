@@ -6,7 +6,13 @@ import formulaide.api.users.Service
 import formulaide.client.Client
 import formulaide.client.refreshToken
 import formulaide.client.routes.*
-import formulaide.ui.components.*
+import formulaide.ui.components.WindowFrame
+import formulaide.ui.components.cards.Card
+import formulaide.ui.components.text.FooterText
+import formulaide.ui.components.text.LightText
+import formulaide.ui.components.useAsync
+import formulaide.ui.components.useAsyncEffect
+import formulaide.ui.components.useAsyncEffectOnce
 import formulaide.ui.screens.clearRecords
 import formulaide.ui.utils.*
 import io.ktor.client.fetch.*
@@ -16,8 +22,8 @@ import kotlinx.coroutines.await
 import kotlinx.coroutines.delay
 import org.w3c.dom.get
 import react.*
-import react.dom.br
-import react.dom.p
+import react.dom.html.ReactHTML.br
+import react.dom.html.ReactHTML.p
 
 //region Production / development environments
 internal var inProduction = true
@@ -41,7 +47,7 @@ private val client = GlobalState<Client>(defaultClient)
 		subscribers.add("clear records" to { clearRecords() })
 	}
 
-fun RBuilder.useClient(name: String? = null) = useGlobalState(client, name = name)
+fun ChildrenBuilder.useClient(name: String? = null) = useGlobalState(client, name = name)
 
 suspend fun logout() {
 	val authenticated = client.value as? Client.Authenticated
@@ -51,7 +57,7 @@ suspend fun logout() {
 	client.value = defaultClient
 }
 
-fun RBuilder.useUser(name: String? = null) = useGlobalState(client, name = name)
+fun ChildrenBuilder.useUser(name: String? = null) = useGlobalState(client, name = name)
 	.filterIs<Client.Authenticated>()
 	.map { it.me }
 
@@ -61,10 +67,10 @@ private val compositesDelegate = composites.asDelegated()
 	.useListEquality()
 	.useEquals()
 
-fun RBuilder.useComposites() = useGlobalState(composites, compositesDelegate)
+fun ChildrenBuilder.useComposites() = useGlobalState(composites, compositesDelegate)
 	.map { composite -> composite.filter { it.open } }
 
-fun RBuilder.useAllComposites() = useGlobalState(composites, compositesDelegate)
+fun ChildrenBuilder.useAllComposites() = useGlobalState(composites, compositesDelegate)
 
 suspend fun refreshComposites() = (client.value as? Client.Authenticated)
 	?.let { c -> compositesDelegate.value = c.listData() }
@@ -76,7 +82,7 @@ private val formsDelegate = forms.asDelegated()
 	.useListEquality()
 	.useEquals()
 
-fun RBuilder.useForms() = useGlobalState(forms, formsDelegate)
+fun ChildrenBuilder.useForms() = useGlobalState(forms, formsDelegate)
 suspend fun refreshForms() {
 	formsDelegate.value = (client.value as? Client.Authenticated)
 		?.listAllForms()
@@ -93,7 +99,7 @@ suspend fun refreshForms() {
 private val services = GlobalState(emptyList<Service>())
 	.apply { subscribers.add("services console" to { println("The services have been updated: ${it.size} are stored") }) }
 
-fun RBuilder.useServices() = useGlobalState(services)
+fun ChildrenBuilder.useServices() = useGlobalState(services)
 suspend fun refreshServices() {
 	services.value = (
 			(client.value as? Client.Authenticated)
@@ -111,7 +117,7 @@ private val bottomText = GlobalState("")
 /**
  * The main app screen.
  */
-val App = fc<Props>("App") {
+val App = FC<Props>("App") {
 	//region User fix
 	/*
 	 * For some reason, without this unused hook, the 'App' component doesn't re-render when:
@@ -168,93 +174,115 @@ val App = fc<Props>("App") {
 		}
 	}
 
-	useAsyncEffectOnce() {
+	useAsyncEffectOnce {
 		bottomText.value = fetch("version.txt").await().text().await()
 			.takeIf { "DOCTYPE" !in it } ?: "Les informations de version ne sont pas disponibles."
 	}
 
-	child(Window)
+	Window()
 
 	for (error in errors) {
-		child(ErrorCard) {
+		ErrorCard {
 			key = error.hashCode().toString()
-			attrs {
-				this.error = error
-			}
+			this.error = error
 		}
 	}
 
 	if (!client.hostUrl.startsWith("https://")) {
-		styledCard(
-			"Votre accès n'est pas sécurisé",
-			"Alerte de sécurité",
+		Card {
+			title = "Votre accès n'est pas sécurisé"
+			subtitle = "Alerte de sécurité"
 			failed = true
-		) {
-			p { text("Formulaide est connecté à l'API via l'URL ${client.hostUrl}. Cette URL ne commence pas par 'https://'.") }
 
-			p { text("Actuellement, il est possible d'accéder à tout ce que vous faites, dont votre compte et les mots de passes tapés. Veuillez contacter l'administrateur du site.") }
+			p {
+				+"Formulaide est connecté à l'API via l'URL ${client.hostUrl}. Cette URL ne commence pas par 'https://'."
+			}
+
+			p {
+				+"Actuellement, il est possible d'accéder à tout ce que vous faites, dont votre compte et les mots de passes tapés. Veuillez contacter l'administrateur du site."
+			}
 		}
 	}
 
 	val footerText by useGlobalState(bottomText)
 	if (footerText.isNotBlank())
 		footerText.split("\n")
-			.forEach { br {}; styledFooterText(it) }
+			.forEach { br {}; FooterText { text = it } }
+}
+
+val StyledAppFrame = FC<Props>("StyledFrame") {
+	StrictMode {
+		WindowFrame {
+			App()
+		}
+	}
 }
 
 //region Crash reporter
 
 private const val errorSectionClass = "mt-2"
 
-val CrashReporter = fc<PropsWithChildren>("CrashReporter") { props ->
+val CrashReporter = FC<PropsWithChildren>("CrashReporter") { props ->
 	val (boundary, didCatch, error) = useErrorBoundary()
 
 	if (didCatch) {
-		styledCard(
-			"Erreur",
-			"Le site a rencontré un échec fatal",
-			failed = true,
-		) {
-			p { text("Veuillez signaler cette erreur à l'administrateur, en lui envoyant les informations ci-dessous, à l'adresse incoming+arcachon-ville-formulaide-27105418-issue-@incoming.gitlab.com :") }
+		Card {
+			title = "Erreur"
+			subtitle = "Le site a rencontré un échec fatal"
+			failed = true
 
-			p(errorSectionClass) {
-				text("Ce que j'étais en train de faire : ")
-				br {}
-				styledLightText("Ici, expliquez ce que vous étiez en train de faire quand le problème a eu lieu.")
+			p {
+				+"Veuillez signaler cette erreur à l'administrateur, en lui envoyant les informations ci-dessous, à l'adresse incoming+arcachon-ville-formulaide-27105418-issue-@incoming.gitlab.com :"
 			}
 
-			p(errorSectionClass) {
-				text("Error type : ")
+			p {
+				className = errorSectionClass
+
+				+"Ce que j'étais en train de faire : "
 				br {}
-				styledLightText("Plantage de l'application, capturé par CrashReporter")
+				LightText { text = "Ici, expliquez ce que vous étiez en train de faire quand le problème a eu lieu." }
 			}
 
-			p(errorSectionClass) {
-				text("Throwable : ")
+			p {
+				className = errorSectionClass
+
+				+"Error type : "
+				br {}
+				LightText { text = "Plantage de l'application, capturé par CrashReporter" }
+			}
+
+			p {
+				className = errorSectionClass
+
+				+"Throwable : "
 				error?.stackTraceToString()
 					?.removeSurrounding("\n")
 					?.split("\n")
 					?.forEach {
 						br {}
-						styledLightText(it.trim())
+						LightText { text = it.trim() }
 					}
-					?: run { styledLightText("No stacktrace available") }
+					?: LightText { text = "No stacktrace available" }
 			}
 
 			for (local in listOf("form-fields", "form-actions", "data-fields")) {
-				p(errorSectionClass) {
-					text("Local storage : $local")
+				p {
+					className = errorSectionClass
+
+					+"Local storage : $local"
 					br {}
-					styledLightText(window.localStorage[local].toString())
+					LightText { text = window.localStorage[local].toString() }
 				}
 			}
 
-			p(errorSectionClass) {
-				text("Client : ")
+			p {
+				className = errorSectionClass
+
+				+"Client : "
 				br {}
-				styledLightText(client.value.hostUrl)
+				LightText { text = client.value.hostUrl }
 				br {}
-				styledLightText((client.value as? Client.Authenticated)?.me.toString())
+				LightText { text = (client.value as? Client.Authenticated)?.me.toString() }
 			}
 
 			for ((globalName, global) in mapOf(
@@ -262,11 +290,13 @@ val CrashReporter = fc<PropsWithChildren>("CrashReporter") { props ->
 				"Formulaires" to forms,
 				"Services" to services,
 			)) {
-				p(errorSectionClass) {
-					text("Cache : $globalName")
+				p {
+					className = errorSectionClass
+
+					+"Cache : $globalName"
 					global.value.forEach {
 						br {}
-						styledLightText(it.toString())
+						LightText { text = it.toString() }
 					}
 				}
 			}

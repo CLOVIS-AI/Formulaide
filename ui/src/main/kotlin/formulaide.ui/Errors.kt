@@ -1,9 +1,9 @@
 package formulaide.ui
 
-import formulaide.ui.components.styledCard
+import formulaide.ui.components.cards.Card
+import formulaide.ui.components.cards.action
 import formulaide.ui.components.useAsync
 import formulaide.ui.utils.GlobalState
-import formulaide.ui.utils.text
 import formulaide.ui.utils.useGlobalState
 import io.ktor.client.call.*
 import io.ktor.client.features.*
@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 import react.*
 
 private val errors = GlobalState(listOf<Throwable>())
-fun RBuilder.useErrors(): List<Throwable> {
+fun ChildrenBuilder.useErrors(): List<Throwable> {
 	val (local, _) = useGlobalState(errors)
 
 	return local
@@ -27,7 +27,7 @@ external interface ErrorProps : Props {
 	var error: Throwable
 }
 
-val ErrorCard = fc<ErrorProps>("ErrorCard") { props ->
+val ErrorCard = FC<ErrorProps>("ErrorCard") { props ->
 	traceRenders("ErrorCard")
 
 	var errors by useGlobalState(errors)
@@ -58,15 +58,20 @@ val ErrorCard = fc<ErrorProps>("ErrorCard") { props ->
 		}
 	}
 
-	styledCard(
-		title,
-		subtitle,
-		"OK" to {
+	Card {
+		this.title = title
+		this.subtitle = subtitle
+		this.failed = true
+
+		action("OK") {
 			val index = errors.indexOf(error)
 			errors = errors.subList(0, index) + errors.subList(index + 1, errors.size)
-		},
-		failed = true,
-	) { body?.let { text(it) } }
+		}
+
+		body?.let {
+			+it
+		}
+	}
 }
 
 inline fun <R> reportExceptions(finally: (e: Exception) -> Unit = {}, block: () -> R): R = try {
