@@ -1,4 +1,4 @@
-package formulaide.ui.fields
+package formulaide.ui.fields.editors
 
 import formulaide.api.data.Composite
 import formulaide.api.data.SPECIAL_TOKEN_RECURSION
@@ -8,7 +8,7 @@ import formulaide.api.types.Ref
 import formulaide.ui.components.inputs.FormField
 import formulaide.ui.components.inputs.Select
 import formulaide.ui.components.text.LightText
-import formulaide.ui.fields.SimpleFieldEnum.Companion.asEnum
+import formulaide.ui.fields.editors.SimpleFieldEnum.Companion.asEnum
 import formulaide.ui.useComposites
 import react.FC
 import react.dom.html.ReactHTML.option
@@ -34,12 +34,8 @@ val TypeEditor = FC<EditableFieldProps>("TypeEditor") { props ->
 				required = true
 
 				SimpleOptions { +props }
-
 				UnionOptions { +props }
-
 				CompositeOptions { +props }
-
-				// Select itself
 				RecursiveCompositeOptions { +props }
 			}
 		}
@@ -76,8 +72,7 @@ private fun onSelect(
 					.build(Arity.mandatory())
 			when (field) {
 				is DataField -> props.replace(field.copyToSimple(newSimple))
-				is ShallowFormField -> props.replace(field.copyToSimple(
-					newSimple))
+				is ShallowFormField -> props.replace(field.copyToSimple(newSimple))
 			}
 		}
 		selected == "union" -> when (field) {
