@@ -7,7 +7,7 @@ import react.dom.html.ReactHTML.li
 import react.dom.html.ReactHTML.p
 import react.dom.html.ReactHTML.ul
 
-val FormEditWarning = FC<Props>("FormEditWarning") { props ->
+val FormEditWarning = FC<Props>("FormEditWarning") {
 	ErrorText {
 		text =
 			" Il est possible que le système refuse certaines modifications. Il est possible que le système autorise des modifications qui amènent à l'inaccessibilité de certaines données."

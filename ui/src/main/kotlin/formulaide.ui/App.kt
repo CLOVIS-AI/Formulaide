@@ -13,7 +13,7 @@ import formulaide.ui.components.text.LightText
 import formulaide.ui.components.useAsync
 import formulaide.ui.components.useAsyncEffect
 import formulaide.ui.components.useAsyncEffectOnce
-import formulaide.ui.screens.clearRecords
+import formulaide.ui.screens.forms.list.clearRecords
 import formulaide.ui.utils.*
 import io.ktor.client.fetch.*
 import kotlinext.js.jso
