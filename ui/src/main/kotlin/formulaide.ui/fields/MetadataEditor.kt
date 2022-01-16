@@ -8,6 +8,7 @@ import formulaide.api.types.Arity
 import formulaide.ui.components.StyledButton
 import formulaide.ui.components.inputs.Checkbox
 import formulaide.ui.components.inputs.Input
+import formulaide.ui.fields.renderers.Field
 import org.w3c.dom.HTMLInputElement
 import react.ChildrenBuilder
 import react.FC
@@ -33,18 +34,15 @@ val MetadataEditor = FC<EditableFieldProps>("MetadataEditor") { props ->
 		}
 
 		if (field.simple !is SimpleField.Upload && field.simple != SimpleField.Message) {
-			field(
-				form = null,
-				root = null,
-				defaultField,
-				input = { _, value ->
+			Field {
+				this.field = defaultField
+				this.onInput = { _, value ->
 					props.replace(
-						field.requestCopy(
-							field.simple.requestCopy(defaultValue = value)
-						).requestCopy(name = "Valeur par défaut")
+						field.requestCopy(field.simple.requestCopy(defaultValue = value))
+							.requestCopy(name = "Valeur par défaut")
 					)
 				}
-			)
+			}
 		}
 	}
 }

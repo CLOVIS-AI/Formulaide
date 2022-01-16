@@ -16,8 +16,8 @@ import formulaide.ui.components.inputs.ControlledSelect
 import formulaide.ui.components.inputs.Nesting
 import formulaide.ui.components.inputs.Option
 import formulaide.ui.components.text.Title
-import formulaide.ui.fields.field
 import formulaide.ui.fields.immutableFields
+import formulaide.ui.fields.renderers.Field
 import formulaide.ui.reportExceptions
 import formulaide.ui.traceRenders
 import formulaide.ui.useClient
@@ -1036,7 +1036,12 @@ private val ReviewRecordContents = FC<ReviewRecordContentsProps>("ReviewRecordCo
 				fieldNumber = i
 
 				for (field in root.fields) {
-					field(props.form, action, field, key = "${props.record.id}_${field.id}")
+					Field {
+						this.form = props.form
+						this.root = action
+						this.field = field
+						this.fieldKey = "${props.record.id}_${field.id}"
+					}
 				}
 				i++
 			}
