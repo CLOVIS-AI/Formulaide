@@ -10,12 +10,12 @@ import formulaide.ui.*
 import formulaide.ui.Role.Companion.role
 import formulaide.ui.components.StyledButton
 import formulaide.ui.components.inputs.Nesting
+import formulaide.ui.components.useAsync
+import formulaide.ui.utils.ReadDelegatedProperty
+import formulaide.ui.utils.useGlobalState
 import kotlinx.browser.window
-import react.FC
-import react.Props
+import react.*
 import react.dom.html.ReactHTML.div
-import react.key
-import react.useState
 
 external interface FormDescriptionProps : Props {
 	var form: Form
@@ -29,6 +29,14 @@ val FormDescription = FC<FormDescriptionProps>("FormDescription") { props ->
 	var showAdministration by useState(false)
 
 	val (client) = useClient()
+	val scope = useAsync()
+
+	val recordsCacheEdits by useGlobalState(recordsCacheModification) // to force a render when the cache changes
+	val recordsDelegate = useMemo(recordsCacheEdits) {
+		if (client is Client.Authenticated) ReadDelegatedProperty { scope.getRecords(client, form) }
+		else ReadDelegatedProperty { emptyList() }
+	}
+	val records by recordsDelegate
 
 	fun toggle(bool: Boolean) = if (!bool) "▼" else "▲"
 
@@ -42,7 +50,12 @@ val FormDescription = FC<FormDescriptionProps>("FormDescription") { props ->
 
 		if (user.role >= Role.EMPLOYEE)
 			StyledButton {
-				text = "Dossiers ${toggle(showRecords)}"
+				text = when {
+					records.isEmpty() -> "Dossiers "
+					records.size == 1 -> "1 Dossier "
+					else -> "${records.size} Dossiers"
+				} + toggle(showRecords)
+
 				action = { showRecords = !showRecords }
 			}
 
