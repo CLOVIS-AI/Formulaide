@@ -12,11 +12,15 @@ import formulaide.ui.components.StyledButton
 import formulaide.ui.components.TopBar
 import formulaide.ui.components.cards.Card
 import formulaide.ui.components.cards.action
-import formulaide.ui.screens.*
+import formulaide.ui.screens.CreateUser
+import formulaide.ui.screens.ServiceList
+import formulaide.ui.screens.UserList
 import formulaide.ui.screens.data.CreateData
 import formulaide.ui.screens.data.DataList
 import formulaide.ui.screens.forms.edition.CreateForm
 import formulaide.ui.screens.forms.list.FormList
+import formulaide.ui.screens.homepage.Homepage
+import formulaide.ui.screens.homepage.PasswordEditor
 import formulaide.ui.utils.GlobalState
 import formulaide.ui.utils.useGlobalState
 import kotlinx.browser.document
@@ -51,7 +55,7 @@ abstract class Screen(
 	val route: String,
 ) {
 
-	object Home : Screen("Accueil", Role.ANONYMOUS, { LoginAccess }, "home")
+	object Home : Screen("Accueil", Role.ANONYMOUS, { Homepage }, "home")
 	object ShowData : Screen("Groupes", Role.ADMINISTRATOR, { DataList }, "data")
 	object ShowForms : Screen("Formulaires", Role.ANONYMOUS, { FormList }, "forms")
 	class NewData(original: Composite?) :
@@ -72,7 +76,7 @@ abstract class Screen(
 	class EditPassword(user: Email, redirectTo: Screen) :
 		Screen("Modifier mon mot de passe",
 		       Role.EMPLOYEE,
-		       { PasswordModification(user, redirectTo) },
+		       { PasswordEditor(user, redirectTo) },
 		       "editUser-${user.email}")
 
 	class SubmitForm(form: Ref<Form>) :
