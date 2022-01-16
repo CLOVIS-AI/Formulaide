@@ -16,7 +16,7 @@ import formulaide.ui.components.inputs.ControlledSelect
 import formulaide.ui.components.inputs.Nesting
 import formulaide.ui.components.inputs.Option
 import formulaide.ui.components.text.Title
-import formulaide.ui.fields.immutableFields
+import formulaide.ui.fields.editors.immutableFields
 import formulaide.ui.fields.renderers.Field
 import formulaide.ui.reportExceptions
 import formulaide.ui.traceRenders

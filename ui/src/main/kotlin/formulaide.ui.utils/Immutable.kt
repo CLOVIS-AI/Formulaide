@@ -1,7 +1,7 @@
 package formulaide.ui.utils
 
 import formulaide.api.fields.Field
-import formulaide.ui.fields.SwitchDirection
+import formulaide.ui.fields.editors.SwitchDirection
 
 fun <T> List<T>.replace(index: Int, value: T): List<T> =
 	ArrayList<T>(size).also {

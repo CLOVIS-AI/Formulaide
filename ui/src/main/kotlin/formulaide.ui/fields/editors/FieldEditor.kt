@@ -1,4 +1,4 @@
-package formulaide.ui.fields
+package formulaide.ui.fields.editors
 
 import formulaide.api.fields.DataField
 import formulaide.api.fields.DeepFormField

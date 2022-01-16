@@ -22,8 +22,8 @@ import formulaide.ui.components.cards.action
 import formulaide.ui.components.cards.submit
 import formulaide.ui.components.inputs.*
 import formulaide.ui.components.text.ErrorText
-import formulaide.ui.fields.FieldEditor
-import formulaide.ui.fields.SwitchDirection
+import formulaide.ui.fields.editors.FieldEditor
+import formulaide.ui.fields.editors.SwitchDirection
 import formulaide.ui.utils.remove
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.switchOrder
