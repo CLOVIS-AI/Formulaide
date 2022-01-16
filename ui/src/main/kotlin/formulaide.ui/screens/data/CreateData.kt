@@ -1,4 +1,4 @@
-package formulaide.ui.screens
+package formulaide.ui.screens.data
 
 import formulaide.api.data.Composite
 import formulaide.api.fields.DataField

@@ -13,6 +13,8 @@ import formulaide.ui.components.TopBar
 import formulaide.ui.components.cards.Card
 import formulaide.ui.components.cards.action
 import formulaide.ui.screens.*
+import formulaide.ui.screens.data.CreateData
+import formulaide.ui.screens.data.DataList
 import formulaide.ui.utils.GlobalState
 import formulaide.ui.utils.useGlobalState
 import kotlinx.browser.document
