@@ -19,6 +19,7 @@ import formulaide.ui.components.text.Title
 import formulaide.ui.fields.editors.immutableFields
 import formulaide.ui.fields.renderers.Field
 import formulaide.ui.reportExceptions
+import formulaide.ui.screens.forms.list.clearRecords
 import formulaide.ui.traceRenders
 import formulaide.ui.useClient
 import formulaide.ui.useUser
