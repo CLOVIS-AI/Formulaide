@@ -14,6 +14,8 @@ val Select = FC<SelectProps>("Select") { props ->
 	select {
 		+props
 		className = largeInputStyle
-		props.onSelect = { props.onSelection(it.target as HTMLSelectElement) }
+		onChange = {
+			props.onSelection(it.target)
+		}
 	}
 }
