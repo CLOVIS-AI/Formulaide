@@ -44,7 +44,11 @@ val SearchInput = FC<SearchInputProps>("SearchInput") { props ->
 		}
 	}
 
-	//TODO: criterion selection and creation
+	SelectSearchCriterionType {
+		+props
+		this.selectedSearch =
+			selectedSearch ?: error("It should not be possible for 'selectedSearch' to be null at this point.")
+	}
 }
 
 //region Generation of possible criteria
