@@ -6,7 +6,7 @@ import react.dom.svg.ReactSVG.circle
 import react.dom.svg.ReactSVG.path
 import react.dom.svg.ReactSVG.svg
 
-val LoadingSpinner = FC<Props> {
+val LoadingSpinner = FC<Props>("LoadingSpinner") {
 	svg {
 		className = "animate-spin h-4 w-4 mx-2 inline"
 		viewBox = "0 0 24 24"
