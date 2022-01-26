@@ -1,6 +1,7 @@
 package formulaide.ui.screens.review
 
 import formulaide.api.data.RecordState
+import formulaide.api.types.Ref
 import formulaide.ui.components.LoadingSpinner
 import formulaide.ui.components.inputs.Nesting
 import formulaide.ui.components.text.Title
@@ -29,9 +30,12 @@ internal val ReviewRecordContents = FC<ReviewRecordContentsProps>("ReviewRecordC
 			state.current.loadFrom(props.form.actions, lazy = true)
 			val action = state.current.obj
 
-			if (props.referencedComposites.isNotEmpty()) { // No need to load if there are no composites
+			loaded = try {
 				action.fields?.load(props.referencedComposites, allowNotFound = false)
-				loaded = true
+				true
+			} catch (e: Ref.MissingElementToLoadReferenceException) {
+				console.log("ReviewRecordContents: not all composites are loaded: $e")
+				false
 			}
 		} else {
 			loaded = true
