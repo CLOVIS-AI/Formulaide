@@ -2,7 +2,6 @@ package formulaide.ui
 
 import formulaide.api.data.Composite
 import formulaide.api.data.Form
-import formulaide.api.data.Record
 import formulaide.api.data.RecordState
 import formulaide.api.types.Email
 import formulaide.api.types.Ref
@@ -85,10 +84,10 @@ abstract class Screen(
 		       { formulaide.ui.screens.SubmitForm(form) },
 		       "submit-${form.id}")
 
-	class Review(form: Form, state: RecordState?, records: List<Record>) :
+	class Review(form: Form, state: RecordState?) :
 		Screen("Vérification",
 		       Role.EMPLOYEE,
-		       { formulaide.ui.screens.Review(form, state, records) },
+		       { formulaide.ui.screens.review.Review(form, state) },
 		       "review")
 
 	companion object {
