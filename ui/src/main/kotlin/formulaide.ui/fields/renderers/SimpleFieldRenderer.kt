@@ -23,8 +23,8 @@ val SimpleFieldRenderer = FC<FieldProps>("SimpleFieldRenderer") { props ->
 	var simpleInputValue by useState<String>()
 
 	val defaultInputProps = jso<InputProps> {
-		id = props.id
-		name = props.id
+		id = props.idOrDefault
+		name = props.idOrDefault
 		required = field.arity == Arity.mandatory()
 		onChange = {
 			val newValue = it.target.value
@@ -46,6 +46,7 @@ val SimpleFieldRenderer = FC<FieldProps>("SimpleFieldRenderer") { props ->
 		}
 		is SimpleField.Decimal -> Input { +defaultInputProps; type = InputType.number; step = 0.01 }
 		is SimpleField.Boolean -> Checkbox {
+			name = props.idOrDefault
 			id = props.idOrDefault
 			text = ""
 			required = false
