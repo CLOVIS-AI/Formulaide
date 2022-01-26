@@ -31,8 +31,7 @@ val MetadataEditor = FC<EditableFieldProps>("MetadataEditor") { props ->
 		formulaide.ui.fields.renderers.Field {
 			this.field = defaultField
 			this.onInput = { _, value ->
-				props.replace(field.requestCopy(simple.requestCopy(defaultValue = value))
-					              .requestCopy(name = "Valeur par défaut"))
+				props.replace(field.requestCopy(simple.requestCopy(defaultValue = value)))
 			}
 		}
 	}
