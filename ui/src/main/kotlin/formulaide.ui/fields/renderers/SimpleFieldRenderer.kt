@@ -37,7 +37,13 @@ val SimpleFieldRenderer = FC<FieldProps>("SimpleFieldRenderer") { props ->
 
 	when (simple) {
 		is SimpleField.Text -> Input { +defaultInputProps; type = InputType.text }
-		is SimpleField.Integer -> Input { +defaultInputProps; type = InputType.number }
+		is SimpleField.Integer -> Input {
+			+defaultInputProps
+			type = InputType.number
+
+			min = simple.min?.toDouble()
+			max = simple.max?.toDouble()
+		}
 		is SimpleField.Decimal -> Input { +defaultInputProps; type = InputType.number; step = 0.01 }
 		is SimpleField.Boolean -> Checkbox {
 			id = props.idOrDefault
