@@ -37,24 +37,26 @@ val RecordTable = FC<RecordTableProps>("RecordTable") { props ->
 	table {
 		className = "table-auto w-full"
 
-		thead {
-			tr {
-				val thClasses = "first:pl-8 last:pr-8 py-2"
+		if (props.expandedRecords.values.any { !it }) { // Display the column titles if at least 1 record is collapsed
+			thead {
+				tr {
+					val thClasses = "first:pl-8 last:pr-8 py-2"
 
-				if (props.windowState == null) th {
-					className = thClasses
-					div {
-						className = "mx-4"
-						+"Étape"
-					}
-				}
-
-				columnsToDisplay.forEach { (_, it) ->
-					th {
+					if (props.windowState == null) th {
 						className = thClasses
 						div {
 							className = "mx-4"
-							+it.name
+							+"Étape"
+						}
+					}
+
+					columnsToDisplay.forEach { (_, it) ->
+						th {
+							className = thClasses
+							div {
+								className = "mx-4"
+								+it.name
+							}
 						}
 					}
 				}
