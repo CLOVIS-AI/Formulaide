@@ -7,7 +7,7 @@ import formulaide.ui.Screen
 import formulaide.ui.components.StyledButton
 import formulaide.ui.components.useAsync
 import formulaide.ui.navigateTo
-import formulaide.ui.screens.displayName
+import formulaide.ui.screens.review.displayName
 import formulaide.ui.useClient
 import formulaide.ui.useUser
 import formulaide.ui.utils.ReadDelegatedProperty
@@ -52,7 +52,7 @@ val ActionDescription = FC<ActionDescriptionProps>("ActionDescription") { props 
 
 		StyledButton {
 			text = title
-			action = { navigateTo(Screen.Review(form, state, records)) }
+			action = { navigateTo(Screen.Review(form, state)) }
 		}
 	}
 }
