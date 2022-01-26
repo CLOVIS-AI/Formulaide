@@ -36,7 +36,7 @@ val Card = FC<CardProps>("Card") { props ->
 			for ((text, block) in actions) {
 				StyledButton {
 					this.text = text
-					this.emphasize = action == actions.first()
+					this.emphasize = text === actions.first().first
 					this.action = block
 				}
 			}

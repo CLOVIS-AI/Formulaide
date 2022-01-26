@@ -10,7 +10,7 @@ import formulaide.ui.components.cards.FormCard
 import formulaide.ui.components.cards.submit
 import formulaide.ui.components.text.ErrorText
 import formulaide.ui.components.useAsync
-import formulaide.ui.fields.field
+import formulaide.ui.fields.renderers.Field
 import formulaide.ui.utils.parseHtmlForm
 import kotlinx.coroutines.launch
 import react.FC
@@ -153,7 +153,11 @@ fun SubmitForm(formRef: Ref<Form>) = FC<Props>("SubmitForm") {
 		}
 
 		for (field in form.mainFields.fields.sortedBy { it.order }) {
-			field(form, null, field)
+			Field {
+				this.form = form
+				this.field = field
+				this.id = field.id
+			}
 		}
 	}
 }

@@ -40,10 +40,10 @@ val RadioButton = FC<RadioButtonProps>("RadioButton") { props ->
 		name = props.radioId
 		className = "mr-1"
 		id = props.buttonId
-		this.value = value
+		this.value = props.value
 
 		onChange = { props.onClick?.invoke() }
-		this.checked = checked
+		this.checked = props.checked
 	}
 
 	label {

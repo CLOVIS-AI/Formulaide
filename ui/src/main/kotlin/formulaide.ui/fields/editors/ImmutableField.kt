@@ -1,4 +1,4 @@
-package formulaide.ui.fields
+package formulaide.ui.fields.editors
 
 import formulaide.api.data.*
 import formulaide.api.fields.FormField
@@ -12,31 +12,23 @@ import kotlinx.browser.window
 import org.w3c.dom.url.URL
 import org.w3c.files.Blob
 import org.w3c.files.BlobPropertyBag
-import react.ChildrenBuilder
 import react.FC
 import react.Props
 import react.dom.html.ReactHTML.div
 import kotlin.js.Date
 
-fun ChildrenBuilder.immutableFields(answers: ParsedSubmission) {
-	for (answer in answers.fields) {
-		immutableField(answer)
-	}
-}
-
-private fun ChildrenBuilder.immutableField(answer: ParsedField<*>) {
-	ImmutableField {
-		this.answer = answer
-	}
-}
-
-private external interface ImmutableFieldProps : Props {
+external interface ImmutableFieldProps : Props {
 	var answer: ParsedField<*>
 }
 
 private const val miniNesting = "px-4"
 
-private val ImmutableField: FC<ImmutableFieldProps> = FC("ImmutableField") { props ->
+private val LazyImmutableField get() = ImmutableField
+
+/**
+ * Displays a user's submission to a field.
+ */
+val ImmutableField: FC<ImmutableFieldProps> = FC("ImmutableField") { props ->
 	traceRenders(props.answer.toString())
 
 	val (client) = useClient()
@@ -82,13 +74,17 @@ private val ImmutableField: FC<ImmutableFieldProps> = FC("ImmutableField") { pro
 					+answer.constraint.name
 					div {
 						className = miniNesting
-						immutableField(answer.children.first())
+						LazyImmutableField {
+							this.answer = answer.children.first()
+						}
 					}
 				}
 			}
 			is ParsedList<*> -> {
 				for (child in answer.children) {
-					immutableField(child)
+					LazyImmutableField {
+						this.answer = child
+					}
 				}
 			}
 			is ParsedComposite<*> -> {
@@ -98,7 +94,9 @@ private val ImmutableField: FC<ImmutableFieldProps> = FC("ImmutableField") { pro
 				for (child in answer.children) {
 					div {
 						className = miniNesting
-						immutableField(child)
+						LazyImmutableField {
+							this.answer = child
+						}
 					}
 				}
 			}
