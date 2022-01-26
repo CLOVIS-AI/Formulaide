@@ -159,7 +159,10 @@ data class FormSubmission(
 					?.components
 					?.map { (_, value) -> value }
 					?: emptyList()
-				println("$parent ${field.id} -> list of ${answers.size} elements ; the keys of the children will be incorrect in the logs")
+				log(parent,
+				    field,
+				    answer,
+				    "list of ${answers.size} elements ; the keys of the children will be incorrect in the logs")
 
 				require(answers.size in fieldArity.range) { "${fieldErrorMessage(field)} a une arité de ${fieldArity}, mais ${answers.size} valeurs ont été données : $answer" }
 
@@ -201,7 +204,7 @@ data class FormSubmission(
 		field: C,
 		answer: ReadOnlyAnswer?,
 	): ParsedComposite<C> {
-		println("$parent ${field.id} -> composite $field")
+		log(parent, field, answer, "composite $field")
 
 		val children = field.fields.mapNotNull { formField ->
 			parseFieldWithArity(parent + field.id, formField, answer?.components?.get(formField.id))
@@ -217,11 +220,14 @@ data class FormSubmission(
 		answer: ReadOnlyAnswer?,
 		overrideArity: Arity? = null,
 	): ParsedUnion<U, C>? {
-		println("$parent ${field.id} -> union $field")
+		log(parent, field, answer, "union $field")
 		val arity = overrideArity ?: field.arity
 
 		val selectedId = answer?.value
-		if (arity.min == 0 && selectedId == null) return null
+		if (arity.min == 0 && selectedId == null) {
+			log(parent, field, answer, "this union is optional, and the user did not fill it in, so it is ignored")
+			return null
+		}
 		requireNotNull(selectedId) { "${fieldErrorMessage(field)} est une union, elle doit avoir une unique valeur ; trouvé le choix ${answer?.value}" }
 
 		val selectedField = field.options.find { it.id == selectedId }
@@ -250,21 +256,21 @@ data class FormSubmission(
 		val arity = overrideArity ?: field.arity
 		return when {
 			arity.min == 0 && (answer == null || answer.value.isNullOrBlank()) -> {
-				println("$parent ${field.id} -> simple, was not filled in")
+				log(parent, field, answer, "simple, was not filled in")
 
 				field.simple.defaultValue?.let {
-					println("$parent ${field.id} -> however, it has a default value: '$it'")
+					log(parent, field, answer, "however, it has a default value: '$it'")
 					ParsedSimple(field, it)
 				} // else null
 			}
 			field.simple is Message -> {
-				println("$parent ${field.id} -> simple $Message")
+				log(parent, field, answer, "simple $Message")
 				require(answer == null) { "${fieldErrorMessage(field)} est un champ de type $Message, il ne peut donc pas avoir de valeur : $answer" }
 				null
 			}
 			else -> {
 				requireNotNull(answer) { "${fieldErrorMessage(field)} est un champ obligatoire (${field.arity}), mais aucune réponse n'a été trouvée" }
-				println("$parent ${field.id} -> simple ${answer.value}")
+				log(parent, field, answer, "simple ${answer.value}")
 
 				require(!answer.value.isNullOrBlank()) { "${fieldErrorMessage(field)} est un champ obligatoire (${field.arity}), mais la réponse donnée est vide : '${answer.value}'" }
 				field.simple.parse(answer.value)
@@ -277,6 +283,13 @@ data class FormSubmission(
 
 	private fun fieldErrorMessage(field: FormField) =
 		"Le champ '${field.id}' (nommé '${field.name}')"
+
+	private fun log(parent: List<String>, field: FormField, answer: Answer?, message: String) {
+		println("""
+			$parent ${field.id} → $message
+			      Answer: $answer
+			""".trimIndent())
+	}
 
 	//endregion
 	//region Form answers
@@ -306,7 +319,16 @@ data class FormSubmission(
 	) : Answer() {
 
 		companion object {
-			fun List<Pair<List<String>, String>>.asAnswer(): ReadOnlyAnswer {
+			private fun indent(depth: Int, message: String) {
+				var output = ""
+
+				repeat(depth) { output += "  " }
+
+				println("$output $message")
+			}
+
+			fun List<Pair<List<String>, String>>.asAnswer(depth: Int = 0): ReadOnlyAnswer {
+				indent(depth, "-> $this")
 
 				val elements = this
 					.sortedBy { (ids, _) -> ids.size }
@@ -322,12 +344,13 @@ data class FormSubmission(
 					.mapValues { (_, values) ->
 						values.map { (ids, value) ->
 							ids.subList(1, ids.size) to value
-						}.asAnswer()
+						}.asAnswer(depth + 1)
 					}
 					.toList()
 					.fold(ReadOnlyAnswer(head, emptyMap())) { acc, (id, value) ->
 						ReadOnlyAnswer(acc.value, acc.components + mapOf(id to value))
 					}
+					.also { indent(depth, "<- $it") }
 			}
 		}
 	}
