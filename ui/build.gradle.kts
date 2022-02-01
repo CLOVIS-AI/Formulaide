@@ -36,7 +36,7 @@ dependencies {
 	implementation(npm("postcss", "8.3.11"))
 	implementation(npm("postcss-loader", "6.2.0"))
 	implementation(npm("autoprefixer", "10.4.0"))
-	implementation(npm("tailwindcss", "2.2.19"))
+	implementation(npm("tailwindcss", "3.0.18"))
 
 	implementation(KotlinX.coroutines.core)
 }
