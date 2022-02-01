@@ -6,6 +6,7 @@ import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.types.UploadRequest
 import formulaide.client.files.FileUploadJS
 import formulaide.client.routes.uploadFile
+import formulaide.ui.components.LoadingSpinner
 import formulaide.ui.components.inputs.Input
 import formulaide.ui.components.text.ErrorText
 import formulaide.ui.components.useAsync
@@ -19,6 +20,7 @@ import react.dom.html.ReactHTML.input
 import react.dom.html.ReactHTML.li
 import react.dom.html.ReactHTML.p
 import react.dom.html.ReactHTML.ul
+import react.useState
 
 external interface UploadFieldRendererProps : FieldProps {
 	var value: String?
@@ -27,6 +29,15 @@ external interface UploadFieldRendererProps : FieldProps {
 val UploadFieldRenderer = FC<UploadFieldRendererProps>("UploadFieldRenderer") { props ->
 	val scope = useAsync()
 	val client by useClient()
+
+	/**
+	 * The ID of the uploaded file.
+	 *
+	 * `null` if no file was uploaded yet.
+	 */
+	var uploadId by useState<String>()
+
+	var uploading by useState(false)
 
 	if (props.form == null) {
 		p {
@@ -67,12 +78,14 @@ val UploadFieldRenderer = FC<UploadFieldRendererProps>("UploadFieldRenderer") { 
 			onChange = {
 				val file = it.target.files?.get(0)
 
-				scope.reportExceptions {
+				scope.reportExceptions(onFailure = { uploading = false }) {
 					requireNotNull(file) { "Aucun fichier n'a été trouvé : ${it.target}" }
+					uploading = true
 
 					val uploaded = client.uploadFile(
 						request = UploadRequest(
-							form = props.form?.createRef() ?: error("Ce champ ne fait partie d'aucun formulaire, il n'est pas possible de publier un fichier."),
+							form = props.form?.createRef()
+								?: error("Ce champ ne fait partie d'aucun formulaire, il n'est pas possible de publier un fichier."),
 							root = props.root?.createRef(),
 							field = props.idOrDefault
 						),
@@ -80,6 +93,8 @@ val UploadFieldRenderer = FC<UploadFieldRendererProps>("UploadFieldRenderer") { 
 					)
 
 					props.onInput?.invoke(props.fieldKeyOrDefault, uploaded.id)
+					uploadId = uploaded.id
+					uploading = false
 				}
 			}
 		}
@@ -88,7 +103,10 @@ val UploadFieldRenderer = FC<UploadFieldRendererProps>("UploadFieldRenderer") { 
 			type = InputType.hidden
 			name = props.idOrDefault
 			id = props.idOrDefault
-			value = props.value
+			value = uploadId
 		}
+
+		if (uploading)
+			LoadingSpinner()
 	}
 }

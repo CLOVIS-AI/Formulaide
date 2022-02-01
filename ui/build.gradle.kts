@@ -38,7 +38,7 @@ dependencies {
 	implementation(npm("autoprefixer", "10.4.0"))
 	implementation(npm("tailwindcss", "2.2.19"))
 
-	implementation(KotlinX.coroutines.coreJs)
+	implementation(KotlinX.coroutines.core)
 }
 
 val copyTailwindConfig = tasks.register<Copy>("copyTailwindConfig") {
