@@ -18,11 +18,13 @@ import formulaide.ui.components.inputs.*
 import formulaide.ui.components.text.LightText
 import formulaide.ui.components.useAsync
 import formulaide.ui.utils.replace
-import org.w3c.dom.HTMLInputElement
-import react.*
+import react.FC
+import react.Props
 import react.dom.html.InputType
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.option
+import react.useEffect
+import react.useState
 
 val UserList = FC<Props>("UserList") {
 	traceRenders("UserList")
@@ -120,14 +122,12 @@ private suspend fun editUser(
 val CreateUser = FC<Props>("CreateUser") {
 	val services by useServices()
 
-	val email = useRef<HTMLInputElement>()
-	val fullName = useRef<HTMLInputElement>()
+	var email by useState("")
+	var fullName by useState("")
 	var selectedService by useState(services.firstOrNull())
-	val admin = useRef<HTMLInputElement>()
-	val password1 = useRef<HTMLInputElement>()
-	val password2 = useRef<HTMLInputElement>()
-
-	useEffectOnce { admin.current?.value = "false" } // Ensure the default value is 'false'
+	var admin by useState(false)
+	var password1 by useState("")
+	var password2 by useState("")
 
 	val (client) = useClient()
 	require(client is Client.Authenticated) { "Un employé anonyme ne peut pas créer d'utilisateurs" }
@@ -136,35 +136,20 @@ val CreateUser = FC<Props>("CreateUser") {
 		title = "Ajouter un employé"
 
 		submit("Créer") {
-			val password1Value = password1.current?.value
-			val password2Value = password2.current?.value
+			require(password1 == password2) { "Les deux mots de passes ne correspondent pas." }
 
-			require((password1Value
-				?: Unit) == password2Value) { "Les deux mots de passes ne correspondent pas." }
-
-			val passwordOrFail = (password1Value
-				?: error("Le mot de passe ne peut pas être vide, trouvé $password1"))
-
-			val emailOrFail = (email.current?.value
-				?: error("L'adresse mail ne peut pas être vide, trouvé $email"))
-
-			val fullNameOrFail = (fullName.current?.value
-				?: error("Le nom ne peut pas être vide, trouvé $fullName"))
-
-			val serviceOrFail = (selectedService?.id
-				?: error("L'utilisateur doit avoir choisi un service, trouvé $selectedService"))
-
-			val adminOrFail = admin.current?.value
-				?: error("Il faut préciser si l'utilisateur est un administrateur ou non, trouvé $admin")
+			require(password1.isNotBlank()) { "Le mot de passe ne peut pas être vide." }
+			require(email.isNotBlank()) { "L'adresse mail ne peut pas être vide, trouvé '$email'" }
+			requireNotNull(selectedService) { "Un utilisateur doit appartenir à un service, mais aucun n'a été choisi" }
 
 			launch {
 				client.createUser(NewUser(
-					passwordOrFail,
+					password1,
 					User(
-						email = Email(emailOrFail),
-						fullName = fullNameOrFail,
-						service = Ref(serviceOrFail),
-						administrator = adminOrFail.toBoolean()
+						email = Email(email),
+						fullName = fullName,
+						service = Ref(selectedService!!),
+						administrator = admin
 					)
 				))
 
@@ -180,7 +165,8 @@ val CreateUser = FC<Props>("CreateUser") {
 				type = InputType.email
 				id = "employee-email"
 				required = true
-				ref = email
+				value = email
+				onChange = { email = it.target.value }
 			}
 		}
 
@@ -192,7 +178,8 @@ val CreateUser = FC<Props>("CreateUser") {
 				type = InputType.text
 				id = "employee-name"
 				required = true
-				ref = fullName
+				value = fullName
+				onChange = { fullName = it.target.value }
 			}
 		}
 
@@ -219,7 +206,8 @@ val CreateUser = FC<Props>("CreateUser") {
 			Checkbox {
 				id = "employee-is-admin"
 				text = "Cet employé est un administrateur"
-				ref = admin
+				checked = admin
+				onChange = { admin = it.target.checked }
 			}
 		}
 
@@ -231,8 +219,9 @@ val CreateUser = FC<Props>("CreateUser") {
 				type = InputType.password
 				id = "employee-password-1"
 				required = true
-				ref = password1
-				minLength = 5
+				value = password1
+				onChange = { password1 = it.target.value }
+				minLength = 6
 			}
 		}
 
@@ -244,8 +233,9 @@ val CreateUser = FC<Props>("CreateUser") {
 				type = InputType.password
 				id = "employee-password-2"
 				required = true
-				ref = password2
-				minLength = 5
+				value = password2
+				onChange = { password2 = it.target.value }
+				minLength = 6
 			}
 		}
 	}

@@ -94,7 +94,7 @@ data class Ref<R : Referencable>(
 		if (candidate != null)
 			obj = candidate
 		else if (!allowNotFound)
-			error("Couldn't find any object with id '$id' in the given list.")
+			throw MissingElementToLoadReferenceException(this, objs)
 	}
 
 	override fun toString() = "$id ${if (loaded) "✔" else "✖"}"
@@ -136,4 +136,7 @@ data class Ref<R : Referencable>(
 
 	class UnloadedReferenceException(val ref: Ref<*>) :
 		IllegalStateException("Cette référence sur '${ref.id}' n'est pas chargée, il est donc impossible d'accéder à sa valeur")
+
+	class MissingElementToLoadReferenceException(val ref: Ref<*>, elements: Iterable<*>) :
+		IllegalStateException("Cette référence sur '${ref.id}' ne peut pas être chargée par ces éléments: $elements")
 }
