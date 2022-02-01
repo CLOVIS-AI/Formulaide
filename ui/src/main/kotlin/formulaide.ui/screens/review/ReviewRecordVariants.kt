@@ -131,7 +131,7 @@ internal val ReviewRecordExpanded = FC<ReviewRecordVariantProps>("ReviewRecordEx
 			title = "Dossier"
 
 			action("Réduire") { props.collapse() }
-			action(if (props.showFullHistory == true) "Valeur les plus récentes" else "historique") {
+			action(if (props.showFullHistory == true) "Valeur les plus récentes" else "Historique") {
 				props.updateShowFullHistory(!(props.showFullHistory ?: false))
 			}
 
