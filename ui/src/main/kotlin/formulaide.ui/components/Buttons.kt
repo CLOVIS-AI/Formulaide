@@ -11,7 +11,7 @@ import react.dom.html.ReactHTML.input
 import react.dom.html.ReactHTML.span
 import react.useState
 
-internal const val buttonShapeClasses = "rounded-full py-1 px-3 mx-1"
+internal const val buttonShapeClasses = "rounded-full py-1 px-3 mx-1 print:hidden"
 internal const val buttonClasses = "$buttonShapeClasses hover:bg-purple-500"
 internal const val buttonDefaultClasses = "$buttonClasses bg-purple-800 text-white"
 internal const val buttonNonDefaultClasses =
