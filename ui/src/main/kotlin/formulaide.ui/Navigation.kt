@@ -20,6 +20,7 @@ import formulaide.ui.screens.forms.edition.CreateForm
 import formulaide.ui.screens.forms.list.FormList
 import formulaide.ui.screens.homepage.Homepage
 import formulaide.ui.screens.homepage.PasswordEditor
+import formulaide.ui.screens.review.displayName
 import formulaide.ui.utils.GlobalState
 import formulaide.ui.utils.useGlobalState
 import kotlinx.browser.document
@@ -85,7 +86,7 @@ abstract class Screen(
 		       "submit-${form.id}")
 
 	class Review(form: Form, state: RecordState?) :
-		Screen("Vérification",
+		Screen("${form.name} : ${state.displayName()}",
 		       Role.EMPLOYEE,
 		       { formulaide.ui.screens.review.Review(form, state) },
 		       "review")
