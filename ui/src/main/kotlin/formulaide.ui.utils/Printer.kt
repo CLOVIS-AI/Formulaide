@@ -2,7 +2,10 @@ package formulaide.ui.utils
 
 import formulaide.ui.reportExceptions
 import kotlinx.browser.document
+import kotlinx.dom.createElement
+import org.w3c.dom.Element
 import org.w3c.dom.HTMLIFrameElement
+import org.w3c.dom.asList
 
 /**
  * Selects an element by its [elementId], copies it to an invisible `iframe`, and asks the browser to print it.
@@ -22,8 +25,21 @@ fun printElement(elementId: String) = reportExceptions {
 
 	with(window.document) {
 		open()
-		write(contents.innerHTML)
+		write("")
+		appendChild(createElement("html") {
+			appendChild(createElement("head") {
+				for (style in document.querySelectorAll("style").asList()) {
+					appendChild(createElement("style") {
+						innerHTML = (style as Element).innerHTML
+					})
+				}
+			})
+			appendChild(createElement("body") {
+				innerHTML = contents.innerHTML
+			})
+		})
 		close()
+		console.log("Temporary document created for printing", this)
 	}
 
 	with(window) {
