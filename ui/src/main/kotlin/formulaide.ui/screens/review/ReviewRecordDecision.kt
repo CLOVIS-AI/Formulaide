@@ -43,62 +43,66 @@ internal val ReviewRecordDecision = FC<ReviewRecordDecisionProps>("ReviewRecordD
 	}
 
 	div {
-		className = "mt-4"
-		+"Votre décision :"
+		className = "print:hidden"
 
-		if ((state as? RecordState.Action)?.current?.obj != props.form.actions.firstOrNull())
+		div {
+			className = "mt-4"
+			+"Votre décision :"
+
+			if ((state as? RecordState.Action)?.current?.obj != props.form.actions.firstOrNull())
+				StyledButton {
+					text = "Renvoyer à une étape précédente"
+					enabled = decision != ReviewDecision.PREVIOUS
+					action = { RecordState.Action(props.form.actions.first().createRef()) }
+				}
+
 			StyledButton {
-				text = "Renvoyer à une étape précédente"
-				enabled = decision != ReviewDecision.PREVIOUS
-				action = { RecordState.Action(props.form.actions.first().createRef()) }
+				text = "Conserver"
+				enabled = decision != ReviewDecision.NO_CHANGE
+				action = { selectedDestination = state; reason = null }
 			}
 
-		StyledButton {
-			text = "Conserver"
-			enabled = decision != ReviewDecision.NO_CHANGE
-			action = { selectedDestination = state; reason = null }
+			if (nextAction != null)
+				StyledButton {
+					text = "Accepter"
+					enabled = decision != ReviewDecision.NEXT
+					action = { selectedDestination = nextAction }
+				}
+
+			if (state != RecordState.Refused)
+				StyledButton {
+					text = "Refuser"
+					enabled = decision != ReviewDecision.REFUSE
+					action = { selectedDestination = RecordState.Refused }
+				}
 		}
 
-		if (nextAction != null)
-			StyledButton {
-				text = "Accepter"
-				enabled = decision != ReviewDecision.NEXT
-				action = { selectedDestination = nextAction }
-			}
+		if (decision == ReviewDecision.PREVIOUS) div {
+			+"Étapes précédentes :"
 
-		if (state != RecordState.Refused)
-			StyledButton {
-				text = "Refuser"
-				enabled = decision != ReviewDecision.REFUSE
-				action = { selectedDestination = RecordState.Refused }
-			}
-	}
+			for (previousState in props.form.actions.map { RecordState.Action(it.createRef()) }) {
+				if (previousState == state)
+					break
 
-	if (decision == ReviewDecision.PREVIOUS) div {
-		+"Étapes précédentes :"
-
-		for (previousState in props.form.actions.map { RecordState.Action(it.createRef()) }) {
-			if (previousState == state)
-				break
-
-			StyledButton {
-				text = previousState.current.obj.name
-				enabled = selectedDestination != previousState
-				action = { selectedDestination = previousState }
+				StyledButton {
+					text = previousState.current.obj.name
+					enabled = selectedDestination != previousState
+					action = { selectedDestination = previousState }
+				}
 			}
 		}
-	}
 
-	if (decision != ReviewDecision.NEXT) Field {
-		id = "record-${props.record.id}-reason"
-		text = "Pourquoi ce choix ?"
-
-		Input {
-			type = InputType.text
+		if (decision != ReviewDecision.NEXT) Field {
 			id = "record-${props.record.id}-reason"
-			required = decision == ReviewDecision.REFUSE
-			value = reason ?: ""
-			onChange = { reason = it.target.value }
+			text = "Pourquoi ce choix ?"
+
+			Input {
+				type = InputType.text
+				id = "record-${props.record.id}-reason"
+				required = decision == ReviewDecision.REFUSE
+				value = reason ?: ""
+				onChange = { reason = it.target.value }
+			}
 		}
 	}
 }

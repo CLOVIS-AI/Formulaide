@@ -56,7 +56,7 @@ val CriterionPill = FC<CriterionPillProps>("CriterionPill") { props ->
 		}
 
 		if (expanded) {
-			+(props.root?.name ?: "Saisie originelle")
+			+(props.root?.name ?: "Saisie initiale")
 
 			for (field in fields) {
 				br {}

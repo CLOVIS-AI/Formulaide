@@ -6,15 +6,13 @@ import formulaide.client.Client
 import formulaide.client.routes.review
 import formulaide.ui.components.LoadingSpinner
 import formulaide.ui.components.StyledButton
-import formulaide.ui.components.cards.Card
-import formulaide.ui.components.cards.FormCard
-import formulaide.ui.components.cards.action
-import formulaide.ui.components.cards.submit
+import formulaide.ui.components.cards.*
 import formulaide.ui.components.useAsync
 import formulaide.ui.reportExceptions
 import formulaide.ui.useClient
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
 import formulaide.ui.utils.parseHtmlForm
+import formulaide.ui.utils.printElement
 import react.FC
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.td
@@ -117,23 +115,24 @@ internal val ReviewRecordExpanded = FC<ReviewRecordVariantProps>("ReviewRecordEx
 	val (reason, updateReason) = useState<String>()
 		.asDelegated()
 
+	val formCardId = "record-card-${props.record.id}"
+
 	td {
 		colSpan = props.columnsToDisplay.size
 
 		if (props.windowState == null) Card {
+			id = formCardId
 			title = "Dossier"
 			subtitle = props.record.state.displayName()
 
-			action("Réduire") { props.collapse() }
+			reviewRecordButtons(props, formCardId)
 
 			ReviewRecordContents { +props }
 		} else FormCard {
+			id = formCardId
 			title = "Dossier"
 
-			action("Réduire") { props.collapse() }
-			action(if (props.showFullHistory == true) "Valeur les plus récentes" else "historique") {
-				props.updateShowFullHistory(!(props.showFullHistory ?: false))
-			}
+			reviewRecordButtons(props, formCardId)
 
 			ReviewRecordContents { +props }
 
@@ -175,4 +174,14 @@ internal val ReviewRecordExpanded = FC<ReviewRecordVariantProps>("ReviewRecordEx
 			}
 		}
 	}
+}
+
+private fun CardProps.reviewRecordButtons(props: ReviewRecordVariantProps, formCardId: String) {
+	action("Réduire") { props.collapse() }
+
+	action(if (props.showFullHistory == true) "Valeur les plus récentes" else "Historique") {
+		props.updateShowFullHistory(!(props.showFullHistory ?: false))
+	}
+
+	action("Récépissé") { printElement(formCardId) }
 }
