@@ -19,6 +19,7 @@ import react.dom.html.ReactHTML.input
 import react.dom.html.ReactHTML.li
 import react.dom.html.ReactHTML.p
 import react.dom.html.ReactHTML.ul
+import react.useState
 
 external interface UploadFieldRendererProps : FieldProps {
 	var value: String?
@@ -27,6 +28,13 @@ external interface UploadFieldRendererProps : FieldProps {
 val UploadFieldRenderer = FC<UploadFieldRendererProps>("UploadFieldRenderer") { props ->
 	val scope = useAsync()
 	val client by useClient()
+
+	/**
+	 * The ID of the uploaded file.
+	 *
+	 * `null` if no file was uploaded yet.
+	 */
+	var uploadId by useState<String>()
 
 	if (props.form == null) {
 		p {
@@ -80,6 +88,7 @@ val UploadFieldRenderer = FC<UploadFieldRendererProps>("UploadFieldRenderer") { 
 					)
 
 					props.onInput?.invoke(props.fieldKeyOrDefault, uploaded.id)
+					uploadId = uploaded.id
 				}
 			}
 		}
@@ -88,7 +97,7 @@ val UploadFieldRenderer = FC<UploadFieldRendererProps>("UploadFieldRenderer") { 
 			type = InputType.hidden
 			name = props.idOrDefault
 			id = props.idOrDefault
-			value = props.value
+			value = uploadId
 		}
 	}
 }
