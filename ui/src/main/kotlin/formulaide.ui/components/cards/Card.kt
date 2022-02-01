@@ -6,6 +6,7 @@ import react.PropsWithChildren
 import react.dom.html.ReactHTML.div
 
 external interface CardProps : PropsWithChildren, CardTitleProps {
+	var id: String?
 	var actions: List<Pair<String, suspend () -> Unit>>?
 	var failed: Boolean?
 }
@@ -21,6 +22,7 @@ val Card = FC<CardProps>("Card") { props ->
 	val actions = props.actions ?: emptyList()
 
 	CardShell {
+		this.id = props.id
 		this.failed = props.failed
 
 		CardTitle { +props }
