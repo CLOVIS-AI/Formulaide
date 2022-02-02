@@ -10,6 +10,7 @@ import formulaide.ui.fields.renderers.Field
 import formulaide.ui.reportExceptions
 import react.FC
 import react.dom.html.ReactHTML.br
+import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.p
 import react.useEffect
 import react.useState
@@ -55,7 +56,7 @@ internal val ReviewRecordContents = FC<ReviewRecordContentsProps>("ReviewRecordC
 			fieldNumber = i
 
 			val transition = parsed.transition
-			val title = transition.previousState?.displayName() ?: "Saisie originelle"
+			val title = transition.previousState.displayName()
 			if (props.showFullHistory == true) {
 				Title { this.title = "$title → ${transition.nextState.displayName()}" }
 			} else {
@@ -92,7 +93,9 @@ internal val ReviewRecordContents = FC<ReviewRecordContentsProps>("ReviewRecordC
 	}
 
 	val state = props.windowState
-	if (state is RecordState.Action && props.windowState != null) {
+	if (state is RecordState.Action && props.windowState != null) div {
+		className = "print:hidden"
+
 		val action = state.current.obj
 
 		val root = action.fields

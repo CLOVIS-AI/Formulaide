@@ -25,7 +25,7 @@ suspend fun Database.createRecord(submission: FormSubmission) {
 			previousState = null,
 			nextState = state,
 			assignee = null,
-			reason = "Saisie originelle",
+			reason = "Saisie initiale",
 			fields = submission.createRef(),
 		))
 	)

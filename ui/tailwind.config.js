@@ -1,11 +1,7 @@
 module.exports = {
-    purge: {
-        enabled: true,
-        content: [
-            './kotlin/*.js',
-        ]
-    },
-    darkMode: false, // or 'media' or 'class'
+    content: [
+        './kotlin/*.js',
+    ],
     theme: {
         extend: {},
     },

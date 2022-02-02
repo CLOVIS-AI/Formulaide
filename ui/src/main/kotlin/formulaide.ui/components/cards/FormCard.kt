@@ -30,6 +30,8 @@ val FormCard = FC<FormCardProps>("FormCard") { props ->
 
 	CardShell {
 		form {
+			this.id = props.id
+
 			CardTitle { +props }
 
 			div {
