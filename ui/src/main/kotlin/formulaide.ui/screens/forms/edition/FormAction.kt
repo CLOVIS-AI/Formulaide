@@ -15,7 +15,7 @@ external interface FormActionProps : FormActionsProps {
 	var maxFieldId: Int
 }
 
-val FormAction = FC<FormActionProps>("FormActionProps") { props ->
+val FormAction = FC<FormActionProps>("FormAction") { props ->
 	val i = props.index
 	val action = props.action
 
