@@ -25,8 +25,8 @@ val FormActionReviewer = FC<FormActionProps>("FormActionReviewer") { props ->
 				}
 			}
 
-			onChange = { event ->
-				val serviceId = event.target.value
+			onSelection = { target ->
+				val serviceId = target.value
 				val service = services.find { it.id == serviceId }
 					?: error("Impossible de trouver le service '$serviceId'")
 
