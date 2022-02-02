@@ -46,7 +46,10 @@ val Review = FC<ReviewProps>("Review") { props ->
 	require(client is Client.Authenticated) { "Unauthenticated users cannot review records." }
 
 	val scope = useAsync()
-	val cachedRecords = useMemo { scope.getRecords(client, props.form) }
+	val cachedRecords = useMemo {
+		scope.getRecords(client, props.form)
+			.filter { props.windowState == null || props.windowState == it.state }
+	}
 
 	val (openedRecords, setOpenedRecords) = useState(cachedRecords.associateWith { true })
 		.asDelegated()
