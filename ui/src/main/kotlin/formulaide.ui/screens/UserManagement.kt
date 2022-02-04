@@ -3,6 +3,7 @@ package formulaide.ui.screens
 import formulaide.api.types.Email
 import formulaide.api.types.Ref
 import formulaide.api.users.NewUser
+import formulaide.api.users.Service
 import formulaide.api.users.User
 import formulaide.client.Client
 import formulaide.client.routes.createUser
@@ -18,14 +19,11 @@ import formulaide.ui.components.inputs.*
 import formulaide.ui.components.text.LightText
 import formulaide.ui.components.useAsync
 import formulaide.ui.utils.replace
-import react.FC
-import react.Props
+import react.*
 import react.dom.html.InputType
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.hr
 import react.dom.html.ReactHTML.option
-import react.useEffect
-import react.useState
 
 val UserList = FC<Props>("UserList") {
 	traceRenders("UserList")
@@ -53,6 +51,17 @@ val UserList = FC<Props>("UserList") {
 		}
 	}
 
+	val services by useServices()
+	var filterByServices by useState(false)
+	var filteredServices by useState(emptySet<Service>())
+
+	val filteredUsers = useMemo(users, filteredServices, filterByServices) {
+		if (!filterByServices)
+			users
+		else
+			users.filter { it.service.id in filteredServices.map { it.id } }
+	}
+
 	Card {
 		title = "Employés"
 		action("Créer un employé") { navigateTo(Screen.NewUser) }
@@ -70,7 +79,37 @@ val UserList = FC<Props>("UserList") {
 			}
 		}
 
-		for ((i, user) in users.withIndex()) {
+		Field {
+			id = "service-filters"
+			text = "Choisir les services à afficher"
+
+			Checkbox {
+				id = "service-filters"
+				text = "Ne pas filtrer par service"
+				checked = !filterByServices
+				onChange = { filterByServices = !it.target.checked }
+			}
+
+			if (filterByServices)
+				for (service in services) {
+					br()
+
+					Checkbox {
+						id = "service-filter-${service.id}"
+						text = "Afficher le service « ${service.name} »"
+						checked = service in filteredServices
+						onChange = {
+							@Suppress("SuspiciousCollectionReassignment") // +=/-= copy the set and call the setter, this is intended here (React setState)
+							if (it.target.checked)
+								filteredServices += service
+							else
+								filteredServices -= service
+						}
+					}
+				}
+		}
+
+		for ((i, user) in filteredUsers.withIndex()) {
 			hr {
 				className = "mb-2"
 			}
