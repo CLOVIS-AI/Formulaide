@@ -130,18 +130,18 @@ val UserList = FC<Props>("UserList") {
 					user.service.loadFrom(services)
 					LightText { text = "Service : " }
 
-					if (user != me) {
-						ControlledSelect {
-							for (service in services) {
-								Option(service.name, service.id, user.service.id == service.id) {
-									editUser(user, client, service = service) { newUser ->
-										users = users - user + newUser
-									}
+					ControlledSelect {
+						for (service in services) {
+							Option(service.name, service.id, user.service.id == service.id) {
+								editUser(user, client, service = service) { newUser ->
+									users = users - user + newUser
+								}
+
+								if (user == me) {
+									forceTokenRefresh(client)
 								}
 							}
 						}
-					} else {
-						LightText { text = user.service.obj.name }
 					}
 				}
 
