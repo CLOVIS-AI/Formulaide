@@ -16,7 +16,7 @@ private val colorPerDepth = listOf(
 
 private const val spacing = "p-2 px-4 my-1"
 private const val shape = "rounded-md print:border-solid print:border-2"
-private const val hover = "hover:shadow hover:mb-2"
+private const val hover = "hover:shadow"
 private const val layout = "relative"
 private const val nestingStyle = "$spacing $shape $hover $layout"
 
