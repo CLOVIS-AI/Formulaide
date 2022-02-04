@@ -181,7 +181,7 @@ internal val ReviewRecordExpanded = FC<ReviewRecordVariantProps>("ReviewRecordEx
 private fun CardProps.reviewRecordButtons(props: ReviewRecordVariantProps, formCardId: String) {
 	action("Réduire") { props.collapse() }
 
-	action(if (props.showFullHistory == true) "Valeur les plus récentes" else "Historique") {
+	action(if (props.showFullHistory == true) "Valeurs les plus récentes" else "Historique") {
 		props.updateShowFullHistory(!(props.showFullHistory ?: false))
 	}
 
