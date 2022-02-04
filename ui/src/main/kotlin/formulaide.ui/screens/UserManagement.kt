@@ -118,6 +118,10 @@ val UserList = FC<Props>("UserList") {
 				+"${user.fullName} "
 				LightText { text = user.email.email }
 
+				br()
+				user.service.loadFrom(services)
+				LightText { text = user.service.obj.name }
+
 				div { // buttons
 
 					if (user != me) {
