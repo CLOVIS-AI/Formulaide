@@ -2,10 +2,11 @@ package formulaide.ui.components.cards
 
 import react.ChildrenBuilder
 import react.FC
+import react.Props
 import react.PropsWithChildren
 import react.dom.html.ReactHTML.div
 
-external interface CardShellProps : PropsWithChildren {
+external interface CommonCardProps : Props {
 	var id: String?
 	var failed: Boolean?
 	var mini: Boolean?
@@ -13,6 +14,8 @@ external interface CardShellProps : PropsWithChildren {
 	var header: ((ChildrenBuilder) -> Unit)?
 	var footer: ((ChildrenBuilder) -> Unit)?
 }
+
+external interface CardShellProps : PropsWithChildren, CommonCardProps
 
 val CardShell = FC<CardShellProps>("CardShell") { props ->
 	val paddingTop = if (props.mini == true) "pt-4" else "pt-8"
@@ -44,11 +47,11 @@ val CardShell = FC<CardShellProps>("CardShell") { props ->
 }
 
 @Suppress("FunctionName") // This function looks like a component
-fun CardShellProps.Header(block: ChildrenBuilder.() -> Unit) {
+fun CommonCardProps.Header(block: ChildrenBuilder.() -> Unit) {
 	header = block
 }
 
 @Suppress("FunctionName") // This function looks like a component
-fun CardShellProps.Footer(block: ChildrenBuilder.() -> Unit) {
+fun CommonCardProps.Footer(block: ChildrenBuilder.() -> Unit) {
 	footer = block
 }

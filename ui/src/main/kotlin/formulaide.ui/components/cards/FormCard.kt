@@ -34,6 +34,8 @@ val FormCard = FC<FormCardProps>("FormCard") { props ->
 
 			Header {
 				CardTitle { +props }
+
+				props.header?.invoke(this)
 			}
 
 			div {
@@ -42,6 +44,8 @@ val FormCard = FC<FormCardProps>("FormCard") { props ->
 			}
 
 			Footer {
+				props.footer?.invoke(this)
+
 				//region Submit button
 				if (!loading)
 					StyledSubmitButton {
