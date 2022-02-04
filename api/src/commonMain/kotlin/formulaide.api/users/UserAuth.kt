@@ -1,6 +1,7 @@
 package formulaide.api.users
 
 import formulaide.api.types.Email
+import formulaide.api.types.Ref
 import kotlinx.serialization.Serializable
 
 /**
@@ -47,6 +48,7 @@ data class UserEdits(
 	val user: Email,
 	val enabled: Boolean? = null,
 	val administrator: Boolean? = null,
+	var service: Ref<Service>? = null,
 )
 
 /**

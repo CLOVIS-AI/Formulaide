@@ -2,6 +2,7 @@ package formulaide.db.document
 
 import formulaide.api.types.Email
 import formulaide.api.types.Ref
+import formulaide.api.users.Service
 import formulaide.api.users.User
 import formulaide.db.Database
 import kotlinx.serialization.Serializable
@@ -77,6 +78,7 @@ suspend fun Database.editUser(
 	newEnabled: Boolean? = null,
 	newIsAdministrator: Boolean? = null,
 	newBlockedUntil: Long? = null,
+	newService: Ref<Service>? = null,
 ): DbUser {
 	var newUser = user
 
@@ -88,6 +90,9 @@ suspend fun Database.editUser(
 
 	if (newBlockedUntil != null)
 		newUser = newUser.copy(blockedUntil = newBlockedUntil)
+
+	if (newService != null)
+		newUser = newUser.copy(service = newService.id.toInt())
 
 	require(user != newUser) { "La demande de modification de l'utilisateur ${user.email} n'apporte aucune modification" }
 
