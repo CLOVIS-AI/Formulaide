@@ -5,10 +5,8 @@ import react.FC
 import react.PropsWithChildren
 import react.dom.html.ReactHTML.div
 
-external interface CardProps : PropsWithChildren, CardTitleProps {
-	var id: String?
+external interface CardProps : PropsWithChildren, CardTitleProps, CommonCardProps {
 	var actions: List<Pair<String, suspend () -> Unit>>?
-	var failed: Boolean?
 }
 
 /**
@@ -27,6 +25,8 @@ val Card = FC<CardProps>("Card") { props ->
 
 		Header {
 			CardTitle { +props }
+
+			props.header?.invoke(this)
 		}
 
 		div {
@@ -35,6 +35,8 @@ val Card = FC<CardProps>("Card") { props ->
 		}
 
 		Footer {
+			props.footer?.invoke(this)
+
 			if (actions.isNotEmpty()) div {
 				className = "pt-4"
 
