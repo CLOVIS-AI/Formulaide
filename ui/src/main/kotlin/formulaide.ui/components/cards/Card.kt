@@ -25,21 +25,25 @@ val Card = FC<CardProps>("Card") { props ->
 		this.id = props.id
 		this.failed = props.failed
 
-		CardTitle { +props }
+		Header {
+			CardTitle { +props }
+		}
 
 		div {
 			className = "pt-4"
 			props.children()
 		}
 
-		if (actions.isNotEmpty()) div {
-			className = "pt-4"
+		Footer {
+			if (actions.isNotEmpty()) div {
+				className = "pt-4"
 
-			for ((text, block) in actions) {
-				StyledButton {
-					this.text = text
-					this.emphasize = text === actions.first().first
-					this.action = block
+				for ((text, block) in actions) {
+					StyledButton {
+						this.text = text
+						this.emphasize = text === actions.first().first
+						this.action = block
+					}
 				}
 			}
 		}

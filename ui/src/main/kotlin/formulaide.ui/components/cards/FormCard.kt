@@ -28,50 +28,51 @@ val FormCard = FC<FormCardProps>("FormCard") { props ->
 
 	var loading by useState(props.loading ?: false)
 
-	CardShell {
-		form {
+	form {
+		CardShell {
 			this.id = props.id
 
-			CardTitle { +props }
+			Header {
+				CardTitle { +props }
+			}
 
 			div {
 				className = "py-4"
 				props.children()
 			}
 
-			//region Submit button
+			Footer {
+				//region Submit button
+				if (!loading)
+					StyledSubmitButton {
+						text = submitText
+						emphasize = true
+					}
+				else
+					span {
+						className = buttonNonDefaultClasses
+						LoadingSpinner()
+					}
+				//endregion
 
-			if (!loading)
-				StyledSubmitButton {
-					text = submitText
-					emphasize = true
+				//region Other buttons
+				for (action in actions) {
+					StyledButton {
+						text = action.first
+						this.action = action.second
+					}
 				}
-			else
-				span {
-					className = buttonNonDefaultClasses
-					LoadingSpinner()
-				}
-
-			onSubmit = { event ->
-				event.preventDefault()
-
-				val submitActionDsl = SubmitAction(scope, setLoading = { loading = it })
-				reportExceptions {
-					submitActionDsl.submitAction(event.target as HTMLFormElement)
-				}
+				//endregion
 			}
+		}
 
-			//endregion
-			//region Other buttons
+		onSubmit = { event ->
+			event.preventDefault()
 
-			for (action in actions) {
-				StyledButton {
-					text = action.first
-					this.action = action.second
-				}
+			val submitActionDsl = SubmitAction(scope, setLoading = { loading = it })
+			reportExceptions {
+				submitActionDsl.submitAction(event.target as HTMLFormElement)
 			}
-
-			//endregion
 		}
 	}
 }
