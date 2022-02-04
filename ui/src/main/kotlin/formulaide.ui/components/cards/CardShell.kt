@@ -15,14 +15,18 @@ external interface CardShellProps : PropsWithChildren {
 }
 
 val CardShell = FC<CardShellProps>("CardShell") { props ->
+	val paddingTop = if (props.mini == true) "pt-4" else "pt-8"
+	val paddingBottom = if (props.mini == true) "pb-4" else "pb-8"
+	val color = if (props.failed == true) "bg-red-200" else ""
+
 	div {
 		this.id = props.id
-		className = "m-4 px-8 shadow-lg rounded-lg z-10 relative bg-white" +
-				(if (props.mini == true) " py-4" else " py-8") +
-				(if (props.failed == true) " bg-red-200" else "")
+		className = "m-4 px-8 shadow-lg rounded-lg z-10 relative bg-white $color"
 
 		props.header?.let { header ->
 			div {
+				className = "sticky top-0 z-40 bg-inherit $paddingTop pb-2"
+
 				header(this)
 			}
 		}
@@ -31,6 +35,8 @@ val CardShell = FC<CardShellProps>("CardShell") { props ->
 
 		props.footer?.let { footer ->
 			div {
+				className = "sticky bottom-0 z-40 bg-inherit $paddingBottom pt-2"
+
 				footer(this)
 			}
 		}
