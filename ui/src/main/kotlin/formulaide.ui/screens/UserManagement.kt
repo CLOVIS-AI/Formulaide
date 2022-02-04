@@ -18,7 +18,10 @@ import formulaide.ui.components.cards.submit
 import formulaide.ui.components.inputs.*
 import formulaide.ui.components.text.LightText
 import formulaide.ui.components.useAsync
+import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
 import formulaide.ui.utils.replace
+import formulaide.ui.utils.useEquals
+import formulaide.ui.utils.useListEquality
 import react.*
 import react.dom.html.InputType
 import react.dom.html.ReactHTML.div
@@ -44,10 +47,12 @@ val UserList = FC<Props>("UserList") {
 	}
 
 	var listDisabledUsers by useState(false)
-	var users by useState(emptyList<User>())
+	var users by useState(emptyList<User>()).asDelegated()
+		.useListEquality()
+		.useEquals()
 	useEffect(client, listDisabledUsers) {
 		scope.reportExceptions {
-			users = client.listUsers(listDisabledUsers).sortedBy { it.fullName }
+			users = client.listUsers(listDisabledUsers)
 		}
 	}
 
@@ -56,10 +61,10 @@ val UserList = FC<Props>("UserList") {
 	var filteredServices by useState(emptySet<Service>())
 
 	val filteredUsers = useMemo(users, filteredServices, filterByServices) {
-		if (!filterByServices)
-			users
-		else
-			users.filter { it.service.id in filteredServices.map { it.id } }
+		val selectedUsers = if (!filterByServices) users
+		else users.filter { it.service.id in filteredServices.map { it.id } }
+
+		selectedUsers.sortedBy { it.fullName }
 	}
 
 	Card {
