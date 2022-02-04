@@ -46,7 +46,6 @@ internal val ReviewRecordDecision = FC<ReviewRecordDecisionProps>("ReviewRecordD
 		className = "print:hidden"
 
 		div {
-			className = "mt-4"
 			+"Votre décision :"
 
 			if ((state as? RecordState.Action)?.current?.obj != props.form.actions.firstOrNull())
