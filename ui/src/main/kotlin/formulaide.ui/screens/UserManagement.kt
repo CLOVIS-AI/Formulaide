@@ -24,6 +24,7 @@ import formulaide.ui.utils.useEquals
 import formulaide.ui.utils.useListEquality
 import react.*
 import react.dom.html.InputType
+import react.dom.html.ReactHTML.br
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.hr
 import react.dom.html.ReactHTML.option
@@ -114,37 +115,42 @@ val UserList = FC<Props>("UserList") {
 				}
 		}
 
-		for ((i, user) in filteredUsers.withIndex()) {
+		for (user in filteredUsers) {
 			hr {
 				className = "mb-2"
 			}
 
 			FormField {
-				+"${user.fullName} "
-				LightText { text = user.email.email }
+				div { // Name and email
+					+"${user.fullName} "
+					LightText { text = user.email.email }
+				}
 
-				br()
-				user.service.loadFrom(services)
-				LightText { text = user.service.obj.name }
+				div { // Services
+					user.service.loadFrom(services)
+					LightText { text = user.service.obj.name }
+				}
+
+				div { // Role
+					LightText { text = "Rôle : ${if (user.administrator) "Administration" else "Employé"}" }
+
+					if (user != me) StyledButton {
+						text = "Modifier"
+						action = {
+							editUser(user, client, administrator = !user.administrator) { newUser ->
+								users = users - user + newUser
+							}
+						}
+					}
+				}
 
 				div { // buttons
-
 					if (user != me) {
 						StyledButton {
 							text = if (user.enabled) "Désactiver" else "Activer"
 							action = {
-								editUser(user, client, enabled = !user.enabled) {
-									users = users.replace(i, it)
-								}
-							}
-						}
-
-						StyledButton {
-							text =
-								if (user.administrator) "Enlever le droit d'administration" else "Donner le droit d'administration"
-							action = {
-								editUser(user, client, administrator = !user.administrator) {
-									users = users.replace(i, it)
+								editUser(user, client, enabled = !user.enabled) { newUser ->
+									users = users - user + newUser
 								}
 							}
 						}
