@@ -136,13 +136,15 @@ internal val ReviewRecordExpanded = FC<ReviewRecordVariantProps>("ReviewRecordEx
 
 			ReviewRecordContents { +props }
 
-			ReviewRecordDecision {
-				+props
-				this.reason = reason
-				this.updateReason = updateReason
-				this.selectedDestination = selectedDestination
-				this.updateSelectedDestination = updateSelectedDestination
-				this.nextAction = nextAction
+			Footer {
+				ReviewRecordDecision {
+					+props
+					this.reason = reason
+					this.updateReason = updateReason
+					this.selectedDestination = selectedDestination
+					this.updateSelectedDestination = updateSelectedDestination
+					this.nextAction = nextAction
+				}
 			}
 
 			submit("Confirmer") { htmlForm ->
