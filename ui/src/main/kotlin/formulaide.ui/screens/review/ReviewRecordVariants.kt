@@ -136,13 +136,15 @@ internal val ReviewRecordExpanded = FC<ReviewRecordVariantProps>("ReviewRecordEx
 
 			ReviewRecordContents { +props }
 
-			ReviewRecordDecision {
-				+props
-				this.reason = reason
-				this.updateReason = updateReason
-				this.selectedDestination = selectedDestination
-				this.updateSelectedDestination = updateSelectedDestination
-				this.nextAction = nextAction
+			Footer {
+				ReviewRecordDecision {
+					+props
+					this.reason = reason
+					this.updateReason = updateReason
+					this.selectedDestination = selectedDestination
+					this.updateSelectedDestination = updateSelectedDestination
+					this.nextAction = nextAction
+				}
 			}
 
 			submit("Confirmer") { htmlForm ->
@@ -179,7 +181,7 @@ internal val ReviewRecordExpanded = FC<ReviewRecordVariantProps>("ReviewRecordEx
 private fun CardProps.reviewRecordButtons(props: ReviewRecordVariantProps, formCardId: String) {
 	action("Réduire") { props.collapse() }
 
-	action(if (props.showFullHistory == true) "Valeur les plus récentes" else "Historique") {
+	action(if (props.showFullHistory == true) "Valeurs les plus récentes" else "Historique") {
 		props.updateShowFullHistory(!(props.showFullHistory ?: false))
 	}
 
