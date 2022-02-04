@@ -17,12 +17,10 @@ import formulaide.ui.traceRenders
 import formulaide.ui.useClient
 import formulaide.ui.useServices
 import formulaide.ui.utils.map
-import org.w3c.dom.HTMLInputElement
 import react.FC
 import react.Props
 import react.dom.html.InputType
 import react.dom.html.ReactHTML.div
-import react.useRef
 import react.useState
 import formulaide.ui.components.inputs.Input as UIInput
 
@@ -81,19 +79,18 @@ val ServiceList = FC<Props>("ServiceList") {
 		}
 	}
 
-	val newServiceName = useRef<HTMLInputElement>()
+	var newServiceName by useState("")
 
 	FormCard {
 		title = "Créer un service"
 
 		submit("Créer") {
-			val serviceName = newServiceName.current?.value
-			requireNotNull(serviceName) { "Le nom d'un service ne peut pas être vide" }
-			require(serviceName.isNotBlank()) { "Le nom d'un service ne peut pas être vide : $serviceName" }
+			require(newServiceName.isNotBlank()) { "Le nom d'un service ne peut pas être vide : '$newServiceName'" }
 
 			launch {
-				client.createService(serviceName)
+				client.createService(newServiceName)
 				refreshServices()
+				newServiceName = ""
 			}
 		}
 
@@ -105,7 +102,8 @@ val ServiceList = FC<Props>("ServiceList") {
 				type = InputType.text
 				id = "service-name"
 				required = true
-				ref = newServiceName
+				value = newServiceName
+				onChange = { newServiceName = it.target.value }
 			}
 		}
 	}
