@@ -2,6 +2,7 @@ package formulaide.ui.screens
 
 import formulaide.api.types.Email
 import formulaide.api.types.Ref
+import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.users.NewUser
 import formulaide.api.users.Service
 import formulaide.api.users.User
@@ -19,7 +20,6 @@ import formulaide.ui.components.inputs.*
 import formulaide.ui.components.text.LightText
 import formulaide.ui.components.useAsync
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
-import formulaide.ui.utils.replace
 import formulaide.ui.utils.useEquals
 import formulaide.ui.utils.useListEquality
 import react.*
@@ -128,7 +128,21 @@ val UserList = FC<Props>("UserList") {
 
 				div { // Services
 					user.service.loadFrom(services)
-					LightText { text = user.service.obj.name }
+					LightText { text = "Service : " }
+
+					if (user != me) {
+						ControlledSelect {
+							for (service in services) {
+								Option(service.name, service.id, user.service.id == service.id) {
+									editUser(user, client, service = service) { newUser ->
+										users = users - user + newUser
+									}
+								}
+							}
+						}
+					} else {
+						LightText { text = user.service.obj.name }
+					}
 				}
 
 				div { // Role
@@ -173,9 +187,10 @@ private suspend fun editUser(
 	client: Client.Authenticated,
 	enabled: Boolean? = null,
 	administrator: Boolean? = null,
+	service: Service? = null,
 	onChange: (User) -> Unit,
 ) {
-	val newUser = client.editUser(user, enabled, administrator)
+	val newUser = client.editUser(user, enabled, administrator, service?.createRef())
 	onChange(newUser)
 }
 
