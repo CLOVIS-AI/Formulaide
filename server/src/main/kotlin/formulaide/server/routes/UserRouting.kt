@@ -116,6 +116,7 @@ fun Routing.userRoutes(auth: Auth) {
 					user,
 					newEnabled = data.enabled,
 					newIsAdministrator = data.administrator,
+					newService = data.service,
 				)
 
 				call.respond(editedUser.toApi())
