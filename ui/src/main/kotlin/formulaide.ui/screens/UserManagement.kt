@@ -22,6 +22,7 @@ import react.FC
 import react.Props
 import react.dom.html.InputType
 import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.hr
 import react.dom.html.ReactHTML.option
 import react.useEffect
 import react.useState
@@ -69,6 +70,10 @@ val UserList = FC<Props>("UserList") {
 		}
 
 		for ((i, user) in users.withIndex()) {
+			hr {
+				className = "mb-2"
+			}
+
 			FormField {
 				+"${user.fullName} "
 				LightText { text = user.email.email }
