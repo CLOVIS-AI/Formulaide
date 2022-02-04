@@ -65,6 +65,7 @@ val UserList = FC<Props>("UserList") {
 			Checkbox {
 				id = "hide-disabled"
 				text = "Afficher les comptes désactivés"
+				checked = listDisabledUsers
 				onChange = { listDisabledUsers = it.target.checked }
 			}
 		}
