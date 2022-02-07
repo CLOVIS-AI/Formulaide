@@ -2,7 +2,9 @@ package formulaide.ui.screens
 
 import formulaide.api.types.Email
 import formulaide.api.types.Ref
+import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.users.NewUser
+import formulaide.api.users.Service
 import formulaide.api.users.User
 import formulaide.client.Client
 import formulaide.client.routes.createUser
@@ -17,14 +19,15 @@ import formulaide.ui.components.cards.submit
 import formulaide.ui.components.inputs.*
 import formulaide.ui.components.text.LightText
 import formulaide.ui.components.useAsync
-import formulaide.ui.utils.replace
-import react.FC
-import react.Props
+import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
+import formulaide.ui.utils.useEquals
+import formulaide.ui.utils.useListEquality
+import react.*
 import react.dom.html.InputType
+import react.dom.html.ReactHTML.br
 import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.hr
 import react.dom.html.ReactHTML.option
-import react.useEffect
-import react.useState
 
 val UserList = FC<Props>("UserList") {
 	traceRenders("UserList")
@@ -45,11 +48,24 @@ val UserList = FC<Props>("UserList") {
 	}
 
 	var listDisabledUsers by useState(false)
-	var users by useState(emptyList<User>())
+	var users by useState(emptyList<User>()).asDelegated()
+		.useListEquality()
+		.useEquals()
 	useEffect(client, listDisabledUsers) {
 		scope.reportExceptions {
-			users = client.listUsers(listDisabledUsers).sortedBy { it.fullName }
+			users = client.listUsers(listDisabledUsers)
 		}
+	}
+
+	val services by useServices()
+	var filterByServices by useState(false)
+	var filteredServices by useState(emptySet<Service>())
+
+	val filteredUsers = useMemo(users, filteredServices, filterByServices) {
+		val selectedUsers = if (!filterByServices) users
+		else users.filter { it.service.id in filteredServices.map { it.id } }
+
+		selectedUsers.sortedBy { it.fullName }
 	}
 
 	Card {
@@ -64,33 +80,91 @@ val UserList = FC<Props>("UserList") {
 			Checkbox {
 				id = "hide-disabled"
 				text = "Afficher les comptes désactivés"
+				checked = listDisabledUsers
 				onChange = { listDisabledUsers = it.target.checked }
 			}
 		}
 
-		for ((i, user) in users.withIndex()) {
+		Field {
+			id = "service-filters"
+			text = "Choisir les services à afficher"
+
+			Checkbox {
+				id = "service-filters"
+				text = "Ne pas filtrer par service"
+				checked = !filterByServices
+				onChange = { filterByServices = !it.target.checked }
+			}
+
+			if (filterByServices)
+				for (service in services) {
+					br()
+
+					Checkbox {
+						id = "service-filter-${service.id}"
+						text = "Afficher le service « ${service.name} »"
+						checked = service in filteredServices
+						onChange = {
+							@Suppress("SuspiciousCollectionReassignment") // +=/-= copy the set and call the setter, this is intended here (React setState)
+							if (it.target.checked)
+								filteredServices += service
+							else
+								filteredServices -= service
+						}
+					}
+				}
+		}
+
+		for (user in filteredUsers) {
+			hr {
+				className = "mb-2"
+			}
+
 			FormField {
-				+"${user.fullName} "
-				LightText { text = user.email.email }
+				div { // Name and email
+					+"${user.fullName} "
+					LightText { text = user.email.email }
+				}
+
+				div { // Services
+					user.service.loadFrom(services)
+					LightText { text = "Service : " }
+
+					ControlledSelect {
+						for (service in services) {
+							Option(service.name, service.id, user.service.id == service.id) {
+								editUser(user, client, service = service) { newUser ->
+									users = users - user + newUser
+								}
+
+								if (user == me) {
+									forceTokenRefresh(client)
+								}
+							}
+						}
+					}
+				}
+
+				div { // Role
+					LightText { text = "Rôle : ${if (user.administrator) "Administration" else "Employé"}" }
+
+					if (user != me) StyledButton {
+						text = "Modifier"
+						action = {
+							editUser(user, client, administrator = !user.administrator) { newUser ->
+								users = users - user + newUser
+							}
+						}
+					}
+				}
 
 				div { // buttons
-
 					if (user != me) {
 						StyledButton {
 							text = if (user.enabled) "Désactiver" else "Activer"
 							action = {
-								editUser(user, client, enabled = !user.enabled) {
-									users = users.replace(i, it)
-								}
-							}
-						}
-
-						StyledButton {
-							text =
-								if (user.administrator) "Enlever le droit d'administration" else "Donner le droit d'administration"
-							action = {
-								editUser(user, client, administrator = !user.administrator) {
-									users = users.replace(i, it)
+								editUser(user, client, enabled = !user.enabled) { newUser ->
+									users = users - user + newUser
 								}
 							}
 						}
@@ -113,9 +187,10 @@ private suspend fun editUser(
 	client: Client.Authenticated,
 	enabled: Boolean? = null,
 	administrator: Boolean? = null,
+	service: Service? = null,
 	onChange: (User) -> Unit,
 ) {
-	val newUser = client.editUser(user, enabled, administrator)
+	val newUser = client.editUser(user, enabled, administrator, service?.createRef())
 	onChange(newUser)
 }
 
