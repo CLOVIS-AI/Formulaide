@@ -1,5 +1,6 @@
 package formulaide.client.routes
 
+import formulaide.api.types.Ref
 import formulaide.api.users.*
 import formulaide.client.Client
 
@@ -48,8 +49,9 @@ suspend fun Client.Authenticated.editUser(
 	user: User,
 	enabled: Boolean? = null,
 	administrator: Boolean? = null,
+	service: Ref<Service>? = null,
 ): User =
-	post("/users/edit", body = UserEdits(user.email, enabled, administrator))
+	post("/users/edit", body = UserEdits(user.email, enabled, administrator, service))
 
 /**
  * Edits a user's password.

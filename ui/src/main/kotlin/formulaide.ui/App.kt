@@ -135,7 +135,7 @@ val App = FC<Props>("App") {
 
 	traceRenders("App")
 
-	var client by useClient("App")
+	val client by useClient("App")
 	val scope = useAsync()
 
 	val errors = useErrors()
@@ -165,11 +165,7 @@ val App = FC<Props>("App") {
 			reportExceptions {
 				delay(1000L * 60 * 25) // every 25 minutes
 
-				val accessToken = client.refreshToken()
-				checkNotNull(accessToken) { "Le serveur a refusé de rafraichir le token d'accès. Une raison possible est que votre mot de passe a été modifié." }
-
-				client = defaultClient.authenticate(accessToken)
-				console.log("Got an access token from the cookie-stored refresh token (expiration time was near)")
+				forceTokenRefresh(client)
 			}
 		}
 	}
@@ -208,6 +204,14 @@ val App = FC<Props>("App") {
 	if (footerText.isNotBlank())
 		footerText.split("\n")
 			.forEach { br {}; FooterText { text = it } }
+}
+
+internal suspend fun forceTokenRefresh(client: Client) {
+	val accessToken = client.refreshToken()
+	checkNotNull(accessToken) { "Le serveur a refusé de rafraichir le token d'accès. Une raison possible est que votre mot de passe a été modifié." }
+
+	formulaide.ui.client.value = defaultClient.authenticate(accessToken)
+	console.log("Got an access token from the cookie-stored refresh token (expiration time was near)")
 }
 
 val StyledAppFrame = FC<Props>("StyledFrame") {
