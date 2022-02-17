@@ -1,7 +1,9 @@
 package formulaide.ui
 
 import formulaide.api.data.Composite
+import formulaide.api.data.Config
 import formulaide.api.data.Form
+import formulaide.api.data.reportEmailOrDefault
 import formulaide.api.users.Service
 import formulaide.client.Client
 import formulaide.client.refreshToken
@@ -112,6 +114,10 @@ suspend fun refreshServices() {
 
 private val bottomText = GlobalState("")
 
+val config = GlobalState<Config?>(null)
+fun ChildrenBuilder.useConfig() = useGlobalState(config)
+	.useEquals()
+
 //endregion
 
 /**
@@ -175,6 +181,10 @@ val App = FC<Props>("App") {
 			.takeIf { "DOCTYPE" !in it } ?: "Les informations de version ne sont pas disponibles."
 	}
 
+	useAsyncEffect(client) {
+		config.value = client.getConfig()
+	}
+
 	Window()
 
 	for (error in errors) {
@@ -228,6 +238,7 @@ private const val errorSectionClass = "mt-2"
 
 val CrashReporter = FC<PropsWithChildren>("CrashReporter") { props ->
 	val (boundary, didCatch, error) = useErrorBoundary()
+	val config by useConfig()
 
 	if (didCatch) {
 		Card {
@@ -236,7 +247,7 @@ val CrashReporter = FC<PropsWithChildren>("CrashReporter") { props ->
 			failed = true
 
 			p {
-				+"Veuillez signaler cette erreur à l'administrateur, en lui envoyant les informations ci-dessous, à l'adresse incoming+clovis-ai-formulaide-27107472-issue-@incoming.gitlab.com :"
+				+"Veuillez signaler cette erreur à l'administrateur, en lui envoyant les informations ci-dessous, à l'adresse ${config.reportEmailOrDefault} :"
 			}
 
 			p {
