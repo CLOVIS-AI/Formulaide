@@ -1,5 +1,6 @@
 package formulaide.server
 
+import formulaide.api.data.Config
 import formulaide.api.types.Email
 import formulaide.api.types.Ref
 import formulaide.api.users.NewUser
@@ -103,5 +104,12 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 		formRoutes()
 		submissionRoutes()
 		fileRoutes()
+
+		get("/config") {
+			call.respond(Config(
+				reportEmail = System.getenv("formulaide_support_email")?.let { Email(it) },
+				helpURL = System.getenv("formulaide_help_url")
+			))
+		}
 	}
 }
