@@ -38,17 +38,17 @@ val FormActionFields = FC<FormActionProps>("FormActionFields") { props ->
 				this.replace = { it: Field ->
 					val newFields = root.fields.replace(i, it as ShallowFormField)
 					replace(action.copy(fields = FormRoot(newFields)))
-				}.memoIn(lambdas, "action-fields-replace-${field.id}", i, root)
+				}.memoIn(lambdas, "action-fields-replace-${field.id}", i, root, action)
 
 				this.remove = {
 					val newFields = root.fields.remove(i)
 					replace(action.copy(fields = FormRoot(newFields)))
-				}.memoIn(lambdas, "action-fields-remove-${field.id}", i, root)
+				}.memoIn(lambdas, "action-fields-remove-${field.id}", i, root, action)
 
 				this.switch = { direction: SwitchDirection ->
 					val newFields = root.fields.switchOrder(i, direction)
 					replace(action.copy(fields = FormRoot(newFields)))
-				}.memoIn(lambdas, "action-fields-switch-${field.id}", i, root)
+				}.memoIn(lambdas, "action-fields-switch-${field.id}", i, root, action)
 
 				depth = 1
 				fieldNumber = i
