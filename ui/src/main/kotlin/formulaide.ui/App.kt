@@ -1,7 +1,9 @@
 package formulaide.ui
 
 import formulaide.api.data.Composite
+import formulaide.api.data.Config
 import formulaide.api.data.Form
+import formulaide.api.data.reportEmailOrDefault
 import formulaide.api.users.Service
 import formulaide.client.Client
 import formulaide.client.refreshToken
@@ -22,7 +24,9 @@ import kotlinx.coroutines.await
 import kotlinx.coroutines.delay
 import org.w3c.dom.get
 import react.*
+import react.dom.html.ReactHTML.a
 import react.dom.html.ReactHTML.br
+import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.p
 
 //region Production / development environments
@@ -110,7 +114,11 @@ suspend fun refreshServices() {
 				?: emptyList())
 }
 
-private val bottomText = GlobalState("")
+private val bottomText = GlobalState<String?>(null)
+
+val config = GlobalState<Config?>(null)
+fun ChildrenBuilder.useConfig() = useGlobalState(config)
+	.useEquals()
 
 //endregion
 
@@ -137,6 +145,7 @@ val App = FC<Props>("App") {
 
 	val client by useClient("App")
 	val scope = useAsync()
+	var config by useConfig()
 
 	val errors = useErrors()
 
@@ -172,7 +181,11 @@ val App = FC<Props>("App") {
 
 	useAsyncEffectOnce {
 		bottomText.value = fetch("version.txt").await().text().await()
-			.takeIf { "DOCTYPE" !in it } ?: "Les informations de version ne sont pas disponibles."
+			.takeIf { "DOCTYPE" !in it }
+	}
+
+	useAsyncEffect(client) {
+		config = client.getConfig()
 	}
 
 	Window()
@@ -201,9 +214,29 @@ val App = FC<Props>("App") {
 	}
 
 	val footerText by useGlobalState(bottomText)
-	if (footerText.isNotBlank())
-		footerText.split("\n")
-			.forEach { br {}; FooterText { text = it } }
+	div {
+		className = "m-4 flex"
+
+		div {
+			className = "grow text-left"
+
+			footerText?.let { text ->
+				text.split("\n").forEach { br {}; FooterText { this.text = it } }
+			}
+		}
+
+		div {
+			className = "grow text-right"
+
+			a {
+				href = "mailto:${config.reportEmailOrDefault.email}"
+				FooterText {
+					className = "hover:underline"
+					text = "Signaler un problème"
+				}
+			}
+		}
+	}
 }
 
 internal suspend fun forceTokenRefresh(client: Client) {
@@ -228,6 +261,7 @@ private const val errorSectionClass = "mt-2"
 
 val CrashReporter = FC<PropsWithChildren>("CrashReporter") { props ->
 	val (boundary, didCatch, error) = useErrorBoundary()
+	val config by useConfig()
 
 	if (didCatch) {
 		Card {
@@ -236,7 +270,7 @@ val CrashReporter = FC<PropsWithChildren>("CrashReporter") { props ->
 			failed = true
 
 			p {
-				+"Veuillez signaler cette erreur à l'administrateur, en lui envoyant les informations ci-dessous, à l'adresse incoming+clovis-ai-formulaide-27107472-issue-@incoming.gitlab.com :"
+				+"Veuillez signaler cette erreur à l'administrateur, en lui envoyant les informations ci-dessous, à l'adresse ${config.reportEmailOrDefault} :"
 			}
 
 			p {
