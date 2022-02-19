@@ -109,11 +109,19 @@ internal suspend fun uploadFile(request: UploadRequest, file: PartData.FileItem)
 			mime = getFileType(it, file.originalFileName, mime)
 			require(simple.allowedFormats.allowsContentType(mime)) { "L'analyse du fichier a donné comme type '$mime', qui ne correspond à aucun type autorisé pour ce champ : ${simple.allowedFormats.flatMap { it.mimeTypes }}" }
 
-			it.readAllBytes()
+			// Loads the file into memory, so it can be sent to the database.
+			// If the file is too big, the file is truncated to the max size.
+			val bytes = it.readNBytes(simple.effectiveMaxSizeMB * 1024 * 1024)
+			// If we stopped here, the user would not be warned about files that are too big,
+			// and the truncated file would be stored in the BD. In turn, this would let employees open truncated files, which are probably corrupted.
+			// To stop this scenario, we attempt to read a few more bytes. If the read succeeds, we know that the file was too big, and we can fail the request.
+			// We assume that this small number of bytes is insignificant towards the server performance, and cannot be used for DoS attacks.
+			val future = it.readNBytes(10)
+			require(future.isEmpty()) { "Le fichier ne peut pas être plus gros que ${simple.effectiveMaxSizeMB} Mo, mais il fait au moins ${future.size} octets de trop." }
+
+			bytes
 		}
 	}
-
-	require(bytes.size < simple.effectiveMaxSizeMB * 1024 * 1024) { "Le fichier ne peut pas plus gros que ${simple.effectiveMaxSizeMB} Mo, mais il fait ${bytes.size / (1024 * 1024)}" }
 
 	return Ref(database.uploadFile(bytes, mime, simple))
 }
