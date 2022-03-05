@@ -10,11 +10,14 @@ import formulaide.ui.components.cards.*
 import formulaide.ui.components.useAsync
 import formulaide.ui.reportExceptions
 import formulaide.ui.useClient
+import formulaide.ui.useConfig
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
 import formulaide.ui.utils.parseHtmlForm
 import formulaide.ui.utils.printElement
 import react.FC
+import react.Props
 import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.img
 import react.dom.html.ReactHTML.td
 import react.useMemo
 import react.useState
@@ -127,6 +130,7 @@ internal val ReviewRecordExpanded = FC<ReviewRecordVariantProps>("ReviewRecordEx
 
 			reviewRecordButtons(props, formCardId)
 
+			ReviewRecordPrintImages()
 			ReviewRecordContents { +props }
 		} else FormCard {
 			id = formCardId
@@ -134,6 +138,7 @@ internal val ReviewRecordExpanded = FC<ReviewRecordVariantProps>("ReviewRecordEx
 
 			reviewRecordButtons(props, formCardId)
 
+			ReviewRecordPrintImages()
 			ReviewRecordContents { +props }
 
 			Footer {
@@ -186,4 +191,31 @@ private fun CardProps.reviewRecordButtons(props: ReviewRecordVariantProps, formC
 	}
 
 	action("Récépissé") { printElement(formCardId) }
+}
+
+private const val printImageDiv = "flex grow shrink object-contain"
+private const val printImage = "min-w-[20%] max-w-[50%] object-contain"
+
+private val ReviewRecordPrintImages = FC<Props>("ReviewRecordPrintImages") {
+	val config by useConfig()
+
+	div {
+		className = "max-w-full gap-2 my-2 max-h-20 min-h-5 justify-between hidden print:flex"
+
+		div {
+			className = "$printImageDiv justify-start"
+			img {
+				className = printImage
+				src = config?.pdfLeftImageURL
+			}
+		}
+
+		div {
+			className = "$printImageDiv justify-end"
+			img {
+				className = printImage
+				src = config?.pdfRightImageURL
+			}
+		}
+	}
 }
