@@ -108,7 +108,9 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 		get("/config") {
 			call.respond(Config(
 				reportEmail = System.getenv("formulaide_support_email")?.let { Email(it) },
-				helpURL = System.getenv("formulaide_help_url")
+				helpURL = System.getenv("formulaide_help_url"),
+				pdfLeftImageURL = System.getenv("formulaide_pdf_image_left_url")?.takeIf { it.isNotBlank() },
+				pdfRightImageURL = System.getenv("formulaide_pdf_image_right_url")?.takeIf { it.isNotBlank() },
 			))
 		}
 	}
