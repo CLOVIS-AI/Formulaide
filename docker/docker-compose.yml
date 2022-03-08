@@ -23,6 +23,9 @@ services:
       formulaide_password: "development-password"
       formulaide_report_email: "contact-project+opensavvy-formulaide-33369420-issue-@incoming.gitlab.com"
       formulaide_help_url: "https://opensavvy.gitlab.io/formulaide/docs/user-guide.pdf"
+      # Images affichées dans les récépissés en PDF
+      formulaide_pdf_image_left_url: ""
+      formulaide_pdf_image_right_url: ""
 
       # Secret utilisé pour la gestion des mots de passe.
       # Ce secret est la partie la plus importante de toute la sécurité du logiciel. Il n'est jamais nécessaire de le taper, ni même de s'en souvenir. Il ne devrait JAMAIS être transmis à quiconque.
