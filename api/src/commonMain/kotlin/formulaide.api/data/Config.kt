@@ -10,6 +10,8 @@ import kotlinx.serialization.Serializable
 data class Config(
 	val reportEmail: Email?,
 	val helpURL: String?,
+	val pdfLeftImageURL: String?,
+	val pdfRightImageURL: String?,
 ) {
 
 	companion object {
