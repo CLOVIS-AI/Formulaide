@@ -1,5 +1,6 @@
 package formulaide.ui.components.inputs
 
+import formulaide.ui.utils.classes
 import org.w3c.dom.HTMLSelectElement
 import react.FC
 import react.PropsWithChildren
@@ -13,7 +14,7 @@ external interface SelectProps : SelectHTMLAttributes<HTMLSelectElement>, PropsW
 val Select = FC<SelectProps>("Select") { props ->
 	select {
 		+props
-		className = largeInputStyle
+		classes = largeInputStyle
 		onChange = {
 			props.onSelection(it.target)
 		}

@@ -9,6 +9,8 @@
 
 package formulaide.ui.utils
 
+import react.Props
+
 external interface ErrorState {
 	var didCatch: Boolean
 	var error: Throwable?
@@ -32,7 +34,7 @@ external interface ErrorObject {
 	var error: Any
 }
 
-external interface ErrorBoundaryProps {
+external interface ErrorBoundaryProps : Props {
 	var onDidCatch: OnDidCatchCallback
 	var children: dynamic /* React.ReactNode? | JSX.Element? */
 		get() = definedExternally

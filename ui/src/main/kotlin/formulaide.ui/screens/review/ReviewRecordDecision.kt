@@ -6,6 +6,7 @@ import formulaide.ui.components.StyledButton
 import formulaide.ui.components.inputs.Field
 import formulaide.ui.components.inputs.Input
 import formulaide.ui.utils.DelegatedProperty.Companion.DelegatedProperty
+import formulaide.ui.utils.classes
 import react.FC
 import react.dom.html.InputType
 import react.dom.html.ReactHTML.div
@@ -43,7 +44,7 @@ internal val ReviewRecordDecision = FC<ReviewRecordDecisionProps>("ReviewRecordD
 	}
 
 	div {
-		className = "print:hidden"
+		classes = "print:hidden"
 
 		div {
 			+"Votre décision :"

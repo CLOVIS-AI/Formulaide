@@ -12,6 +12,7 @@ import formulaide.ui.reportExceptions
 import formulaide.ui.useClient
 import formulaide.ui.useConfig
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
+import formulaide.ui.utils.classes
 import formulaide.ui.utils.parseHtmlForm
 import formulaide.ui.utils.printElement
 import react.FC
@@ -39,10 +40,10 @@ internal val ReviewRecordCollapsed = FC<ReviewRecordVariantProps>("ReviewRecordC
 
 	// If we are displaying all records, add a column that displays in which state the record currently is
 	if (props.windowState == null) td {
-		className = tdClasses
+		classes = tdClasses
 
 		div {
-			className = tdDivClasses
+			classes = tdDivClasses
 			+props.record.state.displayName()
 		}
 	}
@@ -75,9 +76,9 @@ internal val ReviewRecordCollapsed = FC<ReviewRecordVariantProps>("ReviewRecordC
 			.firstOrNull { it.fullKeyString == key }
 
 		td {
-			className = tdClasses
+			classes = tdClasses
 			div {
-				className = tdDivClasses
+				classes = tdDivClasses
 
 				if (parsedField is ParsedList<*>) {
 					+parsedField.children.mapNotNull { it.rawValue }
@@ -200,20 +201,20 @@ private val ReviewRecordPrintImages = FC<Props>("ReviewRecordPrintImages") {
 	val config by useConfig()
 
 	div {
-		className = "max-w-full gap-2 my-2 max-h-20 min-h-5 justify-between hidden print:flex"
+		classes = "max-w-full gap-2 my-2 max-h-20 min-h-5 justify-between hidden print:flex"
 
 		div {
-			className = "$printImageDiv justify-start"
+			classes = "$printImageDiv justify-start"
 			img {
-				className = printImage
+				classes = printImage
 				src = config?.pdfLeftImageURL
 			}
 		}
 
 		div {
-			className = "$printImageDiv justify-end"
+			classes = "$printImageDiv justify-end"
 			img {
-				className = printImage
+				classes = printImage
 				src = config?.pdfRightImageURL
 			}
 		}

@@ -18,10 +18,10 @@ import formulaide.ui.components.useAsyncEffectOnce
 import formulaide.ui.screens.forms.list.clearRecords
 import formulaide.ui.utils.*
 import io.ktor.client.fetch.*
-import kotlinext.js.jso
 import kotlinx.browser.window
 import kotlinx.coroutines.await
 import kotlinx.coroutines.delay
+import kotlinx.js.jso
 import org.w3c.dom.get
 import react.*
 import react.dom.html.ReactHTML.a
@@ -215,10 +215,10 @@ val App = FC<Props>("App") {
 
 	val footerText by useGlobalState(bottomText)
 	div {
-		className = "m-4 flex"
+		classes = "m-4 flex"
 
 		div {
-			className = "grow text-left"
+			classes = "grow text-left"
 
 			footerText?.let { text ->
 				text.split("\n").forEach { br {}; FooterText { this.text = it } }
@@ -226,12 +226,12 @@ val App = FC<Props>("App") {
 		}
 
 		div {
-			className = "grow text-right"
+			classes = "grow text-right"
 
 			a {
 				href = "mailto:${config.reportEmailOrDefault.email}"
 				FooterText {
-					className = "hover:underline"
+					this@a.classes = "hover:underline"
 					text = "Signaler un problème"
 				}
 			}
@@ -274,7 +274,7 @@ val CrashReporter = FC<PropsWithChildren>("CrashReporter") { props ->
 			}
 
 			p {
-				className = errorSectionClass
+				classes = errorSectionClass
 
 				+"Ce que j'étais en train de faire : "
 				br {}
@@ -282,7 +282,7 @@ val CrashReporter = FC<PropsWithChildren>("CrashReporter") { props ->
 			}
 
 			p {
-				className = errorSectionClass
+				classes = errorSectionClass
 
 				+"Error type : "
 				br {}
@@ -290,7 +290,7 @@ val CrashReporter = FC<PropsWithChildren>("CrashReporter") { props ->
 			}
 
 			p {
-				className = errorSectionClass
+				classes = errorSectionClass
 
 				+"Throwable : "
 				error?.stackTraceToString()
@@ -305,7 +305,7 @@ val CrashReporter = FC<PropsWithChildren>("CrashReporter") { props ->
 
 			for (local in listOf("form-fields", "form-actions", "data-fields")) {
 				p {
-					className = errorSectionClass
+					classes = errorSectionClass
 
 					+"Local storage : $local"
 					br {}
@@ -314,7 +314,7 @@ val CrashReporter = FC<PropsWithChildren>("CrashReporter") { props ->
 			}
 
 			p {
-				className = errorSectionClass
+				classes = errorSectionClass
 
 				+"Client : "
 				br {}
@@ -329,7 +329,7 @@ val CrashReporter = FC<PropsWithChildren>("CrashReporter") { props ->
 				"Services" to services,
 			)) {
 				p {
-					className = errorSectionClass
+					classes = errorSectionClass
 
 					+"Cache : $globalName"
 					global.value.forEach {

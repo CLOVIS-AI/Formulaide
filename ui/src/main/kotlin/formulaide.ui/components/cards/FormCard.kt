@@ -2,6 +2,7 @@ package formulaide.ui.components.cards
 
 import formulaide.ui.components.*
 import formulaide.ui.reportExceptions
+import formulaide.ui.utils.classes
 import kotlinx.coroutines.CoroutineScope
 import org.w3c.dom.HTMLFormElement
 import react.FC
@@ -39,8 +40,8 @@ val FormCard = FC<FormCardProps>("FormCard") { props ->
 			}
 
 			div {
-				className = "py-4"
-				props.children()
+				classes = "py-4"
+				+props.children
 			}
 
 			Footer {
@@ -54,7 +55,7 @@ val FormCard = FC<FormCardProps>("FormCard") { props ->
 					}
 				else
 					span {
-						className = buttonNonDefaultClasses
+						classes = buttonNonDefaultClasses
 						LoadingSpinner()
 					}
 				//endregion

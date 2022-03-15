@@ -1,5 +1,6 @@
 package formulaide.ui.components.text
 
+import formulaide.ui.utils.classes
 import react.FC
 import react.Props
 import react.dom.html.ReactHTML.span
@@ -7,17 +8,17 @@ import react.dom.html.ReactHTML.span
 external interface TextProps : Props {
 	var text: String
 
-	var className: String?
+	var classes: String?
 }
 
-private val TextProps.classNameOrEmpty get() = className ?: ""
+private val TextProps.classesOrEmpty get() = this.classes ?: ""
 
 /**
  * Grey text for information that is not too important.
  */
 val LightText = FC<TextProps>("LightText") { props ->
 	span {
-		className = "text-gray-600 ${props.classNameOrEmpty}"
+		classes = "text-gray-600 ${props.classesOrEmpty}"
 		+props.text
 	}
 }
@@ -27,7 +28,7 @@ val LightText = FC<TextProps>("LightText") { props ->
  */
 val ErrorText = FC<TextProps>("ErrorText") { props ->
 	span {
-		className = "text-red-600 ${props.classNameOrEmpty}"
+		classes = "text-red-600 ${props.classesOrEmpty}"
 		+props.text
 	}
 }
@@ -37,7 +38,7 @@ val ErrorText = FC<TextProps>("ErrorText") { props ->
  */
 val FooterText = FC<TextProps>("FooterText") { props ->
 	span {
-		className = "text-sm text-gray-600 mx-4 ${props.classNameOrEmpty}"
+		classes = "text-sm text-gray-600 mx-4 ${props.classesOrEmpty}"
 		+props.text
 	}
 }
