@@ -14,7 +14,7 @@ val FieldEditorShell = FC<FieldEditorShellProps>("FieldEditorShell") { props ->
 		this.text = props.text
 
 		Nesting {
-			props.children()
+			+props.children
 		}
 	}
 }

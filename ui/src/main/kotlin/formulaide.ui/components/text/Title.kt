@@ -1,6 +1,7 @@
 package formulaide.ui.components.text
 
 import formulaide.ui.components.LoadingSpinner
+import formulaide.ui.utils.classes
 import react.FC
 import react.Props
 import react.dom.html.ReactHTML.h2
@@ -16,7 +17,7 @@ external interface TitleProps : Props {
 
 val Title = FC<TitleProps>("Title") { props ->
 	h2 {
-		className = "text-xl"
+		classes = "text-xl"
 
 		+props.title
 		if (props.loading == true) LoadingSpinner()
