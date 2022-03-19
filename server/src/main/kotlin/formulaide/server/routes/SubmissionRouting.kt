@@ -135,8 +135,9 @@ fun Routing.submissionRoutes() {
 				val form = database.findForm(request.form.id)
 					?: error("Le formulaire est introuvable : ${request.form.id}")
 
-				require(user.toApi().canAccess(form,
-				                               request.state)) { "Vous n'avez pas accès aux saisies du formulaire ${form.name} (${form.id})" }
+				require(user.toApi().canAccess(form, request.state)) {
+					"Vous n'avez pas accès aux saisies du formulaire « ${form.name} » (${form.id}, utilisateur ${user.email})"
+				}
 
 				val records = submissionsMatchingRecord(request, form)
 
