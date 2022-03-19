@@ -1,6 +1,7 @@
 package formulaide.ui.components
 
 import formulaide.ui.reportExceptions
+import formulaide.ui.utils.classes
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import react.FC
@@ -46,7 +47,7 @@ val StyledButton = FC<StyledButtonProps>("StyledButton") { props ->
 
 	if (props.enabled != false) {
 		button {
-			className = if (props.emphasize == true) buttonDefaultClasses else buttonNonDefaultClasses
+			classes = if (props.emphasize == true) buttonDefaultClasses else buttonNonDefaultClasses
 			disabled = loading
 
 			if (loading)
@@ -73,7 +74,7 @@ val StyledButton = FC<StyledButtonProps>("StyledButton") { props ->
 	} else {
 		span {
 			+(props.text ?: "")
-			className = "$buttonShapeClasses font-bold"
+			classes = "$buttonShapeClasses font-bold"
 		}
 	}
 }
@@ -85,7 +86,7 @@ val StyledSubmitButton = FC<StyledButtonProps>("StyledSubmitButton") { props ->
 
 	input {
 		type = InputType.submit
-		className = if (props.emphasize == true) buttonDefaultClasses else buttonNonDefaultClasses
+		classes = if (props.emphasize == true) buttonDefaultClasses else buttonNonDefaultClasses
 		value = props.text
 		disabled = !(props.enabled ?: true)
 	}

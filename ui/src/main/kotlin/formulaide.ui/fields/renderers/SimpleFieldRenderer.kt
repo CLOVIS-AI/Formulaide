@@ -7,7 +7,7 @@ import formulaide.ui.components.inputs.Checkbox
 import formulaide.ui.components.inputs.Input
 import formulaide.ui.components.inputs.InputProps
 import formulaide.ui.components.text.ErrorText
-import kotlinext.js.jso
+import kotlinx.js.jso
 import react.FC
 import react.dom.html.InputType
 import react.useState

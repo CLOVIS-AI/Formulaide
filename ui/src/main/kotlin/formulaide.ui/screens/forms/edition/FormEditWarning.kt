@@ -1,6 +1,7 @@
 package formulaide.ui.screens.forms.edition
 
 import formulaide.ui.components.text.ErrorText
+import formulaide.ui.utils.classes
 import react.FC
 import react.Props
 import react.dom.html.ReactHTML.li
@@ -15,12 +16,12 @@ val FormEditWarning = FC<Props>("FormEditWarning") {
 	+" Aucune garantie n'est donnée pour les modifications non listées ci-dessous."
 
 	p {
-		className = "pt-2"
+		classes = "pt-2"
 
 		+"Modifications qui ne peuvent pas causer de problèmes :"
 	}
 	ul {
-		className = "list-disc"
+		classes = "list-disc"
 
 		li { +"Renommer le formulaire" }
 		li { +"Renommer un champ ou une étape" }
@@ -31,12 +32,12 @@ val FormEditWarning = FC<Props>("FormEditWarning") {
 	}
 
 	p {
-		className = "pt-2"
+		classes = "pt-2"
 
 		+"Modifications qui peuvent être refusées :"
 	}
 	ul {
-		className = "list-disc"
+		classes = "list-disc"
 
 		li { +"Modifier les restrictions des champs (obligatoire, facultatif, longueur maximale…)" }
 		li { +"Modifier le type d'un champ (dans certains cas, il n'est pas possible d'annuler la modification)" }
@@ -44,12 +45,12 @@ val FormEditWarning = FC<Props>("FormEditWarning") {
 	}
 
 	p {
-		className = "pt-2"
+		classes = "pt-2"
 
 		+"Modifications qui peuvent amener à une perte de données :"
 	}
 	ul {
-		className = "list-disc pb-4"
+		classes = "list-disc pb-4"
 
 		li { +"Modifier le type d'un champ" }
 		li { +"Supprimer un champ" }

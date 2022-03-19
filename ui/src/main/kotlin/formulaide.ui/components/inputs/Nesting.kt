@@ -2,6 +2,7 @@ package formulaide.ui.components.inputs
 
 import formulaide.ui.components.StyledButton
 import formulaide.ui.traceRenders
+import formulaide.ui.utils.classes
 import react.FC
 import react.PropsWithChildren
 import react.dom.html.ReactHTML.div
@@ -42,12 +43,12 @@ val Nesting = FC<NestingProps>("Nesting") { props ->
 	} else ""
 
 	div {
-		className = "$nestingStyle $selectedBackground"
+		classes = "$nestingStyle $selectedBackground"
 
-		props.children()
+		+props.children
 
 		div {
-			className = "m-2 absolute top-0 right-0"
+			classes = "m-2 absolute top-0 right-0"
 
 			if (props.onMoveUp != null)
 				StyledButton {

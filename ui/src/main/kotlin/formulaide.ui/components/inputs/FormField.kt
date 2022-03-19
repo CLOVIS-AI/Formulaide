@@ -1,5 +1,6 @@
 package formulaide.ui.components.inputs
 
+import formulaide.ui.utils.classes
 import react.FC
 import react.PropsWithChildren
 import react.dom.html.ReactHTML.div
@@ -9,7 +10,7 @@ import react.dom.html.ReactHTML.div
  */
 val FormField = FC<PropsWithChildren>("FormField") { props ->
 	div {
-		className = "mb-2"
-		props.children()
+		classes = "mb-2"
+		+props.children
 	}
 }

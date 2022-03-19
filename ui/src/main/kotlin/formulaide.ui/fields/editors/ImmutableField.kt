@@ -8,6 +8,7 @@ import formulaide.client.routes.downloadFile
 import formulaide.ui.components.StyledButton
 import formulaide.ui.traceRenders
 import formulaide.ui.useClient
+import formulaide.ui.utils.classes
 import kotlinx.browser.window
 import org.w3c.dom.url.URL
 import org.w3c.files.Blob
@@ -73,7 +74,7 @@ val ImmutableField: FC<ImmutableFieldProps> = FC("ImmutableField") { props ->
 				} else {
 					+answer.constraint.name
 					div {
-						className = miniNesting
+						classes = miniNesting
 						LazyImmutableField {
 							this.answer = answer.children.first()
 						}
@@ -93,7 +94,7 @@ val ImmutableField: FC<ImmutableFieldProps> = FC("ImmutableField") { props ->
 				+compositeField.name
 				for (child in answer.children) {
 					div {
-						className = miniNesting
+						classes = miniNesting
 						LazyImmutableField {
 							this.answer = child
 						}

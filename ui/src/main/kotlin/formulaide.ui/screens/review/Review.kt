@@ -11,6 +11,7 @@ import formulaide.ui.components.useAsyncEffect
 import formulaide.ui.screens.forms.list.getRecords
 import formulaide.ui.useClient
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
+import formulaide.ui.utils.classes
 import formulaide.ui.utils.onSet
 import formulaide.ui.utils.useEquals
 import formulaide.ui.utils.useListEquality
@@ -90,10 +91,10 @@ val Review = FC<ReviewProps>("Review") { props ->
 	}
 
 	div {
-		className = "lg:grid lg:grid-cols-3 lg:gap-y-0"
+		classes = "lg:grid lg:grid-cols-3 lg:gap-y-0"
 
 		div {
-			className = "lg:order-2"
+			classes = "lg:order-2"
 
 			SearchBar {
 				+props
@@ -107,7 +108,7 @@ val Review = FC<ReviewProps>("Review") { props ->
 		}
 
 		div {
-			className = "lg:col-span-2 lg:order-1 w-full overflow-x-auto"
+			classes = "lg:col-span-2 lg:order-1 w-full overflow-x-auto"
 
 			RecordTable {
 				+props
