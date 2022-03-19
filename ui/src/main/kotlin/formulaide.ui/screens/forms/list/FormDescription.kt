@@ -16,6 +16,7 @@ import formulaide.ui.utils.useGlobalState
 import kotlinx.browser.window
 import react.*
 import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.span
 
 external interface FormDescriptionProps : Props {
 	var form: Form
@@ -121,11 +122,15 @@ val FormDescription = FC<FormDescriptionProps>("FormDescription") { props ->
 			}
 		}
 
-		StyledButton {
-			text = "Voir HTML"
-			action = {
-				window.open("${client.hostUrl}/forms/html?id=${form.id}&url=${client.hostUrl}")
+		if (form.public) {
+			StyledButton {
+				text = "Voir HTML"
+				action = {
+					window.open("${client.hostUrl}/forms/html?id=${form.id}&url=${client.hostUrl}")
+				}
 			}
+		} else {
+			span { +"L'export HTML n'est disponible que pour les formulaires publics" }
 		}
 	}
 }
