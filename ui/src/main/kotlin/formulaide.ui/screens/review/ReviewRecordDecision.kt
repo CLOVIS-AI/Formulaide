@@ -52,7 +52,7 @@ internal val ReviewRecordDecision = FC<ReviewRecordDecisionProps>("ReviewRecordD
 				StyledButton {
 					text = "Renvoyer à une étape précédente"
 					enabled = decision != ReviewDecision.PREVIOUS
-					action = { RecordState.Action(props.form.actions.first().createRef()) }
+					action = { selectedDestination = RecordState.Action(props.form.actions.first().createRef()) }
 				}
 
 			StyledButton {
