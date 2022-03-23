@@ -63,10 +63,10 @@ tasks.named("compileKotlinJs") {
 rootProject.plugins.withType<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootPlugin> {
 	rootProject.the<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootExtension>().versions.apply {
 		// Fix for https://youtrack.jetbrains.com/issue/KT-48273
-		webpackDevServer.version = "4.6.0"
+		webpackDevServer.version = "4.7.4"
 
 		// Fix for https://github.com/webpack/webpack-cli/issues/2990
-		webpackCli.version = "4.9.1"
+		webpackCli.version = "4.9.2"
 	}
 }
 
