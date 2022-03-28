@@ -7,7 +7,7 @@ package formulaide.ui.utils
 
 import react.ReactElement
 
-typealias UseErrorBoundaryWrapper = (props: ErrorBoundaryProps) -> ReactElement
+typealias UseErrorBoundaryWrapper = (props: ErrorBoundaryProps) -> ReactElement<ErrorBoundaryProps>
 typealias OnDidCatchCallback = (error: Any, errorInfo: Any) -> Unit
 
 //region Kotlin extensions

@@ -1,5 +1,6 @@
 package formulaide.ui.components.cards
 
+import formulaide.ui.utils.classes
 import react.ChildrenBuilder
 import react.FC
 import react.Props
@@ -24,21 +25,21 @@ val CardShell = FC<CardShellProps>("CardShell") { props ->
 
 	div {
 		this.id = props.id
-		className = "m-4 px-8 shadow-lg rounded-lg z-10 relative bg-white $color"
+		classes = "m-4 px-8 shadow-lg rounded-lg z-10 relative bg-white $color"
 
 		props.header?.let { header ->
 			div {
-				className = "sticky top-0 z-40 bg-inherit $paddingTop pb-2"
+				classes = "sticky top-0 z-40 bg-inherit $paddingTop pb-2"
 
 				header(this)
 			}
 		}
 
-		props.children()
+		+props.children
 
 		props.footer?.let { footer ->
 			div {
-				className = "sticky bottom-0 z-40 bg-inherit $paddingBottom pt-2"
+				classes = "sticky bottom-0 z-40 bg-inherit $paddingBottom pt-2"
 
 				footer(this)
 			}

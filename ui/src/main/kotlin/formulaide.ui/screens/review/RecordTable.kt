@@ -5,6 +5,7 @@ import formulaide.api.fields.FormField
 import formulaide.api.fields.SimpleField
 import formulaide.api.fields.asSequenceWithKey
 import formulaide.ui.CrashReporter
+import formulaide.ui.utils.classes
 import react.FC
 import react.RefObject
 import react.dom.html.ReactHTML.div
@@ -35,7 +36,7 @@ val RecordTable = FC<RecordTableProps>("RecordTable") { props ->
 	}
 
 	table {
-		className = "table-auto w-full"
+		classes = "table-auto w-full"
 
 		if (props.expandedRecords.values.any { !it }) { // Display the column titles if at least 1 record is collapsed
 			thead {
@@ -43,18 +44,18 @@ val RecordTable = FC<RecordTableProps>("RecordTable") { props ->
 					val thClasses = "first:pl-8 last:pr-8 py-2"
 
 					if (props.windowState == null) th {
-						className = thClasses
+						classes = thClasses
 						div {
-							className = "mx-4"
+							classes = "mx-4"
 							+"Étape"
 						}
 					}
 
 					columnsToDisplay.forEach { (_, it) ->
 						th {
-							className = thClasses
+							classes = thClasses
 							div {
-								className = "mx-4"
+								classes = "mx-4"
 								+it.name
 							}
 						}
@@ -80,9 +81,9 @@ val RecordTable = FC<RecordTableProps>("RecordTable") { props ->
 				td {
 					colSpan = columnsToDisplay.size
 					div {
-						className = "flex justify-center items-center w-full h-full"
+						classes = "flex justify-center items-center w-full h-full"
 						p {
-							className = "my-10"
+							classes = "my-10"
 							+"Aucun résultat"
 						}
 					}

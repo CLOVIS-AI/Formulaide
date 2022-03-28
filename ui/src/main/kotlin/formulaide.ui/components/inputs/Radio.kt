@@ -1,5 +1,6 @@
 package formulaide.ui.components.inputs
 
+import formulaide.ui.utils.classes
 import react.FC
 import react.Props
 import react.dom.html.InputType
@@ -38,7 +39,7 @@ val RadioButton = FC<RadioButtonProps>("RadioButton") { props ->
 	input {
 		this.type = InputType.radio
 		name = props.radioId
-		className = "mr-1"
+		classes = "mr-1"
 		id = props.buttonId
 		this.value = props.value
 
@@ -47,7 +48,7 @@ val RadioButton = FC<RadioButtonProps>("RadioButton") { props ->
 	}
 
 	label {
-		className = "mr-2"
+		classes = "mr-2"
 
 		+props.text
 		htmlFor = props.buttonId

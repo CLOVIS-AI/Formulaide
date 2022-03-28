@@ -1,5 +1,6 @@
 package formulaide.ui.components.inputs
 
+import formulaide.ui.utils.classes
 import org.w3c.dom.HTMLInputElement
 import react.FC
 import react.dom.html.InputHTMLAttributes
@@ -25,14 +26,14 @@ val CommonInput = FC<InputProps>("CommonInput") { props ->
 
 val Input = FC<InputProps>("Input") { props ->
 	CommonInput {
-		className = largeInputStyle
+		classes = largeInputStyle
 		+props
 	}
 }
 
 val SmallInput = FC<InputProps>("SmallInput") { props ->
 	CommonInput {
-		className = smallInputStyle
+		classes = smallInputStyle
 		+props
 	}
 }

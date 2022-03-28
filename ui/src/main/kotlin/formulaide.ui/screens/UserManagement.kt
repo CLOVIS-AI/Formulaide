@@ -20,6 +20,7 @@ import formulaide.ui.components.inputs.*
 import formulaide.ui.components.text.LightText
 import formulaide.ui.components.useAsync
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
+import formulaide.ui.utils.classes
 import formulaide.ui.utils.useEquals
 import formulaide.ui.utils.useListEquality
 import react.*
@@ -117,7 +118,7 @@ val UserList = FC<Props>("UserList") {
 
 		for (user in filteredUsers) {
 			hr {
-				className = "mb-2"
+				classes = "mb-2"
 			}
 
 			FormField {

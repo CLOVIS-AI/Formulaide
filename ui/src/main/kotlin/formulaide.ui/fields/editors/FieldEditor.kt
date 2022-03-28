@@ -6,6 +6,7 @@ import formulaide.api.fields.Field
 import formulaide.api.types.Arity
 import formulaide.ui.components.inputs.FormField
 import formulaide.ui.components.inputs.Nesting
+import formulaide.ui.utils.classes
 import react.FC
 import react.Props
 import react.dom.html.ReactHTML.div
@@ -41,7 +42,7 @@ val FieldEditor = memo(FC<EditableFieldProps>("FieldEditor") { props ->
 			.takeIf { props.field !is DeepFormField }
 
 		div {
-			className = "flex gap-x-16 flex-wrap"
+			classes = "flex gap-x-16 flex-wrap"
 
 			div {
 				NameEditor { +props }
@@ -49,7 +50,7 @@ val FieldEditor = memo(FC<EditableFieldProps>("FieldEditor") { props ->
 			}
 
 			div {
-				className = "mr-32"
+				classes = "mr-32"
 
 				MetadataEditor { +props }
 			}

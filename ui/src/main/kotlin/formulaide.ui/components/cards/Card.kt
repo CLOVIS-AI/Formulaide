@@ -1,6 +1,7 @@
 package formulaide.ui.components.cards
 
 import formulaide.ui.components.StyledButton
+import formulaide.ui.utils.classes
 import react.FC
 import react.PropsWithChildren
 import react.dom.html.ReactHTML.div
@@ -30,15 +31,15 @@ val Card = FC<CardProps>("Card") { props ->
 		}
 
 		div {
-			className = "pt-4"
-			props.children()
+			classes = "pt-4"
+			+props.children
 		}
 
 		Footer {
 			props.footer?.invoke(this)
 
 			if (actions.isNotEmpty()) div {
-				className = "pt-4"
+				classes = "pt-4"
 
 				for ((text, block) in actions) {
 					StyledButton {

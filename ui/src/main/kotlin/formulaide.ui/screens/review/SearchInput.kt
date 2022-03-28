@@ -8,6 +8,7 @@ import formulaide.api.fields.FormRoot
 import formulaide.api.fields.SimpleField
 import formulaide.ui.components.inputs.ControlledSelect
 import formulaide.ui.components.inputs.Option
+import formulaide.ui.utils.classes
 import react.FC
 import react.dom.html.ReactHTML.p
 import react.useMemo
@@ -23,14 +24,14 @@ val SearchInput = FC<SearchInputProps>("SearchInput") { props ->
 
 	if (selectedSearch == null) {
 		p {
-			className = "mt-4"
+			classes = "mt-4"
 			+"Il n'est pas possible de filtrer les saisies dans ce formulaire."
 		}
 		return@FC
 	}
 
 	p {
-		className = "mt-4"
+		classes = "mt-4"
 		+"Filtrer les dossiers affichés :"
 	}
 

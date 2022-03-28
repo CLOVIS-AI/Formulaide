@@ -8,6 +8,7 @@ import formulaide.ui.components.text.Title
 import formulaide.ui.fields.editors.ImmutableField
 import formulaide.ui.fields.renderers.Field
 import formulaide.ui.reportExceptions
+import formulaide.ui.utils.classes
 import react.FC
 import react.dom.html.ReactHTML.br
 import react.dom.html.ReactHTML.div
@@ -94,7 +95,7 @@ internal val ReviewRecordContents = FC<ReviewRecordContentsProps>("ReviewRecordC
 
 	val state = props.windowState
 	if (state is RecordState.Action && props.windowState != null) div {
-		className = "print:hidden"
+		classes = "print:hidden"
 
 		val action = state.current.obj
 
