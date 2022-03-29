@@ -8,6 +8,7 @@ import formulaide.api.types.Ref
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.types.Ref.Companion.load
 import formulaide.api.types.UploadRequest
+import formulaide.api.users.canAccess
 import formulaide.db.document.*
 import formulaide.server.Auth
 import formulaide.server.Auth.Companion.requireEmployee
@@ -19,6 +20,9 @@ import io.ktor.http.content.*
 import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
+import kotlin.collections.component1
+import kotlin.collections.component2
+import kotlin.collections.set
 
 fun Routing.submissionRoutes() {
 	route("/submissions") {
@@ -126,12 +130,14 @@ fun Routing.submissionRoutes() {
 			}
 
 			post("/recordsToReview") {
-				call.requireEmployee(database)
+				val user = call.requireEmployee(database)
 				val request = call.receive<RecordsToReviewRequest>()
 				val form = database.findForm(request.form.id)
 					?: error("Le formulaire est introuvable : ${request.form.id}")
 
-				//TODO audit: refuse access to the records based on some rights?
+				require(user.toApi().canAccess(form, request.state)) {
+					"Vous n'avez pas accès aux saisies du formulaire « ${form.name} » (${form.id}, utilisateur ${user.email})"
+				}
 
 				val records = submissionsMatchingRecord(request, form)
 

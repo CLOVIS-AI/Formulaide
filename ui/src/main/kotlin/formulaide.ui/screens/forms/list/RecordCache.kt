@@ -4,6 +4,7 @@ import formulaide.api.data.Form
 import formulaide.api.data.Record
 import formulaide.api.data.RecordState
 import formulaide.api.types.Ref.Companion.createRef
+import formulaide.api.users.canAccess
 import formulaide.client.Client
 import formulaide.client.routes.todoListFor
 import formulaide.ui.reportExceptions
@@ -28,10 +29,11 @@ fun CoroutineScope.getRecords(
 	state: RecordState,
 ): GlobalState<List<Record>> = recordsCache.getOrPut(form to state) {
 	GlobalState<List<Record>>(emptyList()).apply {
-		reportExceptions {
-			this@apply.value = client.todoListFor(form, state)
-			recordsCacheModification.value++
-		}
+		if (client.me.canAccess(form, state))
+			reportExceptions {
+				this@apply.value = client.todoListFor(form, state)
+				recordsCacheModification.value++
+			}
 	}
 }
 
@@ -48,8 +50,7 @@ fun CoroutineScope.insertIntoRecordsCache(
 	state: RecordState,
 	records: List<Record>,
 ) {
-	val list = getRecords(client, form, state)
-	list.asDelegated()
+	getRecords(client, form, state).asDelegated()
 		.useListEquality()
 		.useEquals()
 		.update { records }

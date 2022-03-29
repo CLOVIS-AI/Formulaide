@@ -1,5 +1,7 @@
 package formulaide.api.users
 
+import formulaide.api.data.Form
+import formulaide.api.data.RecordState
 import formulaide.api.types.Email
 import formulaide.api.types.Ref
 import formulaide.api.types.Referencable
@@ -24,4 +26,24 @@ data class User(
 
 	override val id: ReferenceId
 		get() = email.email
+}
+
+/**
+ * Is this user allowed to access this [form]'s [state]?
+ *
+ * If [state] is `null`, it is interpreted as asking whether the user is allowed to access the "all records" page for the [form].
+ */
+fun User.canAccess(form: Form, state: RecordState?): Boolean {
+	val user = this
+
+	if (user.administrator)
+		return true
+
+	return when (state) {
+		is RecordState.Action -> user.service.id == state.current.apply {
+			loadFrom(form.actions,
+			         lazy = true)
+		}.obj.reviewer.id
+		is RecordState.Refused, null -> user.service.id in form.actions.map { it.reviewer.id }
+	}
 }
