@@ -4,6 +4,7 @@ import formulaide.api.data.Form
 import formulaide.api.data.FormMetadata
 import formulaide.api.data.RecordState
 import formulaide.api.types.Ref.Companion.createRef
+import formulaide.api.users.canAccess
 import formulaide.client.Client
 import formulaide.client.routes.editForm
 import formulaide.ui.*
@@ -16,6 +17,7 @@ import formulaide.ui.utils.useGlobalState
 import kotlinx.browser.window
 import react.*
 import react.dom.html.ReactHTML.div
+import react.dom.html.ReactHTML.span
 
 external interface FormDescriptionProps : Props {
 	var form: Form
@@ -48,7 +50,7 @@ val FormDescription = FC<FormDescriptionProps>("FormDescription") { props ->
 			action = { navigateTo(Screen.SubmitForm(form.createRef())) }
 		}
 
-		if (user.role >= Role.EMPLOYEE)
+		if (user.role >= Role.EMPLOYEE && user?.canAccess(form, null) == true)
 			StyledButton {
 				text = when {
 					records.isEmpty() -> "Dossiers "
@@ -121,11 +123,15 @@ val FormDescription = FC<FormDescriptionProps>("FormDescription") { props ->
 			}
 		}
 
-		StyledButton {
-			text = "Voir HTML"
-			action = {
-				window.open("${client.hostUrl}/forms/html?id=${form.id}&url=${client.hostUrl}")
+		if (form.public) {
+			StyledButton {
+				text = "Voir HTML"
+				action = {
+					window.open("${client.hostUrl}/forms/html?id=${form.id}&url=${client.hostUrl}")
+				}
 			}
+		} else {
+			span { +" L'export HTML n'est disponible que pour les formulaires publics " }
 		}
 	}
 }

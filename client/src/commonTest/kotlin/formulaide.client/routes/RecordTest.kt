@@ -16,14 +16,12 @@ import formulaide.api.types.Arity
 import formulaide.api.types.Ref
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.types.Ref.Companion.load
+import formulaide.api.users.canAccess
 import formulaide.client.runTest
 import formulaide.client.testAdministrator
 import formulaide.client.testEmployee
 import kotlinx.coroutines.delay
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class RecordTest {
 
@@ -153,12 +151,27 @@ class RecordTest {
 			fields = null,
 		))
 
-		assertEquals(1,
-		             client.todoListFor(assignedForm, RecordState.Action(Ref("1")))
-			             .also { println("Étape 1 : $it") }.size)
-		assertEquals(1,
-		             client.todoListFor(assignedForm, RecordState.Refused)
-			             .also { println("Refusés : $it") }.size)
+		assertTrue(me.canAccess(assignedForm, null))
+
+		assertEquals(
+			0,
+			client.todoListFor(assignedForm, RecordState.Action(Ref("0")))
+				.also { println("Étape 0 : $it") }.size
+		)
+		assertFails {
+			// The action #1 is not assigned to me
+			client.todoListFor(assignedForm, RecordState.Action(Ref("1"))).size
+		}
+		assertEquals(
+			1,
+			// The admin is not assigned either, but they can still access it
+			admin.todoListFor(assignedForm, RecordState.Action(Ref("1"))).size
+		)
+		assertEquals(
+			1,
+			client.todoListFor(assignedForm, RecordState.Refused)
+				.also { println("Refusés : $it") }.size
+		)
 
 		// Cleanup…
 		admin.closeService(otherService)
