@@ -97,7 +97,7 @@ fun Routing.submissionRoutes() {
 				id = Ref.SPECIAL_TOKEN_NEW,
 				form = form.createRef(),
 				root = null, // The raw HTML can only be used for the original submission
-				data = data,
+				data = data.mapValues { (_, v) -> v.trim() },
 			)
 			val dbSubmission = database.saveSubmission(submission)
 			database.createRecord(dbSubmission.toApi())
