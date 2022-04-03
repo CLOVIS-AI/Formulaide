@@ -1,4 +1,4 @@
-FROM openjdk:11
+FROM openjdk:18-alpine
 
 COPY build/distributions/server-*.tar /home/server/server.tar
 RUN cd /home/server/ && \
