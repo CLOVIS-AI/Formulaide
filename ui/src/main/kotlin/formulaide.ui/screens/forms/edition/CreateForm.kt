@@ -22,6 +22,7 @@ import formulaide.ui.components.inputs.Field
 import formulaide.ui.components.inputs.Input
 import formulaide.ui.components.useAsyncEffectOnce
 import formulaide.ui.components.useLocalStorage
+import formulaide.ui.utils.traceRenders
 import react.FC
 import react.Props
 import react.dom.html.InputType

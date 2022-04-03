@@ -7,8 +7,8 @@ import formulaide.ui.components.cards.FormCard
 import formulaide.ui.components.cards.submit
 import formulaide.ui.components.inputs.Field
 import formulaide.ui.components.inputs.Input
-import formulaide.ui.traceRenders
 import formulaide.ui.useClient
+import formulaide.ui.utils.traceRenders
 import react.FC
 import react.Props
 import react.dom.html.InputType

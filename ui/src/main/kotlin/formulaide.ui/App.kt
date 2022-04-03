@@ -17,7 +17,6 @@ import formulaide.ui.components.useAsyncEffectOnce
 import formulaide.ui.screens.forms.list.clearRecords
 import formulaide.ui.utils.*
 import io.ktor.client.fetch.*
-import kotlinx.browser.window
 import kotlinx.coroutines.await
 import kotlinx.coroutines.delay
 import react.*
@@ -25,20 +24,6 @@ import react.dom.html.ReactHTML.a
 import react.dom.html.ReactHTML.br
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.p
-
-//region Production / development environments
-internal var inProduction = true
-internal val defaultClient
-	get() = when (inProduction) {
-		true -> Client.Anonymous.connect(window.location.protocol + "//" + window.location.host)
-		false -> Client.Anonymous.connect("http://localhost:8000")
-	}
-
-fun traceRenders(componentName: String) {
-	if (!inProduction)
-		console.log("Render : $componentName")
-}
-//endregion
 
 //region Global state
 
