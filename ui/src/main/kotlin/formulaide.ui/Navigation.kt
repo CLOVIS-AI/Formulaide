@@ -23,6 +23,7 @@ import formulaide.ui.screens.homepage.Homepage
 import formulaide.ui.screens.homepage.PasswordEditor
 import formulaide.ui.screens.review.displayName
 import formulaide.ui.utils.GlobalState
+import formulaide.ui.utils.traceRenders
 import formulaide.ui.utils.useGlobalState
 import kotlinx.browser.document
 import kotlinx.browser.window

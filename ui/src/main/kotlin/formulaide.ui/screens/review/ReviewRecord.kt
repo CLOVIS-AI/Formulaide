@@ -10,7 +10,11 @@ import formulaide.client.routes.findSubmission
 import formulaide.ui.components.CrashReporter
 import formulaide.ui.components.cards.Card
 import formulaide.ui.components.useAsync
+import formulaide.ui.reportExceptions
+import formulaide.ui.useClient
+import formulaide.ui.useUser
 import formulaide.ui.utils.replace
+import formulaide.ui.utils.traceRenders
 import kotlinx.coroutines.launch
 import react.FC
 import react.dom.html.ReactHTML.tr

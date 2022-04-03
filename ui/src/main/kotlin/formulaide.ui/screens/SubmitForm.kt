@@ -12,6 +12,7 @@ import formulaide.ui.components.text.ErrorText
 import formulaide.ui.components.useAsync
 import formulaide.ui.fields.renderers.Field
 import formulaide.ui.utils.parseHtmlForm
+import formulaide.ui.utils.traceRenders
 import kotlinx.coroutines.launch
 import react.FC
 import react.Props

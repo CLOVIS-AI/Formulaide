@@ -9,7 +9,7 @@ import formulaide.ui.components.inputs.Field
 import formulaide.ui.components.inputs.Input
 import formulaide.ui.components.inputs.Nesting
 import formulaide.ui.components.inputs.Select
-import formulaide.ui.traceRenders
+import formulaide.ui.utils.traceRenders
 import react.ChildrenBuilder
 import react.FC
 import react.Props

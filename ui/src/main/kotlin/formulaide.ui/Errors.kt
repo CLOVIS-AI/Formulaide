@@ -4,6 +4,7 @@ import formulaide.ui.components.cards.Card
 import formulaide.ui.components.cards.action
 import formulaide.ui.components.useAsync
 import formulaide.ui.utils.GlobalState
+import formulaide.ui.utils.traceRenders
 import formulaide.ui.utils.useGlobalState
 import io.ktor.client.call.*
 import io.ktor.client.features.*
