@@ -23,7 +23,7 @@ fun parseHtmlForm(htmlForm: HTMLFormElement, form: Form, root: Action?): FormSub
 	return FormSubmission(
 		Ref.SPECIAL_TOKEN_NEW,
 		form.createRef(),
-		data = answers,
+		data = answers.mapValues { (_, v) -> v.trim() },
 		root = root?.createRef(),
 	).also { it.parse(form) }
 }
