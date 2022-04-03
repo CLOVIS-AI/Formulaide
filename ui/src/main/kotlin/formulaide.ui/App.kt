@@ -18,10 +18,10 @@ import formulaide.ui.components.useAsyncEffectOnce
 import formulaide.ui.screens.forms.list.clearRecords
 import formulaide.ui.utils.*
 import io.ktor.client.fetch.*
+import kotlinext.js.jso
 import kotlinx.browser.window
 import kotlinx.coroutines.await
 import kotlinx.coroutines.delay
-import kotlinx.js.jso
 import org.w3c.dom.get
 import react.*
 import react.dom.html.ReactHTML.a
@@ -221,7 +221,7 @@ val App = FC<Props>("App") {
 			classes = "grow text-left"
 
 			footerText?.let { text ->
-				text.split("\n").forEach { br {}; FooterText { this.text = it } }
+				text.split("\n").forEach { p { FooterText { this.text = it } } }
 			}
 		}
 
