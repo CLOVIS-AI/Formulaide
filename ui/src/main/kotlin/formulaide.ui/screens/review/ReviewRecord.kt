@@ -7,7 +7,7 @@ import formulaide.api.fields.FormField
 import formulaide.api.types.Ref.Companion.load
 import formulaide.client.Client
 import formulaide.client.routes.findSubmission
-import formulaide.ui.*
+import formulaide.ui.components.CrashReporter
 import formulaide.ui.components.cards.Card
 import formulaide.ui.components.useAsync
 import formulaide.ui.utils.replace

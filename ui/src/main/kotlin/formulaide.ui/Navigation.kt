@@ -7,6 +7,7 @@ import formulaide.api.types.Email
 import formulaide.api.types.Ref
 import formulaide.api.users.User
 import formulaide.ui.Role.Companion.role
+import formulaide.ui.components.CrashReporter
 import formulaide.ui.components.StyledButton
 import formulaide.ui.components.TopBar
 import formulaide.ui.components.cards.Card

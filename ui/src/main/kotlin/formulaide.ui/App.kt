@@ -11,7 +11,6 @@ import formulaide.client.routes.*
 import formulaide.ui.components.WindowFrame
 import formulaide.ui.components.cards.Card
 import formulaide.ui.components.text.FooterText
-import formulaide.ui.components.text.LightText
 import formulaide.ui.components.useAsync
 import formulaide.ui.components.useAsyncEffect
 import formulaide.ui.components.useAsyncEffectOnce
@@ -254,97 +253,3 @@ val StyledAppFrame = FC<Props>("StyledFrame") {
 		}
 	}
 }
-
-//region Crash reporter
-
-private const val errorSectionClass = "mt-2"
-
-val CrashReporter = FC<PropsWithChildren>("CrashReporter") { props ->
-	val (boundary, didCatch, error) = useErrorBoundary()
-	val config by useConfig()
-
-	if (didCatch) {
-		Card {
-			title = "Erreur"
-			subtitle = "Le site a rencontré un échec fatal"
-			failed = true
-
-			p {
-				+"Veuillez signaler cette erreur à l'administrateur, en lui envoyant les informations ci-dessous, à l'adresse ${config.reportEmailOrDefault} :"
-			}
-
-			p {
-				classes = errorSectionClass
-
-				+"Ce que j'étais en train de faire : "
-				br {}
-				LightText { text = "Ici, expliquez ce que vous étiez en train de faire quand le problème a eu lieu." }
-			}
-
-			p {
-				classes = errorSectionClass
-
-				+"Error type : "
-				br {}
-				LightText { text = "Plantage de l'application, capturé par CrashReporter" }
-			}
-
-			p {
-				classes = errorSectionClass
-
-				+"Throwable : "
-				error?.stackTraceToString()
-					?.removeSurrounding("\n")
-					?.split("\n")
-					?.forEach {
-						br {}
-						LightText { text = it.trim() }
-					}
-					?: LightText { text = "No stacktrace available" }
-			}
-
-			for (local in listOf("form-fields", "form-actions", "data-fields")) {
-				p {
-					classes = errorSectionClass
-
-					+"Local storage : $local"
-					br {}
-					LightText { text = window.localStorage[local].toString() }
-				}
-			}
-
-			p {
-				classes = errorSectionClass
-
-				+"Client : "
-				br {}
-				LightText { text = client.value.hostUrl }
-				br {}
-				LightText { text = (client.value as? Client.Authenticated)?.me.toString() }
-			}
-
-			for ((globalName, global) in mapOf(
-				"Groupes" to composites,
-				"Formulaires" to forms,
-				"Services" to services,
-			)) {
-				p {
-					classes = errorSectionClass
-
-					+"Cache : $globalName"
-					global.value.forEach {
-						br {}
-						LightText { text = it.toString() }
-					}
-				}
-			}
-		}
-	} else {
-		child(boundary(
-			jso<ErrorBoundaryProps>()
-				.apply { children = props.children }
-		))
-	}
-}
-
-//endregion
