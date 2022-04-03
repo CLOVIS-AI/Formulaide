@@ -4,6 +4,7 @@ import formulaide.api.data.*
 import formulaide.api.fields.FormField
 import formulaide.api.fields.FormRoot
 import formulaide.api.fields.asSequence
+import formulaide.api.fields.asSequenceWithKey
 import formulaide.api.types.Ref
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.types.Ref.Companion.load
@@ -190,16 +191,29 @@ private fun String.sanitizeForCsv() = this
 	.replace("\n", "\\n")
 	.replace(",", " ")
 
-private fun Form.csvFields() = mainFields.asSequence() +
+private fun Form.csvFields() = mainFields.asSequence(checkArity = true) +
 		actions.map { it.fields ?: FormRoot(emptyList()) }
-			.flatMap { it.asSequence() }
+			.flatMap { it.asSequence(checkArity = true) }
+
+private fun Form.csvFieldsWithKey() =
+	mainFields.asSequenceWithKey(checkArity = true).map { "_:${it.first}" to it.second } +
+			actions.map { it.id to (it.fields ?: FormRoot(emptyList())) }
+				.flatMap { (rootId, root) ->
+					root.asSequenceWithKey(checkArity = true).map { "$rootId:${it.first}" to it.second }
+				}
 
 private fun StringBuilder.csvBuildColumns(form: Form) {
+	// Column ID
+	for ((key, _) in form.csvFieldsWithKey()) {
+		append(key)
+		append(',')
+	}
+	append('\n')
+
+	// Column name
 	for (field in form.csvFields()) {
-		repeat(field.arity.max) {
-			append(field.name.sanitizeForCsv())
-			append(',')
-		}
+		append(field.name.sanitizeForCsv())
+		append(',')
 	}
 	append('\n')
 }
@@ -214,15 +228,15 @@ private suspend fun StringBuilder.csvBuildRow(form: Form, record: Record) {
 
 			append(submission.data[currentKey]?.sanitizeForCsv() ?: "")
 			append(',')
+
+			if (field is FormField.Union<*>)
+				for (subField in field.options)
+					csvBuildField(subField, submission, "$currentKey:${subField.id}")
+
+			if (field is FormField.Composite)
+				for (subField in field.fields)
+					csvBuildField(subField, submission, "$currentKey:${subField.id}")
 		}
-
-		if (field is FormField.Union<*>)
-			for (subField in field.options)
-				csvBuildField(subField, submission, "$key:${subField.id}")
-
-		if (field is FormField.Composite)
-			for (subField in field.fields)
-				csvBuildField(subField, submission, "$key:${subField.id}")
 	}
 
 	val initialSubmission = record.history
