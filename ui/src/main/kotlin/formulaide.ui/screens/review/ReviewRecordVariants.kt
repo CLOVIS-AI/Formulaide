@@ -131,16 +131,18 @@ internal val ReviewRecordExpanded = FC<ReviewRecordVariantProps>("ReviewRecordEx
 
 			reviewRecordButtons(props, formCardId)
 
-			ReviewRecordPrintImages()
+			ReviewRecordPrintImagesTop()
 			ReviewRecordContents { +props }
+			ReviewRecordPrintImagesBottom()
 		} else FormCard {
 			id = formCardId
 			title = "Dossier"
 
 			reviewRecordButtons(props, formCardId)
 
-			ReviewRecordPrintImages()
+			ReviewRecordPrintImagesTop()
 			ReviewRecordContents { +props }
+			ReviewRecordPrintImagesBottom()
 
 			Footer {
 				ReviewRecordDecision {
@@ -194,29 +196,30 @@ private fun CardProps.reviewRecordButtons(props: ReviewRecordVariantProps, formC
 	action("Récépissé") { printElement(formCardId) }
 }
 
-private const val printImageDiv = "flex grow shrink object-contain"
 private const val printImage = "min-w-[20%] max-w-[50%] object-contain"
 
-private val ReviewRecordPrintImages = FC<Props>("ReviewRecordPrintImages") {
+private val ReviewRecordPrintImagesTop = FC<Props>("ReviewRecordPrintImagesTop") {
 	val config by useConfig()
 
 	div {
-		classes = "max-w-full gap-2 my-2 max-h-20 min-h-5 justify-between hidden print:flex"
+		classes = "hidden print:flex justify-center"
 
-		div {
-			classes = "$printImageDiv justify-start"
-			img {
-				classes = printImage
-				src = config?.pdfLeftImageURL
-			}
+		img {
+			classes = printImage
+			src = config?.pdfLeftImageURL
 		}
+	}
+}
 
-		div {
-			classes = "$printImageDiv justify-end"
-			img {
-				classes = printImage
-				src = config?.pdfRightImageURL
-			}
+private val ReviewRecordPrintImagesBottom = FC<Props>("ReviewRecordPrintImagesBottom") {
+	val config by useConfig()
+
+	div {
+		classes = "hidden print:flex justify-end max-h-32"
+
+		img {
+			classes = printImage
+			src = config?.pdfRightImageURL
 		}
 	}
 }
