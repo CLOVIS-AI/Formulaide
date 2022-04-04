@@ -1,6 +1,7 @@
 package formulaide.ui
 
 import formulaide.ui.utils.detectTests
+import formulaide.ui.utils.traceRenders
 import kotlinext.js.require
 import kotlinx.browser.document
 import react.createElement

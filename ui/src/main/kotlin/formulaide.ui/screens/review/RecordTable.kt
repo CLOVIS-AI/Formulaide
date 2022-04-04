@@ -4,7 +4,7 @@ import formulaide.api.data.Record
 import formulaide.api.fields.FormField
 import formulaide.api.fields.SimpleField
 import formulaide.api.fields.asSequenceWithKey
-import formulaide.ui.CrashReporter
+import formulaide.ui.components.CrashReporter
 import formulaide.ui.utils.classes
 import react.FC
 import react.RefObject

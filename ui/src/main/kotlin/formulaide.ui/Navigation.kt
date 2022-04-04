@@ -7,6 +7,7 @@ import formulaide.api.types.Email
 import formulaide.api.types.Ref
 import formulaide.api.users.User
 import formulaide.ui.Role.Companion.role
+import formulaide.ui.components.CrashReporter
 import formulaide.ui.components.StyledButton
 import formulaide.ui.components.TopBar
 import formulaide.ui.components.cards.Card
@@ -22,6 +23,7 @@ import formulaide.ui.screens.homepage.Homepage
 import formulaide.ui.screens.homepage.PasswordEditor
 import formulaide.ui.screens.review.displayName
 import formulaide.ui.utils.GlobalState
+import formulaide.ui.utils.traceRenders
 import formulaide.ui.utils.useGlobalState
 import kotlinx.browser.document
 import kotlinx.browser.window

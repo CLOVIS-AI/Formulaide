@@ -6,9 +6,9 @@ import formulaide.api.fields.SimpleField
 import formulaide.client.Client
 import formulaide.client.routes.downloadFile
 import formulaide.ui.components.StyledButton
-import formulaide.ui.traceRenders
 import formulaide.ui.useClient
 import formulaide.ui.utils.classes
+import formulaide.ui.utils.traceRenders
 import kotlinx.browser.window
 import org.w3c.dom.url.URL
 import org.w3c.files.Blob
