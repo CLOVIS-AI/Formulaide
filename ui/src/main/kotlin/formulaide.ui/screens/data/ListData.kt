@@ -10,6 +10,7 @@ import formulaide.ui.components.cards.Card
 import formulaide.ui.components.inputs.Checkbox
 import formulaide.ui.components.inputs.Field
 import formulaide.ui.utils.map
+import formulaide.ui.utils.traceRenders
 import react.FC
 import react.Props
 import react.useState

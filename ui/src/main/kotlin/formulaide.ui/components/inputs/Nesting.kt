@@ -1,8 +1,8 @@
 package formulaide.ui.components.inputs
 
 import formulaide.ui.components.StyledButton
-import formulaide.ui.traceRenders
 import formulaide.ui.utils.classes
+import formulaide.ui.utils.traceRenders
 import react.FC
 import react.PropsWithChildren
 import react.dom.html.ReactHTML.div

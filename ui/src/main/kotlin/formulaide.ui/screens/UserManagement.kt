@@ -21,6 +21,7 @@ import formulaide.ui.components.text.LightText
 import formulaide.ui.components.useAsync
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
 import formulaide.ui.utils.classes
+import formulaide.ui.utils.traceRenders
 import formulaide.ui.utils.useEquals
 import formulaide.ui.utils.useListEquality
 import react.*
