@@ -180,6 +180,7 @@ internal val ReviewRecordExpanded = FC<ReviewRecordVariantProps>("ReviewRecordEx
 					}
 
 					updateReason { null }
+					htmlForm.reset()
 				}
 			}
 		}
