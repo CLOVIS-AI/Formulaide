@@ -21,7 +21,6 @@ import kotlinx.coroutines.await
 import kotlinx.coroutines.delay
 import react.*
 import react.dom.html.ReactHTML.a
-import react.dom.html.ReactHTML.br
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.p
 
@@ -203,7 +202,7 @@ val App = FC<Props>("App") {
 			classes = "grow text-left"
 
 			footerText?.let { text ->
-				text.split("\n").forEach { br {}; FooterText { this.text = it } }
+				text.split("\n").forEach { p { FooterText { this.text = it } } }
 			}
 		}
 
