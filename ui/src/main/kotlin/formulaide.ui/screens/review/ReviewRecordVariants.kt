@@ -180,6 +180,9 @@ internal val ReviewRecordExpanded = FC<ReviewRecordVariantProps>("ReviewRecordEx
 					scope.reportExceptions {
 						props.refresh.current?.invoke()
 					}
+
+					updateReason { null }
+					htmlForm.reset()
 				}
 			}
 		}
