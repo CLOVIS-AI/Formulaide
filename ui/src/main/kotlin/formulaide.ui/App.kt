@@ -3,7 +3,6 @@ package formulaide.ui
 import formulaide.api.data.Composite
 import formulaide.api.data.Config
 import formulaide.api.data.Form
-import formulaide.api.data.reportEmailOrDefault
 import formulaide.api.users.Service
 import formulaide.client.Client
 import formulaide.client.refreshToken
@@ -126,6 +125,8 @@ val App = FC<Props>("App") {
 
 	val client by useClient("App")
 	val scope = useAsync()
+
+	@Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
 	var config by useConfig()
 
 	val errors = useErrors()
@@ -209,12 +210,8 @@ val App = FC<Props>("App") {
 		div {
 			classes = "grow text-right"
 
-			a {
-				href = "mailto:${config.reportEmailOrDefault.email}"
-				FooterText {
-					this@a.classes = "hover:underline"
-					text = "Signaler un problème"
-				}
+			ReportIssue {
+				footer = true
 			}
 		}
 	}
