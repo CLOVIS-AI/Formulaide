@@ -20,7 +20,7 @@ kotlin {
 	}
 	jvm()
 
-	@kotlin.Suppress("UNUSED_VARIABLE")
+	@Suppress("UNUSED_VARIABLE")
 	sourceSets {
 		val commonMain by getting {
 			dependencies {
@@ -29,7 +29,8 @@ kotlin {
 				api(project(":api"))
 
 				implementation(Ktor.client.core)
-				implementation(Ktor.client.serialization)
+				implementation("io.ktor:ktor-client-content-negotiation:2.0.1")
+				implementation("io.ktor:ktor-serialization-kotlinx-json:2.0.1")
 				implementation(Ktor.client.json)
 				implementation(Ktor.client.logging)
 				implementation(Ktor.client.auth)

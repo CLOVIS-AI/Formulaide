@@ -7,7 +7,7 @@ import formulaide.ui.utils.GlobalState
 import formulaide.ui.utils.traceRenders
 import formulaide.ui.utils.useGlobalState
 import io.ktor.client.call.*
-import io.ktor.client.features.*
+import io.ktor.client.plugins.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -44,7 +44,7 @@ val ErrorCard = FC<ErrorProps>("ErrorCard") { props ->
 		scope.launch {
 			when (error) {
 				is ResponseException -> {
-					val responseText = error.response.receive<String>()
+					val responseText = error.response.body<String>()
 
 					if (responseText.isBlank()) {
 						title = error.response.status.toString()

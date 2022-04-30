@@ -6,21 +6,21 @@ import formulaide.client.Client.Authenticated
 import formulaide.client.files.MultipartUpload
 import formulaide.client.routes.getMe
 import io.ktor.client.*
-import io.ktor.client.features.auth.*
-import io.ktor.client.features.auth.providers.*
-import io.ktor.client.features.json.*
-import io.ktor.client.features.json.serializer.*
-import io.ktor.client.features.json.serializer.KotlinxSerializer.Companion.DefaultJson
+import io.ktor.client.call.*
+import io.ktor.client.plugins.auth.*
+import io.ktor.client.plugins.auth.providers.*
+import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.*
 
 /**
  * Common behavior between [Anonymous] and [Authenticated].
  */
 sealed class Client(
 	val hostUrl: String,
-	internal val client: HttpClient
+	internal val client: HttpClient,
 ) {
 
 	/**
@@ -30,18 +30,18 @@ sealed class Client(
 		method: HttpMethod,
 		url: String,
 		body: Any? = null,
-		block: HttpRequestBuilder.() -> Unit = {}
+		block: HttpRequestBuilder.() -> Unit = {},
 	): Out {
 		return client.request(hostUrl + url) {
 			this.method = method
 
 			if (body != null) {
 				contentType(ContentType.Application.Json)
-				this.body = body
+				setBody(body)
 			}
 
 			block()
-		}
+		}.body()
 	}
 
 	internal suspend inline fun <reified Out> post(
@@ -64,11 +64,13 @@ sealed class Client(
 		parts.forEach { it.load() }
 
 		return post(url) {
-			body = MultiPartFormDataContent(
-				formData {
-					for (part in parts)
-						part.applyTo(this)
-				}
+			setBody(
+				MultiPartFormDataContent(
+					formData {
+						for (part in parts)
+							part.applyTo(this)
+					}
+				)
 			)
 			block()
 		}
@@ -79,8 +81,8 @@ sealed class Client(
 		internal val jsonSerializer = DefaultJson
 
 		private fun createClient(token: String? = null) = HttpClient {
-			install(JsonFeature) {
-				serializer = KotlinxSerializer(jsonSerializer)
+			install(ContentNegotiation) {
+				json(jsonSerializer)
 			}
 
 			if (token != null)
