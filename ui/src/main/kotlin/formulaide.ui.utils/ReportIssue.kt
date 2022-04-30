@@ -14,6 +14,7 @@ external fun encodeURIComponent(encodedURI: String): String
 external interface ReportIssueProps : Props {
 	var text: String?
 	var footer: Boolean?
+	var error: Throwable?
 }
 
 val ReportIssue = FC<ReportIssueProps>("ReportIssue") { props ->
@@ -22,6 +23,7 @@ val ReportIssue = FC<ReportIssueProps>("ReportIssue") { props ->
 
 	val text = props.text ?: "Signaler un problème"
 	val footer = props.footer ?: false
+	val error = props.error
 	var body = """
 		MERCI DE REMPLACER CE MESSAGE EN EXPLIQUANT CE QUE VOUS ÉTIEZ EN TRAIN DE FAIRE.
 		N'OUBLIEZ PAS D'AJOUTER UN SUJET QUI RÉSUME LE PROBLÈME EN QUELQUES MOTS.
@@ -34,6 +36,13 @@ val ReportIssue = FC<ReportIssueProps>("ReportIssue") { props ->
 		API URL: ${client.hostUrl}
 		User: ${(client as? Client.Authenticated)?.me?.toString() ?: "anonymous user"}
 	""".trimIndent()
+
+	if (error != null) {
+		body += """
+			
+			Error: ${error.stackTraceToString()}
+		""".trimIndent()
+	}
 
 	a {
 		href = "mailto:${config.reportEmailOrDefault.email}?body=${encodeURIComponent(body)}"
