@@ -8,12 +8,12 @@ import formulaide.server.Auth.Companion.requireAdmin
 import formulaide.server.Auth.Companion.requireEmployee
 import formulaide.server.allowUnsafeCookie
 import formulaide.server.database
-import io.ktor.application.*
-import io.ktor.auth.*
 import io.ktor.http.*
-import io.ktor.request.*
-import io.ktor.response.*
-import io.ktor.routing.*
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import io.ktor.util.date.*
 
 private fun ApplicationCall.setRefreshTokenCookie(value: String) {
@@ -23,14 +23,16 @@ private fun ApplicationCall.setRefreshTokenCookie(value: String) {
 	if (!this.application.developmentMode && !allowUnsafeCookie)
 		extensions["Secure"] = null
 
-	response.cookies.append(Cookie(
-		"REFRESH-TOKEN",
-		value = value,
-		expires = GMTDate() + Auth.refreshTokenExpiration.toMillis(),
-		httpOnly = true,
-		path = "/",
-		extensions = extensions,
-	))
+	response.cookies.append(
+		Cookie(
+			"REFRESH-TOKEN",
+			value = value,
+			expires = GMTDate() + Auth.refreshTokenExpiration.toMillis(),
+			httpOnly = true,
+			path = "/",
+			extensions = extensions,
+		)
+	)
 }
 
 fun Routing.userRoutes(auth: Auth) {
@@ -46,8 +48,10 @@ fun Routing.userRoutes(auth: Auth) {
 				call.respond(TokenResponse(accessToken))
 			} catch (e: Exception) {
 				e.printStackTrace()
-				call.respondText("Les informations de connexion sont incorrectes. Veuillez attendre quelques secondes avant de réessayer.",
-				                 status = HttpStatusCode.Forbidden)
+				call.respondText(
+					"Les informations de connexion sont incorrectes. Veuillez attendre quelques secondes avant de réessayer.",
+					status = HttpStatusCode.Forbidden
+				)
 			}
 		}
 
@@ -92,8 +96,10 @@ fun Routing.userRoutes(auth: Auth) {
 						auth.login(PasswordLogin(email = user.email, password = oldPassword))
 					} catch (e: Exception) {
 						e.printStackTrace()
-						call.respondText("Les informations de connexion sont incorrectes.",
-						                 status = HttpStatusCode.Forbidden)
+						call.respondText(
+							"Les informations de connexion sont incorrectes.",
+							status = HttpStatusCode.Forbidden
+						)
 						return@post
 					}
 				} else {

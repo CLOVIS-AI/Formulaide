@@ -9,14 +9,17 @@ import formulaide.db.Database
 import formulaide.db.document.createService
 import formulaide.server.Auth.Companion.Employee
 import formulaide.server.routes.*
-import io.ktor.application.*
-import io.ktor.auth.*
-import io.ktor.auth.jwt.*
-import io.ktor.features.*
 import io.ktor.http.*
-import io.ktor.response.*
-import io.ktor.routing.*
-import io.ktor.serialization.*
+import io.ktor.serialization.kotlinx.json.*
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
+import io.ktor.server.plugins.conditionalheaders.*
+import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.plugins.cors.routing.*
+import io.ktor.server.plugins.statuspages.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
@@ -34,16 +37,28 @@ fun main(args: Array<String>) {
 		runBlocking {
 			val service = database.createService("Service informatique")
 			val auth = Auth(database)
-			auth.newAccount(NewUser("admin-development-password",
-			                        User(Email("admin@formulaide"),
-			                             "Administrateur",
-			                             Ref(service.id.toString()),
-			                             true)))
-			auth.newAccount(NewUser("employee-development-password",
-			                        User(Email("employee@formulaide"),
-			                             "Employé",
-			                             Ref(service.id.toString()),
-			                             false)))
+			auth.newAccount(
+				NewUser(
+					"admin-development-password",
+					User(
+						Email("admin@formulaide"),
+						"Administrateur",
+						Ref(service.id.toString()),
+						true
+					)
+				)
+			)
+			auth.newAccount(
+				NewUser(
+					"employee-development-password",
+					User(
+						Email("employee@formulaide"),
+						"Employé",
+						Ref(service.id.toString()),
+						false
+					)
+				)
+			)
 		}
 	}
 
@@ -74,9 +89,9 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 		anyHost()
 		allowCredentials = true
 		allowSameOrigin = true
-		header("Accept")
-		header("Content-Type")
-		header("Authorization")
+		allowHeader("Accept")
+		allowHeader("Content-Type")
+		allowHeader("Authorization")
 	}
 
 	install(Authentication) {
@@ -91,7 +106,7 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 	install(ConditionalHeaders)
 
 	install(StatusPages) {
-		exception<Throwable> { error ->
+		exception<Throwable> { call, error ->
 			call.respondText(error.message ?: error.toString(), status = HttpStatusCode.BadRequest)
 			error.printStackTrace()
 		}
@@ -108,12 +123,14 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 		fileRoutes()
 
 		get("/config") {
-			call.respond(Config(
-				reportEmail = System.getenv("formulaide_support_email")?.let { Email(it) },
-				helpURL = System.getenv("formulaide_help_url"),
-				pdfLeftImageURL = System.getenv("formulaide_pdf_image_left_url")?.takeIf { it.isNotBlank() },
-				pdfRightImageURL = System.getenv("formulaide_pdf_image_right_url")?.takeIf { it.isNotBlank() },
-			))
+			call.respond(
+				Config(
+					reportEmail = System.getenv("formulaide_support_email")?.let { Email(it) },
+					helpURL = System.getenv("formulaide_help_url"),
+					pdfLeftImageURL = System.getenv("formulaide_pdf_image_left_url")?.takeIf { it.isNotBlank() },
+					pdfRightImageURL = System.getenv("formulaide_pdf_image_right_url")?.takeIf { it.isNotBlank() },
+				)
+			)
 		}
 	}
 }
