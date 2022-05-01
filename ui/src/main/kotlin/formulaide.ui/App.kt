@@ -3,7 +3,6 @@ package formulaide.ui
 import formulaide.api.data.Composite
 import formulaide.api.data.Config
 import formulaide.api.data.Form
-import formulaide.api.data.reportEmailOrDefault
 import formulaide.api.users.Service
 import formulaide.client.Client
 import formulaide.client.refreshToken
@@ -17,14 +16,9 @@ import formulaide.ui.components.useAsyncEffectOnce
 import formulaide.ui.screens.forms.list.clearRecords
 import formulaide.ui.utils.*
 import io.ktor.client.fetch.*
-import kotlinext.js.jso
-import kotlinx.browser.window
 import kotlinx.coroutines.await
 import kotlinx.coroutines.delay
-import org.w3c.dom.get
 import react.*
-import react.dom.html.ReactHTML.a
-import react.dom.html.ReactHTML.br
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.p
 
@@ -130,6 +124,8 @@ val App = FC<Props>("App") {
 
 	val client by useClient("App")
 	val scope = useAsync()
+
+	@Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
 	var config by useConfig()
 
 	val errors = useErrors()
@@ -213,12 +209,8 @@ val App = FC<Props>("App") {
 		div {
 			classes = "grow text-right"
 
-			a {
-				href = "mailto:${config.reportEmailOrDefault.email}"
-				FooterText {
-					this@a.classes = "hover:underline"
-					text = "Signaler un problème"
-				}
+			ReportIssue {
+				footer = true
 			}
 		}
 	}

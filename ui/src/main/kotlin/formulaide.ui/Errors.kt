@@ -4,14 +4,16 @@ import formulaide.ui.components.cards.Card
 import formulaide.ui.components.cards.action
 import formulaide.ui.components.useAsync
 import formulaide.ui.utils.GlobalState
+import formulaide.ui.utils.ReportIssue
 import formulaide.ui.utils.traceRenders
 import formulaide.ui.utils.useGlobalState
 import io.ktor.client.call.*
-import io.ktor.client.features.*
+import io.ktor.client.plugins.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import react.*
+import react.dom.html.ReactHTML.div
 
 private val errors = GlobalState(listOf<Throwable>())
 fun ChildrenBuilder.useErrors(): List<Throwable> {
@@ -44,7 +46,7 @@ val ErrorCard = FC<ErrorProps>("ErrorCard") { props ->
 		scope.launch {
 			when (error) {
 				is ResponseException -> {
-					val responseText = error.response.receive<String>()
+					val responseText = error.response.body<String>()
 
 					if (responseText.isBlank()) {
 						title = error.response.status.toString()
@@ -64,13 +66,22 @@ val ErrorCard = FC<ErrorProps>("ErrorCard") { props ->
 		this.subtitle = subtitle
 		this.failed = true
 
-		action("OK") {
+		action("Cacher") {
 			val index = errors.indexOf(error)
 			errors = errors.subList(0, index) + errors.subList(index + 1, errors.size)
 		}
 
 		body?.let {
 			+it
+		}
+
+		div {
+			+"Si vous ne comprenez pas ce que cette erreur signifie, vous pouvez la signaler aux administrateurs "
+			ReportIssue {
+				text = "en cliquant ici"
+				this.error = error
+			}
+			+"."
 		}
 	}
 }

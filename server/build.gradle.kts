@@ -11,6 +11,10 @@ plugins {
 
 dependencies {
 	implementation(kotlin("stdlib"))
+	implementation("io.ktor:ktor-server-status-pages:2.0.1")
+	implementation("io.ktor:ktor-server-conditional-headers:2.0.1")
+	implementation("io.ktor:ktor-server-cors:2.0.1")
+	implementation("io.ktor:ktor-server-content-negotiation:2.0.1")
 	testImplementation(kotlin("test"))
 	testImplementation(kotlin("test-junit"))
 
@@ -19,20 +23,19 @@ dependencies {
 
 	implementation(Ktor.server.core)
 	implementation(Ktor.server.netty)
-	implementation(Ktor.features.htmlBuilder)
-	implementation(Ktor.features.serialization)
-	implementation(KotlinX.serialization.json)
-	testImplementation("io.ktor:ktor-server-tests:_")
+	implementation("io.ktor:ktor-server-html-builder:2.0.1")
+	implementation("io.ktor:ktor-serialization-kotlinx-json:2.0.1")
 	implementation("ch.qos.logback:logback-classic:_")
 
-	implementation(Ktor.features.auth)
-	implementation(Ktor.features.authJwt)
+	implementation("io.ktor:ktor-server-auth:2.0.1")
+	implementation("io.ktor:ktor-server-auth-jwt:2.0.1")
 	implementation("at.favre.lib:bcrypt:_")
 
 	implementation(KotlinX.coroutines.core)
 	testImplementation(KotlinX.coroutines.test)
 
 	implementation("org.apache.tika:tika-core:_")
+	testImplementation("io.ktor:ktor-server-tests-jvm:2.0.1")
 }
 
 application {
@@ -46,16 +49,16 @@ tasks.named<JavaExec>("run") {
 }
 
 jacoco {
-	toolVersion = "0.8.7"
+	toolVersion = "0.8.8"
 }
 
 tasks.jacocoTestReport {
 	dependsOn(tasks.test)
 
 	reports {
-		xml.isEnabled = true
-		csv.isEnabled = false
-		html.isEnabled = true
+		xml.required.set(true)
+		csv.required.set(false)
+		html.required.set(true)
 	}
 }
 
