@@ -13,12 +13,12 @@ import formulaide.server.Auth.Companion.Employee
 import formulaide.server.Auth.Companion.requireAdmin
 import formulaide.server.Auth.Companion.requireEmployee
 import formulaide.server.database
-import io.ktor.application.*
-import io.ktor.auth.*
-import io.ktor.html.*
-import io.ktor.request.*
-import io.ktor.response.*
-import io.ktor.routing.*
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.html.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import kotlinx.html.*
 
 fun Routing.formRoutes() {
@@ -207,14 +207,18 @@ private fun FlowContent.generateFieldHtml(
 ): Unit = when {
 	overrideArity == null && field.arity.max > 1 -> {
 		repeat(field.arity.min) {
-			generateFieldHtml(field,
-			                  "$fieldId:$it",
-			                  overrideArity = Arity.mandatory())
+			generateFieldHtml(
+				field,
+				"$fieldId:$it",
+				overrideArity = Arity.mandatory()
+			)
 		}
 		repeat(field.arity.max - field.arity.min) {
-			generateFieldHtml(field,
-			                  "$fieldId:${it + field.arity.min}",
-			                  overrideArity = Arity.optional())
+			generateFieldHtml(
+				field,
+				"$fieldId:${it + field.arity.min}",
+				overrideArity = Arity.optional()
+			)
 		}
 	}
 	field is FormField.Simple -> {
@@ -241,9 +245,11 @@ private fun FlowContent.generateFieldHtml(
 					required = mandatory
 					maxLength = simple.effectiveMaxLength.toString()
 				}
-				is SimpleField.Email -> input(InputType.email,
-				                              name = fieldId,
-				                              classes = fieldClass) {
+				is SimpleField.Email -> input(
+					InputType.email,
+					name = fieldId,
+					classes = fieldClass
+				) {
 					id = fieldId
 					required = mandatory
 				}
@@ -253,22 +259,28 @@ private fun FlowContent.generateFieldHtml(
 				}
 				is SimpleField.Boolean -> {
 					input(InputType.hidden, name = fieldId) { value = "false" }
-					input(InputType.checkBox,
-					      name = fieldId,
-					      classes = "$fieldClass checkbox") { value = "true"; id = fieldId }
+					input(
+						InputType.checkBox,
+						name = fieldId,
+						classes = "$fieldClass checkbox"
+					) { value = "true"; id = fieldId }
 				}
-				is SimpleField.Integer -> input(InputType.number,
-				                                name = fieldId,
-				                                classes = fieldClass) {
+				is SimpleField.Integer -> input(
+					InputType.number,
+					name = fieldId,
+					classes = fieldClass
+				) {
 					id = fieldId
 					required = mandatory
 					min = simple.effectiveMin.toString()
 					max = simple.effectiveMax.toString()
 					step = "1"
 				}
-				is SimpleField.Decimal -> input(InputType.number,
-				                                name = fieldId,
-				                                classes = fieldClass) {
+				is SimpleField.Decimal -> input(
+					InputType.number,
+					name = fieldId,
+					classes = fieldClass
+				) {
 					id = fieldId
 					step = "any"
 					required = mandatory

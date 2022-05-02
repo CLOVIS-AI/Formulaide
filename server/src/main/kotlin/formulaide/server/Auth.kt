@@ -13,8 +13,8 @@ import formulaide.db.document.DbUser
 import formulaide.db.document.createUser
 import formulaide.db.document.editUser
 import formulaide.db.document.findUser
-import io.ktor.application.*
-import io.ktor.auth.*
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
 import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.time.Instant
@@ -95,8 +95,10 @@ class Auth(private val database: Database) {
 		)
 		if (!passwordIsVerified) {
 			if (user.blockedUntil <= current + maxBlockedTimeSeconds) {
-				database.editUser(user,
-				                  newBlockedUntil = user.blockedUntil + blockedForAfterFailedPasswordSeconds)
+				database.editUser(
+					user,
+					newBlockedUntil = user.blockedUntil + blockedForAfterFailedPasswordSeconds
+				)
 			}
 			if (serverWideBlock <= current + maxServerBlockedTimeSeconds) {
 				serverWideBlock = current + serverBlockedAfterFailedPasswordSeconds
