@@ -88,8 +88,8 @@ suspend fun refreshServices() {
 	services.value = (
 			(client.value as? Client.Authenticated)
 				?.let { c ->
-					if (c.me.administrator) c.listAllServices()
-					else c.listServices()
+					if (c.me.administrator) c.listAllServices().toList()
+					else c.listServices().toList()
 				}
 				?: emptyList())
 }

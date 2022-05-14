@@ -43,7 +43,7 @@ fun main(args: Array<String>) {
 					User(
 						Email("admin@formulaide"),
 						"Administrateur",
-						Ref(service.id.toString()),
+						setOf(Ref(service.id.toString())),
 						true
 					)
 				)
@@ -54,7 +54,7 @@ fun main(args: Array<String>) {
 					User(
 						Email("employee@formulaide"),
 						"Employé",
-						Ref(service.id.toString()),
+						setOf(Ref(service.id.toString())),
 						false
 					)
 				)

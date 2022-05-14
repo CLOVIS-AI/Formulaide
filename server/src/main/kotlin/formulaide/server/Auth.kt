@@ -67,8 +67,8 @@ class Auth(private val database: Database) {
 				newUser.user.email.email,
 				hashedPassword,
 				newUser.user.fullName,
-				newUser.user.service.id.toInt(),
-				newUser.user.administrator
+				services = newUser.user.services.mapTo(HashSet()) { it.id.toInt() },
+				isAdministrator = newUser.user.administrator
 			)
 		)
 
