@@ -19,7 +19,7 @@ import kotlinx.serialization.Serializable
 data class User(
 	val email: Email,
 	val fullName: String,
-	val service: Ref<Service>,
+	val services: Set<Ref<Service>>,
 	val administrator: Boolean,
 	val enabled: Boolean = true,
 ) : Referencable {
@@ -40,10 +40,18 @@ fun User.canAccess(form: Form, state: RecordState?): Boolean {
 		return true
 
 	return when (state) {
-		is RecordState.Action -> user.service.id == state.current.apply {
-			loadFrom(form.actions,
-			         lazy = true)
-		}.obj.reviewer.id
-		is RecordState.Refused, null -> user.service.id in form.actions.map { it.reviewer.id }
+		is RecordState.Action -> {
+			user.services.any { service ->
+				service.id == state.current.apply {
+					loadFrom(
+						form.actions,
+						lazy = true
+					)
+				}.obj.reviewer.id
+			}
+		}
+		is RecordState.Refused, null -> {
+			user.services.any { service -> service.id in form.actions.map { it.reviewer.id } }
+		}
 	}
 }

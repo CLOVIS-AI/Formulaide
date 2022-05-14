@@ -48,7 +48,7 @@ data class UserEdits(
 	val user: Email,
 	val enabled: Boolean? = null,
 	val administrator: Boolean? = null,
-	var service: Ref<Service>? = null,
+	var services: Set<Ref<Service>> = emptySet(),
 )
 
 /**

@@ -35,7 +35,7 @@ suspend fun multipartTest(file: FileUpload) {
 		Action(
 			"1",
 			order = 0,
-			reviewer = client.getMe().service,
+			reviewer = client.getMe().services.first(),
 			name = "Dossiers acceptés",
 		)
 	).let { admin.createForm(it) }

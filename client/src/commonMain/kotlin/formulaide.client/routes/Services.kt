@@ -12,7 +12,7 @@ import formulaide.client.Client
  * - Requires 'employee' authentication
  * - Response: list of [services][Service]
  */
-suspend fun Client.Authenticated.listServices(): List<Service> =
+suspend fun Client.Authenticated.listServices(): Set<Service> =
 	get("/services/list")
 
 /**
