@@ -141,7 +141,10 @@ internal val ReviewRecordExpanded = FC<ReviewRecordVariantProps>("ReviewRecordEx
 			reviewRecordButtons(props, formCardId)
 
 			ReviewRecordPrintImagesTop()
-			ReviewRecordContents { +props }
+			ReviewRecordContents {
+				+props
+				this.selectedDestination = selectedDestination
+			}
 			ReviewRecordPrintImagesBottom()
 
 			Footer {

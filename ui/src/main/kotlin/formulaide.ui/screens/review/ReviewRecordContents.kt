@@ -17,7 +17,9 @@ import react.useEffect
 import react.useState
 import kotlin.js.Date
 
-internal external interface ReviewRecordContentsProps : ReviewRecordVariantProps
+internal external interface ReviewRecordContentsProps : ReviewRecordVariantProps {
+	var selectedDestination: RecordState?
+}
 
 /**
  * Draws the contents of a [ReviewRecord], with the user's submission.
@@ -94,7 +96,7 @@ internal val ReviewRecordContents = FC<ReviewRecordContentsProps>("ReviewRecordC
 	}
 
 	val state = props.windowState
-	if (state is RecordState.Action && props.windowState != null) div {
+	if (state is RecordState.Action && props.windowState != null && props.selectedDestination !is RecordState.Refused) div {
 		classes = "print:hidden"
 
 		val action = state.current.obj
