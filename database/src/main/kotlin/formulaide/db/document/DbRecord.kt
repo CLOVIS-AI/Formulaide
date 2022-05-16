@@ -63,7 +63,7 @@ suspend fun Database.reviewRecord(review: ReviewRequest, employee: DbUser) {
 	val next = transition.nextState
 	when {
 		next is RecordState.Refused -> {
-			require(review.fields == null) { "Une transition depuis l'état ${RecordState.Refused} ne peut pas contenir de champs" }
+			require(review.fields == null) { "Une transition vers l'état ${RecordState.Refused} ne peut pas contenir de champs" }
 
 			submissionToCreate = null
 		}
@@ -72,11 +72,12 @@ suspend fun Database.reviewRecord(review: ReviewRequest, employee: DbUser) {
 
 			submissionToCreate = review.fields?.let { saveSubmission(it) }
 		}
-		else -> {
+		previous is RecordState.Refused -> {
 			require(review.fields == null) { "Une transition depuis l'état ${RecordState.Refused} ne peut pas contenir de champs" }
 
 			submissionToCreate = null
 		}
+		else -> error("Situation impossible : l'étape précédente n'est ni 'refusé' ni une action, trouvé $previous")
 	}
 
 	val newRecord = record.copy(
