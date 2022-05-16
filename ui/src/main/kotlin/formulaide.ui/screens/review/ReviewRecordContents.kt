@@ -59,7 +59,7 @@ internal val ReviewRecordContents = FC<ReviewRecordContentsProps>("ReviewRecordC
 			fieldNumber = i
 
 			val transition = parsed.transition
-			val title = transition.previousState.displayName()
+			val title = transition.previousState?.displayName() ?: "Saisie initiale"
 			if (props.showFullHistory == true) {
 				Title { this.title = "$title → ${transition.nextState.displayName()}" }
 			} else {
