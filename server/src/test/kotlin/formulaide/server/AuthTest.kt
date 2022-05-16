@@ -51,7 +51,8 @@ class AuthTest {
 		// Creating the account
 
 		val apiUser = User(
-			Email(email), "Auth Test User", Ref(service.id.toString()), false)
+			Email(email), "Auth Test User", setOf(Ref(service.id.toString())), false
+		)
 		val user = NewUser(password, apiUser)
 		val (token1, dbUser1) = auth.newAccount(user)
 

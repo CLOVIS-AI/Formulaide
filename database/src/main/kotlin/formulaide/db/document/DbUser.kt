@@ -22,7 +22,9 @@ data class DbUser(
 	val email: String,
 	val hashedPassword: String,
 	val fullName: String,
-	val service: DbServiceId,
+	@Deprecated(message = "Replaced by 'services', kept for backward compatibility of previous database installations")
+	val service: DbServiceId? = null,
+	val services: Set<DbServiceId> = emptySet(),
 	val isAdministrator: Boolean,
 	val enabled: Boolean? = true,
 	val tokenVersion: ULong = 0u,
@@ -32,8 +34,16 @@ data class DbUser(
 /**
  * Converts a database [DbUser] to a [User].
  */
-fun DbUser.toApi() = User(
-	Email(email), fullName, Ref(service.toString()), isAdministrator, enabled ?: false)
+fun DbUser.toApi(): User {
+	@Suppress("DEPRECATION")
+	val apiServices = services
+		.mapTo(HashSet<Ref<Service>>()) { Ref(it.toString()) }
+		.ifEmpty { setOf(Ref(service.toString())) }
+
+	return User(
+		Email(email), fullName, apiServices, isAdministrator, enabled ?: false
+	)
+}
 
 /**
  * Finds a user in the database, by searching for an exact match with its [email].
@@ -51,7 +61,10 @@ suspend fun Database.findUserById(id: DbUserId): DbUser? =
  * Creates a [user], and returns it.
  */
 suspend fun Database.createUser(user: DbUser): DbUser {
-	checkNotNull(findService(user.service)) { "Le service ${user.service} n'existe pas" }
+	for (service in user.services) {
+		checkNotNull(findService(service)) { "Le service $service n'existe pas" }
+	}
+
 	check(findUser(user.email) == null) { "Un utilisateur avec cette adresse mail existe déjà : ${user.email}" }
 	check(findUserById(user.id) == null) { "Un utilisateur avec cet identifiant existe déjà : ${user.id}" }
 
@@ -78,7 +91,7 @@ suspend fun Database.editUser(
 	newEnabled: Boolean? = null,
 	newIsAdministrator: Boolean? = null,
 	newBlockedUntil: Long? = null,
-	newService: Ref<Service>? = null,
+	newServices: Set<Ref<Service>>? = null,
 ): DbUser {
 	var newUser = user
 
@@ -91,8 +104,8 @@ suspend fun Database.editUser(
 	if (newBlockedUntil != null)
 		newUser = newUser.copy(blockedUntil = newBlockedUntil)
 
-	if (newService != null)
-		newUser = newUser.copy(service = newService.id.toInt())
+	if (newServices != null)
+		newUser = newUser.copy(services = newServices.mapTo(HashSet()) { it.id.toInt() })
 
 	require(user != newUser) { "La demande de modification de l'utilisateur ${user.email} n'apporte aucune modification" }
 

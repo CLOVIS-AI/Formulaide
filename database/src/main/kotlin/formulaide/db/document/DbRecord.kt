@@ -6,6 +6,9 @@ import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.types.Ref.Companion.load
 import formulaide.api.users.canAccess
 import formulaide.db.Database
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import org.litote.kmongo.*
 import java.time.Instant
 
@@ -21,14 +24,16 @@ suspend fun Database.createRecord(submission: FormSubmission) {
 		newId<Record>().toString(),
 		form.createRef(),
 		state,
-		history = listOf(RecordStateTransition(
-			Instant.now().epochSecond,
-			previousState = null,
-			nextState = state,
-			assignee = null,
-			reason = "Saisie initiale",
-			fields = submission.createRef(),
-		))
+		history = listOf(
+			RecordStateTransition(
+				Instant.now().epochSecond,
+				previousState = null,
+				nextState = state,
+				assignee = null,
+				reason = "Saisie initiale",
+				fields = submission.createRef(),
+			)
+		)
 	)
 
 	records.insertOne(record)
@@ -46,8 +51,12 @@ suspend fun Database.reviewRecord(review: ReviewRequest, employee: DbUser) {
 	require(record.state == transition.previousState) { "Il n'est pas possible de transférer le dossier depuis l'étape ${transition.previousState} alors qu'il est actuellement dans l'état ${record.state}" }
 	require(employee.email == transition.assignee?.id) { "Il est interdit d'attribuer la modification à quelqu'un d'autre que soit-même" }
 	require(transition.timestamp > record.history.maxOf { it.timestamp }) { "Une modification doit être plus récente que toutes les modifications déjà appliquées" }
-	require(employee.toApi().canAccess(record.form.obj,
-	                                   record.state)) { "Vous ne pouvez pas prendre une décision sur un dossier sans être assigné(e) à l'étape dans laquelle il se trouve" }
+	require(
+		employee.toApi().canAccess(
+			record.form.obj,
+			record.state
+		)
+	) { "Vous ne pouvez pas prendre une décision sur un dossier sans être assigné(e) à l'étape dans laquelle il se trouve" }
 
 	val submissionToCreate: DbSubmission?
 	val previous = transition.previousState
@@ -83,11 +92,22 @@ suspend fun Database.reviewRecord(review: ReviewRequest, employee: DbUser) {
 }
 
 suspend fun Database.findFormsAssignedTo(user: DbUser): List<Form> {
-	val service = findService(user.service)
-		?: error("Impossible de trouver le service à qui cet utilisateur appartient : ${user.service}")
+	return coroutineScope {
+		user.services
+			.ifEmpty {
+				@Suppress("DEPRECATION") // This is the fallback in case the new field is empty
+				user.service?.let { listOf(it) } ?: emptyList()
+			}
+			.map {
+				async {
+					val service = findService(it)
+						?: error("Impossible de trouver un des service(s) auquel l'utilisateur actuel appartient : $it")
 
-	return forms.find(Form::actions / Action::reviewer / Ref<*>::id eq service.id.toString())
-		.toList()
+					forms.find(Form::actions / Action::reviewer / Ref<*>::id eq service.id.toString()).toList()
+				}
+			}
+			.awaitAll()
+	}.flatten()
 }
 
 /**

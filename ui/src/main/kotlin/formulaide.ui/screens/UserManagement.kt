@@ -2,7 +2,6 @@ package formulaide.ui.screens
 
 import formulaide.api.types.Email
 import formulaide.api.types.Ref
-import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.users.NewUser
 import formulaide.api.users.Service
 import formulaide.api.users.User
@@ -65,7 +64,7 @@ val UserList = FC<Props>("UserList") {
 
 	val filteredUsers = useMemo(users, filteredServices, filterByServices) {
 		val selectedUsers = if (!filterByServices) users
-		else users.filter { it.service.id in filteredServices.map { it.id } }
+		else users.filter { user -> user.services.any { service -> service.id in filteredServices.map { it.id } } }
 
 		selectedUsers.sortedBy { it.fullName }
 	}
@@ -128,14 +127,29 @@ val UserList = FC<Props>("UserList") {
 					LightText { text = user.email.email }
 				}
 
+				// Already-selected services
+				user.services.forEach { it.loadFrom(services, lazy = true) }
+				for (service in user.services) {
+					div {
+						LightText { text = "Service : ${service.obj.name}" }
+						StyledButton {
+							text = "Enlever"
+							action = {
+								editUser(user, client, services = user.services - service) { newUser ->
+									users = users - user + newUser
+								}
+							}
+						}
+					}
+				}
+
 				div { // Services
-					user.service.loadFrom(services)
-					LightText { text = "Service : " }
+					LightText { text = "Ajouter un service : " }
 
 					ControlledSelect {
 						for (service in services) {
-							Option(service.name, service.id, user.service.id == service.id) {
-								editUser(user, client, service = service) { newUser ->
+							Option(service.name, service.id, null) {
+								editUser(user, client, services = user.services + Ref(service)) { newUser ->
 									users = users - user + newUser
 								}
 
@@ -189,10 +203,10 @@ private suspend fun editUser(
 	client: Client.Authenticated,
 	enabled: Boolean? = null,
 	administrator: Boolean? = null,
-	service: Service? = null,
+	services: Set<Ref<Service>> = emptySet(),
 	onChange: (User) -> Unit,
 ) {
-	val newUser = client.editUser(user, enabled, administrator, service?.createRef())
+	val newUser = client.editUser(user, enabled, administrator, services)
 	onChange(newUser)
 }
 
@@ -220,15 +234,17 @@ val CreateUser = FC<Props>("CreateUser") {
 			requireNotNull(selectedService) { "Un utilisateur doit appartenir à un service, mais aucun n'a été choisi" }
 
 			launch {
-				client.createUser(NewUser(
-					password1,
-					User(
-						email = Email(email),
-						fullName = fullName,
-						service = Ref(selectedService!!),
-						administrator = admin
+				client.createUser(
+					NewUser(
+						password1,
+						User(
+							email = Email(email),
+							fullName = fullName,
+							services = setOf(Ref(selectedService!!)),
+							administrator = admin
+						)
 					)
-				))
+				)
 
 				navigateTo(Screen.ShowUsers)
 			}
@@ -262,7 +278,7 @@ val CreateUser = FC<Props>("CreateUser") {
 
 		Field {
 			id = "employee-service"
-			text = "Service"
+			text = "Service initial (vous pourrez ensuite modifier l'utilisateur pour en ajouter d'autres)"
 
 			Select {
 				onSelection = { option -> selectedService = services.find { it.id == option.value } }
