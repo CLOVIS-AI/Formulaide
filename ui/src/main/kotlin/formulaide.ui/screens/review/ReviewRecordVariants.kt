@@ -157,7 +157,7 @@ internal val ReviewRecordExpanded = FC<ReviewRecordVariantProps>("ReviewRecordEx
 
 			submit("Confirmer") { htmlForm ->
 				val submission =
-					if (state is RecordState.Action && state.current.obj.fields?.fields?.isNotEmpty() == true)
+					if (state is RecordState.Action && state.current.obj.fields?.fields?.isNotEmpty() == true && selectedDestination !is RecordState.Refused)
 						parseHtmlForm(
 							htmlForm,
 							props.form,
@@ -175,7 +175,7 @@ internal val ReviewRecordExpanded = FC<ReviewRecordVariantProps>("ReviewRecordEx
 							assignee = client.me.createRef(),
 							reason = reason,
 						),
-						submission.takeIf { true },
+						submission,
 					))
 					scope.reportExceptions {
 						props.refresh.current?.invoke()
