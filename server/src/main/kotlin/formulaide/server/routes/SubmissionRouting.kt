@@ -62,7 +62,7 @@ fun Routing.submissionRoutes() {
 							?: error("Le champ $fieldKey n'existe pas.")
 						val fieldIdsIterator = fieldIds.drop(1).iterator()
 						while (fieldIdsIterator.hasNext()) {
-							if (field.arity.max >= 1) {
+							if (field.arity.max > 1) {
 								// If the field is a list, then we can ignore the next ID (which is an index in that list)
 								fieldIdsIterator.next()
 							}
