@@ -30,7 +30,7 @@ class FormsTest {
 			Action(
 				id = "1",
 				order = 1,
-				me.service,
+				me.services.first(),
 				name = "Vérification de l'identité"
 			),
 		)

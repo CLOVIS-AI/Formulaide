@@ -19,7 +19,7 @@ class UsersTest {
 			"123456789",
 			"My Other Name",
 			db.testService().id,
-			false
+			isAdministrator = false
 		)
 
 		val actual = db.createUser(expected)
@@ -36,7 +36,7 @@ class UsersTest {
 			"123456789",
 			"Name",
 			db.testService().id,
-			false
+			isAdministrator = false
 		)
 		db.createUser(user)
 
@@ -52,7 +52,14 @@ class UsersTest {
 
 		val email = "random+${Random.nextInt()}@email.fr"
 
-		val user = DbUser(Random.nextInt().toString(), email, "…", "Some Other Name", db.testService().id, false)
+		val user = DbUser(
+			Random.nextInt().toString(),
+			email,
+			"…",
+			"Some Other Name",
+			db.testService().id,
+			isAdministrator = false
+		)
 		db.createUser(user)
 
 		val found = db.findUser(email)

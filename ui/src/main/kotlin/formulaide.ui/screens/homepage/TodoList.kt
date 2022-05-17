@@ -35,7 +35,7 @@ val TodoList = FC<Props>("TodoList") {
 
 	useEffect(client, allForms) {
 		scope.reportExceptions {
-			forms = client.todoList()
+			forms = client.todoList().distinct()
 			loadingMessage = "Vous n'avez aucun formulaire à vérifier"
 		}
 	}

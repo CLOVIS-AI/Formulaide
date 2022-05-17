@@ -40,10 +40,12 @@ class UsersTest {
 
 		val email = Email("mon email ${Random.nextInt()} @zut")
 		val response = client.createUser(NewUser("mon mot de passe",
-		                                         User(email,
-		                                              "Mon Identité",
-		                                              client.listServices()[0].createRef(),
-		                                              false)))
+		                                         User(
+			                                         email,
+			                                         "Mon Identité",
+			                                         client.listServices().mapTo(HashSet()) { it.createRef() },
+			                                         false
+		                                         )))
 
 		println(response)
 		assertTrue(true) // on failure, exceptions are thrown previously
@@ -57,10 +59,12 @@ class UsersTest {
 			client.createUser(
 				NewUser(
 					"mon mot de passe",
-					User(Email("mon email ${Random.nextInt()}"),
-					     "Mon Identité",
-					     client.listServices()[0].createRef(),
-					     false)
+					User(
+						Email("mon email ${Random.nextInt()}"),
+						"Mon Identité",
+						client.listServices().mapTo(HashSet()) { it.createRef() },
+						false
+					)
 				)
 			)
 		}

@@ -57,14 +57,14 @@ class RecordTest {
 			Action(
 				"0",
 				0,
-				me.service,
+				me.services.first(),
 				"Vérification de l'identité",
 				formRoot {
 					reviewText = simple("Un texte normal", Text(Arity.mandatory()))
 				}
 			).also { action0 = it },
 			Action("1", 1, otherService.createRef(), "Étape 2"),
-			Action("2", 2, me.service, "Étape 3"),
+			Action("2", 2, me.services.first(), "Étape 3"),
 		))
 
 		val notAssignedForm = admin.createForm(form(

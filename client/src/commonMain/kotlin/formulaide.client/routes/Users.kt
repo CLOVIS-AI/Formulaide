@@ -49,9 +49,9 @@ suspend fun Client.Authenticated.editUser(
 	user: User,
 	enabled: Boolean? = null,
 	administrator: Boolean? = null,
-	service: Ref<Service>? = null,
+	services: Set<Ref<Service>> = emptySet(),
 ): User =
-	post("/users/edit", body = UserEdits(user.email, enabled, administrator, service))
+	post("/users/edit", body = UserEdits(user.email, enabled, administrator, services))
 
 /**
  * Edits a user's password.
