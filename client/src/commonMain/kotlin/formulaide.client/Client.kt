@@ -85,6 +85,8 @@ sealed class Client(
 				json(jsonSerializer)
 			}
 
+			expectSuccess = true
+
 			if (token != null)
 				install(Auth) {
 					bearer { //TODO: audit
