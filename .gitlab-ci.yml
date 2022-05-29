@@ -102,7 +102,7 @@ latex:
     - cd docs
     - ln -s latex-templates/clovisai.sty
     - ln -s latex-templates/clovisai-constructs.sty
-    - ./latex-templates/build PDF *.tex
+    - ./latex-templates/build PDF user-guide.tex report.tex
     - mv *.pdf ../public/docs/
   artifacts:
     paths:
@@ -302,5 +302,15 @@ pages:
   artifacts:
     paths:
       - public
+  only:
+    - main
+
+telegram:
+  stage: deploy
+  image: registry.gitlab.com/clovis-ai/dotfiles:latest
+  needs: [ ]
+  script:
+    - git changelog --format telegram-html --incoming >changelog
+    - announce-telegram changelog "$CHAT_IDS"
   only:
     - main

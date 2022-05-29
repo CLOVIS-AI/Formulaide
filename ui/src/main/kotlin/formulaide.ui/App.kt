@@ -19,7 +19,6 @@ import io.ktor.client.fetch.*
 import kotlinx.coroutines.await
 import kotlinx.coroutines.delay
 import react.*
-import react.dom.html.ReactHTML.a
 import react.dom.html.ReactHTML.div
 import react.dom.html.ReactHTML.p
 

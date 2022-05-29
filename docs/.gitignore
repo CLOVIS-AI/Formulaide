@@ -1,0 +1,6 @@
+*
+!*.tex
+
+# UMLet files
+!*.uxf
+!reports-forms-fields.pdf
