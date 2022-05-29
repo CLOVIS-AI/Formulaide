@@ -12,6 +12,8 @@ variables:
   SERVER_BIN_IMAGE: "$CI_REGISTRY_IMAGE/server:build-$CI_PIPELINE_IID"
   SERVER_BIN_IMAGE_LATEST: "$CI_REGISTRY_IMAGE/server:latest"
   SERVER_BIN_IMAGE_TAG: "$CI_REGISTRY_IMAGE/server:$CI_COMMIT_TAG"
+  GIT_IMAGE: "$CI_REGISTRY_IMAGE/git:build-$CI_PIPELINE_IID"
+  GIT_IMAGE_LATEST: "$CI_REGISTRY_IMAGE/git:latest"
 
 include:
   # This template is required to use merge request pipelines.
@@ -72,6 +74,20 @@ docker-js-chrome:
       -f $CI_PROJECT_DIR/client/build.dockerfile
       .
     - docker push $JS_CHROME_IMAGE
+
+docker-git:
+  extends: .docker-build
+  stage: docker
+  script:
+    - docker pull $GIT_IMAGE_LATEST || true
+    - >
+      docker build
+      --pull
+      --cache-from $GIT_IMAGE_LATEST
+      --tag $GIT_IMAGE
+      -f $CI_PROJECT_DIR/.gitlab/git.dockerfile
+      .
+    - docker push $GIT_IMAGE
 
 # *** Build *** #
 
@@ -209,7 +225,7 @@ api-jvm-test:
   image: $JDK_IMAGE
   stage: test
   extends: [ .gradle ]
-  needs: []
+  needs: [ ]
   before_script:
     - *prepare_gradle
   script:
@@ -222,7 +238,7 @@ database-test:
   image: $JDK_IMAGE
   stage: test
   extends: [ .gradle, .with-database ]
-  needs: []
+  needs: [ ]
   before_script:
     - *prepare_gradle
   script:
@@ -288,6 +304,15 @@ server-bin-docker-tag:
   only:
     - tags
 
+docker-git-latest:
+  extends: .docker-latest
+  script:
+    - docker pull $GIT_IMAGE
+    - docker tag $GIT_IMAGE $GIT_IMAGE_LATEST
+    - docker push $GIT_IMAGE_LATEST
+  only:
+    - main
+
 pages:
   image: alpine:latest
   stage: deploy
@@ -314,3 +339,33 @@ telegram:
     - announce-telegram changelog "$CHAT_IDS"
   only:
     - main
+  allow_failure: true
+
+update:
+  image: $GIT_IMAGE
+  stage: deploy
+  needs: [ docker-git ]
+  script:
+    # Identity
+    - git config user.name 'Arcachon Auto-Updater'
+    - git config user.email 'contact-project+arcachon-ville-formulaide-27105418-issue-@incoming.gitlab.com'  # Service desk
+    # Pull from upstream
+    - git remote add upstream https://gitlab.com/opensavvy/formulaide.git
+    - git pull --no-ff --no-rebase --stat upstream main | tee -a output
+    - "git commit --amend -m 'merge: Automatic update from OpenSavvy'"
+    # Prepare the push
+    - mkdir -p ~/.ssh
+    - mv "$update_key" ~/.ssh/id_rsa
+    - mv "$update_key_public" ~/.ssh/id_rsa.pub
+    - cat ~/.ssh/id_rsa.pub
+    - chmod 600 ~/.ssh/id_rsa
+    # add the GitLab servers to the list of known hosts (hardcoded to prevent MITM)
+    - echo 'gitlab.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCsj2bNKTBSpIYDEGk9KxsGh3mySTRgMtXL583qmBpzeQ+jqCMRgBqB98u3z++J1sKlXHWfM9dyhSevkMwSbhoR8XIq/U0tCNyokEi/ueaBMCvbcTHhO7FcwzY92WK4Yt0aGROY5qX2UKSeOvuP4D6TPqKF1onrSzH9bx9XUf2lEdWT/ia1NEKjunUqu1xOB/StKDHMoX4/OKyIzuS0q/T1zOATthvasJFoPrAjkohTyaDUz2LN5JoH839hViyEG82yB+MjcFV5MU3N1l1QL3cVUCh93xSaua1N85qivl+siMkPGbO5xR/En4iEY6K2XPASUEMaieWVNTRCtJ4S8H+9' >>~/.ssh/known_hosts
+    # Push if necessary
+    - git remote set-url --push origin git@gitlab.com:$CI_PROJECT_PATH.git
+    - <output grep 'up to date' || git push origin HEAD:main
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: manual
+      allow_failure: true
+    - if: $CI_PIPELINE_SOURCE == "schedule"
