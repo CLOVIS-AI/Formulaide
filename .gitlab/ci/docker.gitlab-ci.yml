@@ -1,0 +1,55 @@
+variables:
+  build_version: build-$CI_PIPELINE_IID
+
+.docker:
+  image: $CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX/docker:20.10
+  services:
+    - name: $CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX/docker:dind
+      alias: docker
+  before_script:
+    - echo -n $CI_JOB_TOKEN | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
+    - echo -n $CI_DEPENDENCY_PROXY_PASSWORD | docker login -u $CI_DEPENDENCY_PROXY_USER --password-stdin $CI_DEPENDENCY_PROXY_SERVER
+  tags:
+    - docker
+
+.docker-build:
+  extends: [ .docker ]
+  stage: docker
+  script:
+    - docker pull $image:latest || true
+    - >
+      docker build
+      --pull
+      --cache-from $image:latest
+      --tag $image:$build_version
+      -f "$dockerfile"
+      "$docker_context"
+    - docker push $image:$build_version
+  only:
+    - merge_requests
+    - main
+    - tags
+
+.docker-rename:
+  extends: [ .docker ]
+  variables:
+    GIT_STRATEGY: none
+  stage: deploy
+  script:
+    - docker pull $image:$build_version
+    - docker tag $image:$build_version $image:$new_version
+    - docker push $image:$new_version
+
+.docker-rename-latest:
+  extends: [ .docker-rename ]
+  variables:
+    new_version: latest
+  only:
+    - main
+
+.docker-rename-tag:
+  extends: [ .docker-rename ]
+  variables:
+    new_version: $GIT_COMMIT_TAG
+  only:
+    - tags
