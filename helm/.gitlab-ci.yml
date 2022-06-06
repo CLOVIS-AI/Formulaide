@@ -34,12 +34,53 @@ helm:package:
     - main
     - tags
 
-helm:review:
+.k8s:
   image: $helm_image
   stage: deploy
-  needs: [ environment, helm:package ]
-  dependencies: [ helm:package ]
+  needs: [ helm:package, environment ]
+  dependencies: [ helm:package, environment ]
   script:
-    - helm upgrade --install formulaide-dev helm/formulaide-*.tgz
+    - source .env || true
+    - kubectl config use-context opensavvy/config:opensavvy-agent
+    - >
+      helm upgrade --install
+      $release
+      helm/formulaide-$CURRENT_VERSION.tgz
+      --set config.host=$host
+      --create-namespace=true
+      --namespace=$namespace
+      --wait
+      --atomic
+
+helm:review:
+  extends: [ .k8s ]
+  variables:
+    release: merge-request-$CI_MERGE_REQUEST_IID
+    namespace: formulaide-review
+    host: $CI_MERGE_REQUEST_IID.formulaide.girardet.dev
+  environment:
+    name: review/$CI_MERGE_REQUEST_IID
+    url: https://$host
+    deployment_tier: development
+    on_stop: helm:review-stop
+    auto_stop_in: 2 weeks
   only:
     - merge_requests
+
+helm:review-stop:
+  extends: [ .k8s ]
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - source .env || true
+    - kubectl config use-context opensavvy/config:opensavvy-agent
+    - helm uninstall merge-request-$CI_MERGE_REQUEST_IID --namespace=formulaide-review
+  environment:
+    name: review/$CI_MERGE_REQUEST_IID
+    url: $CI_MERGE_REQUEST_IID.formulaide.girardet.dev
+    deployment_tier: development
+    action: stop
+  only:
+    - merge_requests
+  allow_failure: true
+  when: manual
