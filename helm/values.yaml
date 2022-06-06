@@ -1,0 +1,53 @@
+# Formulaide Helm configuration
+# This file contains the default values for Formulaide development
+# Unless explicitly mentioned, you can keep the default values
+
+# General Formulaide configuration
+config:
+  # When a user uses the 'report a problem' button, Formulaide generates an email in the user's client, that is pre-filled
+  # to be sent at this address:
+  report_email: "contact-project+opensavvy-formulaide-33369420-issue-@incoming.gitlab.com"  # this is the OpenSavvy Formulaide Service Desk on GitLab
+
+  # The target of the help link in the homepage
+  help_page: "https://opensavvy.gitlab.io/formulaide/docs/user-guide.pdf"
+
+  # When generating a PDF summary of the treatment of a record, these images will be displayed for customization.
+  pdf_first_image: "null"
+  pdf_second_image: "null"
+
+  # The domain name on which you will deploy Formulaide.
+  host: "formulaide.girardet.dev"
+
+  # Formulaide image
+  image: "registry.gitlab.com/opensavvy/formulaide/server"
+  version: "latest"
+
+  # Number of replicas of the Formulaide backend.
+  replicas: 2
+
+security:
+  # JWT secret.
+  # This secret is the most important part of Formulaide security.
+  # Any attacker with this secret can log in as any user, including administrator accounts.
+  # Editing this secret will force-log-out all users.
+  # You will never need to type or remember this secret, so it can be as complicated as you want.
+  # DO NOT USE THE DEFAULT SECRET IN PRODUCTION.
+  jwt_secret: "this secret is very bad, replace it by a better one!"
+
+mongodb:
+  architecture: "standalone"
+
+  auth:
+    # The credentials of the database user
+    # The Formulaide backend uses this account to communicate with the database
+    # If you want to change this, you need to either recreate the database, or manually switch the existing account's
+    # password directly through the MongoDB API.
+    # DO NOT USE THE DEFAULT PASSWORD IN PRODUCTION.
+    rootUser: "root"
+    rootPassword: "development-password"
+
+  # The DNS name of the database.
+  nameOverride: "formulaide-database"
+
+# The name of the database to create in the MongoDB instance.
+database: "formulaide"
