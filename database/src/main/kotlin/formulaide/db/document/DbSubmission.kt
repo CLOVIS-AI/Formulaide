@@ -192,3 +192,7 @@ suspend fun Database.searchSubmission(
 
 	return submissions.find(and(filter)).toList()
 }
+
+suspend fun Database.deleteSubmission(submissionId: String) {
+	submissions.deleteOne(DbSubmission::apiId eq submissionId)
+}

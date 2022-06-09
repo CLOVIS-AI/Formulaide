@@ -39,6 +39,9 @@ suspend fun Database.createRecord(submission: FormSubmission) {
 	records.insertOne(record)
 }
 
+suspend fun Database.findRecord(record: Ref<Record>): Record? =
+	records.findOne(Record::id eq record.id)
+
 suspend fun Database.reviewRecord(review: ReviewRequest, employee: DbUser) {
 	val record = records.findOne(Record::id eq review.record.id)
 		?: error("Impossible de trouver le dossier ${review.record.id}")
@@ -138,4 +141,14 @@ suspend fun Database.findRecords(
 		results = results.limit(limit)
 
 	return results.toList()
+}
+
+suspend fun Database.deleteRecord(record: Record, user: DbUser) {
+	for (transition in record.history) {
+		transition.fields?.let {
+			deleteSubmission(it.id)
+		}
+	}
+
+	records.deleteOne(Record::id eq record.id)
 }

@@ -110,4 +110,21 @@ data class ReviewRequest(
 	val fields: FormSubmission?,
 )
 
+@Serializable
+data class RecordDeletionRequest(
+	val record: Ref<Record>,
+)
+
+@Serializable
+data class RecordDeletionChallenge(
+	val record: Ref<Record>,
+	val challenge: String,
+)
+
+@Serializable
+data class RecordDeletion(
+	val record: Ref<Record>,
+	val challengeResponse: String,
+)
+
 //endregion
