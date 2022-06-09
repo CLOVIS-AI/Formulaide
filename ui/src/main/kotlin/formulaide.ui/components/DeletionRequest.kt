@@ -18,7 +18,7 @@ import react.useState
 
 internal external interface DeletionRequestProps : Props {
 	var delete: Boolean?
-	var onFinished: () -> Unit
+	var onFinished: suspend () -> Unit
 	var record: Record
 }
 

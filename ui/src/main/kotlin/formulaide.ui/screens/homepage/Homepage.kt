@@ -15,6 +15,10 @@ val Homepage = FC<Props>("Homepage") {
 	if (user == null) {
 		Login()
 	} else {
+		if (user.administrator) {
+			Alerts()
+		}
+
 		Card {
 			title = "Espace employé"
 
