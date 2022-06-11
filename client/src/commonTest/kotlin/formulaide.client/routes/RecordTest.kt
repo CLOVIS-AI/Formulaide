@@ -176,4 +176,118 @@ class RecordTest {
 		// Cleanup…
 		admin.closeService(otherService)
 	}
+
+	@Test
+	fun delete() = runTest {
+		val admin = testAdministrator()
+
+		val client = testEmployee()
+		val me = client.getMe()
+
+		lateinit var familyName: ShallowFormField.Simple
+		lateinit var firstName: ShallowFormField.Simple
+		val assignedForm = admin.createForm(
+			form(
+				"Test de suppression de données",
+				public = false,
+				mainFields = formRoot {
+					familyName = simple("Nom de famille", Text(Arity.mandatory()))
+					firstName = simple("Prénom", Text(Arity.optional()))
+				},
+				Action(
+					"0",
+					0,
+					me.services.first(),
+					"Vérification",
+				),
+			)
+		)
+
+		val submission1 = assignedForm.createSubmission(null) {
+			text(familyName, "Family name")
+			text(firstName, "First name")
+		}.also { client.submitForm(it) }
+
+		assignedForm.createSubmission(null) {
+			text(familyName, "Family name other")
+			text(firstName, "First name other")
+		}.also { client.submitForm(it) }
+
+		//region Scenario 1
+		// -> Try to delete a record by ignoring the challenge
+		// => forbidden
+		val records = client.todoListFor(assignedForm, RecordState.Action(Ref("0")))
+		assertTrue(records.size == 2)
+		val (record1, record2) = records
+		assertFails {
+			admin.deleteRecord(record1.createRef(), "")
+		}
+		assertEquals(records, client.todoListFor(assignedForm, RecordState.Action(Ref("0"))))
+		//endregion
+
+		//region Scenario 2
+		// -> Request a deletion for a record
+		// -> Attempt to delete another one with the valid challenge response
+		// => forbidden
+		val challenge = admin.requestDeleteRecord(record1.createRef())
+		val response = findAnswer(challenge.challenge)
+		assertFails {
+			admin.deleteRecord(record2.createRef(), response)
+		}
+		assertEquals(records, client.todoListFor(assignedForm, RecordState.Action(Ref("0"))))
+		//endregion
+
+		//region Scenario 3
+		// -> Request a deletion for a record
+		// -> Attempt to delete it with an invalid challenge response
+		// => forbidden
+		// => cancels the deletion request for that challenge (impossible to try with the valid password)
+		val challenge3 = admin.requestDeleteRecord(record1.createRef())
+		val response3 = findAnswer(challenge3.challenge)
+		assertFails {
+			admin.deleteRecord(record2.createRef(), "$response3...")
+		}
+		assertFails {
+			admin.deleteRecord(record2.createRef(), response3)
+		}
+		assertEquals(records, client.todoListFor(assignedForm, RecordState.Action(Ref("0"))))
+		//endregion
+
+		//region Scenario 4
+		// -> Request a deletion for a record
+		// -> Attempt to delete it as a non-admin
+		// => forbidden
+		val challenge4 = admin.requestDeleteRecord(record1.createRef())
+		val response4 = findAnswer(challenge4.challenge)
+		assertFails {
+			client.deleteRecord(record1.createRef(), response4)
+		}
+		assertEquals(records, client.todoListFor(assignedForm, RecordState.Action(Ref("0"))))
+		//endregion
+
+		//region Scenario 5
+		// -> Request a deletion for a record
+		// -> Attempt to delete it correctly
+		// => success
+		// => the record doesn't exist anymore
+		// => the submission doesn't exist anymore
+		val challenge5 = admin.requestDeleteRecord(record1.createRef())
+		val response5 = findAnswer(challenge5.challenge)
+		admin.deleteRecord(record1.createRef(), response5)
+		assertEquals(records - record1, client.todoListFor(assignedForm, RecordState.Action(Ref("0"))))
+		assertFails {
+			admin.findSubmission(submission1.id)
+		}
+		//endregion
+	}
+}
+
+private fun findAnswer(challenge: String): String {
+	println("Challenge : $challenge")
+
+	val (first, second, third) = challenge
+		.split(" ")
+		.mapNotNull { it.toIntOrNull() }
+
+	return (first * second + third).toString()
 }
