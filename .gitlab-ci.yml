@@ -257,6 +257,7 @@ qodana:
   artifacts:
     paths:
       - qodana
+    expose_as: 'Qodana report'
   allow_failure: true
 
 # *** Deploy *** #
