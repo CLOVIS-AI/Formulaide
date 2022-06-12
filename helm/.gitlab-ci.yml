@@ -47,6 +47,7 @@ helm:package:
       $release
       helm/formulaide-$CURRENT_VERSION.tgz
       --set config.host=$host
+      --set config.replicas=$replicas
       --create-namespace=true
       --namespace=$namespace
       --wait
@@ -58,6 +59,7 @@ helm:review:
     release: merge-request-$CI_MERGE_REQUEST_IID
     namespace: formulaide-review
     host: $CI_MERGE_REQUEST_IID.formulaide.girardet.dev
+    replicas: 1
   environment:
     name: review/$CI_MERGE_REQUEST_IID
     url: https://$host
@@ -84,3 +86,16 @@ helm:review-stop:
     - merge_requests
   allow_failure: true
   when: manual
+
+helm:production:
+  extends: [ .k8s ]
+  variables:
+    release: production
+    namespace: formulaide
+    host: formulaide.girardet.dev
+    replicas: 2
+  environment:
+    name: production
+    url: https://$host
+  only:
+    - main
