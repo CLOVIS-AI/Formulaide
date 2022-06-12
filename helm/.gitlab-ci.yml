@@ -84,3 +84,15 @@ helm:review-stop:
     - merge_requests
   allow_failure: true
   when: manual
+
+helm:production:
+  extends: [ .k8s ]
+  variables:
+    release: production
+    namespace: formulaide
+    host: formulaide.girardet.dev
+  environment:
+    name: production
+    url: https://$host
+  only:
+    - main
