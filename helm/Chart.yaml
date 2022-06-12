@@ -1,0 +1,17 @@
+apiVersion: v2
+name: formulaide
+version: 1.0.0
+appVersion: "1.0.0"
+type: "application"
+
+description: Friendly web form generation and treatment
+sources:
+  - https://gitlab.com/opensavvy/formulaide
+
+maintainers:
+  - name: Ivan “CLOVIS” Canet
+
+dependencies:
+  - name: mongodb
+    version: 12.1.16
+    repository: https://charts.bitnami.com/bitnami

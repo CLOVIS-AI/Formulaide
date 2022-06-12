@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-formulaide-server
+  labels:
+    app: ktor
+spec:
+  replicas: {{ .Values.config.replicas }}
+  selector:
+    matchLabels:
+      app: ktor
+  template:
+    metadata:
+      labels:
+        app: ktor
+    spec:
+      containers:
+        - name: formulaide-server
+          image: "{{ .Values.config.image }}:{{ .Values.config.version }}"
+          ports:
+            - containerPort: 8000
+          env:
+            - name: formulaide_host
+              valueFrom:
+                secretKeyRef:
+                  key: host
+                  name: {{ .Release.Name }}-formulaide-secret
+            - name: formulaide_port
+              valueFrom:
+                secretKeyRef:
+                  key: port
+                  name: {{ .Release.Name }}-formulaide-secret
+            - name: formulaide_database
+              valueFrom:
+                secretKeyRef:
+                  key: database
+                  name: {{ .Release.Name }}-formulaide-secret
+            - name: formulaide_username
+              valueFrom:
+                secretKeyRef:
+                  key: username
+                  name: {{ .Release.Name }}-formulaide-secret
+            - name: formulaide_password
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: {{ .Release.Name }}-formulaide-secret
+            - name: formulaide_report_email
+              valueFrom:
+                secretKeyRef:
+                  key: report_email
+                  name: {{ .Release.Name }}-formulaide-secret
+            - name: formulaide_help_url
+              valueFrom:
+                secretKeyRef:
+                  key: help_url
+                  name: {{ .Release.Name }}-formulaide-secret
+            - name: formulaide_pdf_image_left_url
+              valueFrom:
+                secretKeyRef:
+                  key: pdf_left
+                  name: {{ .Release.Name }}-formulaide-secret
+            - name: formulaide_pdf_image_right_url
+              valueFrom:
+                secretKeyRef:
+                  key: pdf_right
+                  name: {{ .Release.Name }}-formulaide-secret
+            - name: formulaide_jwt_secret
+              valueFrom:
+                secretKeyRef:
+                  key: jwt_secret
+                  name: {{ .Release.Name }}-formulaide-secret
