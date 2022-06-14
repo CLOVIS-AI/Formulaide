@@ -14,6 +14,8 @@ variables:
   SERVER_BIN_IMAGE_TAG: "$CI_REGISTRY_IMAGE/server:$CI_COMMIT_TAG"
 
 include:
+  - template: Security/Container-Scanning.gitlab-ci.yml
+
   # This template is required to use merge request pipelines.
   # See https://docs.gitlab.com/ee/ci/pipelines/merge_request_pipelines.html#configure-pipelines-for-merge-requests
   - template: 'Workflows/MergeRequest-Pipelines.gitlab-ci.yml'
@@ -249,6 +251,13 @@ server-test:
     reports:
       junit: server/build/test-results/test/**/TEST-*.xml
   coverage: '/^Coverage:\s(\d+\.\d+%)/'
+
+container_scanning:
+  needs: [ server-bin-docker ]
+  stage: test
+  variables:
+    DOCKER_IMAGE: $SERVER_BIN_IMAGE
+    CS_DEFAULT_BRANCH_IMAGE: $SERVER_BIN_IMAGE_LATEST
 
 qodana:
   stage: test
