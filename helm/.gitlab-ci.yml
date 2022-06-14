@@ -1,0 +1,101 @@
+variables:
+  helm_image_name: "$CI_REGISTRY_IMAGE/helm"
+  helm_image: "$helm_image_name:$build_version"
+
+.helm:image:
+  variables:
+    image: "$CI_REGISTRY_IMAGE/helm"
+    docker_context: .gitlab
+    dockerfile: .gitlab/helm.dockerfile
+
+helm:docker-build:
+  extends: [ .docker-build, .helm:image ]
+  stage: docker
+
+helm:docker-push:
+  extends: [ .docker-rename-latest, .helm:image ]
+  stage: deploy
+
+helm:package:
+  image: $helm_image
+  stage: build
+  needs: [ environment, helm:docker-build ]
+  script:
+    - cd helm
+    - helm dependency update
+    - helm lint
+    - helm package --version $CURRENT_VERSION --app-version $CURRENT_VERSION .
+  artifacts:
+    when: always
+    paths:
+      - helm/formulaide-*.tgz
+  only:
+    - merge_requests
+    - main
+    - tags
+
+.k8s:
+  image: $helm_image
+  stage: deploy
+  needs: [ helm:package, environment ]
+  dependencies: [ helm:package, environment ]
+  script:
+    - source .env || true
+    - kubectl config use-context opensavvy/config:opensavvy-agent
+    - >
+      helm upgrade --install
+      $release
+      helm/formulaide-$CURRENT_VERSION.tgz
+      --set config.host=$host
+      --set config.replicas=$replicas
+      --create-namespace=true
+      --namespace=$namespace
+      --wait
+      --atomic
+
+helm:review:
+  extends: [ .k8s ]
+  variables:
+    release: merge-request-$CI_MERGE_REQUEST_IID
+    namespace: formulaide-review
+    host: $CI_MERGE_REQUEST_IID.formulaide.girardet.dev
+    replicas: 1
+  environment:
+    name: review/$CI_MERGE_REQUEST_IID
+    url: https://$host
+    deployment_tier: development
+    on_stop: helm:review-stop
+    auto_stop_in: 2 weeks
+  only:
+    - merge_requests
+
+helm:review-stop:
+  extends: [ .k8s ]
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - source .env || true
+    - kubectl config use-context opensavvy/config:opensavvy-agent
+    - helm uninstall merge-request-$CI_MERGE_REQUEST_IID --namespace=formulaide-review
+  environment:
+    name: review/$CI_MERGE_REQUEST_IID
+    url: $CI_MERGE_REQUEST_IID.formulaide.girardet.dev
+    deployment_tier: development
+    action: stop
+  only:
+    - merge_requests
+  allow_failure: true
+  when: manual
+
+helm:production:
+  extends: [ .k8s ]
+  variables:
+    release: production
+    namespace: formulaide
+    host: formulaide.girardet.dev
+    replicas: 2
+  environment:
+    name: production
+    url: https://$host
+  only:
+    - main

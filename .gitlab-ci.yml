@@ -20,6 +20,10 @@ include:
   # See https://docs.gitlab.com/ee/ci/pipelines/merge_request_pipelines.html#configure-pipelines-for-merge-requests
   - template: 'Workflows/MergeRequest-Pipelines.gitlab-ci.yml'
 
+  - local: ".gitlab/ci/docker.gitlab-ci.yml"
+  - local: ".gitlab/ci/env.gitlab-ci.yml"
+  - local: "helm/.gitlab-ci.yml"
+
 # *** Phantom Jobs *** #
 
 .gradle:
