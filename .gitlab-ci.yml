@@ -16,6 +16,8 @@ variables:
   GIT_IMAGE_LATEST: "$CI_REGISTRY_IMAGE/git:latest"
 
 include:
+  - template: Security/Container-Scanning.gitlab-ci.yml
+
   # This template is required to use merge request pipelines.
   # See https://docs.gitlab.com/ee/ci/pipelines/merge_request_pipelines.html#configure-pipelines-for-merge-requests
   - template: 'Workflows/MergeRequest-Pipelines.gitlab-ci.yml'
@@ -266,6 +268,13 @@ server-test:
       junit: server/build/test-results/test/**/TEST-*.xml
   coverage: '/^Coverage:\s(\d+\.\d+%)/'
 
+container_scanning:
+  needs: [ server-bin-docker ]
+  stage: test
+  variables:
+    DOCKER_IMAGE: $SERVER_BIN_IMAGE
+    CS_DEFAULT_BRANCH_IMAGE: $SERVER_BIN_IMAGE_LATEST
+
 qodana:
   stage: test
   image:
@@ -276,7 +285,8 @@ qodana:
     - /opt/idea/bin/entrypoint --results-dir=$CI_PROJECT_DIR/qodana --save-report --report-dir=$CI_PROJECT_DIR/qodana/report
   artifacts:
     paths:
-      - qodana
+      - qodana/
+    expose_as: 'Qodana report'
   allow_failure: true
 
 # *** Deploy *** #
