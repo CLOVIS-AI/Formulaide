@@ -34,6 +34,23 @@ helm:package:
     - main
     - tags
 
+helm:publish:
+  image: $CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX/curlimages/curl:latest
+  stage: deploy
+  needs: [ helm:package, environment ]
+  dependencies: [ helm:package, environment ]
+  script:
+    - source .env || true
+    - mv helm/formulaide-*.tgz .
+    - curl --request POST --user gitlab-ci-token:$CI_JOB_TOKEN --form "chart=@formulaide-$CURRENT_VERSION.tgz" "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/helm/api/$channel/charts"
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      variables:
+        channel: beta
+    - if: $CI_COMMIT_TAG
+      variables:
+        channel: stable
+
 .k8s:
   image: $helm_image
   stage: deploy
