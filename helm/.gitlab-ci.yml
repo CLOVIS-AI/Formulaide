@@ -47,6 +47,7 @@ helm:package:
       helm/formulaide-$CURRENT_VERSION.tgz
       --set config.host=$host
       --set config.replicas=$replicas
+      --set config.version=$version
       --create-namespace=true
       --namespace=$namespace
       --wait
@@ -59,6 +60,7 @@ helm:review:
     namespace: formulaide-review
     host: $CI_MERGE_REQUEST_IID.formulaide.girardet.dev
     replicas: 1
+    version: build-$CI_PIPELINE_IID
   environment:
     name: review/$CI_MERGE_REQUEST_IID
     url: https://$host
@@ -93,6 +95,7 @@ helm:production:
     namespace: formulaide
     host: formulaide.girardet.dev
     replicas: 2
+    version: latest
   environment:
     name: production
     url: https://$host
