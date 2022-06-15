@@ -37,7 +37,6 @@ helm:package:
 .k8s:
   image: $helm_image
   stage: deploy
-  needs: [ helm:package, environment ]
   dependencies: [ helm:package, environment ]
   script:
     - source .env || true
