@@ -55,6 +55,7 @@ helm:package:
 
 helm:review:
   extends: [ .k8s ]
+  stage: review
   variables:
     release: merge-request-$CI_MERGE_REQUEST_IID
     namespace: formulaide-review
@@ -72,6 +73,7 @@ helm:review:
 
 helm:review-stop:
   extends: [ .k8s ]
+  stage: review
   variables:
     GIT_STRATEGY: none
   script:
@@ -90,6 +92,7 @@ helm:review-stop:
 
 helm:production:
   extends: [ .k8s ]
+  stage: deploy
   variables:
     release: production
     namespace: formulaide
