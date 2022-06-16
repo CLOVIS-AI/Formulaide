@@ -6,7 +6,9 @@ import formulaide.api.types.Ref
 import formulaide.api.users.NewUser
 import formulaide.api.users.User
 import formulaide.db.Database
+import formulaide.db.document.allServices
 import formulaide.db.document.createService
+import formulaide.db.document.findUser
 import formulaide.server.Auth.Companion.Employee
 import formulaide.server.routes.*
 import io.ktor.http.*
@@ -28,37 +30,36 @@ import kotlinx.serialization.json.Json
 val database = Database("localhost", 27017, "formulaide", "root", "development-password", Job())
 val allowUnsafeCookie = System.getenv("formulaide_allow_unsafe_cookie").toBoolean()
 
+const val rootServiceName = "Service informatique"
+const val rootUser = "admin@formulaide"
+const val rootPassword = "admin-development-password"
+
 fun main(args: Array<String>) {
 	println("Starting up; CLI arguments: ${args.contentDeepToString()}")
 
-	if (args.isNotEmpty() && args[0] == "--init") {
-		require(System.getenv("formulaide_allow_init") == "true") { "For security reasons, you need to set the 'formulaide_allow_init' environment variable to 'true' before you initialize the database." }
+	runBlocking {
+		println("Checking that the admin user exists…")
+		val service = database.allServices()
+			.firstOrNull { it.name == rootServiceName }
+			?: database.createService(rootServiceName)
 
-		runBlocking {
-			val service = database.createService("Service informatique")
-			val auth = Auth(database)
+		val auth = Auth(database)
+
+		if (database.findUser(rootUser) == null) {
+			println("Creating the administrator account $rootUser…")
 			auth.newAccount(
 				NewUser(
-					"admin-development-password",
+					rootPassword,
 					User(
-						Email("admin@formulaide"),
+						Email(rootUser),
 						"Administrateur",
 						setOf(Ref(service.id.toString())),
-						true
+						true,
 					)
 				)
 			)
-			auth.newAccount(
-				NewUser(
-					"employee-development-password",
-					User(
-						Email("employee@formulaide"),
-						"Employé",
-						setOf(Ref(service.id.toString())),
-						false
-					)
-				)
-			)
+		} else {
+			println("The administrator account ($rootUser) already exists.")
 		}
 	}
 

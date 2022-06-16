@@ -49,22 +49,22 @@ Par défaut, le serveur écoute sur le port 8000. L'interface web est accessible
 
 ### Initialisation de la base de données
 
-Lors de la première exécution, la base de données est vide. Pour créer les comptes par défaut, il faut ajouter la variable d'environnement :
+Lors de la première exécution, le serveur crée automatiquement un compte d'administration :
 
-```shell
-export formulaide_allow_init="true"
-```
+- Nom d'utilisateur : `admin@formulaide`
+- Mot de passe par défaut : `admin-development-password`.
 
-et donner `--init` comme paramètre au serveur lors de son exécution.
+Pour sécuriser votre installation :
 
-Si le serveur affiche `Responding at http://0.0.0.0:8000` dans sa sortie standard, la création des comptes a réussi. Si elle échoue, une erreur est affichée et le serveur plante.
+- Accédez à la page d'accueil (voir la section précédente),
+- Connectez-vous via cet utilisateur,
+- Changez le mot de passe de l'utilisateur par défaut,
+- Allez dans l'onglet "employés" pour créer un nouveau compte utilisateur avec les droits d'administration,
+- Déconnectez-vous et connectez-vous avec votre nouveau compte,
+- Depuis l'onglet "employés", désactivez le compte par défaut.
 
-Les comptes créés sont :
-
-- un compte administrateur, login `admin@formulaide` et mot de passe `admin-development-password`,
-- un compte employé, login `employee@formulaide` et mot de passe `employee-development-password`.
-
-Pour des raisons de sécurité, il est très fortement conseillé de désactiver ces comptes.
+De cette manière, il devient impossible de se connecter avec le compte administrateur par défaut.
+Vous pouvez maintenant créer autant d'autres comptes que vous le souhaitez.
 
 ### Maintenance
 
@@ -74,7 +74,7 @@ La base de données est une installation standard de MongoDB. La documentation p
 
 ### Docker Compose & Docker Swarm
 
-Une configuration pour Docker Compose est disponible dans le fichier [docker-compose.yml](docker/docker-compose.yml). Pour l'utiliser, il suffit de télécharger les 4 fichiers appelés `docker.compose[…].yml` dans le dossier `docker`.
+Une configuration pour Docker Compose est disponible dans le fichier [docker-compose.yml](docker/docker-compose.yml). Pour l'utiliser, il suffit de télécharger les 3 fichiers appelés `docker.compose[…].yml` dans le dossier `docker`.
 
 Cette configuration est encouragée pour les environnements de développement. Pour un environnement de production, il faut changer les mots de passe et ajouter des sauvegardes de la base de données et des logs.
 
@@ -88,10 +88,7 @@ Avec cette configuration, on retrouve :
 
 ```shell
 # Démarrer l'environnement de développement
-docker-compose up -d
-
-# La première fois, pour créer les comptes :
-docker-compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.init.yml up -d
+docker compose up -d
 ```
 
 #### Environnement de production (Docker Compose)
@@ -105,10 +102,7 @@ Avec cette configuration, on retrouve :
 
 ```shell
 # Démarrer l'environnement de production
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-
-# La première fois, pour créer les comptes :
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.init.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 
 #### Environnement de production (Docker Swarm)
@@ -123,9 +117,6 @@ Avec cette configuration, on retrouve :
 ```shell
 # Déployer le projet sur un Swarm
 docker stack deploy -c docker-compose.yml -c docker-compose.prod.yml formulaide
-
-# La première fois, pour créer les comptes :
-docker stack deploy -c docker-compose.yml -c docker-compose.prod.yml -c docker-compose.init.yml formulaide
 ```
 
 ## Développement
