@@ -3,16 +3,16 @@ kind: Deployment
 metadata:
   name: {{ .Release.Name }}-formulaide-server
   labels:
-    app: ktor
+    app: {{ .Release.Name }}-ktor
 spec:
   replicas: {{ .Values.config.replicas }}
   selector:
     matchLabels:
-      app: ktor
+      app: {{ .Release.Name }}-ktor
   template:
     metadata:
       labels:
-        app: ktor
+        app: {{ .Release.Name }}-ktor
     spec:
       containers:
         - name: formulaide-server
