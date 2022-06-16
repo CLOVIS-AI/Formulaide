@@ -7,12 +7,9 @@ import formulaide.api.users.Service
 import formulaide.client.Client
 import formulaide.client.refreshToken
 import formulaide.client.routes.*
-import formulaide.ui.components.WindowFrame
+import formulaide.ui.components.*
 import formulaide.ui.components.cards.Card
 import formulaide.ui.components.text.FooterText
-import formulaide.ui.components.useAsync
-import formulaide.ui.components.useAsyncEffect
-import formulaide.ui.components.useAsyncEffectOnce
 import formulaide.ui.screens.forms.list.clearRecords
 import formulaide.ui.utils.*
 import io.ktor.client.fetch.*
@@ -98,6 +95,8 @@ private val bottomText = GlobalState<String?>(null)
 val config = GlobalState<Config?>(null)
 fun ChildrenBuilder.useConfig() = useGlobalState(config)
 	.useEquals()
+
+val lastNotification = GlobalState<Notification?>(null)
 
 //endregion
 
