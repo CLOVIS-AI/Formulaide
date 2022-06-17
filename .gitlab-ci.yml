@@ -2,6 +2,7 @@ stages:
   - docker      # Docker images necessary for the next stages
   - build       # Binary generation
   - docker-bin  # Docker images that contain binaries
+  - review      # Start the review app
   - test        # Tests, documentation
   - deploy      # Final container generation
 

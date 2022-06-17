@@ -8,4 +8,4 @@ spec:
       name: formulaide-http
       targetPort: 8000
   selector:
-    app: ktor
+    app: {{ .Release.Name }}-ktor
