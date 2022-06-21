@@ -86,6 +86,8 @@ helm:review:
     on_stop: helm:review-stop
     auto_stop_in: 2 weeks
   rules:
+    - if: $formulaide_no_cluster
+      when: never
     - if: $CI_MERGE_REQUEST_EVENT_TYPE == "detached"
     - if: $CI_MERGE_REQUEST_EVENT_TYPE == "merged_result"
 
@@ -104,6 +106,8 @@ helm:review-stop:
     deployment_tier: development
     action: stop
   rules:
+    - if: $formulaide_no_cluster
+      when: never
     - if: $CI_MERGE_REQUEST_EVENT_TYPE == "detached"
       when: manual
     - if: $CI_MERGE_REQUEST_EVENT_TYPE == "merged_result"
@@ -123,4 +127,6 @@ helm:production:
     name: production
     url: https://$host
   rules:
+    - if: $formulaide_no_cluster
+      when: never
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
