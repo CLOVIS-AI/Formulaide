@@ -85,8 +85,9 @@ helm:review:
     deployment_tier: development
     on_stop: helm:review-stop
     auto_stop_in: 2 weeks
-  only:
-    - merge_requests
+  rules:
+    - if: $CI_MERGE_REQUEST_EVENT_TYPE == "detached"
+    - if: $CI_MERGE_REQUEST_EVENT_TYPE == "merged_result"
 
 helm:review-stop:
   extends: [ .k8s ]
@@ -102,10 +103,12 @@ helm:review-stop:
     url: $CI_MERGE_REQUEST_IID.formulaide.girardet.dev
     deployment_tier: development
     action: stop
-  only:
-    - merge_requests
+  rules:
+    - if: $CI_MERGE_REQUEST_EVENT_TYPE == "detached"
+      when: manual
+    - if: $CI_MERGE_REQUEST_EVENT_TYPE == "merged_result"
+      when: manual
   allow_failure: true
-  when: manual
 
 helm:production:
   extends: [ .k8s ]
@@ -119,5 +122,5 @@ helm:production:
   environment:
     name: production
     url: https://$host
-  only:
-    - main
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
