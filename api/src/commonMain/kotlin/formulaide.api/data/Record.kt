@@ -39,7 +39,7 @@ data class Record(
 	}
 
 	companion object {
-		const val MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION = 100
+		const val MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION = 1000
 	}
 }
 
