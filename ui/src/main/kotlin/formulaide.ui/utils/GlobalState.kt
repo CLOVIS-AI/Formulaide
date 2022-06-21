@@ -30,7 +30,7 @@ class GlobalState<T>(initialValue: T) {
  *
  * This hook can be used with the same syntax as [useState], and will handle all the machinery for the component to be updated at the right time.
  */
-@Suppress("unused") // ChildrenBuilder for type safety
+@Suppress("UnusedReceiverParameter") // ChildrenBuilder for type safety
 fun <T> ChildrenBuilder.useGlobalState(
 	globalState: GlobalState<T>,
 	interceptor: WriteDelegatedProperty<T>? = null,
