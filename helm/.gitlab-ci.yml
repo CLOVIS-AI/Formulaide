@@ -112,6 +112,8 @@ helm:review-stop:
 
 helm:production:
   extends: [ .k8s ]
+  needs: [ server-bin-docker-latest, helm:package, environment ]
+  dependencies: [ helm:package, environment ]
   stage: deploy
   variables:
     release: production
