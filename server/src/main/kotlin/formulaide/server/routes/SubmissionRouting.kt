@@ -1,10 +1,7 @@
 package formulaide.server.routes
 
 import formulaide.api.data.*
-import formulaide.api.fields.FormField
-import formulaide.api.fields.FormRoot
-import formulaide.api.fields.asSequence
-import formulaide.api.fields.asSequenceWithKey
+import formulaide.api.fields.*
 import formulaide.api.types.Ref
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.types.Ref.Companion.load
@@ -73,6 +70,7 @@ fun Routing.submissionRoutes() {
 								is FormField.Simple -> error("Un champ simple ne contient pas de sous-champs, mais le champ $next est recherché dans le champ simple $field")
 								is FormField.Union<*> -> field.options.find { it.id == next }
 									?: error("L'union ${field.id} ne contient pas d'option $next")
+
 								is FormField.Composite -> field.fields.find { it.id == next }
 									?: error("La donnée composée ${field.id} ne contient pas de champ $next")
 							}
@@ -88,6 +86,7 @@ fun Routing.submissionRoutes() {
 						if (uploaded != null)
 							data[name] = uploaded.id
 					}
+
 					else -> error("Le type de données '${it::class}' n'est pas supporté.")
 				}
 
@@ -193,16 +192,18 @@ private fun String.sanitizeForCsv() = this
 	.replace("\n", "\\n")
 	.replace(",", " ")
 
-private fun Form.csvFields() = mainFields.asSequence(checkArity = true) +
+private fun Form.csvFields() = (mainFields.asSequence(checkArity = true) +
 		actions.map { it.fields ?: FormRoot(emptyList()) }
-			.flatMap { it.asSequence(checkArity = true) }
+			.flatMap { it.asSequence(checkArity = true) })
+	.filter { it !is FormField.Simple || it.simple !is SimpleField.Message }
 
 private fun Form.csvFieldsWithKey() =
-	mainFields.asSequenceWithKey(checkArity = true).map { "_:${it.first}" to it.second } +
+	(mainFields.asSequenceWithKey(checkArity = true).map { "_:${it.first}" to it.second } +
 			actions.map { it.id to (it.fields ?: FormRoot(emptyList())) }
 				.flatMap { (rootId, root) ->
 					root.asSequenceWithKey(checkArity = true).map { "$rootId:${it.first}" to it.second }
-				}
+				})
+		.filter { (_, it) -> it !is FormField.Simple || it.simple !is SimpleField.Message }
 
 private fun StringBuilder.csvBuildColumns(form: Form) {
 	// Column ID
@@ -223,6 +224,9 @@ private fun StringBuilder.csvBuildColumns(form: Form) {
 
 private suspend fun StringBuilder.csvBuildRow(form: Form, record: Record) {
 	fun csvBuildField(field: FormField, submission: FormSubmission, key: String) {
+		if (field is FormField.Simple && field.simple is SimpleField.Message)
+			return
+
 		repeat(field.arity.max) {
 			val currentKey =
 				if (field.arity.max <= 1) key
