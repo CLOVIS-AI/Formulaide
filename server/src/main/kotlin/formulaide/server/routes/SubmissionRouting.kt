@@ -74,7 +74,7 @@ fun Routing.submissionRoutes() {
 								is FormField.Union<*> -> field.options.find { it.id == next }
 									?: error("L'union ${field.id} ne contient pas d'option $next")
 								is FormField.Composite -> field.fields.find { it.id == next }
-									?: error("La donnée composiée ${field.id} ne contient pas de champ $next")
+									?: error("La donnée composée ${field.id} ne contient pas de champ $next")
 							}
 
 							field = nextField
