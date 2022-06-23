@@ -220,7 +220,6 @@ private fun StringBuilder.csvBuildColumns(form: Form) {
 	append('\n')
 }
 
-@Suppress("BlockingMethodInNonBlockingContext") // StringBuilder.append is not a blocking call
 private suspend fun StringBuilder.csvBuildRow(form: Form, record: Record) {
 	fun csvBuildField(field: FormField, submission: FormSubmission, key: String) {
 		repeat(field.arity.max) {
