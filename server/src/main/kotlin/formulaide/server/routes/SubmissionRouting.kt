@@ -227,12 +227,21 @@ private suspend fun StringBuilder.csvBuildRow(form: Form, record: Record) {
 		if (field is FormField.Simple && field.simple is SimpleField.Message)
 			return
 
-		repeat(field.arity.max) {
+		repeat(field.arity.max) { id ->
 			val currentKey =
 				if (field.arity.max <= 1) key
-				else "$key:$it"
+				else "$key:$id"
 
-			append(submission.data[currentKey]?.sanitizeForCsv() ?: "")
+			val stored = submission.data[currentKey]
+			val data = when (field) {
+				is FormField.Union<*> -> field.options
+					.find { it.id == stored }
+					?.name
+
+				else -> stored
+			}
+
+			append(data?.sanitizeForCsv() ?: "")
 			append(',')
 
 			if (field is FormField.Union<*>)
