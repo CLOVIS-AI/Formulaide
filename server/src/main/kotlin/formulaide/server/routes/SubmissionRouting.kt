@@ -218,6 +218,7 @@ private fun StringBuilder.csvBuildColumns(form: Form) {
 		append(',')
 	}
 	append('\n')
+	append('\n')
 }
 
 private suspend fun StringBuilder.csvBuildRow(form: Form, record: Record) {
