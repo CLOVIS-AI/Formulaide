@@ -13,9 +13,9 @@ import formulaide.ui.components.useAsync
 import formulaide.ui.reportExceptions
 import formulaide.ui.useClient
 import formulaide.ui.useUser
-import formulaide.ui.utils.replace
-import formulaide.ui.utils.traceRenders
-import kotlinx.coroutines.launch
+import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
+import formulaide.ui.utils.useEquals
+import formulaide.ui.utils.useListEquality
 import react.FC
 import react.dom.html.ReactHTML.tr
 import react.useEffect
@@ -43,6 +43,9 @@ val ReviewRecord = FC<ReviewRecordProps>("ReviewRecord") { props ->
 	var showFullHistory by useState(false)
 	fun getHistory() = props.record.history.map { ParsedTransition(it, null) }
 	val (fullHistory, setFullHistory) = useState(getHistory())
+		.asDelegated()
+		.useEquals()
+		.useListEquality()
 	val history =
 		if (showFullHistory) fullHistory
 			.sortedBy { it.transition.timestamp }
@@ -54,23 +57,30 @@ val ReviewRecord = FC<ReviewRecordProps>("ReviewRecord") { props ->
 		reportExceptions {
 			val newHistory = getHistory()
 			if (newHistory.map { it.transition } != fullHistory.map { it.transition }) {
-				setFullHistory(newHistory)
+				setFullHistory { newHistory }
 			}
 		}
 	}
 
 	useEffect(fullHistory, showFullHistory) {
-		reportExceptions {
+		scope.reportExceptions {
+			val edits = HashMap<Int, ParsedTransition>()
+
 			for ((i, parsed) in history.withIndex()) {
-				traceRenders("ReviewRecord … parsing transition $parsed")
 				val fields = parsed.transition.fields
 				if (fields != null && parsed.submission == null) {
-					scope.launch {
-						fields.load { client.findSubmission(it) }
-						val newParsed = parsed.copy(submission = fields.obj.parse(props.form))
-						setFullHistory { full -> full.replace(i, newParsed) }
-					}
+					fields.load { client.findSubmission(it) }
+					val newParsed = parsed.copy(submission = fields.obj.parse(props.form))
+					edits[i] = newParsed
 				}
+			}
+
+			setFullHistory {
+				val result = ArrayList<ParsedTransition>()
+				for (i in this.indices) {
+					result.add(edits[i] ?: this[i])
+				}
+				result
 			}
 		}
 	}
