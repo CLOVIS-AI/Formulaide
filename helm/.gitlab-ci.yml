@@ -64,7 +64,7 @@ helm:publish:
       helm/formulaide-$CURRENT_VERSION.tgz
       --set config.host=$host
       --set config.replicas=$replicas
-      --set config.version=$version
+      --set config.version=build-$CI_PIPELINE_IID
       --create-namespace=true
       --namespace=$namespace
       --wait
@@ -78,7 +78,6 @@ helm:review:
     namespace: formulaide-review
     host: $CI_MERGE_REQUEST_IID.formulaide.girardet.dev
     replicas: 1
-    version: build-$CI_PIPELINE_IID
   environment:
     name: review/$CI_MERGE_REQUEST_IID
     url: https://$host
@@ -86,6 +85,8 @@ helm:review:
     on_stop: helm:review-stop
     auto_stop_in: 2 weeks
   rules:
+    - if: $formulaide_no_cluster
+      when: never
     - if: $CI_MERGE_REQUEST_EVENT_TYPE == "detached"
     - if: $CI_MERGE_REQUEST_EVENT_TYPE == "merged_result"
 
@@ -104,6 +105,8 @@ helm:review-stop:
     deployment_tier: development
     action: stop
   rules:
+    - if: $formulaide_no_cluster
+      when: never
     - if: $CI_MERGE_REQUEST_EVENT_TYPE == "detached"
       when: manual
     - if: $CI_MERGE_REQUEST_EVENT_TYPE == "merged_result"
@@ -120,9 +123,10 @@ helm:production:
     namespace: formulaide
     host: formulaide.girardet.dev
     replicas: 2
-    version: latest
   environment:
     name: production
     url: https://$host
   rules:
+    - if: $formulaide_no_cluster
+      when: never
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
