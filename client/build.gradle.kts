@@ -29,8 +29,8 @@ kotlin {
 				api(project(":api"))
 
 				implementation(Ktor.client.core)
-				implementation("io.ktor:ktor-client-content-negotiation:2.0.1")
-				implementation("io.ktor:ktor-serialization-kotlinx-json:2.0.1")
+				implementation("io.ktor:ktor-client-content-negotiation:_")
+				implementation("io.ktor:ktor-serialization-kotlinx-json:_")
 				implementation(Ktor.client.json)
 				implementation(Ktor.client.logging)
 				implementation(Ktor.client.auth)
