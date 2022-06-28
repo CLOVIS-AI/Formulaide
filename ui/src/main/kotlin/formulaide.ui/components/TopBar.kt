@@ -5,6 +5,8 @@ import formulaide.ui.components.cards.CardShell
 import formulaide.ui.components.text.LightText
 import formulaide.ui.components.text.Title
 import formulaide.ui.utils.classes
+import formulaide.ui.utils.useGlobalState
+import kotlinx.coroutines.delay
 import react.FC
 import react.Props
 import react.dom.html.ReactHTML.div
@@ -18,6 +20,12 @@ val TopBar = FC<Props>("TopBar") {
 	val subtitle = when (user) {
 		null -> "Accès anonyme"
 		else -> "Bonjour ${user!!.fullName}"
+	}
+
+	var notification by useGlobalState(lastNotification)
+	useAsyncEffect(notification) {
+		delay(NOTIFICATION_LIFETIME_SECONDS * 1000)
+		notification = null
 	}
 
 	CardShell {
@@ -44,4 +52,9 @@ val TopBar = FC<Props>("TopBar") {
 			}
 		}
 	}
+
+	if (notification != null)
+		ConfirmationNotification {
+			this.notification = notification!!
+		}
 }

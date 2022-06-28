@@ -5,9 +5,11 @@ import formulaide.api.types.Ref.Companion.createRef
 import formulaide.client.Client
 import formulaide.client.routes.review
 import formulaide.ui.components.LoadingSpinner
+import formulaide.ui.components.Notification
 import formulaide.ui.components.StyledButton
 import formulaide.ui.components.cards.*
 import formulaide.ui.components.useAsync
+import formulaide.ui.lastNotification
 import formulaide.ui.reportExceptions
 import formulaide.ui.useClient
 import formulaide.ui.useConfig
@@ -179,13 +181,16 @@ internal val ReviewRecordExpanded = FC<ReviewRecordVariantProps>("ReviewRecordEx
 							reason = reason,
 						),
 						submission,
-					))
+					)
+					)
 					scope.reportExceptions {
 						props.refresh.current?.invoke()
 					}
 
 					updateReason { null }
 					htmlForm.reset()
+
+					lastNotification.value = Notification("Envoyé vers " + selectedDestination.displayName())
 				}
 			}
 		}
