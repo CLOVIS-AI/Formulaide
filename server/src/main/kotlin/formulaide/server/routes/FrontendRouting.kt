@@ -13,4 +13,8 @@ fun Routing.staticFrontendRoutes() {
 	static("/front") {
 		resources("front")
 	}
+
+	static("/beta") {
+		resources("beta")
+	}
 }
