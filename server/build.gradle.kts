@@ -79,7 +79,14 @@ tasks.create<Copy>("copyFrontendJs") {
 	rename { "ui.js" }
 }
 
+tasks.create<Copy>("copyFrontend2") {
+	dependsOn(":ui2:browserProductionWebpack")
+
+	from("${project(":ui2").buildDir}/distributions")
+	into("${project.buildDir}/resources/main/beta")
+}
+
 tasks.processResources {
 	if (!project.hasProperty("devMode"))
-		dependsOn("copyFrontend", "copyFrontendJs")
+		dependsOn("copyFrontend", "copyFrontendJs", "copyFrontend2")
 }
