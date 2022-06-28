@@ -66,7 +66,7 @@ val ReviewRecord = FC<ReviewRecordProps>("ReviewRecord") { props ->
 		scope.reportExceptions {
 			val edits = HashMap<Int, ParsedTransition>()
 
-			for ((i, parsed) in history.withIndex()) {
+			for ((i, parsed) in fullHistory.withIndex()) {
 				val fields = parsed.transition.fields
 				if (fields != null && parsed.submission == null) {
 					fields.load { client.findSubmission(it) }
