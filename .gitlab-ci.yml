@@ -109,7 +109,7 @@ latex:
     - cd docs
     - ln -s latex-templates/clovisai.sty
     - ln -s latex-templates/clovisai-constructs.sty
-    - ./latex-templates/build PDF user-guide.tex report.tex
+    - ./latex-templates/build PDF user-guide.tex
     - mv *.pdf ../public/docs/
   artifacts:
     paths:
