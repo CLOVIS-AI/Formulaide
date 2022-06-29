@@ -11,10 +11,10 @@ plugins {
 
 dependencies {
 	implementation(kotlin("stdlib"))
-	implementation("io.ktor:ktor-server-status-pages:2.0.1")
-	implementation("io.ktor:ktor-server-conditional-headers:2.0.1")
-	implementation("io.ktor:ktor-server-cors:2.0.1")
-	implementation("io.ktor:ktor-server-content-negotiation:2.0.1")
+	implementation("io.ktor:ktor-server-status-pages:_")
+	implementation("io.ktor:ktor-server-conditional-headers:_")
+	implementation("io.ktor:ktor-server-cors:_")
+	implementation("io.ktor:ktor-server-content-negotiation:_")
 	testImplementation(kotlin("test"))
 	testImplementation(kotlin("test-junit"))
 
@@ -23,19 +23,19 @@ dependencies {
 
 	implementation(Ktor.server.core)
 	implementation(Ktor.server.netty)
-	implementation("io.ktor:ktor-server-html-builder:2.0.1")
-	implementation("io.ktor:ktor-serialization-kotlinx-json:2.0.1")
+	implementation("io.ktor:ktor-server-html-builder:_")
+	implementation("io.ktor:ktor-serialization-kotlinx-json:_")
 	implementation("ch.qos.logback:logback-classic:_")
 
-	implementation("io.ktor:ktor-server-auth:2.0.1")
-	implementation("io.ktor:ktor-server-auth-jwt:2.0.1")
+	implementation("io.ktor:ktor-server-auth:_")
+	implementation("io.ktor:ktor-server-auth-jwt:_")
 	implementation("at.favre.lib:bcrypt:_")
 
 	implementation(KotlinX.coroutines.core)
 	testImplementation(KotlinX.coroutines.test)
 
 	implementation("org.apache.tika:tika-core:_")
-	testImplementation("io.ktor:ktor-server-tests-jvm:2.0.1")
+	testImplementation("io.ktor:ktor-server-tests-jvm:_")
 }
 
 application {
@@ -79,7 +79,14 @@ tasks.create<Copy>("copyFrontendJs") {
 	rename { "ui.js" }
 }
 
+tasks.create<Copy>("copyFrontend2") {
+	dependsOn(":ui2:browserProductionWebpack")
+
+	from("${project(":ui2").buildDir}/distributions")
+	into("${project.buildDir}/resources/main/beta")
+}
+
 tasks.processResources {
 	if (!project.hasProperty("devMode"))
-		dependsOn("copyFrontend", "copyFrontendJs")
+		dependsOn("copyFrontend", "copyFrontendJs", "copyFrontend2")
 }
