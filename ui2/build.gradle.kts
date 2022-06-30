@@ -32,4 +32,6 @@ dependencies {
 	implementation(compose.runtime)
 
 	implementation(KotlinX.coroutines.core)
+
+	implementation(project(":client"))
 }
