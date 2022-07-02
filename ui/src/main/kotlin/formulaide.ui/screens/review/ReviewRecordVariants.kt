@@ -4,6 +4,7 @@ import formulaide.api.data.*
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.client.Client
 import formulaide.client.routes.review
+import formulaide.ui.components.DeletionRequest
 import formulaide.ui.components.LoadingSpinner
 import formulaide.ui.components.Notification
 import formulaide.ui.components.StyledButton
@@ -123,6 +124,8 @@ internal val ReviewRecordExpanded = FC<ReviewRecordVariantProps>("ReviewRecordEx
 
 	val formCardId = "record-card-${props.record.id}"
 
+	var delete by useState(false)
+
 	td {
 		colSpan = props.columnsToDisplay.size
 
@@ -131,16 +134,26 @@ internal val ReviewRecordExpanded = FC<ReviewRecordVariantProps>("ReviewRecordEx
 			title = "Dossier"
 			subtitle = props.record.state.displayName()
 
-			reviewRecordButtons(props, formCardId)
+			reviewRecordButtons(props, formCardId, client, onDeleteRequest = { delete = true })
 
 			ReviewRecordPrintImagesTop()
 			ReviewRecordContents { +props }
 			ReviewRecordPrintImagesBottom()
+
+			if (delete) {
+				Footer {
+					DeletionRequest {
+						this.delete = delete
+						this.onFinished = { delete = false; props.refresh.current?.invoke() }
+						this.record = props.record
+					}
+				}
+			}
 		} else FormCard {
 			id = formCardId
 			title = "Dossier"
 
-			reviewRecordButtons(props, formCardId)
+			reviewRecordButtons(props, formCardId, client, onDeleteRequest = { delete = true })
 
 			ReviewRecordPrintImagesTop()
 			ReviewRecordContents {
@@ -150,13 +163,21 @@ internal val ReviewRecordExpanded = FC<ReviewRecordVariantProps>("ReviewRecordEx
 			ReviewRecordPrintImagesBottom()
 
 			Footer {
-				ReviewRecordDecision {
-					+props
-					this.reason = reason
-					this.updateReason = updateReason
-					this.selectedDestination = selectedDestination
-					this.updateSelectedDestination = updateSelectedDestination
-					this.nextAction = nextAction
+				if (delete) {
+					DeletionRequest {
+						this.delete = delete
+						this.onFinished = { delete = false; props.refresh.current?.invoke() }
+						this.record = props.record
+					}
+				} else {
+					ReviewRecordDecision {
+						+props
+						this.reason = reason
+						this.updateReason = updateReason
+						this.selectedDestination = selectedDestination
+						this.updateSelectedDestination = updateSelectedDestination
+						this.nextAction = nextAction
+					}
 				}
 			}
 
@@ -197,7 +218,12 @@ internal val ReviewRecordExpanded = FC<ReviewRecordVariantProps>("ReviewRecordEx
 	}
 }
 
-private fun CardProps.reviewRecordButtons(props: ReviewRecordVariantProps, formCardId: String) {
+private fun CardProps.reviewRecordButtons(
+	props: ReviewRecordVariantProps,
+	formCardId: String,
+	client: Client.Authenticated,
+	onDeleteRequest: () -> Unit,
+) {
 	action("Réduire") { props.collapse() }
 
 	action(if (props.showFullHistory == true) "Valeurs les plus récentes" else "Historique") {
@@ -205,6 +231,10 @@ private fun CardProps.reviewRecordButtons(props: ReviewRecordVariantProps, formC
 	}
 
 	action("Récépissé") { printElement(formCardId) }
+
+	if (client.me.administrator) {
+		action("Supprimer") { onDeleteRequest() }
+	}
 }
 
 private const val printImage = "min-w-[20%] max-w-[50%] object-contain"

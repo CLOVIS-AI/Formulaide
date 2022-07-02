@@ -24,7 +24,7 @@ external interface RecordTableProps : ReviewProps {
 	var expandedRecords: Map<Record, Boolean>
 	var setExpandedRecords: (Map<Record, Boolean>.() -> Map<Record, Boolean>) -> Unit
 
-	var refresh: RefObject<suspend () -> Unit>
+	var refresh: RefObject<() -> Unit>
 }
 
 val RecordTable = FC<RecordTableProps>("RecordTable") { props ->

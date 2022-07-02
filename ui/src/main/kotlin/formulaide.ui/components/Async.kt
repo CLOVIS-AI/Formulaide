@@ -27,7 +27,7 @@ fun ChildrenBuilder.useAsync(): CoroutineScope {
 
 @Suppress("unused") // ChildrenBuilder is used for type safety
 fun ChildrenBuilder.useAsyncEffect(vararg dependencies: dynamic, effect: suspend () -> Unit) {
-	useEffect(dependencies) {
+	useEffect(*dependencies) {
 		val job = Job()
 
 		CoroutineScope(job).launch {

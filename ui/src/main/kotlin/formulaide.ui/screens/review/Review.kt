@@ -65,8 +65,6 @@ val Review = FC<ReviewProps>("Review") { props ->
 					opened[record] = true
 			setOpenedRecords { opened }
 		}
-		.useListEquality()
-		.useEquals()
 
 	var referencedComposites by useState(emptyList<Composite>())
 		.asDelegated()
@@ -81,8 +79,9 @@ val Review = FC<ReviewProps>("Review") { props ->
 		formIsLoaded = true
 	}
 
-	val refresh =
-		useRef<suspend () -> Unit> { console.error("Review.refresh called, but the ref has not been loaded yet.") }
+	val refresh = useRef {
+		console.error("Review.refresh called, but the ref has not been loaded yet.")
+	}
 
 	if (!formIsLoaded) {
 		+"Chargement du formulaire en cours…"

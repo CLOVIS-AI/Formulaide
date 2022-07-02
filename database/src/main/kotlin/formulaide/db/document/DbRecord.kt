@@ -11,6 +11,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import org.litote.kmongo.*
 import java.time.Instant
+import java.util.*
 
 suspend fun Database.createRecord(submission: FormSubmission) {
 	submission.form.load { findForm(it) ?: error("Impossible de trouver le formulaire $it") }
@@ -38,6 +39,9 @@ suspend fun Database.createRecord(submission: FormSubmission) {
 
 	records.insertOne(record)
 }
+
+suspend fun Database.findRecord(record: Ref<Record>): Record? =
+	records.findOne(Record::id eq record.id)
 
 suspend fun Database.reviewRecord(review: ReviewRequest, employee: DbUser) {
 	val record = records.findOne(Record::id eq review.record.id)
@@ -138,4 +142,23 @@ suspend fun Database.findRecords(
 		results = results.limit(limit)
 
 	return results.toList()
+}
+
+suspend fun Database.deleteRecord(record: Record, user: DbUser) {
+	createAlert(
+		Alert(
+			level = Alert.Level.High,
+			timestamp = Date.from(Instant.now()).time,
+			message = "L'utilisateur ${user.email} a supprimé le dossier ${record.id}. Veuillez vérifier que ce n'est pas un accident. S'il s'agit d'une attaque, la seule manière de récupérer les informations est de restaurer une sauvegarde de la base de données.",
+			user = Ref(user.email)
+		)
+	)
+
+	for (transition in record.history) {
+		transition.fields?.let {
+			deleteSubmission(it.id)
+		}
+	}
+
+	records.deleteOne(Record::id eq record.id)
 }

@@ -36,7 +36,7 @@ external interface SearchBarProps : ReviewProps {
 	var records: List<Record>
 	var updateRecords: (List<Record>.() -> List<Record>) -> Unit
 
-	var refresh: MutableRefObject<suspend () -> Unit>
+	var refresh: MutableRefObject<() -> Unit>
 }
 
 data class ReviewSearch(
@@ -61,13 +61,15 @@ val SearchBar = FC<SearchBarProps>("SearchBar") { props ->
 	val scope = useAsync()
 	var loading by useState(false)
 
-	suspend fun refresh(allCriteria: Map<Action?, List<SearchCriterion<*>>>) {
-		loading = true
-		val newRecords = client.todoListFor(props.form, props.windowState, allCriteria)
+	fun refresh(allCriteria: Map<Action?, List<SearchCriterion<*>>>) {
+		scope.reportExceptions {
+			loading = true
+			val newRecords = client.todoListFor(props.form, props.windowState, allCriteria)
 
-		props.updateRecords { newRecords }
-		clearRecords()
-		loading = false
+			props.updateRecords { newRecords }
+			clearRecords()
+			loading = false
+		}
 	}
 
 	var allCriteria by useState(emptyMap<Action?, List<SearchCriterion<*>>>())
