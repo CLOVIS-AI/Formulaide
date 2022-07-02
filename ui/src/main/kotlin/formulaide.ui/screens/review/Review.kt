@@ -65,8 +65,6 @@ val Review = FC<ReviewProps>("Review") { props ->
 					opened[record] = true
 			setOpenedRecords { opened }
 		}
-		.useListEquality()
-		.useEquals()
 
 	var referencedComposites by useState(emptyList<Composite>())
 		.asDelegated()
