@@ -3,6 +3,7 @@ package formulaide.ui.navigation
 import androidx.compose.runtime.*
 import formulaide.ui.screens.DummyScreen
 import formulaide.ui.screens.Home
+import formulaide.ui.theme.Colors
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.jetbrains.compose.web.css.*
@@ -96,6 +97,15 @@ private fun NavigationTarget(screen: Screen) {
 
 				style {
 					property("font-size", "xx-large")
+
+					if (selected) {
+						backgroundColor(Colors.secondary)
+						paddingLeft(10.px)
+						paddingRight(10.px)
+						paddingTop(2.px)
+						paddingBottom(2.px)
+						borderRadius(24.px)
+					}
 				}
 			})
 
