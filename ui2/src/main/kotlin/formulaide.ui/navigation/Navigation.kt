@@ -104,14 +104,14 @@ private fun NavigationTarget(screen: Screen) {
 					property("font-size", "xx-large")
 
 					if (selected) {
-						backgroundColor(CustomColor.primary.css)
+						backgroundColor(CustomColor.primaryContainer.css)
 						paddingLeft(10.px)
 						paddingRight(10.px)
 						paddingTop(2.px)
 						paddingBottom(2.px)
 						borderRadius(24.px)
 					} else {
-						backgroundColor(CustomColor.secondary.copy(alpha = hoverTransition).css)
+						backgroundColor(CustomColor.secondaryContainer.copy(alpha = hoverTransition).css)
 						paddingLeft((hoverTransition * 10).px)
 						paddingRight((hoverTransition * 10).px)
 						paddingTop(2.px)
