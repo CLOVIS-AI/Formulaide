@@ -89,6 +89,7 @@ private fun NavigationRail() = Nav(
 @Composable
 private fun NavigationTarget(screen: Screen) {
 	val selected by remember { derivedStateOf { screen == currentScreen } }
+	val selectedTransition = animateDouble(if (selected) 1.0 else 0.0)
 
 	@Composable
 	fun NavigationTargetInner() {
@@ -123,8 +124,15 @@ private fun NavigationTarget(screen: Screen) {
 				onMouseLeave { hover = false }
 			})
 
-		if (selected) {
-			Br()
+		Br()
+		P(
+			{
+				style {
+					opacity(selectedTransition)
+					height((selectedTransition * 1.5).em)
+				}
+			}
+		) {
 			Text(screen.title)
 		}
 	}
