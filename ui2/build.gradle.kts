@@ -33,5 +33,7 @@ dependencies {
 
 	implementation(KotlinX.coroutines.core)
 
+	implementation(npm("remixicon", "2.5.0"))
+
 	implementation(project(":client"))
 }
