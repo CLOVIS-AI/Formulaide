@@ -7,6 +7,8 @@ data class Screen(
 	val title: String,
 	val requiredRole: Role,
 	val route: String,
+	val icon: String,
+	val iconSelected: String = icon,
 	val render: @Composable () -> Unit,
 ) {
 

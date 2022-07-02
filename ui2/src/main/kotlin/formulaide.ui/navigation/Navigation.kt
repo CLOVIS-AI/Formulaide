@@ -86,24 +86,32 @@ private fun NavigationRail() = Nav(
 
 @Composable
 private fun NavigationTarget(screen: Screen) {
+	val selected by remember { derivedStateOf { screen == currentScreen } }
+
 	@Composable
 	fun NavigationTargetInner() {
-		I({
-			  classes("ri-heart-add-fill")
-		  }) {}
+		I(
+			{
+				classes(if (selected) screen.iconSelected else screen.icon)
 
-		Text(screen.title)
+				style {
+					property("font-size", "xx-large")
+				}
+			})
+
+		if (selected) {
+			Br()
+			Text(screen.title)
+		}
 	}
 
 	Button(
 		{
 			onClick { currentScreen = screen }
+
+			title(screen.title)
 		}) {
-		if (screen == currentScreen)
-			B {
-				NavigationTargetInner()
-			}
-		else NavigationTargetInner()
+		NavigationTargetInner()
 	}
 }
 

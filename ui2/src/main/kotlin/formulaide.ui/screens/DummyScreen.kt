@@ -11,7 +11,9 @@ import org.jetbrains.compose.web.dom.Text
 val DummyScreen: Screen = Screen(
 	title = "Test",
 	requiredRole = Role.ANONYMOUS,
-	"?dummy"
+	"?dummy",
+	icon = "ri-flask-line",
+	iconSelected = "ri-flask-fill",
 ) {
 	Article {
 		P {

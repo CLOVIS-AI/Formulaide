@@ -12,6 +12,8 @@ val Home: Screen = Screen(
 	"Accueil",
 	Role.ANONYMOUS,
 	"?home",
+	icon = "ri-home-line",
+	iconSelected = "ri-home-fill",
 ) {
 	Article {
 		P {
