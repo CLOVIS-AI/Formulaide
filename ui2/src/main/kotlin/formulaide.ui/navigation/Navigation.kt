@@ -49,7 +49,15 @@ fun Navigation() {
 		    }
 	    }) {
 		NavigationRail()
-		Article {
+		Div(
+			{
+				id("Body")
+
+				style {
+					marginTop(8.px)
+					marginBottom(8.px)
+				}
+			}) {
 			_currentScreen()
 		}
 	}
@@ -77,9 +85,13 @@ private fun NavigationRail() = Nav(
 }
 
 @Composable
-private fun NavigationTarget(screen: Screen) = Div {
+private fun NavigationTarget(screen: Screen) {
 	@Composable
 	fun NavigationTargetInner() {
+		I({
+			  classes("ri-heart-add-fill")
+		  }) {}
+
 		Text(screen.title)
 	}
 
