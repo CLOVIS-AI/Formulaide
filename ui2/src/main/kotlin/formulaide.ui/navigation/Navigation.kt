@@ -3,7 +3,8 @@ package formulaide.ui.navigation
 import androidx.compose.runtime.*
 import formulaide.ui.screens.DummyScreen
 import formulaide.ui.screens.Home
-import formulaide.ui.theme.Colors
+import formulaide.ui.theme.CustomColor
+import formulaide.ui.utils.animateDouble
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.jetbrains.compose.web.css.*
@@ -91,6 +92,9 @@ private fun NavigationTarget(screen: Screen) {
 
 	@Composable
 	fun NavigationTargetInner() {
+		var hover by remember { mutableStateOf(false) }
+		val hoverTransition = animateDouble(if (hover) 1.0 else 0.0)
+
 		I(
 			{
 				classes(if (selected) screen.iconSelected else screen.icon)
@@ -99,14 +103,24 @@ private fun NavigationTarget(screen: Screen) {
 					property("font-size", "xx-large")
 
 					if (selected) {
-						backgroundColor(Colors.secondary)
+						backgroundColor(CustomColor.primary.css)
 						paddingLeft(10.px)
 						paddingRight(10.px)
 						paddingTop(2.px)
 						paddingBottom(2.px)
 						borderRadius(24.px)
+					} else {
+						backgroundColor(CustomColor.secondary.copy(alpha = hoverTransition).css)
+						paddingLeft((hoverTransition * 10).px)
+						paddingRight((hoverTransition * 10).px)
+						paddingTop(2.px)
+						paddingBottom(2.px)
+						borderRadius(24.px)
 					}
 				}
+
+				onMouseEnter { hover = true }
+				onMouseLeave { hover = false }
 			})
 
 		if (selected) {
