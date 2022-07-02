@@ -1,13 +1,13 @@
 package formulaide.ui.navigation
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import formulaide.ui.screens.DummyScreen
 import formulaide.ui.screens.Home
 import kotlinx.browser.document
 import kotlinx.browser.window
+import org.jetbrains.compose.web.css.*
+import org.jetbrains.compose.web.dom.*
+import org.w3c.dom.events.Event
 import org.w3c.dom.url.URL
 
 @Suppress("ObjectPropertyName")
@@ -28,7 +28,71 @@ val screens = listOf(
 
 @Composable
 fun Navigation() {
-	_currentScreen()
+	DisposableEffect(Unit) {
+		val handler = { _: Event ->
+			loadNavigation()
+		}
+
+		window.addEventListener("popstate", handler)
+		onDispose { window.removeEventListener("popstate", handler) }
+	}
+
+	Div({
+		    id("Navigation")
+
+		    style {
+			    display(DisplayStyle.Grid)
+			    gridTemplateColumns("80px auto")
+			    gap(8.px)
+			    marginLeft(8.px)
+			    marginRight(8.px)
+		    }
+	    }) {
+		NavigationRail()
+		Article {
+			_currentScreen()
+		}
+	}
+}
+
+@Composable
+private fun NavigationRail() = Nav(
+	{
+		id("NavigationRail")
+
+		style {
+			height(100.vh)
+			position(Position.Sticky)
+			top(0.px)
+			display(DisplayStyle.Flex)
+			flexDirection(FlexDirection.Column)
+			justifyContent(JustifyContent.Center)
+			alignItems(AlignItems.Center)
+			gap(30.px)
+		}
+	}) {
+	for (screen in screens) {
+		NavigationTarget(screen)
+	}
+}
+
+@Composable
+private fun NavigationTarget(screen: Screen) = Div {
+	@Composable
+	fun NavigationTargetInner() {
+		Text(screen.title)
+	}
+
+	Button(
+		{
+			onClick { currentScreen = screen }
+		}) {
+		if (screen == currentScreen)
+			B {
+				NavigationTargetInner()
+			}
+		else NavigationTargetInner()
+	}
 }
 
 fun loadNavigation() {
