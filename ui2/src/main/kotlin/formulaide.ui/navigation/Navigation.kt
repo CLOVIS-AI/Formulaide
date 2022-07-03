@@ -3,12 +3,12 @@ package formulaide.ui.navigation
 import androidx.compose.runtime.*
 import formulaide.ui.screens.DummyScreen
 import formulaide.ui.screens.Home
-import formulaide.ui.theme.CustomColor
-import formulaide.ui.utils.animateDouble
+import formulaide.ui.theme.RailButton
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.jetbrains.compose.web.css.*
-import org.jetbrains.compose.web.dom.*
+import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.Nav
 import org.w3c.dom.events.Event
 import org.w3c.dom.url.URL
 
@@ -82,68 +82,13 @@ private fun NavigationRail() = Nav(
 		}
 	}) {
 	for (screen in screens) {
-		NavigationTarget(screen)
-	}
-}
-
-@Composable
-private fun NavigationTarget(screen: Screen) {
-	val selected by remember { derivedStateOf { screen == currentScreen } }
-	val selectedTransition = animateDouble(if (selected) 1.0 else 0.0)
-
-	@Composable
-	fun NavigationTargetInner() {
-		var hover by remember { mutableStateOf(false) }
-		val hoverTransition = animateDouble(if (hover) 1.0 else 0.0)
-
-		I(
-			{
-				classes(if (selected) screen.iconSelected else screen.icon)
-
-				style {
-					property("font-size", "xx-large")
-
-					if (selected) {
-						backgroundColor(CustomColor.primaryContainer.css)
-						paddingLeft(10.px)
-						paddingRight(10.px)
-						paddingTop(2.px)
-						paddingBottom(2.px)
-						borderRadius(24.px)
-					} else {
-						backgroundColor(CustomColor.secondaryContainer.copy(alpha = hoverTransition).css)
-						paddingLeft((hoverTransition * 10).px)
-						paddingRight((hoverTransition * 10).px)
-						paddingTop(2.px)
-						paddingBottom(2.px)
-						borderRadius(24.px)
-					}
-				}
-
-				onMouseEnter { hover = true }
-				onMouseLeave { hover = false }
-			})
-
-		Br()
-		P(
-			{
-				style {
-					opacity(selectedTransition)
-					height((selectedTransition * 1.5).em)
-				}
-			}
-		) {
-			Text(screen.title)
-		}
-	}
-
-	Button(
-		{
-			onClick { currentScreen = screen }
-
-			title(screen.title)
-		}) {
-		NavigationTargetInner()
+		RailButton(
+			screen.icon,
+			screen.iconSelected,
+			screen.title,
+			selected = screen == currentScreen,
+			action = { currentScreen = screen }
+		)
 	}
 }
 
