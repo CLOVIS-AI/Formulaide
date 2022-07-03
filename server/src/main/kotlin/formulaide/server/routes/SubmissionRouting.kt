@@ -9,6 +9,7 @@ import formulaide.api.types.UploadRequest
 import formulaide.api.users.canAccess
 import formulaide.db.document.*
 import formulaide.server.Auth
+import formulaide.server.Auth.Companion.requireAdmin
 import formulaide.server.Auth.Companion.requireEmployee
 import formulaide.server.database
 import io.ktor.http.*
@@ -18,9 +19,17 @@ import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.set
+import kotlin.random.Random
+import kotlin.random.nextInt
+
+private val deletionRequests = HashMap<Ref<Record>, String>()
+private val deletionRequestsLock = Semaphore(1)
 
 fun Routing.submissionRoutes() {
 	route("/submissions") {
@@ -161,6 +170,50 @@ fun Routing.submissionRoutes() {
 					output.csvBuildRow(form, record)
 
 				call.respondText(output.toString(), ContentType.Text.CSV)
+			}
+
+			post("/requestDelete") {
+				val user = call.requireAdmin(database)
+				val request = call.receive<RecordDeletionRequest>()
+
+				// Generate the challenge: x * y + z
+				val x = Random.nextInt(0..10)
+				val y = Random.nextInt(0..10)
+				val z = Random.nextInt(0..100)
+				val answer = (x * y + z).toString()
+
+				call.application.log.info("The user ${user.email} has requested the deletion of the record ${request.record}, the challenge answer is $answer")
+				deletionRequestsLock.withPermit {
+					deletionRequests[request.record] = answer
+				}
+
+				call.respond(RecordDeletionChallenge(request.record, "Combien font $x × $y + $z ?"))
+
+				delay(2 * 60 * 1000)
+				val result = deletionRequestsLock.withPermit {
+					deletionRequests.remove(request.record)
+				}
+				if (result != null)
+					call.application.log.info("The user ${user.email} had requested the deletion of the record ${request.record}, but their request expired before confirmation")
+			}
+
+			post("/delete") {
+				val user = call.requireAdmin(database)
+				val request = call.receive<RecordDeletion>()
+
+				val expected = deletionRequestsLock.withPermit {
+					deletionRequests.remove(request.record)
+				}
+
+				requireNotNull(expected) { "Avant de pouvoir supprimer un dossier, il est nécessaire de faire une demande de suppression" }
+				require(request.challengeResponse == expected) { "La réponse est incorrecte, la réponse attendue était $expected" }
+				call.application.log.warn("The user ${user.email} has deleted the record ${request.record}")
+
+				database.deleteRecord(
+					database.findRecord(request.record) ?: error("Le dossier demandé n'existe pas"),
+					user
+				)
+				call.respond("Success")
 			}
 		}
 	}

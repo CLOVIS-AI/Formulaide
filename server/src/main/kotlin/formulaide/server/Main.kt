@@ -122,6 +122,7 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 		formRoutes()
 		submissionRoutes()
 		fileRoutes()
+		alertRoutes()
 
 		get("/config") {
 			call.respond(

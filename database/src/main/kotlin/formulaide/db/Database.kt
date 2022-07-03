@@ -1,5 +1,6 @@
 package formulaide.db
 
+import formulaide.api.data.Alert
 import formulaide.api.data.Composite
 import formulaide.api.data.Form
 import formulaide.api.data.Record
@@ -43,6 +44,7 @@ class Database(
 	internal val submissions = database.getCollection<DbSubmission>("submissions")
 	internal val records = database.getCollection<Record>("records")
 	internal val uploads = database.getCollection<DbFile>("uploads")
+	internal val alerts = database.getCollection<Alert>("alerts")
 
 	init {
 		CoroutineScope(job + Dispatchers.IO).launch { autoExpireFiles() }

@@ -2,6 +2,7 @@ package formulaide.client.routes
 
 import formulaide.api.data.*
 import formulaide.api.search.SearchCriterion
+import formulaide.api.types.Ref
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.client.Client
 
@@ -52,7 +53,31 @@ suspend fun Client.Authenticated.downloadCsv(
 	state: RecordState?,
 	criteria: Map<Action?, List<SearchCriterion<*>>> = emptyMap(),
 ): String =
-	post("/submissions/csv",
-	     body = RecordsToReviewRequest(form.createRef(),
-	                                   state,
-	                                   criteria.mapKeys { (k, _) -> k?.id }))
+	post(
+		"/submissions/csv",
+		body = RecordsToReviewRequest(form.createRef(),
+		                              state,
+		                              criteria.mapKeys { (k, _) -> k?.id })
+	)
+
+/**
+ * Requests the deletion of a record.
+ *
+ * - POST /submissions/requestDelete
+ * - Requires 'administrator' authentication
+ * - Body: [RecordDeletionRequest]
+ * - Response: [RecordDeletionChallenge]
+ */
+suspend fun Client.Authenticated.requestDeleteRecord(record: Ref<Record>): RecordDeletionChallenge =
+	post("/submissions/requestDelete", body = RecordDeletionRequest(record))
+
+/**
+ * Deletes a record.
+ *
+ * - POST /submissions/delete
+ * - Requires 'administrator' authentication
+ * - Body: [RecordDeletion]
+ * - Response: `"Success"`
+ */
+suspend fun Client.Authenticated.deleteRecord(record: Ref<Record>, response: String): String =
+	post("/submissions/delete", body = RecordDeletion(record, response))
