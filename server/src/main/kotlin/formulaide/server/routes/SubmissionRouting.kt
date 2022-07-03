@@ -249,6 +249,7 @@ private fun Form.csvFields() = (mainFields.asSequence(checkArity = true) +
 		actions.map { it.fields ?: FormRoot(emptyList()) }
 			.flatMap { it.asSequence(checkArity = true) })
 	.filter { it !is FormField.Simple || it.simple !is SimpleField.Message }
+	.filter { it.arity.max > 0 }
 
 private fun Form.csvFieldsWithKey() =
 	(mainFields.asSequenceWithKey(checkArity = true).map { "_:${it.first}" to it.second } +
@@ -257,6 +258,7 @@ private fun Form.csvFieldsWithKey() =
 					root.asSequenceWithKey(checkArity = true).map { "$rootId:${it.first}" to it.second }
 				})
 		.filter { (_, it) -> it !is FormField.Simple || it.simple !is SimpleField.Message }
+		.filter { (_, it) -> it.arity.max > 0 }
 
 private fun StringBuilder.csvBuildColumns(form: Form) {
 	// Column ID
