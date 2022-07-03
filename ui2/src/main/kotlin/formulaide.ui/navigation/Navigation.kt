@@ -4,6 +4,7 @@ import androidx.compose.runtime.*
 import formulaide.ui.screens.DummyScreen
 import formulaide.ui.screens.Home
 import formulaide.ui.theme.RailButton
+import formulaide.ui.theme.ThemeSelector
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.jetbrains.compose.web.css.*
@@ -76,20 +77,49 @@ private fun NavigationRail() = Nav(
 			top(0.px)
 			display(DisplayStyle.Flex)
 			flexDirection(FlexDirection.Column)
+			justifyContent(JustifyContent.SpaceBetween)
+			paddingTop(50.px)
+			paddingBottom(50.px)
+		}
+	}) {
+
+	NavigationArea("actions") {
+		// In the future, buttons to create a form etc. will be here
+	}
+
+	NavigationArea("screens") {
+		for (screen in screens) {
+			RailButton(
+				screen.icon,
+				screen.iconSelected,
+				screen.title,
+				selected = screen == currentScreen,
+				action = { currentScreen = screen }
+			)
+		}
+	}
+
+	NavigationArea("settings") {
+		ThemeSelector()
+		// In the future: the log-out button
+	}
+}
+
+@Composable
+private fun NavigationArea(id: String, block: @Composable () -> Unit) = Div(
+	{
+		id(id)
+
+		style {
+			display(DisplayStyle.Flex)
+			flexDirection(FlexDirection.Column)
 			justifyContent(JustifyContent.Center)
 			alignItems(AlignItems.Center)
 			gap(30.px)
 		}
-	}) {
-	for (screen in screens) {
-		RailButton(
-			screen.icon,
-			screen.iconSelected,
-			screen.title,
-			selected = screen == currentScreen,
-			action = { currentScreen = screen }
-		)
 	}
+) {
+	block()
 }
 
 fun loadNavigation() {
