@@ -2,8 +2,9 @@ package formulaide.ui.theme
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import formulaide.ui.utils.LocalStorageState.Companion.localStorageOf
+import kotlinx.serialization.Serializable
 import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.css.color
 import org.jetbrains.compose.web.dom.Div
@@ -25,6 +26,7 @@ interface AbstractTheme {
 	val backgroundVariant: CustomColor
 }
 
+@Serializable
 enum class Theme : AbstractTheme {
 	LIGHT {
 		override val icon: String get() = "ri-contrast-2-line"
@@ -67,7 +69,7 @@ enum class Theme : AbstractTheme {
 	abstract val icon: String
 
 	companion object {
-		var current by mutableStateOf(LIGHT)
+		var current by localStorageOf("theme", LIGHT)
 	}
 }
 
