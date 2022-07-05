@@ -12,12 +12,4 @@ data class CustomColor(
 
 	val css: CSSColorValue
 		get() = rgba(red, green, blue, alpha)
-
-	companion object {
-		// Colors from the light mode at https://m3.material.io/styles/color/the-color-system/tokens
-
-		val primary = CustomColor(103, 80, 164)
-		val secondary = CustomColor(98, 91, 113)
-		val tertiary = CustomColor(125, 82, 96)
-	}
 }
