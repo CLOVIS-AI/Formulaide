@@ -1,5 +1,6 @@
 plugins {
 	kotlin("js")
+	kotlin("plugin.serialization")
 	id("org.jetbrains.compose")
 }
 
