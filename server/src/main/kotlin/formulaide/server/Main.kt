@@ -102,8 +102,12 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 		allowCredentials = true
 		allowSameOrigin = true
 		allowHeader("Accept")
-		allowHeader("Content-Type")
-		allowHeader("Authorization")
+		allowHeader(HttpHeaders.ContentType)
+		allowHeader(HttpHeaders.Authorization)
+		allowMethod(HttpMethod.Options)
+		allowMethod(HttpMethod.Put)
+		allowMethod(HttpMethod.Patch)
+		allowMethod(HttpMethod.Delete)
 	}
 
 	install(Authentication) {
