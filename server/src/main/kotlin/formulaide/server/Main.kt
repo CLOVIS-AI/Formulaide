@@ -1,5 +1,7 @@
 package formulaide.server
 
+import ch.qos.logback.classic.Level
+import ch.qos.logback.classic.LoggerContext
 import formulaide.api.data.Config
 import formulaide.api.types.Email
 import formulaide.api.types.Ref
@@ -25,6 +27,7 @@ import io.ktor.server.routing.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
+import org.slf4j.LoggerFactory
 
 // New job: the server never dies cleanly, it can only be killed. No need for structure concurrency.
 val database = Database("localhost", 27017, "formulaide", "root", "development-password", Job())
@@ -63,7 +66,10 @@ fun main(args: Array<String>) {
 		}
 	}
 
-	println("The server is starting…")
+	println("Disable MongoDB request logging…")
+	val loggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
+	val rootLogger = loggerContext.getLogger("org.mongodb.driver")
+	rootLogger.level = Level.INFO
 
 	println("Starting Ktor…")
 	io.ktor.server.netty.EngineMain.main(args)
