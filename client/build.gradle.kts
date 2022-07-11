@@ -26,7 +26,7 @@ kotlin {
 			dependencies {
 				implementation(kotlin("stdlib-common"))
 
-				api(project(":api"))
+				implementation(project(":api"))
 
 				implementation(Ktor.client.core)
 				implementation("io.ktor:ktor-client-content-negotiation:_")
