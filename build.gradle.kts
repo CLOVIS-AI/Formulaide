@@ -19,5 +19,6 @@ subprojects {
 allprojects {
 	repositories {
 		mavenCentral()
+		maven("https://gitlab.com/api/v4/projects/37325377/packages/maven")
 	}
 }
