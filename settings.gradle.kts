@@ -11,6 +11,7 @@ plugins {
 	id("de.fayard.refreshVersions") version "0.40.1"
 }
 
+include("core")
 include("api")
 include("client")
 include("server")
