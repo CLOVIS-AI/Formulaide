@@ -26,6 +26,7 @@ kotlin {
 			dependencies {
 				implementation(kotlin("stdlib-common"))
 
+				api(project(":core"))
 				implementation(project(":api"))
 
 				implementation(Ktor.client.core)
