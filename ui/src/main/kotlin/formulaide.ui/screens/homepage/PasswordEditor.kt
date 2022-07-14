@@ -14,7 +14,6 @@ import formulaide.ui.navigateTo
 import formulaide.ui.useClient
 import formulaide.ui.useUser
 import formulaide.ui.utils.defaultClient
-import formulaide.ui.utils.traceRenders
 import react.FC
 import react.Props
 import react.dom.html.InputType
@@ -22,8 +21,6 @@ import react.useState
 
 @Suppress("FunctionName")
 fun PasswordEditor(user: Email, previousScreen: Screen) = FC<Props>("PasswordEditor") {
-	traceRenders("PasswordModification")
-
 	var oldPassword by useState<String>()
 	var newPassword1 by useState<String>()
 	var newPassword2 by useState<String>()

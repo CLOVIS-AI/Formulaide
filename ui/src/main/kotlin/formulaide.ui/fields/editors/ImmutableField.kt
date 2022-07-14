@@ -8,7 +8,6 @@ import formulaide.client.routes.downloadFile
 import formulaide.ui.components.StyledButton
 import formulaide.ui.useClient
 import formulaide.ui.utils.classes
-import formulaide.ui.utils.traceRenders
 import kotlinx.browser.window
 import org.w3c.dom.url.URL
 import org.w3c.files.Blob
@@ -30,8 +29,6 @@ private val LazyImmutableField get() = ImmutableField
  * Displays a user's submission to a field.
  */
 val ImmutableField: FC<ImmutableFieldProps> = FC("ImmutableField") { props ->
-	traceRenders(props.answer.toString())
-
 	val (client) = useClient()
 
 	require(client is Client.Authenticated) { "Cette page est uniquement accessible par les employés." }

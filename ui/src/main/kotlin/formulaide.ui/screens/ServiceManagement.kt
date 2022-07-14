@@ -16,7 +16,6 @@ import formulaide.ui.refreshServices
 import formulaide.ui.useClient
 import formulaide.ui.useServices
 import formulaide.ui.utils.map
-import formulaide.ui.utils.traceRenders
 import react.FC
 import react.Props
 import react.dom.html.InputType
@@ -25,8 +24,6 @@ import react.useState
 import formulaide.ui.components.inputs.Input as UIInput
 
 val ServiceList = FC<Props>("ServiceList") {
-	traceRenders("ServiceList")
-
 	val (client) = useClient()
 	if (client !is Client.Authenticated) {
 		Card {

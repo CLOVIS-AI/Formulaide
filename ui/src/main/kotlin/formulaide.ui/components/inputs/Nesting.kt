@@ -2,7 +2,6 @@ package formulaide.ui.components.inputs
 
 import formulaide.ui.components.StyledButton
 import formulaide.ui.utils.classes
-import formulaide.ui.utils.traceRenders
 import react.FC
 import react.PropsWithChildren
 import react.dom.html.ReactHTML.div
@@ -32,8 +31,6 @@ external interface NestingProps : PropsWithChildren {
 }
 
 val Nesting = FC<NestingProps>("Nesting") { props ->
-	traceRenders("styledNesting … depth ${props.depth}, number ${props.fieldNumber}")
-
 	val depth = props.depth ?: 0
 	val fieldNumber = props.fieldNumber ?: 0
 

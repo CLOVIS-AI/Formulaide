@@ -8,7 +8,6 @@ import formulaide.ui.components.cards.submit
 import formulaide.ui.components.inputs.Field
 import formulaide.ui.components.inputs.Input
 import formulaide.ui.useClient
-import formulaide.ui.utils.traceRenders
 import react.FC
 import react.Props
 import react.dom.html.InputType
@@ -20,8 +19,6 @@ import react.useState
  * @see login
  */
 val Login = FC<Props>("Login") {
-	traceRenders("Login")
-
 	var email by useState("")
 	var password by useState("")
 
