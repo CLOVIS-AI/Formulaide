@@ -30,7 +30,7 @@ interface UserBackbone : Backbone<User> {
 	 *
 	 * Requires employee authentication.
 	 */
-	suspend fun me(): User
+	suspend fun me(): Ref<User>
 
 	/**
 	 * Logs in.

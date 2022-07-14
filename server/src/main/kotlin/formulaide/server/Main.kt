@@ -2,11 +2,9 @@ package formulaide.server
 
 import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.LoggerContext
+import formulaide.api.bones.ApiNewUser
 import formulaide.api.data.Config
 import formulaide.api.types.Email
-import formulaide.api.types.Ref
-import formulaide.api.users.NewUser
-import formulaide.api.users.User
 import formulaide.db.Database
 import formulaide.db.document.allServices
 import formulaide.db.document.createService
@@ -52,14 +50,12 @@ fun main(args: Array<String>) {
 		if (database.findUser(rootUser) == null) {
 			println("Creating the administrator account $rootUser…")
 			auth.newAccount(
-				NewUser(
+				ApiNewUser(
+					rootUser,
+					"Administrateur",
+					setOf(service.id),
+					true,
 					rootPassword,
-					User(
-						Email(rootUser),
-						"Administrateur",
-						setOf(Ref(service.id.toString())),
-						true,
-					)
 				)
 			)
 		} else {
@@ -131,7 +127,8 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 	routing {
 		staticFrontendRoutes()
 
-		userRoutes(auth)
+		with(AuthRouting) { enable(auth) }
+		with(UserRouting) { enable(auth) }
 		with(DepartmentRouting) { enable() }
 		dataRoutes()
 		formRoutes()

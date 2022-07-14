@@ -4,6 +4,7 @@ import formulaide.api.users.User
 import formulaide.client.Client.Anonymous
 import formulaide.client.Client.Authenticated
 import formulaide.client.bones.Departments
+import formulaide.client.bones.Users
 import formulaide.client.files.MultipartUpload
 import formulaide.client.routes.getMe
 import formulaide.core.Department
@@ -31,6 +32,13 @@ sealed class Client(
 	val departments = Departments(
 		this,
 		Cache.Default<Department>()
+			.cachedInMemory()
+	)
+
+	@Suppress("LeakingThis")
+	val users = Users(
+		this,
+		Cache.Default<formulaide.core.User>()
 			.cachedInMemory()
 	)
 
@@ -141,7 +149,7 @@ sealed class Client(
 		 *
 		 * Calling this method is important because it will clear the cookies set by the login.
 		 */
-		suspend fun logout() = post<String>("/users/logout")
+		suspend fun logout() = post<String>("/api/auth/logout")
 
 		companion object {
 			suspend fun connect(hostUrl: String, token: String) =

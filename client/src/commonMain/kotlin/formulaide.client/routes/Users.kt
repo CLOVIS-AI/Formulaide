@@ -1,77 +1,99 @@
 package formulaide.client.routes
 
+import formulaide.api.types.Email
 import formulaide.api.types.Ref
 import formulaide.api.users.*
 import formulaide.client.Client
+import formulaide.client.bones.DepartmentRef
+import formulaide.client.bones.UserRef
+import opensavvy.backbone.Ref.Companion.requestValue
+
+private fun formulaide.core.User.toLegacy() = User(
+	Email(email),
+	fullName,
+	departments.map {
+		require(it is DepartmentRef) { "$this doesn't support the reference $it" }
+		Ref<Service>(it.id.toString())
+	}.toSet(),
+	administrator,
+	open,
+)
 
 /**
  * Gets a [TokenResponse] from the server, from a [PasswordLogin].
  *
- * - POST /users/login
- * - Body: [PasswordLogin]
- * - Response: [TokenResponse]
+ * > This method is part of the legacy API.
+ * > It will be deprecated in the future.
+ * > See [Client.departments]
  */
 suspend fun Client.login(passwordLogin: PasswordLogin): TokenResponse =
-	post("/users/login", body = passwordLogin)
+	TokenResponse(users.logIn(passwordLogin.email, passwordLogin.password))
 
 /**
  * Creates a new user.
  *
- * - POST /users/create
- * - Requires 'administrator' right
- * - Body: [NewUser]
- * - Response: [TokenResponse]
+ * > This method is part of the legacy API.
+ * > It will be deprecated in the future.
+ * > See [Client.departments]
  */
-suspend fun Client.Authenticated.createUser(newUser: NewUser): TokenResponse =
-	post("/users/create", body = newUser)
+suspend fun Client.Authenticated.createUser(newUser: NewUser) {
+	users.create(
+		newUser.user.email.email,
+		newUser.user.fullName,
+		newUser.user.services.map { DepartmentRef(it.id.toInt(), departments) }.toSet(),
+		newUser.user.administrator,
+		newUser.password,
+	)
+}
 
 /**
  * Gets the current user's data.
  *
- * - GET /users/me
- * - Requires authentication
- * - Response: [User]
+ * > This method is part of the legacy API.
+ * > It will be deprecated in the future.
+ * > See [Client.departments]
  */
 suspend fun Client.Authenticated.getMe(): User =
-	get("/users/me")
+	users.me().requestValue().toLegacy()
 
 /**
  * Edits a [user]'s information.
  *
- * See [UserEdits] for an explanation of the parameters.
- *
- * - POST /users/edit
- * - Requires 'administrator' rights
- * - Body: [UserEdits]
- * - Response: [User]
+ * > This method is part of the legacy API.
+ * > It will be deprecated in the future.
+ * > See [Client.departments]
  */
 suspend fun Client.Authenticated.editUser(
 	user: User,
 	enabled: Boolean? = null,
 	administrator: Boolean? = null,
 	services: Set<Ref<Service>> = emptySet(),
-): User =
-	post("/users/edit", body = UserEdits(user.email, enabled, administrator, services))
+): User {
+	val ref = UserRef(user.id, users)
+	users.edit(ref, enabled, administrator, services.map { DepartmentRef(it.id.toInt(), departments) }.toSet())
+	return ref.requestValue().toLegacy()
+}
 
 /**
  * Edits a user's password.
  *
- * - POST /users/password
- * - Requires 'employee' rights
- * - Body: [PasswordEdit]
- * - Response: a success message
+ * > This method is part of the legacy API.
+ * > It will be deprecated in the future.
+ * > See [Client.departments]
  */
-suspend fun Client.Authenticated.editPassword(edit: PasswordEdit): String =
-	post("/users/password", body = edit)
+suspend fun Client.Authenticated.editPassword(edit: PasswordEdit) {
+	val ref = UserRef(edit.user.email, users)
+	users.setPassword(ref, edit.oldPassword, edit.newPassword)
+}
 
 /**
  * Gets the list of [users][User].
  *
- * - GET /users/listEnabled
- * - GET /users/listAll
- * - Response: list of [User]
- *
- * @param evenDisabled If `true`, users that are disabled are queried as well.
+ * > This method is part of the legacy API.
+ * > It will be deprecated in the future.
+ * > See [Client.departments]
  */
 suspend fun Client.Authenticated.listUsers(evenDisabled: Boolean = false): List<User> =
-	get(if (!evenDisabled) "/users/listEnabled" else "/users/listAll")
+	users.all(evenDisabled)
+		.map { it.requestValue() }
+		.map { it.toLegacy() }

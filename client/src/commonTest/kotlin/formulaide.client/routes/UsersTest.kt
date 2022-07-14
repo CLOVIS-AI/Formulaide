@@ -38,14 +38,18 @@ class UsersTest {
 	fun createUser() = runTest {
 		val client = testAdministrator()
 
-		val email = Email("mon email ${Random.nextInt()} @zut")
-		val response = client.createUser(NewUser("mon mot de passe",
-		                                         User(
-			                                         email,
-			                                         "Mon Identité",
-			                                         client.listServices().mapTo(HashSet()) { it.createRef() },
-			                                         false
-		                                         )))
+		val email = Email("mon-email-${Random.nextInt()}@zut")
+		val response = client.createUser(
+			NewUser(
+				"mon mot de passe",
+				User(
+					email,
+					"Mon Identité",
+					client.listServices().mapTo(HashSet()) { it.createRef() },
+					false
+				)
+			)
+		)
 
 		println(response)
 		assertTrue(true) // on failure, exceptions are thrown previously
@@ -60,7 +64,7 @@ class UsersTest {
 				NewUser(
 					"mon mot de passe",
 					User(
-						Email("mon email ${Random.nextInt()}"),
+						Email("mon-email-${Random.nextInt()}@zut"),
 						"Mon Identité",
 						client.listServices().mapTo(HashSet()) { it.createRef() },
 						false

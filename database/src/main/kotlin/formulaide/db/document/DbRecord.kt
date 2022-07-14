@@ -4,7 +4,6 @@ import formulaide.api.data.*
 import formulaide.api.types.Ref
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.types.Ref.Companion.load
-import formulaide.api.users.canAccess
 import formulaide.db.Database
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
