@@ -9,6 +9,7 @@ import formulaide.db.Database
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import org.bson.conversions.Bson
 import org.litote.kmongo.*
 import java.time.Instant
 import java.util.*
@@ -128,15 +129,36 @@ suspend fun Database.findRecords(
 	submissions: List<DbSubmission>? = null,
 	limit: Int? = Record.MAXIMUM_NUMBER_OF_RECORDS_PER_ACTION,
 ): List<Record> {
-	val submissionsFilter = submissions
-		?.map { it.apiId }
-		?.let { (Record::history / RecordStateTransition::fields / Ref<*>::id).`in`(it) }
+	val submissionFilter = mutableListOf<Bson>()
+	for ((action, subs) in (submissions ?: emptyList()).groupBy { it.root }) {
+		val filterOneOfIds = (RecordStateTransition::fields / Ref<*>::id).`in`(subs.map { it.apiId })
+
+		if (action == null) {
+			submissionFilter.add(
+				Record::history.elemMatch(
+					and(
+						filterOneOfIds,
+						RecordStateTransition::previousState eq null,
+					)
+				)
+			)
+		} else {
+			submissionFilter.add(
+				Record::history.elemMatch(
+					and(
+						filterOneOfIds,
+						RecordStateTransition::previousState eq RecordState.Action(Ref(action)),
+					)
+				)
+			)
+		}
+	}
 
 	val stateFilter = (Record::state eq state)
 		.takeIf { state != null }
 
 	var results = records
-		.find(Record::form / Ref<*>::id eq form.id, stateFilter, submissionsFilter)
+		.find(Record::form / Ref<*>::id eq form.id, stateFilter, and(submissionFilter))
 
 	if (limit != null)
 		results = results.limit(limit)
