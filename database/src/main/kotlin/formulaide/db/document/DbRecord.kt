@@ -13,7 +13,7 @@ import org.litote.kmongo.*
 import java.time.Instant
 import java.util.*
 
-suspend fun Database.createRecord(submission: FormSubmission) {
+suspend fun Database.createRecord(submission: FormSubmission, userEmail: String? = null) {
 	submission.form.load { findForm(it) ?: error("Impossible de trouver le formulaire $it") }
 	val form = submission.form.obj
 
@@ -30,7 +30,7 @@ suspend fun Database.createRecord(submission: FormSubmission) {
 				Instant.now().epochSecond,
 				previousState = null,
 				nextState = state,
-				assignee = null,
+				assignee = userEmail?.let { Ref(it) },
 				reason = "Saisie initiale",
 				fields = submission.createRef(),
 			)
