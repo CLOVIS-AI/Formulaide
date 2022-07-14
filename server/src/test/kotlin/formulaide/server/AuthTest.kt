@@ -1,11 +1,8 @@
 package formulaide.server
 
 import at.favre.lib.crypto.bcrypt.BCrypt
-import formulaide.api.types.Email
-import formulaide.api.types.Ref
-import formulaide.api.users.NewUser
-import formulaide.api.users.PasswordLogin
-import formulaide.api.users.User
+import formulaide.api.bones.ApiNewUser
+import formulaide.api.bones.ApiPasswordLogin
 import formulaide.db.document.createService
 import kotlinx.coroutines.runBlocking
 import kotlin.random.Random
@@ -50,15 +47,12 @@ class AuthTest {
 
 		// Creating the account
 
-		val apiUser = User(
-			Email(email), "Auth Test User", setOf(Ref(service.id.toString())), false
-		)
-		val user = NewUser(password, apiUser)
-		val (token1, dbUser1) = auth.newAccount(user)
+		val user = ApiNewUser(email, "Auth Test User", setOf(service.id), false, password)
+		val dbUser1 = auth.newAccount(user)
 
 		// Logging in
 
-		val (token2, _, dbUser2) = auth.login(PasswordLogin(password, email))
+		val (token2, _, dbUser2) = auth.login(ApiPasswordLogin(email, password))
 
 		// Checking token validity
 
@@ -67,7 +61,6 @@ class AuthTest {
 			dbUser2,
 			"I should retrieve the same user as the one that was created"
 		)
-		assertNotNull(auth.checkToken(token1))
 		assertNotNull(auth.checkToken(token2))
 		Unit
 	}

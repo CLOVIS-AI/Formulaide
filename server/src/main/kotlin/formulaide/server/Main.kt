@@ -1,10 +1,10 @@
 package formulaide.server
 
+import ch.qos.logback.classic.Level
+import ch.qos.logback.classic.LoggerContext
+import formulaide.api.bones.ApiNewUser
 import formulaide.api.data.Config
 import formulaide.api.types.Email
-import formulaide.api.types.Ref
-import formulaide.api.users.NewUser
-import formulaide.api.users.User
 import formulaide.db.Database
 import formulaide.db.document.allServices
 import formulaide.db.document.createService
@@ -16,6 +16,7 @@ import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
+import io.ktor.server.plugins.callloging.*
 import io.ktor.server.plugins.conditionalheaders.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
@@ -25,6 +26,7 @@ import io.ktor.server.routing.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
+import org.slf4j.LoggerFactory
 
 // New job: the server never dies cleanly, it can only be killed. No need for structure concurrency.
 val database = Database("localhost", 27017, "formulaide", "root", "development-password", Job())
@@ -48,14 +50,12 @@ fun main(args: Array<String>) {
 		if (database.findUser(rootUser) == null) {
 			println("Creating the administrator account $rootUser…")
 			auth.newAccount(
-				NewUser(
+				ApiNewUser(
+					rootUser,
+					"Administrateur",
+					setOf(service.id),
+					true,
 					rootPassword,
-					User(
-						Email(rootUser),
-						"Administrateur",
-						setOf(Ref(service.id.toString())),
-						true,
-					)
 				)
 			)
 		} else {
@@ -63,7 +63,10 @@ fun main(args: Array<String>) {
 		}
 	}
 
-	println("The server is starting…")
+	println("Disable MongoDB request logging…")
+	val loggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
+	val rootLogger = loggerContext.getLogger("org.mongodb.driver")
+	rootLogger.level = Level.INFO
 
 	println("Starting Ktor…")
 	io.ktor.server.netty.EngineMain.main(args)
@@ -86,13 +89,21 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 		json(serializer)
 	}
 
+	install(CallLogging) {
+		level = org.slf4j.event.Level.DEBUG
+	}
+
 	install(CORS) { //TODO: audit
 		anyHost()
 		allowCredentials = true
 		allowSameOrigin = true
 		allowHeader("Accept")
-		allowHeader("Content-Type")
-		allowHeader("Authorization")
+		allowHeader(HttpHeaders.ContentType)
+		allowHeader(HttpHeaders.Authorization)
+		allowMethod(HttpMethod.Options)
+		allowMethod(HttpMethod.Put)
+		allowMethod(HttpMethod.Patch)
+		allowMethod(HttpMethod.Delete)
 	}
 
 	install(Authentication) {
@@ -116,8 +127,9 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 	routing {
 		staticFrontendRoutes()
 
-		userRoutes(auth)
-		serviceRoutes()
+		with(AuthRouting) { enable(auth) }
+		with(UserRouting) { enable(auth) }
+		with(DepartmentRouting) { enable() }
 		dataRoutes()
 		formRoutes()
 		submissionRoutes()

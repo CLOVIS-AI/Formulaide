@@ -1,6 +1,5 @@
 package formulaide.client
 
-import formulaide.api.users.TokenResponse
 import kotlinx.browser.window
 import kotlinx.coroutines.await
 import kotlinx.serialization.decodeFromString
@@ -10,7 +9,7 @@ import org.w3c.fetch.RequestInit
 
 actual suspend fun Client.refreshToken(): String? {
 	val response = window.fetch(
-		"$hostUrl/users/refreshToken",
+		"$hostUrl/api/auth/refreshToken",
 		RequestInit(
 			method = "POST",
 			credentials = RequestCredentials.INCLUDE
@@ -19,8 +18,7 @@ actual suspend fun Client.refreshToken(): String? {
 
 	return when {
 		response.ok -> Client.jsonSerializer
-			.decodeFromString<TokenResponse>(response.text().await())
-			.token
+			.decodeFromString<String>(response.text().await())
 		else -> {
 			console.warn("La récupération de l'access token a échoué", response)
 			null

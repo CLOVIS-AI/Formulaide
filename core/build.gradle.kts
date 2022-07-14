@@ -26,24 +26,7 @@ kotlin {
 			dependencies {
 				implementation(kotlin("stdlib-common"))
 
-				api(project(":core"))
-				implementation(project(":api"))
-
-				implementation(Ktor.client.core)
-				implementation("io.ktor:ktor-client-content-negotiation:_")
-				implementation("io.ktor:ktor-serialization-kotlinx-json:_")
-				implementation(Ktor.client.json)
-				implementation(Ktor.client.logging)
-				implementation(Ktor.client.auth)
-
-				implementation(KotlinX.serialization.json)
-			}
-		}
-
-		val jvmMain by getting {
-			dependencies {
-				implementation(Ktor.client.apache)
-				implementation("ch.qos.logback:logback-classic:_")
+				api("opensavvy:backbone:_")
 			}
 		}
 

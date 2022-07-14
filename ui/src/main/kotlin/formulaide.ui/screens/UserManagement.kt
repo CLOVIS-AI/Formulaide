@@ -63,7 +63,7 @@ val UserList = FC<Props>("UserList") {
 		val selectedUsers = if (!filterByServices) users
 		else users.filter { user -> user.services.any { service -> service.id in filteredServices.map { it.id } } }
 
-		selectedUsers.sortedBy { it.fullName }
+		selectedUsers.sortedBy { it.fullName + it.email }
 	}
 
 	Card {

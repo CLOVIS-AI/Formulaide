@@ -25,6 +25,7 @@ kotlin {
 dependencies {
 	testImplementation(kotlin("test-js"))
 
+	implementation(project(":api"))
 	implementation(project(":client"))
 
 	implementation("org.jetbrains.kotlin-wrappers:kotlin-react:_")

@@ -6,7 +6,6 @@ import formulaide.api.types.Ref
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.types.Ref.Companion.load
 import formulaide.api.types.UploadRequest
-import formulaide.api.users.canAccess
 import formulaide.db.document.*
 import formulaide.server.Auth
 import formulaide.server.Auth.Companion.Employee

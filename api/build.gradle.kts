@@ -11,13 +11,14 @@ kotlin {
 		browser()
 	}
 
-	@kotlin.Suppress("UNUSED_VARIABLE")
+	@Suppress("UNUSED_VARIABLE")
 	sourceSets {
 		val commonMain by getting {
 			dependencies {
 				implementation(kotlin("stdlib-common"))
 
 				api(KotlinX.serialization.json)
+				api(project(":core"))
 			}
 		}
 

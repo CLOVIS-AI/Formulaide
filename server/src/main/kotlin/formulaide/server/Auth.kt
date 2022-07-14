@@ -5,9 +5,9 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces.DecodedJWT
 import com.auth0.jwt.interfaces.Payload
+import formulaide.api.bones.ApiNewUser
+import formulaide.api.bones.ApiPasswordLogin
 import formulaide.api.types.Email
-import formulaide.api.users.NewUser
-import formulaide.api.users.PasswordLogin
 import formulaide.db.Database
 import formulaide.db.document.DbUser
 import formulaide.db.document.createUser
@@ -56,30 +56,28 @@ class Auth(private val database: Database) {
 	 * Creates a new account.
 	 * @return A pair of a JWT token and the created user.
 	 */
-	suspend fun newAccount(newUser: NewUser): Pair<String, DbUser> {
+	suspend fun newAccount(newUser: ApiNewUser): DbUser {
 		val hashedPassword = hash(newUser.password)
 
 		val id = UUID.randomUUID().toString()
 
-		val createdUser = database.createUser(
+		return database.createUser(
 			DbUser(
 				id,
-				newUser.user.email.email,
+				newUser.email,
 				hashedPassword,
-				newUser.user.fullName,
-				services = newUser.user.services.mapTo(HashSet()) { it.id.toInt() },
-				isAdministrator = newUser.user.administrator
+				newUser.fullName,
+				services = newUser.departments,
+				isAdministrator = newUser.administrator
 			)
 		)
-
-		return signAccessToken(newUser.user.email, newUser.user.administrator) to createdUser
 	}
 
 	/**
 	 * Checks the validity of a connection based on a hashed password.
 	 * @return A triple of an access token, a refresh token, and their matching user.
 	 */
-	suspend fun login(login: PasswordLogin): Triple<String, String, DbUser> {
+	suspend fun login(login: ApiPasswordLogin): Triple<String, String, DbUser> {
 		val current = Instant.now().epochSecond
 		check(serverWideBlock <= current) { "Toutes les connexions du serveur sont actuellement bloquées (pendant ${current - serverWideBlock} secondes)" }
 

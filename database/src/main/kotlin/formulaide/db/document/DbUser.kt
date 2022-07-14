@@ -1,8 +1,6 @@
 package formulaide.db.document
 
-import formulaide.api.types.Email
-import formulaide.api.types.Ref
-import formulaide.api.users.Service
+import formulaide.api.bones.ApiUser
 import formulaide.api.users.User
 import formulaide.db.Database
 import kotlinx.serialization.Serializable
@@ -34,14 +32,9 @@ data class DbUser(
 /**
  * Converts a database [DbUser] to a [User].
  */
-fun DbUser.toApi(): User {
-	@Suppress("DEPRECATION")
-	val apiServices = services
-		.mapTo(HashSet<Ref<Service>>()) { Ref(it.toString()) }
-		.ifEmpty { setOf(Ref(service.toString())) }
-
-	return User(
-		Email(email), fullName, apiServices, isAdministrator, enabled ?: false
+fun DbUser.toApi(): ApiUser {
+	return ApiUser(
+		email, fullName, services, isAdministrator, enabled ?: false
 	)
 }
 
@@ -91,7 +84,7 @@ suspend fun Database.editUser(
 	newEnabled: Boolean? = null,
 	newIsAdministrator: Boolean? = null,
 	newBlockedUntil: Long? = null,
-	newServices: Set<Ref<Service>>? = null,
+	newServices: Set<Int>? = null,
 ): DbUser {
 	var newUser = user
 
@@ -105,7 +98,7 @@ suspend fun Database.editUser(
 		newUser = newUser.copy(blockedUntil = newBlockedUntil)
 
 	if (newServices != null)
-		newUser = newUser.copy(services = newServices.mapTo(HashSet()) { it.id.toInt() })
+		newUser = newUser.copy(services = newServices)
 
 	require(user != newUser) { "La demande de modification de l'utilisateur ${user.email} n'apporte aucune modification" }
 

@@ -26,6 +26,7 @@ dependencies {
 	implementation("io.ktor:ktor-server-html-builder:_")
 	implementation("io.ktor:ktor-serialization-kotlinx-json:_")
 	implementation("ch.qos.logback:logback-classic:_")
+	implementation("io.ktor:ktor-server-call-logging:_")
 
 	implementation("io.ktor:ktor-server-auth:_")
 	implementation("io.ktor:ktor-server-auth-jwt:_")
