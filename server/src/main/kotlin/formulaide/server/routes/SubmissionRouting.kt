@@ -9,6 +9,7 @@ import formulaide.api.types.UploadRequest
 import formulaide.api.users.canAccess
 import formulaide.db.document.*
 import formulaide.server.Auth
+import formulaide.server.Auth.Companion.Employee
 import formulaide.server.Auth.Companion.requireAdmin
 import formulaide.server.Auth.Companion.requireEmployee
 import formulaide.server.database
@@ -34,15 +35,18 @@ private val deletionRequestsLock = Semaphore(1)
 fun Routing.submissionRoutes() {
 	route("/submissions") {
 
-		post("/create") {
-			val submission = call.receive<FormSubmission>()
+		authenticate(Employee, optional = true) {
+			post("/create") {
+				val user = call.principal<Auth.AuthPrincipal>()
+				val submission = call.receive<FormSubmission>()
 
-			require(submission.root == null) { "L'endpoint /submissions/create ne peut être utilisé que pour les saisies originelles, pas pour la vérification." }
+				require(submission.root == null) { "L'endpoint /submissions/create ne peut être utilisé que pour les saisies originelles, pas pour la vérification." }
 
-			val dbSubmission = database.saveSubmission(submission)
-			database.createRecord(dbSubmission.toApi())
+				val dbSubmission = database.saveSubmission(submission)
+				database.createRecord(dbSubmission.toApi(), userEmail = user?.email?.email)
 
-			call.respond("Success")
+				call.respond("Success")
+			}
 		}
 
 		post("/nativeCreate/{formId}") {
@@ -114,7 +118,7 @@ fun Routing.submissionRoutes() {
 			call.respondText("SUCCESS")
 		}
 
-		authenticate(Auth.Employee) {
+		authenticate(Employee) {
 
 			post("/review") {
 				val employee = call.requireEmployee(database)

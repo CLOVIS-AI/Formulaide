@@ -67,7 +67,7 @@ internal val ReviewRecordContents = FC<ReviewRecordContentsProps>("ReviewRecordC
 			}
 
 			val timestamp = Date(transition.timestamp * 1000)
-			if (transition.previousState != null) {
+			if (transition.assignee != null) {
 				p {
 					+"Par ${transition.assignee?.id}"
 					if (transition.reason != null)
