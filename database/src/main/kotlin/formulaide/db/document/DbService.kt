@@ -1,5 +1,6 @@
 package formulaide.db.document
 
+import formulaide.api.bones.ApiDepartment
 import formulaide.api.users.Service
 import formulaide.db.Database
 import kotlinx.serialization.Serializable
@@ -65,4 +66,4 @@ suspend fun Database.allServices(): List<DbService> =
 suspend fun Database.allServicesIgnoreOpen(): List<DbService> =
 	services.find().toList()
 
-fun DbService.toApi() = Service(id.toString(), name, open)
+fun DbService.toApi() = ApiDepartment(id, name, open)

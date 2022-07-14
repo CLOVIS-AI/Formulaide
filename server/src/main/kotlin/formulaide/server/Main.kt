@@ -117,7 +117,7 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 		staticFrontendRoutes()
 
 		userRoutes(auth)
-		serviceRoutes()
+		with(DepartmentRouting) { enable() }
 		dataRoutes()
 		formRoutes()
 		submissionRoutes()

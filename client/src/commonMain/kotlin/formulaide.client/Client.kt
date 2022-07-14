@@ -3,8 +3,10 @@ package formulaide.client
 import formulaide.api.users.User
 import formulaide.client.Client.Anonymous
 import formulaide.client.Client.Authenticated
+import formulaide.client.bones.Departments
 import formulaide.client.files.MultipartUpload
 import formulaide.client.routes.getMe
+import formulaide.core.Department
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.auth.*
@@ -14,6 +16,8 @@ import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
+import opensavvy.backbone.Cache
+import opensavvy.backbone.cache.MemoryCache.Companion.cachedInMemory
 
 /**
  * Common behavior between [Anonymous] and [Authenticated].
@@ -22,6 +26,13 @@ sealed class Client(
 	val hostUrl: String,
 	internal val client: HttpClient,
 ) {
+
+	@Suppress("LeakingThis")
+	val departments = Departments(
+		this,
+		Cache.Default<Department>()
+			.cachedInMemory()
+	)
 
 	/**
 	 * Makes an HTTP request to the server.
@@ -49,6 +60,12 @@ sealed class Client(
 		body: Any? = null,
 		block: HttpRequestBuilder.() -> Unit = {},
 	) = request<Out>(HttpMethod.Post, url, body, block)
+
+	internal suspend inline fun <reified Out> patch(
+		url: String,
+		body: Any? = null,
+		block: HttpRequestBuilder.() -> Unit = {},
+	) = request<Out>(HttpMethod.Patch, url, body, block)
 
 	internal suspend inline fun <reified Out> get(
 		url: String,
