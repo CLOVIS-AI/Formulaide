@@ -12,7 +12,6 @@ import formulaide.ui.components.text.ErrorText
 import formulaide.ui.components.useAsync
 import formulaide.ui.fields.renderers.Field
 import formulaide.ui.utils.parseHtmlForm
-import formulaide.ui.utils.traceRenders
 import kotlinx.coroutines.launch
 import react.FC
 import react.Props
@@ -22,8 +21,6 @@ import react.useState
 
 @Suppress("FunctionName")
 fun SubmitForm(formRef: Ref<Form>) = FC<Props>("SubmitForm") {
-	traceRenders("SubmitForm")
-
 	val forms by useForms()
 	val client by useClient()
 	val composites by useComposites()
@@ -99,13 +96,11 @@ fun SubmitForm(formRef: Ref<Form>) = FC<Props>("SubmitForm") {
 		}
 		return@FC
 	}
-	traceRenders("SubmitForm … the form is known")
 
 	if (!form.open) {
 		ErrorText { text = "Ce formulaire a été fermé, il ne peut plus être rempli." }
 		return@FC
 	}
-	traceRenders("SubmitForm … the form is open")
 
 	if (formLoadedFromCache == null) {
 		p {
@@ -114,7 +109,6 @@ fun SubmitForm(formRef: Ref<Form>) = FC<Props>("SubmitForm") {
 		}
 		return@FC
 	}
-	traceRenders("SubmitForm … the form is not currently loading from the cache")
 
 	if (formLoadedFromCache != true && formLoadedFromServer == null) {
 		p {
@@ -123,7 +117,6 @@ fun SubmitForm(formRef: Ref<Form>) = FC<Props>("SubmitForm") {
 		}
 		return@FC
 	}
-	traceRenders("SubmitForm … the form is not currently loading from the server")
 
 	if (formLoadedFromServer == false) {
 		ErrorText {
@@ -132,7 +125,6 @@ fun SubmitForm(formRef: Ref<Form>) = FC<Props>("SubmitForm") {
 		}
 		return@FC
 	}
-	traceRenders("SubmitForm … the form is loaded")
 
 	FormCard {
 		title = form.name

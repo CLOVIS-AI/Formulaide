@@ -9,7 +9,6 @@ import formulaide.ui.components.inputs.Field
 import formulaide.ui.components.inputs.Input
 import formulaide.ui.components.inputs.Nesting
 import formulaide.ui.components.inputs.Select
-import formulaide.ui.utils.traceRenders
 import react.ChildrenBuilder
 import react.FC
 import react.Props
@@ -56,7 +55,6 @@ private fun SearchFieldProps.remove(criterion: SearchCriterion<*>) = update(crit
 
 private val SearchField = FC<SearchFieldProps>("SearchField") { props ->
 	val fieldKey = props.keyList.joinToString(separator = ":")
-	traceRenders("SearchField $fieldKey")
 	val field = props.field
 
 	val criteria = props.criteria.filter { it.fieldKey == fieldKey }

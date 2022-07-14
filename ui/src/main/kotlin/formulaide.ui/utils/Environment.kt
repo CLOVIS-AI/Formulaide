@@ -9,8 +9,3 @@ internal val defaultClient
 		true -> Client.Anonymous.connect(window.location.protocol + "//" + window.location.host)
 		false -> Client.Anonymous.connect("http://localhost:8000")
 	}
-
-fun traceRenders(componentName: String) {
-	if (!inProduction)
-		console.log("Render : $componentName")
-}
