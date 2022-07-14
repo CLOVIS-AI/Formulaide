@@ -49,5 +49,8 @@ mongodb:
   # The DNS name of the database.
   nameOverride: "formulaide-database"
 
+  persistence:
+    size: 1Gi
+
 # The name of the database to create in the MongoDB instance.
 database: "formulaide"
