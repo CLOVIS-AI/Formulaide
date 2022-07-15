@@ -266,6 +266,8 @@ sealed class Field {
 	data class Id(val parts: KotlinList<LocalFieldId>) {
 		override fun toString() = parts.joinToString(":")
 
+		operator fun plus(id: LocalFieldId) = Id(parts + id)
+
 		companion object {
 			fun idOf(vararg part: LocalFieldId) = Id(parts = part.toList())
 		}
