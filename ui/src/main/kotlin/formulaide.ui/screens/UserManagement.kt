@@ -20,7 +20,6 @@ import formulaide.ui.components.text.LightText
 import formulaide.ui.components.useAsync
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
 import formulaide.ui.utils.classes
-import formulaide.ui.utils.traceRenders
 import formulaide.ui.utils.useEquals
 import formulaide.ui.utils.useListEquality
 import react.*
@@ -31,8 +30,6 @@ import react.dom.html.ReactHTML.hr
 import react.dom.html.ReactHTML.option
 
 val UserList = FC<Props>("UserList") {
-	traceRenders("UserList")
-
 	val scope = useAsync()
 
 	val (client) = useClient()
@@ -66,7 +63,7 @@ val UserList = FC<Props>("UserList") {
 		val selectedUsers = if (!filterByServices) users
 		else users.filter { user -> user.services.any { service -> service.id in filteredServices.map { it.id } } }
 
-		selectedUsers.sortedBy { it.fullName }
+		selectedUsers.sortedBy { it.fullName + it.email }
 	}
 
 	Card {

@@ -41,6 +41,7 @@ dependencies {
 	implementation(npm("autoprefixer", "10.4.4"))
 	implementation(npm("tailwindcss", "3.0.23"))
 
+	implementation(project(":core"))
 	implementation(project(":client"))
 }
 

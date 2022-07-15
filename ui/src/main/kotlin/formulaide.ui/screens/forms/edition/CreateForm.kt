@@ -22,7 +22,6 @@ import formulaide.ui.components.inputs.Field
 import formulaide.ui.components.inputs.Input
 import formulaide.ui.components.useAsyncEffectOnce
 import formulaide.ui.components.useLocalStorage
-import formulaide.ui.utils.traceRenders
 import react.FC
 import react.Props
 import react.dom.html.InputType
@@ -117,8 +116,6 @@ fun CreateForm(original: Form?, copy: Boolean) = FC<Props>("CreateForm") {
 			updateFields { emptyList() }
 			updateActions { emptyList() }
 		}
-
-		traceRenders("CreateForm Main card (loaded)")
 
 		if (original != null && copy) {
 			+"Vous êtes en train de copier ce formulaire. Vous allez créer un nouveau formulaire n'ayant aucun lien avec l'ancien. Les dossiers remplis pour le formulaire précédent ne seront pas visible pour celui-ci."

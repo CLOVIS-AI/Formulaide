@@ -111,6 +111,7 @@ dokka:
   artifacts:
     paths:
       - build/dokka/htmlMultiModule/
+    expose_as: 'Documentation'
 
 latex:
   image: clovisai/latex:latest

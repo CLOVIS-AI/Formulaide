@@ -119,8 +119,6 @@ val App = FC<Props>("App") {
 	val user by useUser("App user")
 	//endregion
 
-	traceRenders("App")
-
 	val client by useClient("App")
 	val scope = useAsync()
 

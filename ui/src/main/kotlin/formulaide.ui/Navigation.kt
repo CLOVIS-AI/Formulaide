@@ -23,7 +23,6 @@ import formulaide.ui.screens.homepage.Homepage
 import formulaide.ui.screens.homepage.PasswordEditor
 import formulaide.ui.screens.review.displayName
 import formulaide.ui.utils.GlobalState
-import formulaide.ui.utils.traceRenders
 import formulaide.ui.utils.useGlobalState
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -130,8 +129,6 @@ abstract class Screen(
 }
 
 private val CannotAccessThisPage = FC<Props>("CannotAccessThisPage") {
-	traceRenders("CannotAccessThisPage")
-
 	Card {
 		title = "Vous n'avez pas l'autorisation d'accéder à cette page"
 		failed = true
@@ -144,8 +141,6 @@ private val CannotAccessThisPage = FC<Props>("CannotAccessThisPage") {
 val Navigation = FC<Props>("Navigation") {
 	val user by useUser()
 	var currentScreen by useNavigation()
-
-	traceRenders("Navigation bar")
 
 	for (screen in Screen.availableScreens(user)) {
 		StyledButton {
@@ -165,8 +160,6 @@ private fun getScreenFromWindow(): Screen? =
 val Window = memo(FC("Window") {
 	var screen by useNavigation()
 	val user by useUser()
-
-	traceRenders("Window, screen ${screen.displayName}")
 
 	useEffectOnce {
 		val handler = { _: Event ->

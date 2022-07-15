@@ -24,13 +24,10 @@ import formulaide.ui.useClient
 import formulaide.ui.utils.remove
 import formulaide.ui.utils.replace
 import formulaide.ui.utils.switchOrder
-import formulaide.ui.utils.traceRenders
 import react.*
 import react.dom.html.InputType
 
 fun CreateData(original: Composite? = null) = FC<Props>("CreateData") {
-	traceRenders("CreateData")
-
 	val (client) = useClient()
 	if (client !is Client.Authenticated) {
 		Card {
