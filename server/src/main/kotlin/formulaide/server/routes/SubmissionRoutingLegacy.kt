@@ -32,7 +32,7 @@ import kotlin.random.nextInt
 private val deletionRequests = HashMap<Ref<Record>, String>()
 private val deletionRequestsLock = Semaphore(1)
 
-fun Routing.submissionRoutes() {
+fun Routing.legacySubmissionRoutes() {
 	route("/submissions") {
 
 		authenticate(Employee, optional = true) {

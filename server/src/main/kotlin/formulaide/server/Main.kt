@@ -141,9 +141,9 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 		with(AuthRouting) { enable(auth) }
 		with(UserRouting) { enable(auth) }
 		with(DepartmentRouting) { enable() }
-		dataRoutes()
-		formRoutes()
-		submissionRoutes()
+		legacyDataRoutes()
+		legacyFormRoutes()
+		legacySubmissionRoutes()
 		fileRoutes()
 		alertRoutes()
 

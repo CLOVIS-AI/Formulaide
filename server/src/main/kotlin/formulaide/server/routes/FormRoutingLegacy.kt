@@ -21,7 +21,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.html.*
 
-fun Routing.formRoutes() {
+fun Routing.legacyFormRoutes() {
 	route("/forms") {
 
 		get("/list") {
