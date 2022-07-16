@@ -25,12 +25,12 @@ fun Routing.legacyFormRoutes() {
 	route("/forms") {
 
 		get("/list") {
-			call.respond(database.listForms(public = true))
+			call.respond(database.listLegacyForms(public = true))
 		}
 
 		post("/references") {
 			val formId = call.receive<ReferenceId>().removeSurrounding("\"")
-			val form = database.findForm(formId)
+			val form = database.findLegacyForm(formId)
 				?: error("Aucun formulaire ne correspond à l'identifiant $formId")
 
 			call.respond(database.referencedComposites(form))
@@ -39,12 +39,12 @@ fun Routing.legacyFormRoutes() {
 		authenticate(Employee) {
 			get("/listPublicInternal") {
 				call.requireEmployee(database)
-				call.respond(database.listForms(public = null))
+				call.respond(database.listLegacyForms(public = null))
 			}
 
 			get("/listClosed") {
 				call.requireAdmin(database)
-				call.respond(database.listForms(public = null, open = false))
+				call.respond(database.listLegacyForms(public = null, open = false))
 			}
 
 			post("/create") {
@@ -52,7 +52,7 @@ fun Routing.legacyFormRoutes() {
 
 				val form = call.receive<Form>()
 
-				call.respond(database.createForm(form))
+				call.respond(database.createLegacyForm(form))
 			}
 
 			post("/editMetadata") {
@@ -60,7 +60,7 @@ fun Routing.legacyFormRoutes() {
 
 				val metadata = call.receive<FormMetadata>()
 				if (metadata.mainFields != null || metadata.actions != null) {
-					val old = database.findForm(metadata.form.id)
+					val old = database.findLegacyForm(metadata.form.id)
 						?: error("Vous essayez de modifier un formulaire qui n'existe pas : ${metadata.form.id}")
 					val new = old.copy(
 						mainFields = metadata.mainFields ?: old.mainFields,
@@ -69,7 +69,7 @@ fun Routing.legacyFormRoutes() {
 
 					// Check submissions
 					for (root in new.actions + null) {
-						for (submission in database.searchSubmission(new, root, emptyList())) {
+						for (submission in database.searchLegacySubmission(new, root, emptyList())) {
 							val submissionData = submission.toApi()
 							submissionData.parse(new)
 						}
@@ -84,7 +84,7 @@ fun Routing.legacyFormRoutes() {
 					}
 				}
 
-				val form = database.editForm(metadata)
+				val form = database.editLegacyForm(metadata)
 
 				call.respond(form)
 			}
@@ -95,7 +95,7 @@ fun Routing.legacyFormRoutes() {
 				?: error("Le paramètre GET 'id' est obligatoire : ${call.parameters.entries()}")
 			val apiUrl = call.parameters["url"]
 				?: error("Le paramètre GET 'url' est obligatoire : ${call.parameters.entries()}")
-			val form = database.findForm(formId)?.takeIf { it.public }
+			val form = database.findLegacyForm(formId)?.takeIf { it.public }
 				?: error("Le formulaire demandé n'existe pas, ou n'est pas public : $formId")
 			require(form.open) { "Le formulaire demandé a été archivé, il n'est plus possible d'y répondre." }
 
