@@ -158,6 +158,7 @@ suspend fun Database.findRecords(
 
 	var results = records
 		.find(Record::form / Ref<*>::id eq form.id, stateFilter, and(submissionFilter))
+		.descendingSort(Record::id)
 
 	if (limit != null)
 		results = results.limit(limit)
