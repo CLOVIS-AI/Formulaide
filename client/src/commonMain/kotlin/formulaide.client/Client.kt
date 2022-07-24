@@ -8,6 +8,7 @@ import formulaide.client.bones.Users
 import formulaide.client.files.MultipartUpload
 import formulaide.client.routes.getMe
 import formulaide.core.Department
+import formulaide.core.Ref
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.auth.*
@@ -17,6 +18,9 @@ import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.contextual
 import opensavvy.backbone.Cache
 import opensavvy.backbone.cache.MemoryCache.Companion.cachedInMemory
 
@@ -110,7 +114,11 @@ sealed class Client(
 
 	protected open fun configure(client: HttpClientConfig<*>) = with(client) {
 		install(ContentNegotiation) {
-			json(jsonSerializer)
+			json(Json(jsonSerializer) {
+				serializersModule = SerializersModule {
+					contextual(Ref.Serializer(departments))
+				}
+			})
 		}
 
 		expectSuccess = true

@@ -5,6 +5,7 @@ import ch.qos.logback.classic.LoggerContext
 import formulaide.api.bones.ApiNewUser
 import formulaide.api.data.Config
 import formulaide.api.types.Email
+import formulaide.core.Ref
 import formulaide.db.Database
 import formulaide.db.document.findUser
 import formulaide.server.Auth.Companion.Employee
@@ -24,6 +25,8 @@ import io.ktor.server.routing.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.contextual
 import opensavvy.backbone.Ref.Companion.requestValue
 import org.slf4j.LoggerFactory
 
@@ -86,7 +89,11 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 		System.err.println("WARNING. The server has been allowed to create non-safe HTTP cookies. Remove the environment variable 'formulaide_allow_unsafe_cookie' for production use.")
 
 	install(ContentNegotiation) {
-		json(serializer)
+		json(Json(serializer) {
+			serializersModule = SerializersModule {
+				contextual(Ref.Serializer(database.departments))
+			}
+		})
 	}
 
 	install(CallLogging) {
