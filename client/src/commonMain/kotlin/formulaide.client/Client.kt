@@ -25,8 +25,9 @@ import opensavvy.backbone.cache.MemoryCache.Companion.cachedInMemory
  */
 sealed class Client(
 	val hostUrl: String,
-	internal val client: HttpClient,
 ) {
+
+	//region Backbones
 
 	@Suppress("LeakingThis")
 	val departments = Departments(
@@ -41,6 +42,9 @@ sealed class Client(
 		Cache.Default<formulaide.core.User>()
 			.cachedInMemory()
 	)
+
+	//endregion
+	//region Methods
 
 	/**
 	 * Makes an HTTP request to the server.
@@ -101,48 +105,60 @@ sealed class Client(
 		}
 	}
 
+	//endregion
+	//region HTTP client
+
+	protected open fun configure(client: HttpClientConfig<*>) = with(client) {
+		install(ContentNegotiation) {
+			json(jsonSerializer)
+		}
+
+		expectSuccess = true
+	}
+
+	internal val client = HttpClient {
+		configure(this)
+	}
+
+	//endregion
+
 	companion object {
 
 		internal val jsonSerializer = DefaultJson
 
-		private fun createClient(token: String? = null) = HttpClient {
-			install(ContentNegotiation) {
-				json(jsonSerializer)
-			}
-
-			expectSuccess = true
-
-			if (token != null)
-				install(Auth) {
-					bearer { //TODO: audit
-						loadTokens {
-							BearerTokens(accessToken = token, refreshToken = token)
-						}
-
-						refreshTokens {
-							BearerTokens(accessToken = token, refreshToken = token)
-						}
-					}
-				}
-		}
-
 	}
 
-	class Anonymous private constructor(client: HttpClient, hostUrl: String) : Client(hostUrl, client) {
+	class Anonymous private constructor(hostUrl: String) : Client(hostUrl) {
 		companion object {
-			fun connect(hostUrl: String) = Anonymous(createClient(), hostUrl)
+			fun connect(hostUrl: String) = Anonymous(hostUrl)
 		}
 
 		suspend fun authenticate(token: String) = Authenticated.connect(hostUrl, token)
 	}
 
-	class Authenticated private constructor(client: HttpClient, hostUrl: String) : Client(hostUrl, client) {
+	class Authenticated private constructor(private val token: String, hostUrl: String) : Client(hostUrl) {
 
 		/**
 		 * The profile of the user we are connected as.
 		 */
 		lateinit var me: User
 			private set
+
+		override fun configure(client: HttpClientConfig<*>) = with(client) {
+			super.configure(client)
+
+			install(Auth) {
+				bearer { //TODO: audit
+					loadTokens {
+						BearerTokens(accessToken = token, refreshToken = token)
+					}
+
+					refreshTokens {
+						BearerTokens(accessToken = token, refreshToken = token)
+					}
+				}
+			}
+		}
 
 		/**
 		 * Disconnects this client.
@@ -153,7 +169,7 @@ sealed class Client(
 
 		companion object {
 			suspend fun connect(hostUrl: String, token: String) =
-				Authenticated(createClient(token), hostUrl).apply {
+				Authenticated(token, hostUrl).apply {
 					me = getMe()
 				}
 		}
