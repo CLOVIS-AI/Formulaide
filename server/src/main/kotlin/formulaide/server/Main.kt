@@ -5,7 +5,9 @@ import ch.qos.logback.classic.LoggerContext
 import formulaide.api.bones.ApiNewUser
 import formulaide.api.data.Config
 import formulaide.api.types.Email
-import formulaide.core.Ref
+import formulaide.core.Department
+import formulaide.core.RefSerializer
+import formulaide.core.User
 import formulaide.db.Database
 import formulaide.server.Auth.Companion.Employee
 import formulaide.server.routes.*
@@ -92,7 +94,8 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 	install(ContentNegotiation) {
 		json(Json(serializer) {
 			serializersModule = SerializersModule {
-				contextual(Ref.Serializer(database.departments))
+				contextual(RefSerializer("dept", { Department.Ref(it, database.departments) }, { it.id }))
+				contextual(RefSerializer("user", { User.Ref(it, database.users) }, { it.email }))
 			}
 		})
 	}

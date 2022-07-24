@@ -46,18 +46,18 @@ class Users(
 	private val users: CoroutineCollection<DbUser>,
 	override val cache: Cache<formulaide.core.User>,
 ) : UserBackbone {
-	override suspend fun all(includeClosed: Boolean): List<formulaide.core.Ref<formulaide.core.User>> {
+	override suspend fun all(includeClosed: Boolean): List<formulaide.core.User.Ref> {
 		val results = users.find(
 			(DbUser::enabled eq true).takeIf { !includeClosed }
 		)
 
 		return results
 			.toList()
-			.map { formulaide.core.Ref(it.email, this) }
+			.map { formulaide.core.User.Ref(it.email, this) }
 	}
 
 	@Deprecated("This function cannot be implemented server-side")
-	override suspend fun me(): formulaide.core.Ref<formulaide.core.User> {
+	override suspend fun me(): formulaide.core.User.Ref {
 		error("Impossible to implement this function on the server-side")
 	}
 
@@ -69,10 +69,10 @@ class Users(
 	override suspend fun create(
 		email: String,
 		fullName: String,
-		departments: Set<formulaide.core.Ref<Department>>,
+		departments: Set<Department.Ref>,
 		administrator: Boolean,
 		password: String,
-	): formulaide.core.Ref<formulaide.core.User> {
+	): formulaide.core.User.Ref {
 		for (department in departments) {
 			// Check that they all exist
 			department.requestValue()
@@ -91,14 +91,14 @@ class Users(
 			)
 		)
 
-		return formulaide.core.Ref(email, this)
+		return formulaide.core.User.Ref(email, this)
 	}
 
 	override suspend fun edit(
-		user: formulaide.core.Ref<formulaide.core.User>,
+		user: formulaide.core.User.Ref,
 		open: Boolean?,
 		administrator: Boolean?,
-		departments: Set<formulaide.core.Ref<Department>>?,
+		departments: Set<Department.Ref>?,
 	) {
 		val edits = mutableListOf<Bson>()
 
@@ -111,29 +111,29 @@ class Users(
 		if (departments != null)
 			edits.add(setValue(DbUser::services, departments.mapTo(HashSet()) { it.id.toInt() }))
 
-		users.updateOne(DbUser::email eq user.id, combine(edits))
+		users.updateOne(DbUser::email eq user.email, combine(edits))
 	}
 
-	suspend fun blockUntil(user: formulaide.core.Ref<formulaide.core.User>, until: Long) {
-		users.updateOne(DbUser::email eq user.id, setValue(DbUser::blockedUntil, until))
+	suspend fun blockUntil(user: formulaide.core.User.Ref, until: Long) {
+		users.updateOne(DbUser::email eq user.email, setValue(DbUser::blockedUntil, until))
 	}
 
-	fun fromId(id: String) = formulaide.core.Ref(id, this)
+	fun fromId(id: String) = formulaide.core.User.Ref(id, this)
 
 	/**
 	 * Internal method used by the authenticator.
 	 */
-	suspend fun getFromDb(user: formulaide.core.Ref<formulaide.core.User>): DbUser? {
-		return users.findOne(DbUser::email eq user.id)
+	suspend fun getFromDb(user: formulaide.core.User.Ref): DbUser? {
+		return users.findOne(DbUser::email eq user.email)
 	}
 
 	override suspend fun setPassword(
-		user: formulaide.core.Ref<formulaide.core.User>,
+		user: formulaide.core.User.Ref,
 		oldPassword: String?,
 		newPassword: String,
 	) {
 		users.updateOne(
-			DbUser::email eq user.id, combine(
+			DbUser::email eq user.email, combine(
 				setValue(DbUser::hashedPassword, newPassword),
 				inc(DbUser::tokenVersion, 1),
 			)
@@ -141,13 +141,13 @@ class Users(
 	}
 
 	override fun directRequest(ref: Ref<formulaide.core.User>): Flow<Data<formulaide.core.User>> = flow {
-		require(ref is formulaide.core.Ref) { "$this doesn't support the reference $ref" }
+		require(ref is formulaide.core.User.Ref) { "$this doesn't support the reference $ref" }
 
-		val db = users.findOne(DbUser::email eq ref.id) ?: error("L'utilisateur $ref n'existe pas")
+		val db = users.findOne(DbUser::email eq ref.email) ?: error("L'utilisateur $ref n'existe pas")
 		val core = formulaide.core.User(
 			db.email,
 			db.fullName,
-			db.services.mapTo(HashSet()) { formulaide.core.Ref(it.toString(), database.departments) },
+			db.services.mapTo(HashSet()) { Department.Ref(it.toString(), database.departments) },
 			db.isAdministrator,
 			db.enabled ?: true,
 		)

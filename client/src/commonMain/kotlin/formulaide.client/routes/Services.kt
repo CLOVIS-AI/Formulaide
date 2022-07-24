@@ -3,7 +3,7 @@ package formulaide.client.routes
 import formulaide.api.bones.toLegacy
 import formulaide.api.users.Service
 import formulaide.client.Client
-import formulaide.core.Ref
+import formulaide.core.Department
 import opensavvy.backbone.Ref.Companion.requestValue
 
 /**
@@ -51,7 +51,7 @@ suspend fun Client.Authenticated.createService(name: String): Service {
  * > See [Client.departments]
  */
 suspend fun Client.Authenticated.closeService(service: Service): Service {
-	val ref = Ref(service.id, departments)
+	val ref = Department.Ref(service.id, departments)
 	departments.close(ref)
 	return ref.requestValue().toLegacy()
 }
@@ -64,7 +64,7 @@ suspend fun Client.Authenticated.closeService(service: Service): Service {
  * > See [Client.departments]
  */
 suspend fun Client.Authenticated.reopenService(service: Service): Service {
-	val ref = Ref(service.id, departments)
+	val ref = Department.Ref(service.id, departments)
 	departments.open(ref)
 	return ref.requestValue().toLegacy()
 }

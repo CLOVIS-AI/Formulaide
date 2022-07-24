@@ -1,6 +1,9 @@
 package formulaide.client.bones
 
-import formulaide.api.bones.*
+import formulaide.api.bones.ApiNewUser
+import formulaide.api.bones.ApiPasswordLogin
+import formulaide.api.bones.ApiUserEdition
+import formulaide.api.bones.ApiUserPasswordEdition
 import formulaide.client.Client
 import formulaide.core.Department
 import formulaide.core.User
@@ -18,24 +21,24 @@ class Users(
 	private val client: Client,
 	override val cache: Cache<User>,
 ) : UserBackbone {
-	override suspend fun all(includeClosed: Boolean): List<formulaide.core.Ref<User>> {
-		val result: List<formulaide.core.Ref<User>> = client.get("/api/users") {
+	override suspend fun all(includeClosed: Boolean): List<User.Ref> {
+		val result: List<User.Ref> = client.get("/api/users") {
 			parameter("closed", includeClosed)
 		}
 
 		return result
 	}
 
-	override suspend fun me(): formulaide.core.Ref<User> {
-		val result: ApiUser = client.get("/api/users/me")
+	override suspend fun me(): User.Ref {
+		val result: User = client.get("/api/users/me")
 
-		val ref = formulaide.core.Ref(result.email, this)
+		val ref = User.Ref(result.email, this)
 		val user = User(
 			result.email,
 			result.fullName,
-			result.departments.map { formulaide.core.Ref(it.toString(), client.departments) }.toSet(),
+			result.departments,
 			result.administrator,
-			open = result.enabled,
+			open = result.open,
 		)
 
 		cache.update(ref, user)
@@ -50,10 +53,10 @@ class Users(
 	override suspend fun create(
 		email: String,
 		fullName: String,
-		departments: Set<formulaide.core.Ref<Department>>,
+		departments: Set<Department.Ref>,
 		administrator: Boolean,
 		password: String,
-	): formulaide.core.Ref<User> {
+	): User.Ref {
 		val user = ApiNewUser(
 			email,
 			fullName,
@@ -66,13 +69,13 @@ class Users(
 	}
 
 	override suspend fun edit(
-		user: formulaide.core.Ref<User>,
+		user: User.Ref,
 		open: Boolean?,
 		administrator: Boolean?,
-		departments: Set<formulaide.core.Ref<Department>>?,
+		departments: Set<Department.Ref>?,
 	) {
 		client.patch<String>(
-			"/api/users/${user.id}", ApiUserEdition(
+			"/api/users/${user.email}", ApiUserEdition(
 				open,
 				administrator,
 				departments
@@ -81,9 +84,9 @@ class Users(
 		user.expire()
 	}
 
-	override suspend fun setPassword(user: formulaide.core.Ref<User>, oldPassword: String?, newPassword: String) {
+	override suspend fun setPassword(user: User.Ref, oldPassword: String?, newPassword: String) {
 		client.patch<String>(
-			"/api/users/${user.id}/password", ApiUserPasswordEdition(
+			"/api/users/${user.email}/password", ApiUserPasswordEdition(
 				oldPassword,
 				newPassword,
 			)
@@ -91,15 +94,15 @@ class Users(
 	}
 
 	override fun directRequest(ref: Ref<User>): Flow<Data<User>> = flow {
-		require(ref is formulaide.core.Ref) { "$this doesn't support the reference $ref" }
+		require(ref is User.Ref) { "$this doesn't support the reference $ref" }
 
-		val result: ApiUser = client.get("/api/users/${ref.id}")
+		val result: User = client.get("/api/users/${ref.email}")
 		val user = User(
 			result.email,
 			result.fullName,
 			result.departments,
 			result.administrator,
-			open = result.enabled,
+			open = result.open,
 		)
 
 		emit(Data(Result.Success(user), Data.Status.Completed, ref))

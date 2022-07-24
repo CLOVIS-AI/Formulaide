@@ -3,7 +3,6 @@ package formulaide.db.document
 import formulaide.api.users.Service
 import formulaide.core.Department
 import formulaide.core.DepartmentBackbone
-import formulaide.core.Ref
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.Serializable
@@ -37,38 +36,38 @@ class Departments(
 	private val services: CoroutineCollection<DbService>,
 	override val cache: Cache<Department>,
 ) : DepartmentBackbone {
-	override suspend fun all(includeClosed: Boolean): List<Ref<Department>> {
+	override suspend fun all(includeClosed: Boolean): List<Department.Ref> {
 		return services.find(
 			(DbService::open eq true).takeIf { !includeClosed }
 		)
 			.toList()
-			.map { Ref(it.id.toString(), this) }
+			.map { Department.Ref(it.id.toString(), this) }
 	}
 
-	override suspend fun create(name: String): Ref<Department> {
+	override suspend fun create(name: String): Department.Ref {
 		var id: Int
 		do {
 			id = Random.nextInt()
 		} while (services.findOne(DbService::id eq id) != null)
 
 		services.insertOne(DbService(name, id, true))
-		return Ref(id.toString(), this)
+		return Department.Ref(id.toString(), this)
 	}
 
-	override suspend fun open(department: Ref<Department>) {
+	override suspend fun open(department: Department.Ref) {
 		services.updateOne(DbService::id eq department.id.toInt(), setValue(DbService::open, true))
 		department.expire()
 	}
 
-	override suspend fun close(department: Ref<Department>) {
+	override suspend fun close(department: Department.Ref) {
 		services.updateOne(DbService::id eq department.id.toInt(), setValue(DbService::open, false))
 		department.expire()
 	}
 
-	fun fromId(id: Int) = Ref(id.toString(), this)
+	fun fromId(id: Int) = Department.Ref(id.toString(), this)
 
 	override fun directRequest(ref: opensavvy.backbone.Ref<Department>): Flow<Data<Department>> = flow {
-		require(ref is Ref) { "$this doesn't support the reference $ref" }
+		require(ref is Department.Ref) { "$this doesn't support the reference $ref" }
 
 		val dbService =
 			services.findOne(DbService::id eq ref.id.toInt()) ?: error("Le département demandé n'existe pas : $ref")

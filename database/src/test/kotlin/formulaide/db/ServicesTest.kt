@@ -1,9 +1,7 @@
 package formulaide.db
 
-import formulaide.db.document.allServices
-import formulaide.db.document.allServicesIgnoreOpen
-import formulaide.db.document.createService
 import kotlinx.coroutines.runBlocking
+import opensavvy.backbone.Ref.Companion.requestValue
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -14,7 +12,7 @@ class ServicesTest {
 	fun list() = runBlocking {
 		val db = testDatabase()
 
-		val services = db.allServices()
+		val services = db.departments.all().map { it.requestValue() }
 
 		assertTrue(services.all { it.open }, "All services returned by this endpoint should be open")
 	}
@@ -23,7 +21,7 @@ class ServicesTest {
 	fun fullList() = runBlocking {
 		val db = testDatabase()
 
-		db.allServicesIgnoreOpen()
+		db.departments.all(includeClosed = true)
 		Unit
 	}
 
@@ -33,10 +31,11 @@ class ServicesTest {
 
 		val name = "Service des tests créés automatiquement"
 
-		val service = db.createService(name)
+		val dep = db.departments.create(name)
+			.requestValue()
 
-		assertEquals(name, service.name)
-		assertTrue(service.open)
+		assertEquals(name, dep.name)
+		assertTrue(dep.open)
 	}
 
 }

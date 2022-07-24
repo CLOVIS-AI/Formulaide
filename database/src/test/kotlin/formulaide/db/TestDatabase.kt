@@ -1,6 +1,5 @@
 package formulaide.db
 
-import formulaide.db.document.createService
 import kotlinx.coroutines.Job
 
 /**
@@ -18,4 +17,4 @@ fun testDatabase() = Database(
 /**
  * Creates and returns a service that can be used for tests.
  */
-suspend fun Database.testService() = createService("Service des tests")
+suspend fun Database.testService() = departments.create("Service des tests")

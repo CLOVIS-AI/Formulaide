@@ -8,7 +8,6 @@ import com.auth0.jwt.interfaces.Payload
 import formulaide.api.bones.ApiNewUser
 import formulaide.api.bones.ApiPasswordLogin
 import formulaide.api.types.Email
-import formulaide.core.Ref
 import formulaide.core.User
 import formulaide.db.Database
 import formulaide.db.document.DbUser
@@ -55,7 +54,7 @@ class Auth(private val database: Database) {
 	 * Creates a new account.
 	 * @return A pair of a JWT token and the created user.
 	 */
-	suspend fun newAccount(newUser: ApiNewUser): Ref<User> {
+	suspend fun newAccount(newUser: ApiNewUser): User.Ref {
 		val hashedPassword = hash(newUser.password)
 
 		return database.users.create(

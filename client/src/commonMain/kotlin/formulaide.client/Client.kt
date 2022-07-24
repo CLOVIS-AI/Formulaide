@@ -8,7 +8,7 @@ import formulaide.client.bones.Users
 import formulaide.client.files.MultipartUpload
 import formulaide.client.routes.getMe
 import formulaide.core.Department
-import formulaide.core.Ref
+import formulaide.core.RefSerializer
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.auth.*
@@ -116,7 +116,8 @@ sealed class Client(
 		install(ContentNegotiation) {
 			json(Json(jsonSerializer) {
 				serializersModule = SerializersModule {
-					contextual(Ref.Serializer(departments))
+					contextual(RefSerializer("dept", { Department.Ref(it, departments) }, { it.id }))
+					contextual(RefSerializer("user", { formulaide.core.User.Ref(it, users) }, { it.email }))
 				}
 			})
 		}

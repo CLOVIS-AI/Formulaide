@@ -3,19 +3,9 @@ package formulaide.api.bones
 import formulaide.api.data.Form
 import formulaide.api.data.RecordState
 import formulaide.core.Department
-import formulaide.core.Ref
 import formulaide.core.User
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
-
-@Serializable
-data class ApiUser(
-	val email: String,
-	val fullName: String,
-	val departments: Set<@Contextual Ref<Department>>,
-	val administrator: Boolean,
-	val enabled: Boolean,
-)
 
 fun User.canAccess(form: Form, state: RecordState?): Boolean {
 	if (administrator)
@@ -24,17 +14,13 @@ fun User.canAccess(form: Form, state: RecordState?): Boolean {
 	return when (state) {
 		is RecordState.Action -> {
 			departments.any { department ->
-				department.toString() == state.current.apply {
-					loadFrom(
-						form.actions,
-						lazy = true
-					)
-				}.obj.reviewer.id
+				state.current.loadFrom(form.actions, lazy = true)
+				department.id == state.current.obj.reviewer.id
 			}
 		}
 
 		is RecordState.Refused, null -> {
-			departments.any { service -> service.toString() in form.actions.map { it.reviewer.id } }
+			departments.any { service -> service.id in form.actions.map { it.reviewer.id } }
 		}
 	}
 }
@@ -49,7 +35,7 @@ data class ApiPasswordLogin(
 data class ApiNewUser(
 	val email: String,
 	val fullName: String,
-	val departments: Set<@Contextual Ref<Department>>,
+	val departments: Set<@Contextual Department.Ref>,
 	val administrator: Boolean,
 	val password: String,
 )
@@ -58,7 +44,7 @@ data class ApiNewUser(
 data class ApiUserEdition(
 	val enabled: Boolean? = null,
 	val administrator: Boolean? = null,
-	val departments: Set<@Contextual Ref<Department>>? = null,
+	val departments: Set<@Contextual Department.Ref>? = null,
 )
 
 @Serializable
