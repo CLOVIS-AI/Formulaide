@@ -6,8 +6,6 @@ import formulaide.api.bones.ApiNewUser
 import formulaide.api.data.Config
 import formulaide.api.types.Email
 import formulaide.db.Database
-import formulaide.db.document.allServices
-import formulaide.db.document.createService
 import formulaide.db.document.findUser
 import formulaide.server.Auth.Companion.Employee
 import formulaide.server.routes.*
@@ -26,6 +24,7 @@ import io.ktor.server.routing.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
+import opensavvy.backbone.Ref.Companion.requestValue
 import org.slf4j.LoggerFactory
 
 // New job: the server never dies cleanly, it can only be killed. No need for structure concurrency.
@@ -41,9 +40,10 @@ fun main(args: Array<String>) {
 
 	runBlocking {
 		println("Checking that the admin user exists…")
-		val service = database.allServices()
+		val department = database.departments.all()
+			.map { it.requestValue() }
 			.firstOrNull { it.name == rootServiceName }
-			?: database.createService(rootServiceName)
+			?: database.departments.create(rootServiceName).requestValue()
 
 		val auth = Auth(database)
 
@@ -53,7 +53,7 @@ fun main(args: Array<String>) {
 				ApiNewUser(
 					rootUser,
 					"Administrateur",
-					setOf(service.id),
+					setOf(department.id.toInt()),
 					true,
 					rootPassword,
 				)

@@ -4,6 +4,7 @@ import formulaide.api.bones.ApiUser
 import formulaide.api.users.User
 import formulaide.db.Database
 import kotlinx.serialization.Serializable
+import opensavvy.backbone.Ref.Companion.requestValue
 import org.litote.kmongo.eq
 import org.litote.kmongo.ne
 
@@ -55,7 +56,7 @@ suspend fun Database.findUserById(id: DbUserId): DbUser? =
  */
 suspend fun Database.createUser(user: DbUser): DbUser {
 	for (service in user.services) {
-		checkNotNull(findService(service)) { "Le service $service n'existe pas" }
+		departments.fromId(service).requestValue()
 	}
 
 	check(findUser(user.email) == null) { "Un utilisateur avec cette adresse mail existe déjà : ${user.email}" }

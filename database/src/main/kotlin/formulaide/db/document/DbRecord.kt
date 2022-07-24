@@ -8,6 +8,7 @@ import formulaide.db.Database
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import opensavvy.backbone.Ref.Companion.requestValue
 import org.bson.conversions.Bson
 import org.litote.kmongo.*
 import java.time.Instant
@@ -105,10 +106,9 @@ suspend fun Database.findFormsAssignedTo(user: DbUser): List<Form> {
 			}
 			.map {
 				async {
-					val service = findService(it)
-						?: error("Impossible de trouver un des service(s) auquel l'utilisateur actuel appartient : $it")
+					val service = departments.fromId(it).requestValue()
 
-					forms.find(Form::actions / Action::reviewer / Ref<*>::id eq service.id.toString()).toList()
+					forms.find(Form::actions / Action::reviewer / Ref<*>::id eq service.id).toList()
 				}
 			}
 			.awaitAll()

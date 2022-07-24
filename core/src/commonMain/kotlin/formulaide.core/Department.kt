@@ -1,7 +1,6 @@
 package formulaide.core
 
 import opensavvy.backbone.Backbone
-import opensavvy.backbone.Ref
 
 /**
  * A company department, for example "Human resources" or "IT management".
