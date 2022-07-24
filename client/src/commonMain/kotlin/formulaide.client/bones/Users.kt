@@ -34,7 +34,7 @@ class Users(
 		val user = User(
 			result.email,
 			result.fullName,
-			result.departments.map { DepartmentRef(it, client.departments) }.toSet(),
+			result.departments.map { formulaide.core.Ref(it.toString(), client.departments) }.toSet(),
 			result.administrator,
 			open = result.enabled,
 		)
@@ -59,8 +59,8 @@ class Users(
 			email,
 			fullName,
 			departments.map {
-				require(it is DepartmentRef) { "$this doesn't support the reference $it" }
-				it.id
+				require(it is formulaide.core.Ref) { "$this doesn't support the reference $it" }
+				it.id.toInt()
 			}.toSet(),
 			administrator,
 			password
@@ -82,8 +82,8 @@ class Users(
 				open,
 				administrator,
 				departments?.map {
-					require(it is DepartmentRef) { "$this doesn't support the reference $it" }
-					it.id
+					require(it is formulaide.core.Ref) { "$this doesn't support the reference $it" }
+					it.id.toInt()
 				}?.toSet()
 			)
 		)
@@ -91,7 +91,7 @@ class Users(
 		return User(
 			result.email,
 			result.fullName,
-			result.departments.map { DepartmentRef(it, client.departments) }.toSet(),
+			result.departments.map { formulaide.core.Ref(it.toString(), client.departments) }.toSet(),
 			result.administrator,
 			open = result.enabled,
 		).also { cache.update(user, it) }
@@ -115,7 +115,7 @@ class Users(
 		val user = User(
 			result.email,
 			result.fullName,
-			result.departments.map { DepartmentRef(it, client.departments) }.toSet(),
+			result.departments.map { formulaide.core.Ref(it.toString(), client.departments) }.toSet(),
 			result.administrator,
 			open = result.enabled,
 		)

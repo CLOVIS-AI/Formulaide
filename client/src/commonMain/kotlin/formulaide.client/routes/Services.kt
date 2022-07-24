@@ -1,10 +1,9 @@
 package formulaide.client.routes
 
-import formulaide.api.bones.ApiDepartment.Companion.toApi
-import formulaide.api.bones.ApiDepartment.Companion.toLegacy
+import formulaide.api.bones.toLegacy
 import formulaide.api.users.Service
 import formulaide.client.Client
-import formulaide.client.bones.DepartmentRef
+import formulaide.core.Ref
 import opensavvy.backbone.Ref.Companion.requestValue
 
 /**
@@ -17,7 +16,7 @@ import opensavvy.backbone.Ref.Companion.requestValue
 suspend fun Client.Authenticated.listServices(): Set<Service> =
 	departments.all()
 		.map { it.requestValue() }
-		.map { it.toApi().toLegacy() }
+		.map { it.toLegacy() }
 		.toSet()
 
 /**
@@ -30,7 +29,7 @@ suspend fun Client.Authenticated.listServices(): Set<Service> =
 suspend fun Client.Authenticated.listAllServices(): List<Service> =
 	departments.all(includeClosed = true)
 		.map { it.requestValue() }
-		.map { it.toApi().toLegacy() }
+		.map { it.toLegacy() }
 
 /**
  * Creates a new service with the given [name].
@@ -41,7 +40,7 @@ suspend fun Client.Authenticated.listAllServices(): List<Service> =
  */
 suspend fun Client.Authenticated.createService(name: String): Service {
 	val ref = departments.create(name)
-	return ref.requestValue().toApi().toLegacy()
+	return ref.requestValue().toLegacy()
 }
 
 /**
@@ -52,9 +51,9 @@ suspend fun Client.Authenticated.createService(name: String): Service {
  * > See [Client.departments]
  */
 suspend fun Client.Authenticated.closeService(service: Service): Service {
-	val ref = DepartmentRef(service.id.toInt(), departments)
+	val ref = Ref(service.id, departments)
 	departments.close(ref)
-	return ref.requestValue().toApi().toLegacy()
+	return ref.requestValue().toLegacy()
 }
 
 /**
@@ -65,7 +64,7 @@ suspend fun Client.Authenticated.closeService(service: Service): Service {
  * > See [Client.departments]
  */
 suspend fun Client.Authenticated.reopenService(service: Service): Service {
-	val ref = DepartmentRef(service.id.toInt(), departments)
+	val ref = Ref(service.id, departments)
 	departments.open(ref)
-	return ref.requestValue().toApi().toLegacy()
+	return ref.requestValue().toLegacy()
 }

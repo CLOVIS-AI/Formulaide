@@ -1,43 +1,37 @@
 package formulaide.client.bones
 
-import formulaide.api.bones.ApiDepartment
-import formulaide.api.bones.ApiDepartment.Companion.toCore
 import formulaide.client.Client
 import formulaide.core.Department
 import formulaide.core.DepartmentBackbone
+import formulaide.core.Ref
 import io.ktor.client.request.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import opensavvy.backbone.*
+import opensavvy.backbone.Cache
+import opensavvy.backbone.Data
 import opensavvy.backbone.Ref.Companion.expire
-
-data class DepartmentRef(
-	val id: Int,
-	override val backbone: Backbone<Department>,
-) : Ref<Department>
+import opensavvy.backbone.Result
 
 class Departments(
 	private val client: Client,
 	override val cache: Cache<Department>,
 ) : DepartmentBackbone {
-	override suspend fun all(includeClosed: Boolean): List<DepartmentRef> {
+	override suspend fun all(includeClosed: Boolean): List<Ref<Department>> {
 		val ids: List<Int> = client.get("/api/departments/list") {
 			parameter("closed", includeClosed)
 		}
 
-		return ids.map { DepartmentRef(it, this) }
+		return ids.map { Ref(it.toString(), this) }
 	}
 
-	override suspend fun create(name: String): DepartmentRef {
-		val response: ApiDepartment = client.post("/api/departments/create", name)
-		val ref = DepartmentRef(response.id, this)
-		cache.update(ref, response.toCore())
+	override suspend fun create(name: String): Ref<Department> {
+		val response: Department = client.post("/api/departments/create", name)
+		val ref = Ref(response.id, this)
+		cache.update(ref, response)
 		return ref
 	}
 
 	override suspend fun open(department: Ref<Department>) {
-		require(department is DepartmentRef) { "$this doesn't support the reference $department" }
-
 		client.patch<String>("/api/departments/${department.id}") {
 			parameter("open", true)
 		}
@@ -45,19 +39,17 @@ class Departments(
 	}
 
 	override suspend fun close(department: Ref<Department>) {
-		require(department is DepartmentRef) { "$this doesn't support the reference $department" }
-
 		client.patch<String>("/api/departments/${department.id}") {
 			parameter("open", false)
 		}
 		department.expire()
 	}
 
-	override fun directRequest(ref: Ref<Department>): Flow<Data<Department>> = flow {
-		require(ref is DepartmentRef) { "$this doesn't support the reference $ref" }
+	override fun directRequest(ref: opensavvy.backbone.Ref<Department>): Flow<Data<Department>> = flow {
+		require(ref is Ref) { "$this doesn't support the reference $ref" }
 
-		val response: ApiDepartment = client.get("/api/departments/${ref.id}")
+		val response: Department = client.get("/api/departments/${ref.id}")
 
-		emit(Data(Result.Success(response.toCore()), Data.Status.Completed, ref))
+		emit(Data(Result.Success(response), Data.Status.Completed, ref))
 	}
 }
