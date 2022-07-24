@@ -1,12 +1,23 @@
 package formulaide.db.document
 
-import formulaide.api.bones.ApiUser
 import formulaide.api.users.User
+import formulaide.core.Department
+import formulaide.core.UserBackbone
 import formulaide.db.Database
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.Serializable
+import opensavvy.backbone.Cache
+import opensavvy.backbone.Data
+import opensavvy.backbone.Ref
 import opensavvy.backbone.Ref.Companion.requestValue
+import opensavvy.backbone.Result
+import org.bson.conversions.Bson
+import org.litote.kmongo.combine
+import org.litote.kmongo.coroutine.CoroutineCollection
 import org.litote.kmongo.eq
-import org.litote.kmongo.ne
+import org.litote.kmongo.inc
+import org.litote.kmongo.setValue
 
 typealias DbUserId = String
 
@@ -17,7 +28,7 @@ typealias DbUserId = String
  */
 @Serializable
 data class DbUser(
-	val id: DbUserId,
+	val id: DbUserId? = null,
 	val email: String,
 	val hashedPassword: String,
 	val fullName: String,
@@ -26,98 +37,128 @@ data class DbUser(
 	val services: Set<DbServiceId> = emptySet(),
 	val isAdministrator: Boolean,
 	val enabled: Boolean? = true,
-	val tokenVersion: ULong = 0u,
+	val tokenVersion: Long = 0,
 	val blockedUntil: Long = 0,
 )
 
-/**
- * Converts a database [DbUser] to a [User].
- */
-fun DbUser.toApi(): ApiUser {
-	return ApiUser(
-		email, fullName, services, isAdministrator, enabled ?: false
-	)
-}
+class Users(
+	private val database: Database,
+	private val users: CoroutineCollection<DbUser>,
+	override val cache: Cache<formulaide.core.User>,
+) : UserBackbone {
+	override suspend fun all(includeClosed: Boolean): List<formulaide.core.Ref<formulaide.core.User>> {
+		val results = users.find(
+			(DbUser::enabled eq true).takeIf { !includeClosed }
+		)
 
-/**
- * Finds a user in the database, by searching for an exact match with its [email].
- */
-suspend fun Database.findUser(email: String): DbUser? =
-	users.findOne(DbUser::email eq email)
-
-/**
- * Finds a user in the database, by searching for an exact match with its [id].
- */
-suspend fun Database.findUserById(id: DbUserId): DbUser? =
-	users.findOne(DbUser::id eq id)
-
-/**
- * Creates a [user], and returns it.
- */
-suspend fun Database.createUser(user: DbUser): DbUser {
-	for (service in user.services) {
-		departments.fromId(service).requestValue()
+		return results
+			.toList()
+			.map { formulaide.core.Ref(it.email, this) }
 	}
 
-	check(findUser(user.email) == null) { "Un utilisateur avec cette adresse mail existe déjà : ${user.email}" }
-	check(findUserById(user.id) == null) { "Un utilisateur avec cet identifiant existe déjà : ${user.id}" }
+	@Deprecated("This function cannot be implemented server-side")
+	override suspend fun me(): formulaide.core.Ref<formulaide.core.User> {
+		error("Impossible to implement this function on the server-side")
+	}
 
-	users.insertOne(user)
+	@Deprecated("This function cannot be implemented server-side")
+	override suspend fun logIn(email: String, password: String): String {
+		error("Impossible to implement this function on the server-side")
+	}
 
-	return user
+	override suspend fun create(
+		email: String,
+		fullName: String,
+		departments: Set<formulaide.core.Ref<Department>>,
+		administrator: Boolean,
+		password: String,
+	): formulaide.core.Ref<formulaide.core.User> {
+		for (department in departments) {
+			// Check that they all exist
+			department.requestValue()
+		}
+
+		check(users.findOne(DbUser::email eq email) == null) { "Un utilisateur avec cette adresse mail existe déjà : $email" }
+
+		users.insertOne(
+			DbUser(
+				email = email,
+				hashedPassword = password,
+				fullName = fullName,
+				services = departments.mapTo(HashSet()) { it.id.toInt() },
+				enabled = true,
+				isAdministrator = administrator,
+			)
+		)
+
+		return formulaide.core.Ref(email, this)
+	}
+
+	override suspend fun edit(
+		user: formulaide.core.Ref<formulaide.core.User>,
+		open: Boolean?,
+		administrator: Boolean?,
+		departments: Set<formulaide.core.Ref<Department>>?,
+	) {
+		val edits = mutableListOf<Bson>()
+
+		if (open != null)
+			edits.add(setValue(DbUser::enabled, open))
+
+		if (administrator != null)
+			edits.add(setValue(DbUser::isAdministrator, administrator))
+
+		if (departments != null)
+			edits.add(setValue(DbUser::services, departments.mapTo(HashSet()) { it.id.toInt() }))
+
+		users.updateOne(DbUser::email eq user.id, combine(edits))
+	}
+
+	suspend fun blockUntil(user: formulaide.core.Ref<formulaide.core.User>, until: Long) {
+		users.updateOne(DbUser::email eq user.id, setValue(DbUser::blockedUntil, until))
+	}
+
+	fun fromId(id: String) = formulaide.core.Ref(id, this)
+
+	/**
+	 * Internal method used by the authenticator.
+	 */
+	suspend fun getFromDb(user: formulaide.core.Ref<formulaide.core.User>): DbUser? {
+		return users.findOne(DbUser::email eq user.id)
+	}
+
+	override suspend fun setPassword(
+		user: formulaide.core.Ref<formulaide.core.User>,
+		oldPassword: String?,
+		newPassword: String,
+	) {
+		users.updateOne(
+			DbUser::email eq user.id, combine(
+				setValue(DbUser::hashedPassword, newPassword),
+				inc(DbUser::tokenVersion, 1),
+			)
+		)
+	}
+
+	override fun directRequest(ref: Ref<formulaide.core.User>): Flow<Data<formulaide.core.User>> = flow {
+		require(ref is formulaide.core.Ref) { "$this doesn't support the reference $ref" }
+
+		val db = users.findOne(DbUser::email eq ref.id) ?: error("L'utilisateur $ref n'existe pas")
+		val core = formulaide.core.User(
+			db.email,
+			db.fullName,
+			db.services.mapTo(HashSet()) { formulaide.core.Ref(it.toString(), database.departments) },
+			db.isAdministrator,
+			db.enabled ?: true,
+		)
+		emit(Data(Result.Success(core), Data.Status.Completed, ref))
+	}
 }
 
-suspend fun Database.listEnabledUsers(): List<DbUser> =
-	users.find(DbUser::enabled ne false).toList()
-
-suspend fun Database.listAllUsers(): List<DbUser> =
-	users.find().toList()
-
-/**
- * Edits a [user].
- *
- * All optional arguments represent modification requests. `null` means that no modification is requested.
- *
- * At least one argument must be non-`null`.
- */
-suspend fun Database.editUser(
-	user: DbUser,
-	newEnabled: Boolean? = null,
-	newIsAdministrator: Boolean? = null,
-	newBlockedUntil: Long? = null,
-	newServices: Set<Int>? = null,
-): DbUser {
-	var newUser = user
-
-	if (newEnabled != null)
-		newUser = newUser.copy(enabled = newEnabled)
-
-	if (newIsAdministrator != null)
-		newUser = newUser.copy(isAdministrator = newIsAdministrator)
-
-	if (newBlockedUntil != null)
-		newUser = newUser.copy(blockedUntil = newBlockedUntil)
-
-	if (newServices != null)
-		newUser = newUser.copy(services = newServices)
-
-	require(user != newUser) { "La demande de modification de l'utilisateur ${user.email} n'apporte aucune modification" }
-
-	users.updateOne(DbUser::id eq user.id, newUser)
-	return newUser
-}
-
-/**
- * Replaces the [user]'s password.
- *
- * This function does not do any security check. It is the caller's responsibility to check whether the password should, in fact, be replaced.
- */
-suspend fun Database.editUserPassword(user: DbUser, newHashedPassword: String): DbUser {
-	val newUser = user.copy(
-		hashedPassword = newHashedPassword,
-		tokenVersion = user.tokenVersion + 1u,
-	)
-
-	users.updateOne(DbUser::id eq newUser.id, newUser)
-	return newUser
-}
+fun DbUser.toCore(database: Database) = formulaide.core.User(
+	email,
+	fullName,
+	services.mapTo(HashSet()) { database.departments.fromId(it) },
+	isAdministrator,
+	enabled ?: true
+)

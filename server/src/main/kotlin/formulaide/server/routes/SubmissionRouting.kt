@@ -1,5 +1,6 @@
 package formulaide.server.routes
 
+import formulaide.api.bones.canAccess
 import formulaide.api.data.*
 import formulaide.api.fields.*
 import formulaide.api.types.Ref
@@ -123,7 +124,7 @@ fun Routing.submissionRoutes() {
 				val employee = call.requireEmployee(database)
 				val review = call.receive<ReviewRequest>()
 
-				database.reviewRecord(review, employee)
+				database.reviewRecord(review, employee.toCore(database))
 
 				call.respond("Success")
 			}
@@ -149,7 +150,7 @@ fun Routing.submissionRoutes() {
 				val form = database.findForm(request.form.id)
 					?: error("Le formulaire est introuvable : ${request.form.id}")
 
-				require(user.toApi().canAccess(form, request.state)) {
+				require(user.toCore(database).canAccess(form, request.state)) {
 					"Vous n'avez pas accès aux saisies du formulaire « ${form.name} » (${form.id}, utilisateur ${user.email})"
 				}
 

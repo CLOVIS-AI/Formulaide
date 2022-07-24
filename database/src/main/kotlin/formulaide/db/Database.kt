@@ -42,7 +42,7 @@ class Database(
 		KMongo.createClient("mongodb://${this.username}:${this.password}@${this.host}:${this.port}").coroutine
 	private val database = client.getDatabase(this.databaseName)
 
-	internal val users = database.getCollection<DbUser>("users")
+	private val userCollection = database.getCollection<DbUser>("users")
 	private val serviceCollection = database.getCollection<DbService>("services")
 	internal val data = database.getCollection<Composite>("data")
 	internal val forms = database.getCollection<Form>("forms")
@@ -56,6 +56,12 @@ class Database(
 		Cache.Default<Department>()
 			.cachedInMemory(job)
 			.expireAfter(1.minutes, job)
+	)
+
+	val users = Users(
+		this,
+		userCollection,
+		Cache.Default()
 	)
 
 	init {

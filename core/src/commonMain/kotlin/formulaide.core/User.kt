@@ -1,7 +1,6 @@
 package formulaide.core
 
 import opensavvy.backbone.Backbone
-import opensavvy.backbone.Ref
 
 /**
  * An account in the Formulaide tool.
@@ -50,7 +49,7 @@ interface UserBackbone : Backbone<User> {
 		departments: Set<Ref<Department>>,
 		administrator: Boolean,
 		password: String,
-	)
+	): Ref<User>
 
 	/**
 	 * Edits a [user].
@@ -62,7 +61,7 @@ interface UserBackbone : Backbone<User> {
 		open: Boolean? = null,
 		administrator: Boolean? = null,
 		departments: Set<Ref<Department>>? = null,
-	): User
+	)
 
 	/**
 	 * Sets the [user]'s password.

@@ -7,7 +7,6 @@ import formulaide.api.data.Config
 import formulaide.api.types.Email
 import formulaide.core.Ref
 import formulaide.db.Database
-import formulaide.db.document.findUser
 import formulaide.server.Auth.Companion.Employee
 import formulaide.server.routes.*
 import io.ktor.http.*
@@ -50,13 +49,15 @@ fun main(args: Array<String>) {
 
 		val auth = Auth(database)
 
-		if (database.findUser(rootUser) == null) {
+		val rootUserRef = database.users.fromId(rootUser)
+
+		if (database.users.getFromDb(rootUserRef) == null) {
 			println("Creating the administrator account $rootUser…")
 			auth.newAccount(
 				ApiNewUser(
 					rootUser,
 					"Administrateur",
-					setOf(department.id.toInt()),
+					setOf(database.departments.fromId(department.id.toInt())),
 					true,
 					rootPassword,
 				)
