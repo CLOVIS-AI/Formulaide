@@ -6,6 +6,7 @@ import formulaide.core.field.resolve
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import opensavvy.backbone.Backbone
+import opensavvy.backbone.Ref
 import opensavvy.backbone.Ref.Companion.requestValue
 
 /**
@@ -84,7 +85,19 @@ data class Submission(
 
 	//endregion
 
-	data class Ref(val id: String, override val backbone: Backbone<Submission>) : opensavvy.backbone.Ref<Submission> {
+	data class Ref(val id: String, override val backbone: SubmissionBackbone) : opensavvy.backbone.Ref<Submission> {
 		override fun toString() = "Submission $id"
 	}
+}
+
+interface SubmissionBackbone : Backbone<Submission> {
+	/**
+	 * Creates a new submission.
+	 */
+	suspend fun create(
+		form: Ref<Form>,
+		versionId: String,
+		stepId: String?,
+		data: Map<Field.Id, String>,
+	): Submission.Ref
 }
