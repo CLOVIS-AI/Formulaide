@@ -8,29 +8,28 @@ import formulaide.core.UserBackbone
 import io.ktor.client.request.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import opensavvy.backbone.*
-
-data class UserRef(
-	val email: String,
-	override val backbone: Backbone<User>,
-) : Ref<User>
+import opensavvy.backbone.Cache
+import opensavvy.backbone.Data
+import opensavvy.backbone.Ref
+import opensavvy.backbone.Ref.Companion.expire
+import opensavvy.backbone.Result
 
 class Users(
 	private val client: Client,
 	override val cache: Cache<User>,
 ) : UserBackbone {
-	override suspend fun all(includeClosed: Boolean): List<Ref<User>> {
-		val result: List<String> = client.get("/api/users") {
+	override suspend fun all(includeClosed: Boolean): List<formulaide.core.Ref<User>> {
+		val result: List<formulaide.core.Ref<User>> = client.get("/api/users") {
 			parameter("closed", includeClosed)
 		}
 
-		return result.map { UserRef(it, this) }
+		return result
 	}
 
-	override suspend fun me(): Ref<User> {
+	override suspend fun me(): formulaide.core.Ref<User> {
 		val result: ApiUser = client.get("/api/users/me")
 
-		val ref = UserRef(result.email, this)
+		val ref = formulaide.core.Ref(result.email, this)
 		val user = User(
 			result.email,
 			result.fullName,
@@ -51,57 +50,40 @@ class Users(
 	override suspend fun create(
 		email: String,
 		fullName: String,
-		departments: Set<Ref<Department>>,
+		departments: Set<formulaide.core.Ref<Department>>,
 		administrator: Boolean,
 		password: String,
-	) {
+	): formulaide.core.Ref<User> {
 		val user = ApiNewUser(
 			email,
 			fullName,
-			departments.map {
-				require(it is formulaide.core.Ref) { "$this doesn't support the reference $it" }
-				it.id.toInt()
-			}.toSet(),
+			departments,
 			administrator,
 			password
 		)
 
-		client.post<String>("/api/users/create", user)
+		return client.post("/api/users/create", user)
 	}
 
 	override suspend fun edit(
-		user: Ref<User>,
+		user: formulaide.core.Ref<User>,
 		open: Boolean?,
 		administrator: Boolean?,
-		departments: Set<Ref<Department>>?,
-	): User {
-		require(user is UserRef) { "$this doesn't support the reference $user" }
-
-		val result: ApiUser = client.patch(
-			"/api/users/${user.email}", ApiUserEdition(
+		departments: Set<formulaide.core.Ref<Department>>?,
+	) {
+		client.patch<String>(
+			"/api/users/${user.id}", ApiUserEdition(
 				open,
 				administrator,
-				departments?.map {
-					require(it is formulaide.core.Ref) { "$this doesn't support the reference $it" }
-					it.id.toInt()
-				}?.toSet()
+				departments
 			)
 		)
-
-		return User(
-			result.email,
-			result.fullName,
-			result.departments.map { formulaide.core.Ref(it.toString(), client.departments) }.toSet(),
-			result.administrator,
-			open = result.enabled,
-		).also { cache.update(user, it) }
+		user.expire()
 	}
 
-	override suspend fun setPassword(user: Ref<User>, oldPassword: String?, newPassword: String) {
-		require(user is UserRef) { "$this doesn't support the reference $user" }
-
+	override suspend fun setPassword(user: formulaide.core.Ref<User>, oldPassword: String?, newPassword: String) {
 		client.patch<String>(
-			"/api/users/${user.email}/password", ApiUserPasswordEdition(
+			"/api/users/${user.id}/password", ApiUserPasswordEdition(
 				oldPassword,
 				newPassword,
 			)
@@ -109,13 +91,13 @@ class Users(
 	}
 
 	override fun directRequest(ref: Ref<User>): Flow<Data<User>> = flow {
-		require(ref is UserRef) { "$this doesn't support the reference $ref" }
+		require(ref is formulaide.core.Ref) { "$this doesn't support the reference $ref" }
 
-		val result: ApiUser = client.get("/api/users/${ref.email}")
+		val result: ApiUser = client.get("/api/users/${ref.id}")
 		val user = User(
 			result.email,
 			result.fullName,
-			result.departments.map { formulaide.core.Ref(it.toString(), client.departments) }.toSet(),
+			result.departments,
 			result.administrator,
 			open = result.enabled,
 		)

@@ -42,7 +42,7 @@ object UserRouting {
 	 *
 	 * - Requires administrator authentication
 	 * - Body: [ApiNewUser]
-	 * - Response: `"Success"`
+	 * - Response: ID of the created user
 	 */
 	fun Route.create() {
 		authenticate(Employee) {
@@ -50,9 +50,9 @@ object UserRouting {
 				call.requireAdmin(database)
 				val data = call.receive<ApiNewUser>()
 
-				auth.newAccount(data)
+				val ref = auth.newAccount(data)
 
-				call.respond("Success")
+				call.respond(ref)
 			}
 		}
 	}

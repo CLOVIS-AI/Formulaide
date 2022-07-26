@@ -4,14 +4,12 @@ import formulaide.api.types.Email
 import formulaide.api.types.Ref
 import formulaide.api.users.*
 import formulaide.client.Client
-import formulaide.client.bones.UserRef
 import opensavvy.backbone.Ref.Companion.requestValue
 
 private fun formulaide.core.User.toLegacy() = User(
 	Email(email),
 	fullName,
 	departments.map {
-		require(it is formulaide.core.Ref) { "$this doesn't support the reference $it" }
 		Ref<Service>(it.id)
 	}.toSet(),
 	administrator,
@@ -68,7 +66,7 @@ suspend fun Client.Authenticated.editUser(
 	administrator: Boolean? = null,
 	services: Set<Ref<Service>> = emptySet(),
 ): User {
-	val ref = UserRef(user.id, users)
+	val ref = formulaide.core.Ref(user.id, users)
 	users.edit(ref, enabled, administrator, services.map { formulaide.core.Ref(it.id, departments) }.toSet())
 	return ref.requestValue().toLegacy()
 }
@@ -81,7 +79,7 @@ suspend fun Client.Authenticated.editUser(
  * > See [Client.departments]
  */
 suspend fun Client.Authenticated.editPassword(edit: PasswordEdit) {
-	val ref = UserRef(edit.user.email, users)
+	val ref = formulaide.core.Ref(edit.user.email, users)
 	users.setPassword(ref, edit.oldPassword, edit.newPassword)
 }
 
