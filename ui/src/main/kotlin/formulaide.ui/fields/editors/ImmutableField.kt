@@ -41,7 +41,7 @@ val ImmutableField: FC<ImmutableFieldProps> = FC("ImmutableField") { props ->
 					+"${answer.constraint.name} : "
 
 					when (field.simple) {
-						is SimpleField.Boolean -> +if (answer.value.toBoolean()) "✓" else "✗"
+						is SimpleField.Boolean -> +if (answer.value.toBoolean()) "Oui" else "Non"
 						is SimpleField.Date -> {
 							val value = answer.value ?: error("Cette date n'a pas de valeur")
 							+Date(value).toLocaleDateString()
