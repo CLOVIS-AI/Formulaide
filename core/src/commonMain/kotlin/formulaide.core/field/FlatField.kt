@@ -4,7 +4,6 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import opensavvy.backbone.Backbone
-import opensavvy.backbone.Ref
 import opensavvy.backbone.Ref.Companion.requestValue
 
 /**
@@ -107,7 +106,7 @@ interface FieldBackbone : Backbone<FlatField.Container> {
 	 *
 	 * Only administrators can create new fields.
 	 */
-	suspend fun create(name: String, root: Field): Ref<FlatField.Container>
+	suspend fun create(name: String, root: Field): FlatField.Container.Ref
 }
 
 //region Conversion FlatField -> Field
