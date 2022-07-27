@@ -4,6 +4,7 @@ import formulaide.core.field.Field
 import formulaide.core.field.FlatField
 import formulaide.core.field.resolve
 import kotlinx.serialization.Contextual
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import opensavvy.backbone.Backbone
 import opensavvy.backbone.Ref
@@ -14,7 +15,7 @@ import opensavvy.backbone.Ref.Companion.requestValue
  */
 @Serializable
 data class Submission(
-	val id: String,
+	@SerialName("_id") val id: String,
 	val fields: @Contextual FlatField.Container.Ref,
 	val data: Map<Field.Id, String>,
 ) {

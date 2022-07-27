@@ -5,6 +5,7 @@ import formulaide.core.field.FlatField
 import formulaide.core.form.Form.Version
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Contextual
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import opensavvy.backbone.Backbone
 
@@ -16,7 +17,7 @@ import opensavvy.backbone.Backbone
  */
 @Serializable
 data class Form(
-	val id: String,
+	@SerialName("_id") val id: String,
 	val name: String,
 	val versions: List<Version>,
 	val public: Boolean,

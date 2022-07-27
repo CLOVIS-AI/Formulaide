@@ -1,6 +1,7 @@
 package formulaide.core.field
 
 import kotlinx.serialization.Contextual
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import opensavvy.backbone.Backbone
 import opensavvy.backbone.Ref
@@ -88,7 +89,7 @@ sealed class FlatField {
 
 	@Serializable
 	class Container(
-		val id: String,
+		@SerialName("_id") val id: String,
 		val name: String,
 		val root: FlatField,
 	) {
