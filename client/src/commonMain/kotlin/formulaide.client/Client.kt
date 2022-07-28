@@ -3,8 +3,7 @@ package formulaide.client
 import formulaide.api.users.User
 import formulaide.client.Client.Anonymous
 import formulaide.client.Client.Authenticated
-import formulaide.client.bones.Departments
-import formulaide.client.bones.Users
+import formulaide.client.bones.*
 import formulaide.client.files.MultipartUpload
 import formulaide.client.routes.getMe
 import formulaide.core.Department
@@ -45,6 +44,24 @@ sealed class Client(
 		this,
 		Cache.Default<formulaide.core.User>()
 			.cachedInMemory()
+	)
+
+	@Suppress("LeakingThis")
+	val fields = Fields(
+		this,
+		Cache.Default()
+	)
+
+	@Suppress("LeakingThis")
+	val templates = Templates(
+		this,
+		Cache.Default()
+	)
+
+	@Suppress("LeakingThis")
+	val forms = Forms(
+		this,
+		Cache.Default()
 	)
 
 	//endregion
@@ -118,6 +135,19 @@ sealed class Client(
 				serializersModule = SerializersModule {
 					contextual(RefSerializer("dept", { Department.Ref(it, departments) }, { it.id }))
 					contextual(RefSerializer("user", { formulaide.core.User.Ref(it, users) }, { it.email }))
+					contextual(
+						RefSerializer(
+							"field",
+							{ formulaide.core.field.FlatField.Container.Ref(it, fields) },
+							{ it.id })
+					)
+					contextual(
+						RefSerializer(
+							"template",
+							{ formulaide.core.form.Template.Ref(it, templates) },
+							{ it.id })
+					)
+					contextual(RefSerializer("form", { formulaide.core.form.Form.Ref(it, forms) }, { it.id }))
 				}
 			})
 		}
