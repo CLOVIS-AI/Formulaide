@@ -109,3 +109,16 @@ data class ParsedSimple<out Simple : FormField.Simple> internal constructor(
 	override val value get() = rawValue
 	override val children: List<ParsedField<*>>? get() = null
 }
+
+fun List<ParsedField<*>>.findByKey(fullKey: String): ParsedField<*>? {
+	val key = fullKey.split(":", limit = 2)
+	if (key.isEmpty())
+		return null
+	val child = key[0]
+	val answer = firstOrNull { it.key == child }
+
+	return if (key.size > 1)
+		answer?.children?.findByKey(key[1])
+	else
+		answer
+}

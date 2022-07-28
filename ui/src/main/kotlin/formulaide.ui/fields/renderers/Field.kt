@@ -1,8 +1,6 @@
 package formulaide.ui.fields.renderers
 
-import formulaide.api.data.Action
-import formulaide.api.data.Form
-import formulaide.api.data.ParsedSubmission
+import formulaide.api.data.*
 import formulaide.api.fields.Field
 import formulaide.ui.components.StyledButton
 import react.FC
@@ -23,6 +21,7 @@ external interface FieldProps : Props {
 	var onInput: ((String, String) -> Unit)?
 
 	var previousSubmission: ParsedSubmission?
+	var parsedField: ParsedField<*>?
 }
 
 //region FieldProps Extensions
@@ -36,9 +35,11 @@ val FieldProps.fieldKeyOrDefault get() = fieldKey ?: idOrDefault
  * Displays a [Field] such that the user can fill it in.
  */
 val Field: FC<FieldProps> = FC("Field") { props ->
+	val parsed = props.previousSubmission?.fields?.findByKey(props.idOrDefault)
+
 	when {
-		props.field.arity.max == 1 -> UniqueArityField { +props }
-		props.field.arity.max > 1 -> ListArityField { +props }
+		props.field.arity.max == 1 -> UniqueArityField { +props; parsedField = parsed }
+		props.field.arity.max > 1 -> ListArityField { +props; parsedField = parsed }
 		// else -> max arity is 0, the field is forbidden <=> there is nothing to display
 	}
 }
