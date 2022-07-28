@@ -148,7 +148,7 @@ class Auth(private val database: Database) {
 		val dateNow = Date.from(Instant.now())
 
 		check(payload.issuer == "formulaide") { "Le token est invalide, il ne provient pas de 'formulaide' : ${payload.issuer}" }
-		check(payload.expiresAt >= dateNow) { "Le token a expiré à ${payload.expiresAt}" }
+		check(payload.expiresAt >= dateNow) { "Le token a expiré à ${payload.expiresAt}, il est $dateNow" }
 
 		return payload.getClaim("userId").asString()
 			?: error("Le token est invalide, il ne contient pas de 'userId'")
