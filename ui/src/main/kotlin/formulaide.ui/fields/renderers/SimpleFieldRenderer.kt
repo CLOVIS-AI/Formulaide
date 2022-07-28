@@ -36,26 +36,62 @@ val SimpleFieldRenderer = FC<FieldProps>("SimpleFieldRenderer") { props ->
 	}
 
 	when (simple) {
-		is SimpleField.Text -> Input { +defaultInputProps; type = InputType.text }
+		is SimpleField.Text -> Input {
+			+defaultInputProps
+			type = InputType.text
+			defaultValue = props.parsedField?.rawValue
+		}
+
 		is SimpleField.Integer -> Input {
 			+defaultInputProps
 			type = InputType.number
+			defaultValue = props.parsedField?.rawValue
 
 			min = simple.min?.toDouble()
 			max = simple.max?.toDouble()
 		}
-		is SimpleField.Decimal -> Input { +defaultInputProps; type = InputType.number; step = 0.01 }
+
+		is SimpleField.Decimal -> Input {
+			+defaultInputProps
+			type = InputType.number
+			defaultValue = props.parsedField?.rawValue
+
+			step = 0.01
+		}
+
 		is SimpleField.Boolean -> Checkbox {
 			name = props.idOrDefault
 			id = props.idOrDefault
 			text = ""
 			required = false
+			defaultChecked = props.parsedField?.rawValue.toBoolean()
 		}
+
 		is SimpleField.Message -> Unit // The message only has a label, not a body
-		is SimpleField.Email -> Input { +defaultInputProps; type = InputType.email }
-		is SimpleField.Phone -> Input { +defaultInputProps; type = InputType.tel }
-		is SimpleField.Date -> Input { +defaultInputProps; type = InputType.date }
-		is SimpleField.Time -> Input { +defaultInputProps; type = InputType.time }
+		is SimpleField.Email -> Input {
+			+defaultInputProps
+			type = InputType.email
+			defaultValue = props.parsedField?.rawValue
+		}
+
+		is SimpleField.Phone -> Input {
+			+defaultInputProps
+			type = InputType.tel
+			defaultValue = props.parsedField?.rawValue
+		}
+
+		is SimpleField.Date -> Input {
+			+defaultInputProps
+			type = InputType.date
+			defaultValue = props.parsedField?.rawValue
+		}
+
+		is SimpleField.Time -> Input {
+			+defaultInputProps
+			type = InputType.time
+			defaultValue = props.parsedField?.rawValue
+		}
+
 		is SimpleField.Upload -> UploadFieldRenderer { +props; value = simpleInputValue }
 	}
 

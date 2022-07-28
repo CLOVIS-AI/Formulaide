@@ -4,6 +4,7 @@ import formulaide.api.data.RecordState
 import formulaide.api.types.Ref
 import formulaide.ui.components.LoadingSpinner
 import formulaide.ui.components.inputs.Nesting
+import formulaide.ui.components.text.LightText
 import formulaide.ui.components.text.Title
 import formulaide.ui.fields.editors.ImmutableField
 import formulaide.ui.fields.renderers.Field
@@ -100,6 +101,8 @@ internal val ReviewRecordContents = FC<ReviewRecordContentsProps>("ReviewRecordC
 		classes = "print:hidden"
 
 		val action = state.current.obj
+		val previousSubmission =
+			props.history.lastOrNull { it.transition.previousState == props.windowState }?.submission
 
 		val root = action.fields
 		if (root != null) {
@@ -113,9 +116,14 @@ internal val ReviewRecordContents = FC<ReviewRecordContentsProps>("ReviewRecordC
 						this.root = action
 						this.field = field
 						this.fieldKey = "${props.record.id}_${field.id}"
+
+						this.previousSubmission = previousSubmission
 					}
 				}
 				i++
+
+				if (previousSubmission != null)
+					LightText { text = "Champs pré-remplis par la saisie précédente" }
 			}
 		}
 	}
