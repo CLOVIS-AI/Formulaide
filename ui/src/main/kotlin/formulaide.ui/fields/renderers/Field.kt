@@ -2,6 +2,7 @@ package formulaide.ui.fields.renderers
 
 import formulaide.api.data.Action
 import formulaide.api.data.Form
+import formulaide.api.data.ParsedSubmission
 import formulaide.api.fields.Field
 import formulaide.ui.components.StyledButton
 import react.FC
@@ -20,6 +21,8 @@ external interface FieldProps : Props {
 	var fieldKey: String?
 
 	var onInput: ((String, String) -> Unit)?
+
+	var previousSubmission: ParsedSubmission?
 }
 
 //region FieldProps Extensions
