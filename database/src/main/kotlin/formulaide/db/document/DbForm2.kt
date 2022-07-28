@@ -67,6 +67,8 @@ class Forms(
 		form.expire()
 	}
 
+	fun fromId(id: String) = Form.Ref(id, this)
+
 	override fun directRequest(ref: Ref<Form>): Flow<Data<Form>> {
 		require(ref is Form.Ref) { "$this doesn't support the reference $ref" }
 

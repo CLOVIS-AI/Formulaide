@@ -60,4 +60,6 @@ class Templates(
 			emit(Data(Result.Success(value), Data.Status.Completed, ref))
 		}
 	}
+
+	fun fromId(id: String) = Template.Ref(id, this)
 }

@@ -8,6 +8,9 @@ import formulaide.api.types.Email
 import formulaide.core.Department
 import formulaide.core.RefSerializer
 import formulaide.core.User
+import formulaide.core.field.FlatField
+import formulaide.core.form.Form
+import formulaide.core.form.Template
 import formulaide.db.Database
 import formulaide.server.Auth.Companion.Employee
 import formulaide.server.routes.*
@@ -96,6 +99,9 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 			serializersModule = SerializersModule {
 				contextual(RefSerializer("dept", { Department.Ref(it, database.departments) }, { it.id }))
 				contextual(RefSerializer("user", { User.Ref(it, database.users) }, { it.email }))
+				contextual(RefSerializer("field", { FlatField.Container.Ref(it, database.fields) }, { it.id }))
+				contextual(RefSerializer("form", { Form.Ref(it, database.forms) }, { it.id }))
+				contextual(RefSerializer("template", { Template.Ref(it, database.templates) }, { it.id }))
 			}
 		})
 	}
@@ -141,6 +147,7 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 		with(AuthRouting) { enable(auth) }
 		with(UserRouting) { enable(auth) }
 		with(DepartmentRouting) { enable() }
+		with(SchemaRouting) { enable() }
 		legacyDataRoutes()
 		legacyFormRoutes()
 		legacySubmissionRoutes()

@@ -31,6 +31,8 @@ class Fields(
 		return FlatField.Container.Ref(id, this)
 	}
 
+	fun fromId(id: String) = FlatField.Container.Ref(id, this)
+
 	override fun directRequest(ref: Ref<FlatField.Container>): Flow<Data<FlatField.Container>> {
 		require(ref is FlatField.Container.Ref) { "$this doesn't support the reference $ref" }
 
