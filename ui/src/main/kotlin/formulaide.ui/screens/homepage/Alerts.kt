@@ -40,7 +40,7 @@ val Alerts = FC<Props>("Alerts") {
 		refresh()
 	}
 
-	useAsyncEffect(alerts) {
+	useAsyncEffect(alerts, client) {
 		// Refresh every minute
 		delay(1000 * 60)
 		refresh()
