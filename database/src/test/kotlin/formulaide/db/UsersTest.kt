@@ -1,47 +1,64 @@
 package formulaide.db
 
 import formulaide.db.document.DbUser
-import formulaide.db.document.createUser
-import formulaide.db.document.findUser
+import formulaide.db.document.toCore
 import kotlinx.coroutines.runBlocking
+import opensavvy.backbone.Ref.Companion.requestValue
 import kotlin.random.Random
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFails
+import kotlin.test.assertTrue
 
 class UsersTest {
 
 	@Test
 	fun createUser() = runBlocking {
 		val db = testDatabase()
+		val email = "random${Random.nextInt()}@gmail.fr"
+		val service = db.testService()
 
 		val expected = DbUser(
 			Random.nextInt().toString(),
-			"random${Random.nextInt()}@gmail.fr",
+			email,
 			"123456789",
 			"My Other Name",
-			db.testService().id,
+			services = setOf(service.id.toInt()),
 			isAdministrator = false
 		)
 
-		val actual = db.createUser(expected)
-		assertEquals(expected, actual)
+		val actual = db.users.create(
+			email,
+			"My Other Name",
+			setOf(service),
+			administrator = false,
+			password = "123456789"
+		).requestValue()
+		assertEquals(expected.toCore(db), actual)
 	}
 
 	@Test
 	fun createDuplicateUser() = runBlocking {
 		val db = testDatabase()
+		val email = "random${Random.nextInt()}@gmail.fr"
+		val service = db.testService()
 
-		val user = DbUser(
-			Random.nextInt().toString(),
-			"r${Random.nextInt()}@gmail.fr",
-			"123456789",
-			"Name",
-			db.testService().id,
-			isAdministrator = false
-		)
-		db.createUser(user)
+		db.users.create(
+			email,
+			"My Other Name",
+			setOf(service),
+			administrator = true,
+			password = "123456789"
+		).requestValue()
 
 		val failure = assertFails {
-			db.createUser(user)
+			db.users.create(
+				email,
+				"My Other Name",
+				setOf(service),
+				administrator = true,
+				password = "123456789"
+			).requestValue()
 		}
 		assertTrue(failure is IllegalStateException)
 	}
@@ -49,22 +66,19 @@ class UsersTest {
 	@Test
 	fun findUser() = runBlocking {
 		val db = testDatabase()
-
 		val email = "random+${Random.nextInt()}@email.fr"
+		val service = db.testService()
 
-		val user = DbUser(
-			Random.nextInt().toString(),
+		db.users.create(
 			email,
-			"…",
-			"Some Other Name",
-			db.testService().id,
-			isAdministrator = false
-		)
-		db.createUser(user)
+			"My Other Name",
+			setOf(service),
+			administrator = true,
+			password = "123456789"
+		).requestValue()
 
-		val found = db.findUser(email)
+		val found = db.users.fromId(email).requestValue()
 
-		assertNotNull(found)
 		assertEquals(email, found.email)
 	}
 

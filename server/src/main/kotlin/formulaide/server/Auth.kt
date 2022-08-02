@@ -8,11 +8,9 @@ import com.auth0.jwt.interfaces.Payload
 import formulaide.api.bones.ApiNewUser
 import formulaide.api.bones.ApiPasswordLogin
 import formulaide.api.types.Email
+import formulaide.core.User
 import formulaide.db.Database
 import formulaide.db.document.DbUser
-import formulaide.db.document.createUser
-import formulaide.db.document.editUser
-import formulaide.db.document.findUser
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import org.slf4j.LoggerFactory
@@ -56,20 +54,15 @@ class Auth(private val database: Database) {
 	 * Creates a new account.
 	 * @return A pair of a JWT token and the created user.
 	 */
-	suspend fun newAccount(newUser: ApiNewUser): DbUser {
+	suspend fun newAccount(newUser: ApiNewUser): User.Ref {
 		val hashedPassword = hash(newUser.password)
 
-		val id = UUID.randomUUID().toString()
-
-		return database.createUser(
-			DbUser(
-				id,
-				newUser.email,
-				hashedPassword,
-				newUser.fullName,
-				services = newUser.departments,
-				isAdministrator = newUser.administrator
-			)
+		return database.users.create(
+			newUser.email,
+			newUser.fullName,
+			newUser.departments,
+			newUser.administrator,
+			hashedPassword
 		)
 	}
 
@@ -81,7 +74,9 @@ class Auth(private val database: Database) {
 		val current = Instant.now().epochSecond
 		check(serverWideBlock <= current) { "Toutes les connexions du serveur sont actuellement bloquées (pendant ${current - serverWideBlock} secondes)" }
 
-		val user = database.findUser(login.email)
+		val userRef = database.users.fromId(login.email)
+
+		val user = database.users.getFromDb(userRef)
 		checkNotNull(user) { "Aucun utilisateur n'a été trouvé avec cette adresse mail" }
 		check(user.enabled == true) { "Cet utilisateur n'est pas activé" }
 
@@ -93,10 +88,7 @@ class Auth(private val database: Database) {
 		)
 		if (!passwordIsVerified) {
 			if (user.blockedUntil <= current + maxBlockedTimeSeconds) {
-				database.editUser(
-					user,
-					newBlockedUntil = user.blockedUntil + blockedForAfterFailedPasswordSeconds
-				)
+				database.users.blockUntil(userRef, user.blockedUntil + blockedForAfterFailedPasswordSeconds)
 			}
 			if (serverWideBlock <= current + maxServerBlockedTimeSeconds) {
 				serverWideBlock = current + serverBlockedAfterFailedPasswordSeconds
@@ -180,10 +172,11 @@ class Auth(private val database: Database) {
 		val type: String? = payload.getClaim("type").asString()
 		check(type == "refresh") { "Le token est invalide parce qu'il est du mauvais type ('refresh' était attendu) : $type" }
 
-		val tokenVersion: ULong? = payload.getClaim("tokVer").asLong()?.toULong()
+		val tokenVersion: Long? = payload.getClaim("tokVer").asLong()?.toLong()
 		checkNotNull(tokenVersion) { "Le token est invalide, il ne contient pas de 'tokVer', ou a une valeur invalide : $tokenVersion" }
 
-		val databaseUser = database.findUser(email)
+		val databaseUserRef = database.users.fromId(email)
+		val databaseUser = database.users.getFromDb(databaseUserRef)
 			?: error("Aucun utilisateur ne correspond à l'identité de ce token, c'est impossible !")
 
 		check(tokenVersion == databaseUser.tokenVersion) { "La version du token ne correspond pas, par exemple parce que le mot de passe a été modifié récemment" }
@@ -200,11 +193,11 @@ class Auth(private val database: Database) {
 			.withExpiresAt(Date.from(Instant.now() + accessTokenExpiration))
 			.sign(algorithm)
 
-	private fun signRefreshToken(email: Email, tokenVersion: ULong): String =
+	private fun signRefreshToken(email: Email, tokenVersion: Long): String =
 		JWT.create()
 			.withIssuer("formulaide")
 			.withClaim("userId", email.email)
-			.withClaim("tokVer", tokenVersion.toLong())
+			.withClaim("tokVer", tokenVersion)
 			.withClaim("type", "refresh")
 			.withExpiresAt(Date.from(Instant.now() + refreshTokenExpiration))
 			.sign(algorithm)
@@ -249,7 +242,8 @@ class Auth(private val database: Database) {
 			val principal = authentication.principal ?: error("Authentification manquante")
 			require(principal is AuthPrincipal) { "Authentification invalide" }
 
-			val user = database.findUser(principal.email.email)
+			val userRef = database.users.fromId(principal.email.email)
+			val user = database.users.getFromDb(userRef)
 			requireNotNull(user) { "Aucun utilisateur ne correspond à ce token" }
 			require(user.enabled == true) { "Cet utilisateur a été désactivé, le token est donc invalide" }
 

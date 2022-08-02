@@ -1,8 +1,6 @@
 package formulaide.server.routes
 
-import formulaide.api.bones.ApiDepartment
 import formulaide.core.Department
-import formulaide.db.document.*
 import formulaide.server.Auth.Companion.Employee
 import formulaide.server.Auth.Companion.requireAdmin
 import formulaide.server.Auth.Companion.requireEmployee
@@ -12,6 +10,7 @@ import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import opensavvy.backbone.Ref.Companion.requestValue
 
 /**
  * Department management.
@@ -44,16 +43,16 @@ object DepartmentRouting {
 				val services = when (call.parameters["closed"].toBoolean()) {
 					true -> {
 						call.requireAdmin(database)
-						database.allServicesIgnoreOpen()
+						database.departments.all(includeClosed = true)
 					}
 
 					false -> {
 						call.requireEmployee(database)
-						database.allServices()
+						database.departments.all(includeClosed = false)
 					}
 				}
 
-				call.respond(services.map { it.id })
+				call.respond(services)
 			}
 		}
 	}
@@ -67,7 +66,7 @@ object DepartmentRouting {
 	 *
 	 * - Requires employee authentication if the department is [open][Department.open]
 	 * - Requires administrator authentication if the department is [closed][Department.open]
-	 * - Response: [ApiDepartment]
+	 * - Response: [Department]
 	 *
 	 * ### Patch
 	 *
@@ -85,17 +84,15 @@ object DepartmentRouting {
 			get("/{id}") {
 				val id = call.parameters["id"] ?: error("Missing parameter 'id'")
 
-				val service = database.findService(id.toInt())
+				val service = database.departments.fromId(id.toInt()).requestValue()
 
-				if (service == null || !service.open) {
+				if (!service.open) {
 					call.requireAdmin(database)
-
-					requireNotNull(service) { "Service could not be found: $id" }
 				} else {
 					call.requireEmployee(database)
 				}
 
-				call.respond(service.toApi())
+				call.respond(service)
 			}
 
 			patch("/{id}") {
@@ -103,8 +100,10 @@ object DepartmentRouting {
 
 				val id = call.parameters["id"] ?: error("Missing parameter 'id'")
 				val open = call.parameters["open"]?.toBooleanStrictOrNull()
-				if (open != null)
-					database.manageService(id.toInt(), open)
+				if (open == true)
+					database.departments.open(database.departments.fromId(id.toInt()))
+				if (open == false)
+					database.departments.close(database.departments.fromId(id.toInt()))
 
 				call.respond("Success")
 			}
@@ -120,7 +119,7 @@ object DepartmentRouting {
 	 *
 	 * - Requires administrator authentication
 	 * - The request body should be the name of the department ([String])
-	 * - Response: [ApiDepartment]
+	 * - Response: [Department]
 	 */
 	fun Route.create() {
 		authenticate(Employee) {
@@ -128,9 +127,9 @@ object DepartmentRouting {
 				call.requireAdmin(database)
 
 				val service = call.receive<String>().removeSurrounding("\"")
-				val created = database.createService(service)
+				val created = database.departments.create(service)
 
-				call.respond(created.toApi())
+				call.respond(created)
 			}
 		}
 	}

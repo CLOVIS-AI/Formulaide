@@ -1,5 +1,6 @@
 plugins {
 	kotlin("multiplatform")
+	kotlin("plugin.serialization")
 
 	id("org.jetbrains.dokka")
 }
@@ -26,6 +27,7 @@ kotlin {
 			dependencies {
 				implementation(kotlin("stdlib-common"))
 
+				implementation(KotlinX.serialization.core)
 				api("opensavvy:backbone:_")
 			}
 		}

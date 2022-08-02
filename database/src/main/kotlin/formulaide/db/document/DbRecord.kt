@@ -1,13 +1,16 @@
 package formulaide.db.document
 
+import formulaide.api.bones.canAccess
 import formulaide.api.data.*
 import formulaide.api.types.Ref
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.types.Ref.Companion.load
+import formulaide.core.User
 import formulaide.db.Database
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import opensavvy.backbone.Ref.Companion.requestValue
 import org.bson.conversions.Bson
 import org.litote.kmongo.*
 import java.time.Instant
@@ -43,7 +46,7 @@ suspend fun Database.createRecord(submission: FormSubmission, userEmail: String?
 suspend fun Database.findRecord(record: Ref<Record>): Record? =
 	records.findOne(Record::id eq record.id)
 
-suspend fun Database.reviewRecord(review: ReviewRequest, employee: DbUser) {
+suspend fun Database.reviewRecord(review: ReviewRequest, employee: User) {
 	val record = records.findOne(Record::id eq review.record.id)
 		?: error("Impossible de trouver le dossier ${review.record.id}")
 	record.form.load {
@@ -56,7 +59,7 @@ suspend fun Database.reviewRecord(review: ReviewRequest, employee: DbUser) {
 	require(employee.email == transition.assignee?.id) { "Il est interdit d'attribuer la modification à quelqu'un d'autre que soit-même" }
 	require(transition.timestamp > record.history.maxOf { it.timestamp }) { "Une modification doit être plus récente que toutes les modifications déjà appliquées" }
 	require(
-		employee.toApi().canAccess(
+		employee.canAccess(
 			record.form.obj,
 			record.state
 		)
@@ -105,10 +108,9 @@ suspend fun Database.findFormsAssignedTo(user: DbUser): List<Form> {
 			}
 			.map {
 				async {
-					val service = findService(it)
-						?: error("Impossible de trouver un des service(s) auquel l'utilisateur actuel appartient : $it")
+					val service = departments.fromId(it).requestValue()
 
-					forms.find(Form::actions / Action::reviewer / Ref<*>::id eq service.id.toString()).toList()
+					forms.find(Form::actions / Action::reviewer / Ref<*>::id eq service.id).toList()
 				}
 			}
 			.awaitAll()
