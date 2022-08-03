@@ -1,7 +1,7 @@
 package formulaide.server.routes
 
 import formulaide.api.bones.*
-import formulaide.db.document.*
+import formulaide.db.document.toCore
 import formulaide.server.Auth
 import formulaide.server.Auth.Companion.Employee
 import formulaide.server.Auth.Companion.requireAdmin
@@ -13,6 +13,7 @@ import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import opensavvy.backbone.Ref.Companion.requestValue
 
 /**
  * The user management endpoint: `/api/users`.
@@ -41,7 +42,7 @@ object UserRouting {
 	 *
 	 * - Requires administrator authentication
 	 * - Body: [ApiNewUser]
-	 * - Response: `"Success"`
+	 * - Response: ID of the created user
 	 */
 	fun Route.create() {
 		authenticate(Employee) {
@@ -49,9 +50,9 @@ object UserRouting {
 				call.requireAdmin(database)
 				val data = call.receive<ApiNewUser>()
 
-				auth.newAccount(data)
+				val ref = auth.newAccount(data)
 
-				call.respond("Success")
+				call.respond(ref)
 			}
 		}
 	}
@@ -70,7 +71,7 @@ object UserRouting {
 		authenticate(Employee) {
 			get("/me") {
 				val user = call.requireEmployee(database)
-				call.respond(user.toApi())
+				call.respond(user.toCore(database))
 			}
 		}
 	}
@@ -91,12 +92,8 @@ object UserRouting {
 			get {
 				call.requireAdmin(database)
 
-				val list = when (call.parameters["closed"].toBoolean()) {
-					true -> database.listEnabledUsers()
-					false -> database.listAllUsers()
-				}
-
-				call.respond(list.map { it.email })
+				val list = database.users.all(includeClosed = call.parameters["closed"].toBoolean())
+				call.respond(list)
 			}
 		}
 	}
@@ -117,7 +114,7 @@ object UserRouting {
 	 *
 	 * - Requires administrator authentication.
 	 * - Body: [ApiUserEdition] (specify only the fields you want to edit)
-	 * - Response: [ApiUser]
+	 * - Response: `"Success"`
 	 *
 	 * ### Patch `/password`
 	 *
@@ -139,26 +136,20 @@ object UserRouting {
 					call.requireAdmin(database)
 
 					val email = call.parameters["email"] ?: error("Le paramètre obligatoire 'email' n'a pas été fourni")
-					val user = database.findUser(email) ?: error("L'email fournie ne correspond à aucun utilisateur")
-
-					call.respond(user.toApi())
+					val user = database.users.fromId(email)
+					call.respond(user.requestValue())
 				}
 
 				patch {
 					call.requireAdmin(database)
 					val email = call.parameters["email"] ?: error("Le paramètre obligatoire 'email' n'a pas été fourni")
-					val user = database.findUser(email) ?: error("L'email fournie ne correspond à aucun utilisateur")
+					val user = database.users.fromId(email)
 
 					val data = call.receive<ApiUserEdition>()
 
-					val editedUser = database.editUser(
-						user,
-						newEnabled = data.enabled,
-						newIsAdministrator = data.administrator,
-						newServices = data.departments,
-					)
+					database.users.edit(user, data.enabled, data.administrator, data.departments)
 
-					call.respond(editedUser.toApi())
+					call.respond("Success")
 				}
 
 				patch("/password") {
@@ -169,7 +160,8 @@ object UserRouting {
 					val data = call.receive<ApiUserPasswordEdition>()
 					val user = when (me.email == email) {
 						true -> me
-						false -> database.findUser(email) ?: error("L'email fournie ne correspond à aucun utilisateur")
+						false -> database.users.getFromDb(database.users.fromId(email))
+							?: error("L'email fournie ne correspond à aucun utilisateur")
 					}
 
 					val oldPassword = data.oldPassword
@@ -189,7 +181,7 @@ object UserRouting {
 					}
 
 					val newHashedPassword = Auth.hash(data.newPassword)
-					database.editUserPassword(user, newHashedPassword)
+					database.users.setPassword(database.users.fromId(user.email), oldPassword = null, newHashedPassword)
 
 					call.respond("Success")
 				}

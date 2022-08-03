@@ -5,10 +5,13 @@ import ch.qos.logback.classic.LoggerContext
 import formulaide.api.bones.ApiNewUser
 import formulaide.api.data.Config
 import formulaide.api.types.Email
+import formulaide.core.Department
+import formulaide.core.RefSerializer
+import formulaide.core.User
+import formulaide.core.field.FlatField
+import formulaide.core.form.Form
+import formulaide.core.form.Template
 import formulaide.db.Database
-import formulaide.db.document.allServices
-import formulaide.db.document.createService
-import formulaide.db.document.findUser
 import formulaide.server.Auth.Companion.Employee
 import formulaide.server.routes.*
 import io.ktor.http.*
@@ -26,6 +29,9 @@ import io.ktor.server.routing.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.contextual
+import opensavvy.backbone.Ref.Companion.requestValue
 import org.slf4j.LoggerFactory
 
 // New job: the server never dies cleanly, it can only be killed. No need for structure concurrency.
@@ -41,19 +47,22 @@ fun main(args: Array<String>) {
 
 	runBlocking {
 		println("Checking that the admin user exists…")
-		val service = database.allServices()
+		val department = database.departments.all()
+			.map { it.requestValue() }
 			.firstOrNull { it.name == rootServiceName }
-			?: database.createService(rootServiceName)
+			?: database.departments.create(rootServiceName).requestValue()
 
 		val auth = Auth(database)
 
-		if (database.findUser(rootUser) == null) {
+		val rootUserRef = database.users.fromId(rootUser)
+
+		if (database.users.getFromDb(rootUserRef) == null) {
 			println("Creating the administrator account $rootUser…")
 			auth.newAccount(
 				ApiNewUser(
 					rootUser,
 					"Administrateur",
-					setOf(service.id),
+					setOf(database.departments.fromId(department.id.toInt())),
 					true,
 					rootPassword,
 				)
@@ -86,7 +95,15 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 		System.err.println("WARNING. The server has been allowed to create non-safe HTTP cookies. Remove the environment variable 'formulaide_allow_unsafe_cookie' for production use.")
 
 	install(ContentNegotiation) {
-		json(serializer)
+		json(Json(serializer) {
+			serializersModule = SerializersModule {
+				contextual(RefSerializer("dept", { Department.Ref(it, database.departments) }, { it.id }))
+				contextual(RefSerializer("user", { User.Ref(it, database.users) }, { it.email }))
+				contextual(RefSerializer("field", { FlatField.Container.Ref(it, database.fields) }, { it.id }))
+				contextual(RefSerializer("form", { Form.Ref(it, database.forms) }, { it.id }))
+				contextual(RefSerializer("template", { Template.Ref(it, database.templates) }, { it.id }))
+			}
+		})
 	}
 
 	install(CallLogging) {
@@ -130,9 +147,10 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 		with(AuthRouting) { enable(auth) }
 		with(UserRouting) { enable(auth) }
 		with(DepartmentRouting) { enable() }
-		dataRoutes()
-		formRoutes()
-		submissionRoutes()
+		with(SchemaRouting) { enable() }
+		legacyDataRoutes()
+		legacyFormRoutes()
+		legacySubmissionRoutes()
 		fileRoutes()
 		alertRoutes()
 

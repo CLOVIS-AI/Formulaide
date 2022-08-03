@@ -242,6 +242,32 @@ api-jvm-test:
     reports:
       junit: api/build/test-results/test/**/TEST-*.xml
 
+core-js-test:
+  image: $JS_CHROME_IMAGE
+  stage: test
+  extends: [ .gradle ]
+  needs: [ docker-js-chrome ]
+  before_script:
+    - *prepare_gradle
+  script:
+    - "./gradlew :core:jsBrowserTest"
+  artifacts:
+    reports:
+      junit: core/build/test-results/browserTest/**/TEST-*.xml
+
+core-jvm-test:
+  image: $JDK_IMAGE
+  stage: test
+  extends: [ .gradle ]
+  needs: [ ]
+  before_script:
+    - *prepare_gradle
+  script:
+    - "./gradlew :core:jvmTest"
+  artifacts:
+    reports:
+      junit: core/build/test-results/test/**/TEST-*.xml
+
 database-test:
   image: $JDK_IMAGE
   stage: test

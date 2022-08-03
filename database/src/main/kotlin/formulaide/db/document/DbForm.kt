@@ -24,7 +24,7 @@ import org.litote.kmongo.match
  * @param open If `true`, searches for open forms. If `false`, searches for closed.
  * If `null`, searches for all forms without regards for their status. See [Form.open].
  */
-suspend fun Database.listForms(public: Boolean?, open: Boolean? = true): List<Form> {
+suspend fun Database.listLegacyForms(public: Boolean?, open: Boolean? = true): List<Form> {
 	val matchPublic =
 		if (public != null) match(Form::public eq public)
 		else null
@@ -36,20 +36,20 @@ suspend fun Database.listForms(public: Boolean?, open: Boolean? = true): List<Fo
 	val pipeline = arrayOf(matchPublic, matchOpen)
 		.filterNotNull()
 
-	return forms.aggregate<Form>(pipeline).toList()
+	return legacyForms.aggregate<Form>(pipeline).toList()
 }
 
-suspend fun Database.findForm(id: ReferenceId) =
-	forms.findOne(Form::id eq id)
+suspend fun Database.findLegacyForm(id: ReferenceId) =
+	legacyForms.findOne(Form::id eq id)
 
-suspend fun Database.createForm(form: Form): Form {
+suspend fun Database.createLegacyForm(form: Form): Form {
 	require(form.open) { "Il est interdit de créer un formulaire fermé" }
 
 	form.load(listComposites())
 	form.validate()
 
 	val newForm = form.copy(id = generateId<Form>())
-	forms.insertOne(newForm)
+	legacyForms.insertOne(newForm)
 	return newForm
 }
 
@@ -76,8 +76,8 @@ suspend fun Database.referencedComposites(form: Form): List<Composite> {
 	}
 }
 
-suspend fun Database.editForm(edition: FormMetadata): Form {
-	edition.form.load { findForm(it) ?: error("Le formulaire '$it' est introuvable") }
+suspend fun Database.editLegacyForm(edition: FormMetadata): Form {
+	edition.form.load { findLegacyForm(it) ?: error("Le formulaire '$it' est introuvable") }
 
 	val form = edition.form.obj
 
@@ -88,7 +88,7 @@ suspend fun Database.editForm(edition: FormMetadata): Form {
 		actions = edition.actions ?: form.actions,
 	)
 
-	forms.replaceOne(Form::id eq form.id, new)
+	legacyForms.replaceOne(Form::id eq form.id, new)
 
 	return new
 }

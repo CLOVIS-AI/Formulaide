@@ -4,13 +4,20 @@ import formulaide.api.data.Alert
 import formulaide.api.data.Composite
 import formulaide.api.data.Form
 import formulaide.api.data.Record
+import formulaide.core.Department
+import formulaide.core.field.FlatField
+import formulaide.core.form.Template
 import formulaide.db.document.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import opensavvy.backbone.Cache
+import opensavvy.backbone.cache.ExpirationCache.Companion.expireAfter
+import opensavvy.backbone.cache.MemoryCache.Companion.cachedInMemory
 import org.litote.kmongo.coroutine.coroutine
 import org.litote.kmongo.reactivestreams.KMongo
+import kotlin.time.Duration.Companion.minutes
 
 /**
  * Abstraction over the database connection.
@@ -37,14 +44,50 @@ class Database(
 		KMongo.createClient("mongodb://${this.username}:${this.password}@${this.host}:${this.port}").coroutine
 	private val database = client.getDatabase(this.databaseName)
 
-	internal val users = database.getCollection<DbUser>("users")
-	internal val services = database.getCollection<DbService>("services")
+	private val userCollection = database.getCollection<DbUser>("users")
+	private val serviceCollection = database.getCollection<DbService>("services")
+	private val fieldCollection = database.getCollection<FlatField.Container>("fields")
+	private val templateCollection = database.getCollection<Template>("templates2")
+	private val formCollection = database.getCollection<formulaide.core.form.Form>("forms2")
+
 	internal val data = database.getCollection<Composite>("data")
-	internal val forms = database.getCollection<Form>("forms")
-	internal val submissions = database.getCollection<DbSubmission>("submissions")
+	internal val legacyForms = database.getCollection<Form>("forms")
+	internal val legacySubmissions = database.getCollection<DbSubmission>("submissions")
 	internal val records = database.getCollection<Record>("records")
 	internal val uploads = database.getCollection<DbFile>("uploads")
 	internal val alerts = database.getCollection<Alert>("alerts")
+
+	val departments = Departments(
+		serviceCollection,
+		Cache.Default<Department>()
+			.cachedInMemory(job)
+			.expireAfter(1.minutes, job)
+	)
+
+	val users = Users(
+		this,
+		userCollection,
+		Cache.Default()
+	)
+
+	val fields = Fields(
+		fieldCollection,
+		Cache.Default(),
+	)
+
+	val templates = Templates(
+		templateCollection,
+		Cache.Default<Template>()
+			.cachedInMemory(job)
+			.expireAfter(10.minutes, job),
+	)
+
+	val forms = Forms(
+		formCollection,
+		Cache.Default<formulaide.core.form.Form>()
+			.cachedInMemory(job)
+			.expireAfter(10.minutes, job)
+	)
 
 	init {
 		CoroutineScope(job + Dispatchers.IO).launch { autoExpireFiles() }

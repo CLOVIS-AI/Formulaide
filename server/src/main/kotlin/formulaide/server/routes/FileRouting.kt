@@ -8,7 +8,7 @@ import formulaide.api.types.Ref
 import formulaide.api.types.Upload
 import formulaide.api.types.UploadRequest
 import formulaide.db.document.downloadFile
-import formulaide.db.document.findForm
+import formulaide.db.document.findLegacyForm
 import formulaide.db.document.toApi
 import formulaide.db.document.uploadFile
 import formulaide.server.Auth
@@ -65,7 +65,7 @@ fun Routing.fileRoutes() {
 }
 
 internal suspend fun uploadFile(request: UploadRequest, file: PartData.FileItem): Ref<Upload>? {
-	val form = database.findForm(request.form.id)
+	val form = database.findLegacyForm(request.form.id)
 		?: error("Le formulaire ${request.form} est introuvable, il n'est donc pas possible d'y publier une pièce jointe.")
 	val formRoot = request.root
 		?.let { root ->
