@@ -17,7 +17,7 @@ import java.time.Instant
 import java.util.*
 
 suspend fun Database.createRecord(submission: FormSubmission, userEmail: String? = null) {
-	submission.form.load { findForm(it) ?: error("Impossible de trouver le formulaire $it") }
+	submission.form.load { findLegacyForm(it) ?: error("Impossible de trouver le formulaire $it") }
 	val form = submission.form.obj
 
 	val state =
@@ -50,7 +50,7 @@ suspend fun Database.reviewRecord(review: ReviewRequest, employee: User) {
 	val record = records.findOne(Record::id eq review.record.id)
 		?: error("Impossible de trouver le dossier ${review.record.id}")
 	record.form.load {
-		findForm(it) ?: error("Impossible de trouver le formulaire ${record.form.id}")
+		findLegacyForm(it) ?: error("Impossible de trouver le formulaire ${record.form.id}")
 	}
 	val transition = review.transition
 		.copy(timestamp = Instant.now().epochSecond)
@@ -77,7 +77,7 @@ suspend fun Database.reviewRecord(review: ReviewRequest, employee: User) {
 		previous is RecordState.Action -> {
 			previous.current.loadFrom(record.form.obj.actions, lazy = false, allowNotFound = false)
 
-			submissionToCreate = review.fields?.let { saveSubmission(it) }
+			submissionToCreate = review.fields?.let { saveLegacySubmission(it) }
 		}
 		previous is RecordState.Refused -> {
 			require(review.fields == null) { "Une transition depuis l'état ${RecordState.Refused} ne peut pas contenir de champs" }
@@ -110,7 +110,7 @@ suspend fun Database.findFormsAssignedTo(user: DbUser): List<Form> {
 				async {
 					val service = departments.fromId(it).requestValue()
 
-					forms.find(Form::actions / Action::reviewer / Ref<*>::id eq service.id).toList()
+					legacyForms.find(Form::actions / Action::reviewer / Ref<*>::id eq service.id).toList()
 				}
 			}
 			.awaitAll()
@@ -180,7 +180,7 @@ suspend fun Database.deleteRecord(record: Record, user: DbUser) {
 
 	for (transition in record.history) {
 		transition.fields?.let {
-			deleteSubmission(it.id)
+			deleteLegacySubmission(it.id)
 		}
 	}
 

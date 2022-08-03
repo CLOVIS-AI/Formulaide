@@ -11,9 +11,9 @@ import formulaide.api.types.Ref
 import formulaide.db.document.DbSubmissionData.Companion.toApi
 import formulaide.db.document.DbSubmissionData.Companion.toDbSubmissionData
 import formulaide.db.document.createComposite
-import formulaide.db.document.createForm
-import formulaide.db.document.saveSubmission
-import formulaide.db.document.searchSubmission
+import formulaide.db.document.createLegacyForm
+import formulaide.db.document.saveLegacySubmission
+import formulaide.db.document.searchLegacySubmission
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -27,15 +27,17 @@ class SubmissionsTest {
 		lateinit var lastName: FormField.Simple
 		lateinit var firstName: FormField.Simple
 
-		val form = db.createForm(form(
-			"Un formulaire intéressant",
-			public = true,
-			mainFields = formRoot {
-				lastName = simple("Nom", Text(Arity.mandatory()))
-				firstName = simple("Prénom", Text(Arity.optional()))
-			},
-			Action("0", order = 0, reviewer = Ref("0"), name = "Validés")
-		))
+		val form = db.createLegacyForm(
+			form(
+				"Un formulaire intéressant",
+				public = true,
+				mainFields = formRoot {
+					lastName = simple("Nom", Text(Arity.mandatory()))
+					firstName = simple("Prénom", Text(Arity.optional()))
+				},
+				Action("0", order = 0, reviewer = Ref("0"), name = "Validés")
+			)
+		)
 
 		val submission1 = form.createSubmission {
 			text(lastName, "Mon nom de famille")
@@ -47,8 +49,8 @@ class SubmissionsTest {
 			text(firstName, "Mon prénom 2")
 		}
 
-		db.saveSubmission(submission1)
-		db.saveSubmission(submission2)
+		db.saveLegacySubmission(submission1)
+		db.saveLegacySubmission(submission2)
 		Unit
 	}
 
@@ -94,7 +96,7 @@ class SubmissionsTest {
 				}.also { identity = it }
 			},
 			Action("0", order = 0, reviewer = Ref("0"), name = "Validés"),
-		).let { database.createForm(it) }
+		).let { database.createLegacyForm(it) }
 
 		val submission1 = form.createSubmission {
 			text(phoneNumber, "01 23 45 67 89")
@@ -135,7 +137,7 @@ class SubmissionsTest {
 		)
 
 		for (submission in submissions) {
-			database.saveSubmission(submission)
+			database.saveLegacySubmission(submission)
 
 			println("\nSubmission: ${submission.data}")
 
@@ -152,7 +154,7 @@ class SubmissionsTest {
 		}
 
 		suspend fun query(vararg queries: SearchCriterion<*>) =
-			database.searchSubmission(form, null, queries.asList())
+			database.searchLegacySubmission(form, null, queries.asList())
 
 		val allResults = query(SearchCriterion.TextContains("0", "0"))
 		val maleResults = query(SearchCriterion.TextEquals("1", "0"))

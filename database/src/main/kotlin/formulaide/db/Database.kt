@@ -5,6 +5,8 @@ import formulaide.api.data.Composite
 import formulaide.api.data.Form
 import formulaide.api.data.Record
 import formulaide.core.Department
+import formulaide.core.field.FlatField
+import formulaide.core.form.Template
 import formulaide.db.document.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -44,9 +46,13 @@ class Database(
 
 	private val userCollection = database.getCollection<DbUser>("users")
 	private val serviceCollection = database.getCollection<DbService>("services")
+	private val fieldCollection = database.getCollection<FlatField.Container>("fields")
+	private val templateCollection = database.getCollection<Template>("templates2")
+	private val formCollection = database.getCollection<formulaide.core.form.Form>("forms2")
+
 	internal val data = database.getCollection<Composite>("data")
-	internal val forms = database.getCollection<Form>("forms")
-	internal val submissions = database.getCollection<DbSubmission>("submissions")
+	internal val legacyForms = database.getCollection<Form>("forms")
+	internal val legacySubmissions = database.getCollection<DbSubmission>("submissions")
 	internal val records = database.getCollection<Record>("records")
 	internal val uploads = database.getCollection<DbFile>("uploads")
 	internal val alerts = database.getCollection<Alert>("alerts")
@@ -62,6 +68,25 @@ class Database(
 		this,
 		userCollection,
 		Cache.Default()
+	)
+
+	val fields = Fields(
+		fieldCollection,
+		Cache.Default(),
+	)
+
+	val templates = Templates(
+		templateCollection,
+		Cache.Default<Template>()
+			.cachedInMemory(job)
+			.expireAfter(10.minutes, job),
+	)
+
+	val forms = Forms(
+		formCollection,
+		Cache.Default<formulaide.core.form.Form>()
+			.cachedInMemory(job)
+			.expireAfter(10.minutes, job)
 	)
 
 	init {

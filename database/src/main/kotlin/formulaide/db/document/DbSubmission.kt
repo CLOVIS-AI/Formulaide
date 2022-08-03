@@ -122,10 +122,10 @@ data class DbSubmission(
 	val data: DbSubmissionData,
 )
 
-suspend fun Database.saveSubmission(submission: FormSubmission): DbSubmission {
+suspend fun Database.saveLegacySubmission(submission: FormSubmission): DbSubmission {
 	val composites = listComposites()
 
-	val form = findForm(submission.form.id)
+	val form = findLegacyForm(submission.form.id)
 		?: error("Une saisie a été reçue pour le formulaire '${submission.form}', qui n'existe pas.")
 
 	form.load(composites)
@@ -138,19 +138,19 @@ suspend fun Database.saveSubmission(submission: FormSubmission): DbSubmission {
 		root = submission.root?.id,
 		apiId = newId<DbSubmission>().toString()
 	).also {
-		submissions.insertOne(it)
+		legacySubmissions.insertOne(it)
 	}
 }
 
-suspend fun Database.findSubmission(form: ReferenceId): List<DbSubmission> =
-	submissions.find(DbSubmission::form eq form).toList()
+suspend fun Database.findLegacySubmission(form: ReferenceId): List<DbSubmission> =
+	legacySubmissions.find(DbSubmission::form eq form).toList()
 
-suspend fun Database.findSubmissionById(id: ReferenceId): DbSubmission? =
-	submissions.findOne(DbSubmission::apiId eq id)
+suspend fun Database.findLegacySubmissionById(id: ReferenceId): DbSubmission? =
+	legacySubmissions.findOne(DbSubmission::apiId eq id)
 
 fun DbSubmission.toApi() = FormSubmission(apiId, Ref(form), root?.let { Ref(it) }, data.toApi())
 
-suspend fun Database.searchSubmission(
+suspend fun Database.searchLegacySubmission(
 	form: Form,
 	root: Action?,
 	criteria: List<SearchCriterion<*>>,
@@ -190,9 +190,9 @@ suspend fun Database.searchSubmission(
 		filter += nodeFilter
 	}
 
-	return submissions.find(and(filter)).toList()
+	return legacySubmissions.find(and(filter)).toList()
 }
 
-suspend fun Database.deleteSubmission(submissionId: String) {
-	submissions.deleteOne(DbSubmission::apiId eq submissionId)
+suspend fun Database.deleteLegacySubmission(submissionId: String) {
+	legacySubmissions.deleteOne(DbSubmission::apiId eq submissionId)
 }

@@ -7,8 +7,8 @@ import formulaide.api.dsl.simple
 import formulaide.api.fields.SimpleField.Text
 import formulaide.api.types.Arity
 import formulaide.api.types.Ref
-import formulaide.db.document.createForm
-import formulaide.db.document.listForms
+import formulaide.db.document.createLegacyForm
+import formulaide.db.document.listLegacyForms
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 
@@ -18,7 +18,7 @@ class FormsTest {
 	fun listForms() = runBlocking {
 		val db = testDatabase()
 
-		val forms = db.listForms(public = true)
+		val forms = db.listLegacyForms(public = true)
 
 		println(forms)
 	}
@@ -27,19 +27,21 @@ class FormsTest {
 	fun create() = runBlocking {
 		val db = testDatabase()
 
-		db.createForm(form(
-			"Le formulaire des tests",
-			public = true,
-			formRoot {
-				simple("Numéro fiscal", Text(Arity.mandatory()))
-			},
-			Action(
-				id = "1",
-				order = 1,
-				Ref("1"),
-				name = "Étape 1"
+		db.createLegacyForm(
+			form(
+				"Le formulaire des tests",
+				public = true,
+				formRoot {
+					simple("Numéro fiscal", Text(Arity.mandatory()))
+				},
+				Action(
+					id = "1",
+					order = 1,
+					Ref("1"),
+					name = "Étape 1"
+				)
 			)
-		))
+		)
 		Unit
 	}
 

@@ -32,7 +32,7 @@ import kotlin.random.nextInt
 private val deletionRequests = HashMap<Ref<Record>, String>()
 private val deletionRequestsLock = Semaphore(1)
 
-fun Routing.submissionRoutes() {
+fun Routing.legacySubmissionRoutes() {
 	route("/submissions") {
 
 		authenticate(Employee, optional = true) {
@@ -42,7 +42,7 @@ fun Routing.submissionRoutes() {
 
 				require(submission.root == null) { "L'endpoint /submissions/create ne peut être utilisé que pour les saisies originelles, pas pour la vérification." }
 
-				val dbSubmission = database.saveSubmission(submission)
+				val dbSubmission = database.saveLegacySubmission(submission)
 				database.createRecord(dbSubmission.toApi(), userEmail = user?.email?.email)
 
 				call.respond("Success")
@@ -52,7 +52,7 @@ fun Routing.submissionRoutes() {
 		post("/nativeCreate/{formId}") {
 			val formId =
 				call.parameters["formId"] ?: error("Le paramètre GET 'formId' est obligatoire.")
-			val form = database.findForm(formId)?.takeIf { it.public }
+			val form = database.findLegacyForm(formId)?.takeIf { it.public }
 				?: error("Le formulaire demandé n'existe pas, ou n'est pas public : $formId")
 			require(form.open) { "Le formulaire demandé a été archivé, il n'est plus possible d'y répondre." }
 
@@ -112,7 +112,7 @@ fun Routing.submissionRoutes() {
 				root = null, // The raw HTML can only be used for the original submission
 				data = data.mapValues { (_, v) -> v.trim() },
 			)
-			val dbSubmission = database.saveSubmission(submission)
+			val dbSubmission = database.saveLegacySubmission(submission)
 			database.createRecord(dbSubmission.toApi())
 
 			call.respondText("SUCCESS")
@@ -133,7 +133,7 @@ fun Routing.submissionRoutes() {
 				call.requireEmployee(database)
 				val body = call.receive<String>().removeSurrounding("\"")
 				call.respond(
-					database.findSubmissionById(body)?.toApi()
+					database.findLegacySubmissionById(body)?.toApi()
 						?: error("La saisie '$body' est introuvable")
 				)
 			}
@@ -147,7 +147,7 @@ fun Routing.submissionRoutes() {
 			post("/recordsToReview") {
 				val user = call.requireEmployee(database)
 				val request = call.receive<RecordsToReviewRequest>()
-				val form = database.findForm(request.form.id)
+				val form = database.findLegacyForm(request.form.id)
 					?: error("Le formulaire est introuvable : ${request.form.id}")
 
 				require(user.toCore(database).canAccess(form, request.state)) {
@@ -161,7 +161,7 @@ fun Routing.submissionRoutes() {
 
 			post("/csv") {
 				val request = call.receive<RecordsToReviewRequest>()
-				val form = database.findForm(request.form.id)
+				val form = database.findLegacyForm(request.form.id)
 					?: error("Le formulaire est introuvable : ${request.form.id}")
 				form.load(database.listComposites())
 
@@ -234,7 +234,7 @@ private suspend fun submissionsMatchingRecord(
 			.filter { (_, query) -> query.isNotEmpty() }
 			.takeIf { it.isNotEmpty() } // If there are no criteria, ignore the request
 			?.flatMap { (actionId, query) ->
-				database.searchSubmission(
+				database.searchLegacySubmission(
 					form,
 					actionId,
 					query
@@ -320,7 +320,7 @@ private suspend fun StringBuilder.csvBuildRow(form: Form, record: Record) {
 		?.fields
 		?: error("Ce dossier n'a pas de première étape : ${record.id}")
 	initialSubmission.load {
-		database.findSubmissionById(it)?.toApi() ?: error("La saisie est introuvable : $it")
+		database.findLegacySubmissionById(it)?.toApi() ?: error("La saisie est introuvable : $it")
 	}
 	for (field in form.mainFields.fields) {
 		csvBuildField(field, initialSubmission.obj, field.id)
@@ -334,7 +334,7 @@ private suspend fun StringBuilder.csvBuildRow(form: Form, record: Record) {
 			?.fields
 			?: continue
 		submission.load {
-			database.findSubmissionById(it)?.toApi() ?: error("La saisie est introuvable : $it")
+			database.findLegacySubmissionById(it)?.toApi() ?: error("La saisie est introuvable : $it")
 		}
 
 		for (field in action.fields?.fields ?: emptyList())
