@@ -1,8 +1,9 @@
 package formulaide.ui.navigation
 
 import androidx.compose.runtime.*
-import formulaide.ui.screens.DummyScreen
+import formulaide.ui.screens.FormList
 import formulaide.ui.screens.Home
+import formulaide.ui.screens.TemplateList
 import formulaide.ui.theme.RailButton
 import formulaide.ui.theme.ThemeSelector
 import kotlinx.browser.document
@@ -26,7 +27,8 @@ var currentScreen: Screen
 
 val screens = listOf(
 	Home,
-	DummyScreen,
+	TemplateList,
+	FormList,
 )
 
 @Composable
