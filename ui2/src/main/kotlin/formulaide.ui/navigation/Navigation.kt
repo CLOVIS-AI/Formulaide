@@ -80,8 +80,8 @@ private fun NavigationRail() = Nav(
 			display(DisplayStyle.Flex)
 			flexDirection(FlexDirection.Column)
 			justifyContent(JustifyContent.SpaceBetween)
-			paddingTop(50.px)
-			paddingBottom(50.px)
+			paddingTop(30.px)
+			paddingBottom(30.px)
 		}
 	}) {
 

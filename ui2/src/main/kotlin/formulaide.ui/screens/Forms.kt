@@ -1,10 +1,8 @@
 package formulaide.ui.screens
 
+import formulaide.ui.components.Page
 import formulaide.ui.navigation.Screen
 import formulaide.ui.utils.Role
-import org.jetbrains.compose.web.dom.Article
-import org.jetbrains.compose.web.dom.P
-import org.jetbrains.compose.web.dom.Text
 
 val FormList: Screen = Screen(
 	title = "Formulaires",
@@ -13,9 +11,9 @@ val FormList: Screen = Screen(
 	icon = "ri-survey-line",
 	iconSelected = "ri-survey-fill"
 ) {
-	Article {
-		P {
-			Text("Formulaires")
-		}
+	Page(
+		"Formulaires"
+	) {
+		//TODO in future commits of this MR
 	}
 }
