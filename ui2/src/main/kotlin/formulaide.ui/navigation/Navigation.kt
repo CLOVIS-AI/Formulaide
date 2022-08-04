@@ -59,8 +59,8 @@ fun Navigation() {
 				id("Body")
 
 				style {
-					marginTop(8.px)
-					marginBottom(8.px)
+					marginTop(15.px)
+					marginBottom(15.px)
 				}
 			}) {
 			_currentScreen()
