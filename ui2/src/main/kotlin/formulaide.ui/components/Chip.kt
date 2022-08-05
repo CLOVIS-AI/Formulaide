@@ -2,8 +2,10 @@ package formulaide.ui.components
 
 import androidx.compose.runtime.Composable
 import formulaide.ui.theme.Theme
+import formulaide.ui.theme.shade
 import formulaide.ui.utils.animateColor
 import formulaide.ui.utils.animateDouble
+import formulaide.ui.utils.animateShade
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
@@ -18,7 +20,20 @@ fun FilterChip(
 	onRemove: (() -> Unit)? = null,
 ) {
 	val enabledTransition = animateDouble(if (enabled) 1.0 else 0.0)
-	val enabledBorderColor = animateColor(if (enabled) Theme.current.secondaryContainer else Theme.current.secondary)
+
+	val borderColor = animateColor(
+		when {
+			enabled -> Theme.current.secondaryContainer.background
+			else -> Theme.current.default.content // text color
+		}
+	)
+
+	val shade = animateShade(
+		when {
+			enabled -> Theme.current.primaryContainer
+			else -> Theme.current.default
+		}
+	)
 
 	Span(
 		{
@@ -31,11 +46,11 @@ fun FilterChip(
 				paddingTop(2.px)
 				paddingBottom(2.px)
 
-				backgroundColor(Theme.current.secondaryContainer.copy(alpha = enabledTransition).css)
+				shade(shade)
 
 				border {
 					style = LineStyle.Solid
-					color = enabledBorderColor.css
+					color = borderColor.css
 					width = 1.px
 				}
 			}

@@ -2,6 +2,7 @@ package formulaide.ui.utils
 
 import androidx.compose.runtime.*
 import formulaide.ui.theme.CustomColor
+import formulaide.ui.theme.Shade
 import kotlinx.coroutines.delay
 
 private const val defaultRate = 0.05
@@ -36,4 +37,12 @@ fun animateColor(target: CustomColor): CustomColor {
 	val alpha = animateDouble(target.alpha.toDouble(), rate = colorRate)
 
 	return CustomColor(red, green, blue, alpha)
+}
+
+@Composable
+fun animateShade(target: Shade): Shade {
+	val content = animateColor(target.content)
+	val background = animateColor(target.background)
+
+	return Shade(content, background)
 }

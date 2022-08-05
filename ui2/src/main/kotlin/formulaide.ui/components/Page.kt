@@ -22,7 +22,7 @@ fun Page(
 
 				position(Position.Sticky)
 				top(0.px)
-				backgroundColor(Theme.current.background.css)
+				backgroundColor(Theme.current.default.background.css)
 			}
 		}
 	) {
