@@ -1,12 +1,12 @@
 package formulaide.ui.components
 
 import androidx.compose.runtime.Composable
+import formulaide.ui.navigation.client
+import formulaide.ui.navigation.localDevelopmentUrl
 import formulaide.ui.theme.Theme
+import formulaide.ui.theme.shade
 import org.jetbrains.compose.web.css.*
-import org.jetbrains.compose.web.dom.Article
-import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.H1
-import org.jetbrains.compose.web.dom.Text
+import org.jetbrains.compose.web.dom.*
 
 @Composable
 fun Page(
@@ -44,6 +44,26 @@ fun Page(
 			}
 		) {
 			header()
+		}
+
+		if (client.hostUrl == localDevelopmentUrl) P(
+			{
+				style {
+					marginTop(15.px)
+					shade(Theme.current.error)
+				}
+			}
+		) {
+			Text("Mode de développement activé, connecté sur ${client.hostUrl}")
+		} else if (!client.hostUrl.startsWith("https://")) P(
+			{
+				style {
+					marginTop(15.px)
+					shade(Theme.current.error)
+				}
+			}
+		) {
+			Text("La connection à Formulaide n'est pas sécurisée.")
 		}
 	}
 
