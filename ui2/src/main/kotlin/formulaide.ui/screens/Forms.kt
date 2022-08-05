@@ -24,14 +24,16 @@ val FormList: Screen = Screen(
 	Page(
 		"Formulaires",
 		header = {
-			ChipContainer {
-				FilterChip("Publics", showPublic, onUpdate = { showPublic = it })
-				FilterChip("Privés", showPrivate, onUpdate = { showPrivate = it })
-				FilterChip("Archivés", showArchived, onUpdate = { showArchived = it })
+			ChipContainerContainer {
+				ChipContainer {
+					FilterChip("Publics", showPublic, onUpdate = { showPublic = it })
+					FilterChip("Privés", showPrivate, onUpdate = { showPrivate = it })
+					FilterChip("Archivés", showArchived, onUpdate = { showArchived = it })
+				}
 
-				ChipContainerSeparator()
-
-				RefreshButton { /* does nothing for now */ }
+				ChipContainer {
+					RefreshButton { /* does nothing for now */ }
+				}
 			}
 		}
 	) {

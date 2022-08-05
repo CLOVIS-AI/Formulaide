@@ -104,10 +104,17 @@ fun ChipContainer(
 }
 
 @Composable
-fun ChipContainerSeparator() = Div(
+fun ChipContainerContainer(
+	content: @Composable () -> Unit,
+) = Div(
 	{
+		classes("chip-container-container")
 		style {
-			width(2.px)
+			display(DisplayStyle.Flex)
+			flexDirection(FlexDirection.Row)
+			gap(10.px)
 		}
 	}
-)
+) {
+	content()
+}
