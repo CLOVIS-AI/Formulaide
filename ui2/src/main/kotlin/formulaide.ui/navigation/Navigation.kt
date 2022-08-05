@@ -6,6 +6,7 @@ import formulaide.ui.screens.Home
 import formulaide.ui.screens.TemplateList
 import formulaide.ui.theme.RailButton
 import formulaide.ui.theme.ThemeSelector
+import formulaide.ui.utils.Role.Companion.role
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.jetbrains.compose.web.css.*
@@ -90,7 +91,9 @@ private fun NavigationRail() = Nav(
 	}
 
 	NavigationArea("screens") {
-		for (screen in screens) {
+		val visibleScreens by remember { derivedStateOf { screens.filter { client.role >= it.requiredRole } } }
+
+		for (screen in visibleScreens) {
 			RailButton(
 				screen.icon,
 				screen.iconSelected,

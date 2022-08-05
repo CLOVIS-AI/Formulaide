@@ -1,6 +1,7 @@
 package formulaide.ui.utils
 
 import formulaide.api.users.User
+import formulaide.client.Client
 
 enum class Role {
 	ANONYMOUS,
@@ -15,6 +16,12 @@ enum class Role {
 				!administrator -> EMPLOYEE
 				administrator -> ADMINISTRATOR
 				else -> error("Should never happen")
+			}
+
+		val Client.role
+			get() = when (this) {
+				is Client.Anonymous -> ANONYMOUS
+				is Client.Authenticated -> me.role
 			}
 	}
 }
