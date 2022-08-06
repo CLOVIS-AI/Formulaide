@@ -19,14 +19,17 @@ fun DisplayError(error: Throwable) {
 		}
 	}
 
-	P(
-		{
-			style {
-				shade(Theme.current.error)
-				property("font-size", "small")
-			}
+	DisplayError(message)
+}
+
+@Composable
+fun DisplayError(error: String) = P(
+	{
+		style {
+			shade(Theme.current.error)
+			property("font-size", "small")
 		}
-	) {
-		Text(message)
 	}
+) {
+	Text(error)
 }

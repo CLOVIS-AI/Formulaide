@@ -61,7 +61,7 @@ fun Navigation() {
 				id("Body")
 
 				style {
-					marginTop(15.px)
+					marginTop(20.px)
 					marginBottom(15.px)
 				}
 			}) {

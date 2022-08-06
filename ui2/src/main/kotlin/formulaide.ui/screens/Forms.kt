@@ -5,6 +5,8 @@ import formulaide.core.form.Form
 import formulaide.ui.components.*
 import formulaide.ui.navigation.Screen
 import formulaide.ui.navigation.client
+import formulaide.ui.navigation.currentScreen
+import formulaide.ui.theme.RailButton
 import formulaide.ui.utils.Role
 import formulaide.ui.utils.Role.Companion.role
 import kotlinx.coroutines.launch
@@ -18,7 +20,17 @@ val FormList: Screen = Screen(
 	requiredRole = Role.ANONYMOUS,
 	"?forms",
 	icon = "ri-survey-line",
-	iconSelected = "ri-survey-fill"
+	iconSelected = "ri-survey-fill",
+	actions = {
+		if (client.role >= Role.ADMINISTRATOR) {
+			RailButton(
+				FormEditor.icon,
+				FormEditor.iconSelected,
+				"Créer un formulaire",
+				selected = false,
+			) { currentScreen = FormEditor }
+		}
+	}
 ) {
 	var showArchived by remember { mutableStateOf(false) }
 	var showPrivate by remember { mutableStateOf(true) }
