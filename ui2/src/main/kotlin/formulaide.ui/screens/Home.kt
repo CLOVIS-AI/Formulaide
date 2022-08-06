@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import formulaide.ui.components.Page
+import formulaide.ui.components.PasswordField
 import formulaide.ui.components.TextField
 import formulaide.ui.navigation.Screen
 import formulaide.ui.utils.Role
@@ -29,6 +30,6 @@ val Home: Screen = Screen(
 		var password by remember { mutableStateOf("") }
 
 		TextField("Adresse mail", email, onChange = { email = it })
-		TextField("Mot de passe", password, onChange = { password = it })
+		PasswordField("Mot de passe", password, onChange = { password = it })
 	}
 }
