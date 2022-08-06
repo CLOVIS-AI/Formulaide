@@ -1,13 +1,12 @@
 package formulaide.ui.screens
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import formulaide.ui.components.Page
-import formulaide.ui.components.PasswordField
-import formulaide.ui.components.TextField
+import androidx.compose.runtime.*
+import formulaide.api.users.PasswordLogin
+import formulaide.client.Client
+import formulaide.client.routes.login
+import formulaide.ui.components.*
 import formulaide.ui.navigation.Screen
+import formulaide.ui.navigation.client
 import formulaide.ui.utils.Role
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
@@ -22,14 +21,52 @@ val Home: Screen = Screen(
 	Page(
 		"Formulaide",
 	) {
-		P {
-			Text("Identifiez-vous pour avoir accès à l'espace employé :")
+		when (client) {
+			is Client.Anonymous -> LoginPage()
+			is Client.Authenticated -> HomePage()
 		}
+	}
+}
 
-		var email by remember { mutableStateOf("") }
-		var password by remember { mutableStateOf("") }
+@Composable
+private fun LoginPage() {
+	var error by remember { mutableStateOf<Throwable?>(null) }
 
-		TextField("Adresse mail", email, onChange = { email = it })
-		PasswordField("Mot de passe", password, onChange = { password = it })
+	P {
+		Text("Identifiez-vous pour avoir accès à l'espace employé :")
+	}
+
+	var email by remember { mutableStateOf("") }
+	var password by remember { mutableStateOf("") }
+
+	TextField("Adresse mail", email, onChange = { email = it })
+	PasswordField("Mot de passe", password, onChange = { password = it })
+
+	ButtonContainer {
+		MainButton(
+			onClick = {
+				try {
+					error = null
+					val token = client.login(PasswordLogin(password, email))
+					client = (client as Client.Anonymous).authenticate(token.token)
+				} catch (e: Throwable) {
+					error = e
+				}
+			}
+		) {
+			Text("Connexion")
+		}
+	}
+
+	if (error != null)
+		DisplayError(error!!)
+}
+
+@Composable
+private fun HomePage() {
+	val client = client as Client.Authenticated
+
+	P {
+		Text("Bonjour, ${client.me.fullName}.")
 	}
 }
