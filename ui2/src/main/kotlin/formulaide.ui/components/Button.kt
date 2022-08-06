@@ -1,44 +1,64 @@
 package formulaide.ui.components
 
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import formulaide.ui.theme.CustomColor
 import formulaide.ui.theme.Shade
 import formulaide.ui.theme.Theme
 import formulaide.ui.theme.shade
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.Text
 
 @Composable
 private fun AbstractButton(
-	onClick: () -> Unit,
+	onClick: suspend () -> Unit,
 	style: StyleScope.() -> Unit,
 	content: @Composable () -> Unit,
-) = Button(
-	{
-		onClick { onClick() }
-
-		style {
-			display(DisplayStyle.InlineBlock)
-			marginTop(4.px)
-			marginBottom(4.px)
-
-			borderRadius(30.px)
-			paddingLeft(15.px)
-			paddingRight(15.px)
-			paddingTop(5.px)
-			paddingBottom(5.px)
-
-			style()
-		}
-	}
 ) {
-	content()
+	val scope = rememberCoroutineScope()
+
+	var loading by remember { mutableStateOf(false) }
+
+	Button(
+		{
+			onClick {
+				scope.launch {
+					try {
+						loading = true
+						onClick()
+					} finally {
+						loading = false
+					}
+				}
+			}
+
+			style {
+				display(DisplayStyle.InlineBlock)
+				marginTop(4.px)
+				marginBottom(4.px)
+
+				borderRadius(30.px)
+				paddingLeft(15.px)
+				paddingRight(15.px)
+				paddingTop(5.px)
+				paddingBottom(5.px)
+
+				style()
+			}
+		}
+	) {
+		content()
+
+		if (loading)
+			Text("...")
+	}
 }
 
 @Composable
 fun MainButton(
-	onClick: () -> Unit,
+	onClick: suspend () -> Unit,
 	content: @Composable () -> Unit,
 ) = AbstractButton(
 	onClick,
@@ -50,7 +70,7 @@ fun MainButton(
 
 @Composable
 fun SecondaryButton(
-	onClick: () -> Unit,
+	onClick: suspend () -> Unit,
 	content: @Composable () -> Unit,
 ) = AbstractButton(
 	onClick,
@@ -62,7 +82,7 @@ fun SecondaryButton(
 
 @Composable
 fun TextButton(
-	onClick: () -> Unit,
+	onClick: suspend () -> Unit,
 	content: @Composable () -> Unit,
 ) = AbstractButton(
 	onClick,
