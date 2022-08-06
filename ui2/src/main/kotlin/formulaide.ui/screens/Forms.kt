@@ -6,7 +6,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import formulaide.ui.components.*
 import formulaide.ui.navigation.Screen
+import formulaide.ui.navigation.client
 import formulaide.ui.utils.Role
+import formulaide.ui.utils.Role.Companion.role
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 
@@ -25,10 +27,15 @@ val FormList: Screen = Screen(
 		"Formulaires",
 		header = {
 			ChipContainerContainer {
-				ChipContainer {
-					FilterChip("Publics", showPublic, onUpdate = { showPublic = it })
-					FilterChip("Privés", showPrivate, onUpdate = { showPrivate = it })
-					FilterChip("Archivés", showArchived, onUpdate = { showArchived = it })
+				if (client.role >= Role.EMPLOYEE) {
+					ChipContainer {
+						FilterChip("Publics", showPublic, onUpdate = { showPublic = it })
+						FilterChip("Privés", showPrivate, onUpdate = { showPrivate = it })
+
+						if (client.role >= Role.ADMINISTRATOR) {
+							FilterChip("Archivés", showArchived, onUpdate = { showArchived = it })
+						}
+					}
 				}
 
 				ChipContainer {
