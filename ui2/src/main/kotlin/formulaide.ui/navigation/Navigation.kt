@@ -1,6 +1,7 @@
 package formulaide.ui.navigation
 
 import androidx.compose.runtime.*
+import formulaide.client.Client
 import formulaide.ui.screens.FormList
 import formulaide.ui.screens.Home
 import formulaide.ui.screens.TemplateList
@@ -105,8 +106,10 @@ private fun NavigationRail() = Nav(
 	}
 
 	NavigationArea("settings") {
+		if (client is Client.Authenticated)
+			LogOutButton()
+
 		ThemeSelector()
-		// In the future: the log-out button
 	}
 }
 
