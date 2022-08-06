@@ -1,16 +1,17 @@
 package formulaide.ui.screens
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
+import formulaide.core.form.Form
 import formulaide.ui.components.*
 import formulaide.ui.navigation.Screen
 import formulaide.ui.navigation.client
 import formulaide.ui.utils.Role
 import formulaide.ui.utils.Role.Companion.role
+import kotlinx.coroutines.launch
+import org.jetbrains.compose.web.dom.Li
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
+import org.jetbrains.compose.web.dom.Ul
 
 val FormList: Screen = Screen(
 	title = "Formulaires",
@@ -22,6 +23,17 @@ val FormList: Screen = Screen(
 	var showArchived by remember { mutableStateOf(false) }
 	var showPrivate by remember { mutableStateOf(true) }
 	var showPublic by remember { mutableStateOf(true) }
+
+	var forms by remember { mutableStateOf(emptyList<Form.Ref>()) }
+	suspend fun reloadForms() {
+		forms = client.forms.all(includeClosed = showArchived)
+	}
+
+	val scope = rememberCoroutineScope()
+
+	LaunchedEffect(client, showArchived) {
+		reloadForms()
+	}
 
 	Page(
 		"Formulaires",
@@ -39,14 +51,18 @@ val FormList: Screen = Screen(
 				}
 
 				ChipContainer {
-					RefreshButton { /* does nothing for now */ }
+					RefreshButton { scope.launch { reloadForms() } }
 				}
 			}
 		}
 	) {
-		//TODO in future commits of this MR
-		P {
-			Text("The list of forms will be here.")
+
+		if (forms.isNotEmpty()) Ul {
+			for (form in forms) Li {
+				Text(form.id)
+			}
+		} else P {
+			Text("Aucun formulaire ne correspond à cette recherche.")
 		}
 	}
 }
