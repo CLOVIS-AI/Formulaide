@@ -1,8 +1,6 @@
 package formulaide.ui.navigation
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import formulaide.client.Client
 import kotlinx.browser.window
 
@@ -14,4 +12,15 @@ private fun generateClient(production: Boolean): Client = when (production) {
 	false -> Client.Anonymous.connect(localDevelopmentUrl)
 }
 
-var client: Client by mutableStateOf(generateClient(true))
+var client: Client by mutableStateOf(generateClient(production = true))
+
+@Composable
+fun SelectProductionOrTest() {
+	LaunchedEffect(Unit) {
+		try {
+			client.forms.all()
+		} catch (e: Exception) {
+			client = generateClient(production = false)
+		}
+	}
+}
