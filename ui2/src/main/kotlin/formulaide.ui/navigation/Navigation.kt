@@ -88,7 +88,17 @@ private fun NavigationRail() = Nav(
 	}) {
 
 	NavigationArea("actions") {
-		// In the future, buttons to create a form etc. will be here
+		currentScreen.parent?.let { parentScreen ->
+			RailButton(
+				"ri-arrow-left-line",
+				"ri-arrow-left-fill",
+				"Retourner à la page ${parentScreen.title}",
+				selected = false,
+				action = { currentScreen = parentScreen }
+			)
+		}
+
+		currentScreen.actions()
 	}
 
 	NavigationArea("screens") {

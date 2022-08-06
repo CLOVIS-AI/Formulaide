@@ -9,6 +9,8 @@ data class Screen(
 	val route: String,
 	val icon: String,
 	val iconSelected: String = icon,
+	val parent: Screen? = null,
+	val actions: @Composable () -> Unit = {},
 	val render: @Composable () -> Unit,
 ) {
 
