@@ -1,10 +1,13 @@
 package formulaide.ui.navigation
 
 import androidx.compose.runtime.*
-import formulaide.ui.screens.DummyScreen
+import formulaide.client.Client
+import formulaide.ui.screens.FormList
 import formulaide.ui.screens.Home
+import formulaide.ui.screens.TemplateList
 import formulaide.ui.theme.RailButton
 import formulaide.ui.theme.ThemeSelector
+import formulaide.ui.utils.Role.Companion.role
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.jetbrains.compose.web.css.*
@@ -26,7 +29,8 @@ var currentScreen: Screen
 
 val screens = listOf(
 	Home,
-	DummyScreen,
+	TemplateList,
+	FormList,
 )
 
 @Composable
@@ -57,8 +61,8 @@ fun Navigation() {
 				id("Body")
 
 				style {
-					marginTop(8.px)
-					marginBottom(8.px)
+					marginTop(20.px)
+					marginBottom(15.px)
 				}
 			}) {
 			_currentScreen()
@@ -78,17 +82,29 @@ private fun NavigationRail() = Nav(
 			display(DisplayStyle.Flex)
 			flexDirection(FlexDirection.Column)
 			justifyContent(JustifyContent.SpaceBetween)
-			paddingTop(50.px)
-			paddingBottom(50.px)
+			paddingTop(30.px)
+			paddingBottom(30.px)
 		}
 	}) {
 
 	NavigationArea("actions") {
-		// In the future, buttons to create a form etc. will be here
+		currentScreen.parent?.let { parentScreen ->
+			RailButton(
+				"ri-arrow-left-line",
+				"ri-arrow-left-fill",
+				"Retourner à la page ${parentScreen.title}",
+				selected = false,
+				action = { currentScreen = parentScreen }
+			)
+		}
+
+		currentScreen.actions()
 	}
 
 	NavigationArea("screens") {
-		for (screen in screens) {
+		val visibleScreens by remember { derivedStateOf { screens.filter { client.role >= it.requiredRole } } }
+
+		for (screen in visibleScreens) {
 			RailButton(
 				screen.icon,
 				screen.iconSelected,
@@ -100,8 +116,10 @@ private fun NavigationRail() = Nav(
 	}
 
 	NavigationArea("settings") {
+		if (client is Client.Authenticated)
+			LogOutButton()
+
 		ThemeSelector()
-		// In the future: the log-out button
 	}
 }
 

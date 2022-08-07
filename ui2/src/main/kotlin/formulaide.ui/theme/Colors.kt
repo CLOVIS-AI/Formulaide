@@ -12,4 +12,8 @@ data class CustomColor(
 
 	val css: CSSColorValue
 		get() = rgba(red, green, blue, alpha)
+
+	companion object {
+		val transparent = CustomColor(0, 0, 0, alpha = 0.0)
+	}
 }

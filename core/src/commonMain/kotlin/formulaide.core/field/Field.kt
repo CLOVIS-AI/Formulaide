@@ -270,6 +270,8 @@ sealed class Field {
 
 		companion object {
 			fun idOf(vararg part: LocalFieldId) = Id(parts = part.toList())
+
+			val root = Id(parts = emptyList())
 		}
 
 		internal object Serializer : KSerializer<Id> {

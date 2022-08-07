@@ -2,6 +2,7 @@ package formulaide.ui.theme
 
 import androidx.compose.runtime.*
 import formulaide.ui.utils.animateDouble
+import formulaide.ui.utils.animateShade
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
@@ -21,6 +22,14 @@ fun RailButton(
 	var hover by remember { mutableStateOf(false) }
 	val hoverTransition = animateDouble(if (hover) 1.0 else 0.0)
 
+	val color = animateShade(
+		when {
+			selected -> Theme.current.primary
+			hover -> Theme.current.secondary
+			else -> Theme.current.default
+		}
+	)
+
 	Button(
 		{
 			onClick { action() }
@@ -33,16 +42,15 @@ fun RailButton(
 
 				style {
 					property("font-size", "xx-large")
+					shade(color)
 
 					if (selected) {
-						backgroundColor(Theme.current.primaryContainer.css)
 						paddingLeft(10.px)
 						paddingRight(10.px)
 						paddingTop(2.px)
 						paddingBottom(2.px)
 						borderRadius(24.px)
 					} else {
-						backgroundColor(Theme.current.secondaryContainer.copy(alpha = hoverTransition).css)
 						paddingLeft((hoverTransition * 10).px)
 						paddingRight((hoverTransition * 10).px)
 						paddingTop(2.px)
