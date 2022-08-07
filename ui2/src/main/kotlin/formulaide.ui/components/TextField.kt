@@ -76,3 +76,15 @@ fun PasswordField(
 		attrs()
 	}
 }
+
+@Composable
+fun NumberField(
+	label: String,
+	value: Number,
+	onChange: (Number) -> Unit,
+) = AbstractField(label, value.toString(), onChange = { onChange(it.toDouble()) }) { innerValue, innerOnChange, attrs ->
+	NumberInput(innerValue.toDouble()) {
+		onInput { innerOnChange(it.value.toString()) }
+		attrs()
+	}
+}

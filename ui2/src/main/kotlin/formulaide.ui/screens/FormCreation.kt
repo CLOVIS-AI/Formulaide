@@ -31,7 +31,7 @@ val FormEditor: Screen = Screen(
 		TextField("Nom", name, onChange = { name = it })
 
 		SectionTitle("Champs")
-		var field: MutableField by remember { mutableStateOf(MutableField.Group("Saisie initiale", emptyList(), null)) }
+		var field: MutableField by remember { mutableStateOf(MutableField.Group("Racine", emptyList(), null)) }
 		FieldEditor(field, onReplace = { field = it })
 
 		SectionTitle("Étapes de validation")

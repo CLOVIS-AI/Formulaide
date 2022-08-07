@@ -1,107 +1,80 @@
 package formulaide.ui.components.editor
 
 import androidx.compose.runtime.*
-import formulaide.ui.components.DisplayError
-import formulaide.ui.components.TextField
-import formulaide.ui.theme.Theme
-import formulaide.ui.theme.shade
-import formulaide.ui.utils.animateShade
-import org.jetbrains.compose.web.css.*
+import formulaide.core.field.Field
+import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 
 @Composable
-private fun checkFieldValidity(field: MutableField) = remember(field) {
-	derivedStateOf {
-		try {
-			field.fields.forEach { it.value.toField() }
-		} catch (e: Exception) {
-			// If an error happens while checking a subfield, ignore it
-			return@derivedStateOf null
-		}
+fun FieldEditor(
+	root: MutableField,
+	onReplace: (MutableField) -> Unit,
+) {
+	var selectedId by remember { mutableStateOf(Field.Id.root) }
+	val selected by remember(root) { derivedStateOf { findFieldById(root, selectedId) } }
 
-		try {
-			field.toField()
-			null
-		} catch (e: Throwable) {
-			e
+	FieldSelector(root, selectedId, onSelect = { selectedId = it })
+	SingleFieldEditor(
+		selectedId,
+		selected,
+		onReplace = { target, newValue ->
+			if (selectedId == Field.Id.root) {
+				onReplace(newValue)
+			} else {
+				val parent = findFieldById(root, selectedId, last = selectedId.parts.size - 1)
+				if (parent is MutableField.List)
+					parent.field.value = newValue
+				if (parent is MutableField.Group || parent is MutableField.Choice)
+					(parent.fields as MutableMap)[target.parts.last()] = newValue
+			}
+		},
+		onSelect = { selectedId = it }
+	)
+}
+
+private fun findFieldById(parent: MutableField, id: Field.Id, depth: Int = 0, last: Int = id.parts.size): MutableField =
+	when {
+		depth >= last -> parent
+		parent is MutableField.List -> findFieldById(parent.field.value, id, depth + 1, last)
+		else -> {
+			val head = id.parts[depth]
+			val child = parent.fields[head]
+				?: error("Could not find child of $parent with ID $id, this should not be possible")
+			findFieldById(child, id, depth + 1, last)
 		}
+	}
+
+@Composable
+private fun FieldSelector(
+	root: MutableField,
+	selected: Field.Id,
+	onSelect: (Field.Id) -> Unit,
+) = Div {
+	var parent = root
+	SingleFieldSelector(root, onSelect = { onSelect(Field.Id.root) })
+
+	for ((i, fieldId) in selected.parts.withIndex()) {
+		val field = parent.fields[fieldId]
+			?: error("Could not find child of $parent with ID $fieldId, this should not be possible")
+
+		Text(" › ")
+		SingleFieldSelector(field, onSelect = { onSelect(Field.Id(selected.parts.subList(0, i + 1))) })
+
+		parent = field
 	}
 }
 
 @Composable
-fun FieldEditor(
+private fun SingleFieldSelector(
 	field: MutableField,
-	onReplace: (MutableField) -> Unit,
-) {
-	var focused by remember { mutableStateOf(true) }
-	var label by field.label
-	val source by field.source
-
-	val shade = animateShade(
-		when {
-			focused -> Theme.current.neutral1
-			else -> Theme.current.default
-		}
-	)
-
-	val error by checkFieldValidity(field)
-
-	Div(
-		{
-			tabIndex(0)
-			onFocusIn { focused = true }
-			onFocusOut { focused = false }
-
-			style {
-				shade(shade)
-				marginTop(5.px)
-
-				if (focused) {
-					borderRadius(8.px)
-					border {
-						width = 1.px
-						style = LineStyle.Solid
-						color = Theme.current.neutral2.content.css
-					}
-					padding(5.px)
-				}
-
-				paddingLeft(10.px)
-				paddingRight(10.px)
-			}
-		}
-	) {
-		if (focused) {
-			TextField("Label", label, onChange = { label = it })
-			if (error != null)
-				DisplayError(error!!)
-
-			if (source == null)
-				SelectFieldType(field, onReplace)
-		} else if (error != null) {
-			DisplayError(error!!)
-		} else {
-			Span(
-				{
-					style {
-						color(Theme.current.neutral1.content.css)
-					}
-				}
-			) {
-				Text(label)
-			}
-			Text(" : ")
-			when (field) {
-				is MutableField.Choice -> Text("choix")
-				is MutableField.Group -> Text("groupe")
-				is MutableField.Input -> Text("saisie")
-				is MutableField.Label -> Text("label")
-				is MutableField.List -> Text("de ${field.min.value} à ${field.max.value} réponses")
-			}
-		}
-
-		SubfieldEditor(field, focused)
+	onSelect: () -> Unit,
+) = Button(
+	{
+		onClick { onSelect() }
 	}
+) {
+	val name by field.label
+
+	Text(name)
 }
