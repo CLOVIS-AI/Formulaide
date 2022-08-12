@@ -52,14 +52,18 @@ private fun FieldSelector(
 	onSelect: (Field.Id) -> Unit,
 ) = Div {
 	var parent = root
-	SingleFieldSelector(root, onSelect = { onSelect(Field.Id.root) })
+	SingleFieldSelector(root, onSelect = { onSelect(Field.Id.root) }, isLast = false)
 
 	for ((i, fieldId) in selected.parts.withIndex()) {
 		val field = parent.fields[fieldId]
 			?: error("Could not find child of $parent with ID $fieldId, this should not be possible")
 
 		Text(" › ")
-		SingleFieldSelector(field, onSelect = { onSelect(Field.Id(selected.parts.subList(0, i + 1))) })
+		SingleFieldSelector(
+			field,
+			onSelect = { onSelect(Field.Id(selected.parts.subList(0, i + 1))) },
+			isLast = i >= selected.parts.size - 1
+		)
 
 		parent = field
 	}
@@ -68,10 +72,12 @@ private fun FieldSelector(
 @Composable
 private fun SingleFieldSelector(
 	field: MutableField,
+	isLast: Boolean,
 	onSelect: () -> Unit,
 ) {
 	TextButton(
-		onClick = { onSelect() }
+		onClick = { onSelect() },
+		enabled = !isLast,
 	) {
 		val name by field.label
 

@@ -83,11 +83,12 @@ fun SecondaryButton(
 @Composable
 fun TextButton(
 	onClick: suspend () -> Unit,
+	enabled: Boolean = true,
 	content: @Composable () -> Unit,
 ) = AbstractButton(
 	onClick,
 	style = {
-		shade(
+		if (enabled) shade(
 			Shade(
 				Theme.current.primary.background,
 				CustomColor.transparent,
