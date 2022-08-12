@@ -75,6 +75,9 @@ private fun SingleFieldSelector(
 	) {
 		val name by field.label
 
-		Text(name)
+		if (name.isBlank())
+			Text("Libellé manquant")
+		else
+			Text(name)
 	}
 }
