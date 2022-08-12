@@ -2,7 +2,7 @@ package formulaide.ui.components.editor
 
 import androidx.compose.runtime.*
 import formulaide.core.field.Field
-import org.jetbrains.compose.web.dom.Button
+import formulaide.ui.components.TextButton
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
 
@@ -69,12 +69,12 @@ private fun FieldSelector(
 private fun SingleFieldSelector(
 	field: MutableField,
 	onSelect: () -> Unit,
-) = Button(
-	{
-		onClick { onSelect() }
-	}
 ) {
-	val name by field.label
+	TextButton(
+		onClick = { onSelect() }
+	) {
+		val name by field.label
 
-	Text(name)
+		Text(name)
+	}
 }
