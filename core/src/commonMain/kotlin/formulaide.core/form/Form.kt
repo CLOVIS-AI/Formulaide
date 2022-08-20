@@ -34,8 +34,7 @@ data class Form(
 
 	@Serializable
 	data class ReviewStep(
-		val id: String,
-		val order: Int,
+		val id: Int,
 		val reviewer: @Contextual Department.Ref,
 		val title: String,
 		val fields: @Contextual FlatField.Container.Ref?,
