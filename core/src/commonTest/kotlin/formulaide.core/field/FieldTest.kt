@@ -33,7 +33,7 @@ class FieldTest {
 		val first = label("First field")
 		val second = label("Second field")
 		val original = group("Source", 0 to first, 1 to second)
-		val container = Field.Container("0", "Container", original)
+		val container = Field.Container("0", original)
 
 		groupFrom(idOf(), container, 0 to labelFrom(idOf(0), container), 1 to labelFrom(idOf(1), container))
 
@@ -57,7 +57,7 @@ class FieldTest {
 		val third = group("Group", 0 to second)
 		val fourth = list("List", 1u..1u, third)
 
-		val fields = Field.Container("0", "Container", fourth)
+		val fields = Field.Container("0", fourth)
 
 		assertEquals(fourth, fields[idOf()])
 		assertEquals(third, fields[idOf(0)])
@@ -72,7 +72,7 @@ class FieldTest {
 		val boolean = input("Boolean", InputConstraints.Boolean)
 
 		val fields = Field.Container(
-			"0", "Container", group(
+			"0", group(
 				"Group",
 				0 to text,
 				1 to int,
