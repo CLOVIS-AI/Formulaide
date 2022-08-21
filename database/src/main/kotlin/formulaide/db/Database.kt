@@ -53,7 +53,7 @@ class Database(
 	internal val data = database.getCollection<Composite>("data")
 	internal val legacyForms = database.getCollection<Form>("forms")
 	internal val legacySubmissions = database.getCollection<DbSubmission>("submissions")
-	internal val records = database.getCollection<Record>("records")
+	internal val legacyRecords = database.getCollection<Record>("records")
 	internal val uploads = database.getCollection<DbFile>("uploads")
 	internal val alerts = database.getCollection<Alert>("alerts")
 
