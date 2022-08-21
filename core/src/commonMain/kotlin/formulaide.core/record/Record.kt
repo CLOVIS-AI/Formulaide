@@ -1,6 +1,7 @@
 package formulaide.core.record
 
 import formulaide.core.User
+import formulaide.core.field.resolve
 import formulaide.core.form.Form
 import formulaide.core.form.Submission
 import formulaide.core.record.Record.Snapshot
@@ -40,6 +41,28 @@ class Record(
 
 	val snapshots: List<Snapshot>,
 ) {
+
+	init {
+		require(modifiedAt >= createdAt) { "Impossible de modifier un dossier avant sa création : $modifiedAt < $createdAt" }
+	}
+
+	suspend fun verify() {
+		val requestedVersion = formVersion()
+		currentStep()
+
+		for (snapshot in snapshots) {
+			val fields = if (snapshot.forStep != null)
+				requestedVersion.reviewSteps.find { it.id == snapshot.forStep }!!.fields
+			else
+				requestedVersion.fields
+
+			if (fields != null) {
+				val submission =
+					checkNotNull(snapshot.submission) { "L'étape ${snapshot.forStep ?: "initiale"} nécessite une saisie" }
+				submission.verify(fields.requestValue().resolve())
+			}
+		}
+	}
 
 	@JsName("getFormVersion")
 	suspend fun formVersion() = form.requestValue().versions.first { it.creationDate == formVersion }
