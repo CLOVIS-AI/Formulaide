@@ -11,6 +11,7 @@ import formulaide.core.User
 import formulaide.core.field.FlatField
 import formulaide.core.form.Form
 import formulaide.core.form.Template
+import formulaide.core.record.Record
 import formulaide.db.Database
 import formulaide.server.Auth.Companion.Employee
 import formulaide.server.routes.*
@@ -102,6 +103,7 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 				contextual(RefSerializer("field", { FlatField.Container.Ref(it, database.fields) }, { it.id }))
 				contextual(RefSerializer("form", { Form.Ref(it, database.forms) }, { it.id }))
 				contextual(RefSerializer("template", { Template.Ref(it, database.templates) }, { it.id }))
+				contextual(RefSerializer("record", { Record.Ref(it, database.records) }, { it.id }))
 			}
 		})
 	}
@@ -148,6 +150,7 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 		with(UserRouting) { enable(auth) }
 		with(DepartmentRouting) { enable() }
 		with(SchemaRouting) { enable() }
+		with(RecordRouting) { enable() }
 		legacyDataRoutes()
 		legacyFormRoutes()
 		legacySubmissionRoutes()

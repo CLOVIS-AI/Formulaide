@@ -49,6 +49,9 @@ data class Form(
 		val fields: @Contextual FlatField.Container.Ref?,
 	)
 
+	fun version(id: Instant): Version? = versions
+		.find { it.creationDate == id }
+
 	data class Ref(val id: String, override val backbone: FormBackbone) : opensavvy.backbone.Ref<Form> {
 		override fun toString() = "Form $id"
 	}
