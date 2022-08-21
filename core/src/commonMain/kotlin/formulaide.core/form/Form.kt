@@ -30,7 +30,16 @@ data class Form(
 		override val title: String,
 		override val fields: @Contextual FlatField.Container.Ref,
 		val reviewSteps: List<ReviewStep>,
-	) : AbstractVersion()
+	) : AbstractVersion() {
+
+		init {
+			require(reviewSteps.isNotEmpty()) { "Un formulaire doit posséder au moins une étape" }
+
+			repeat(reviewSteps.size) { i ->
+				require(reviewSteps.any { it.id == i }) { "Ce formulaire ne contient pas d'étape $i : $reviewSteps" }
+			}
+		}
+	}
 
 	@Serializable
 	data class ReviewStep(
