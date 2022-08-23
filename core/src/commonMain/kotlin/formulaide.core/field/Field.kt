@@ -250,7 +250,6 @@ sealed class Field {
 	 */
 	data class Container(
 		val id: String,
-		val name: String,
 		val root: Field,
 	) {
 		operator fun get(id: Id): Field? = root.child(id.parts)
@@ -296,7 +295,7 @@ sealed class Field {
 		null -> ""
 		else -> {
 			val (container, id) = this
-			", sourceContainer=${container.id} '${container.name}', sourceField=$id"
+			", sourceContainer=${container.id} '${container.root.label}', sourceField=$id"
 		}
 	}
 

@@ -30,16 +30,27 @@ data class Form(
 		override val title: String,
 		override val fields: @Contextual FlatField.Container.Ref,
 		val reviewSteps: List<ReviewStep>,
-	) : AbstractVersion()
+	) : AbstractVersion() {
+
+		init {
+			require(reviewSteps.isNotEmpty()) { "Un formulaire doit posséder au moins une étape" }
+
+			repeat(reviewSteps.size) { i ->
+				require(reviewSteps.any { it.id == i }) { "Ce formulaire ne contient pas d'étape $i : $reviewSteps" }
+			}
+		}
+	}
 
 	@Serializable
 	data class ReviewStep(
-		val id: String,
-		val order: Int,
+		val id: Int,
 		val reviewer: @Contextual Department.Ref,
 		val title: String,
 		val fields: @Contextual FlatField.Container.Ref?,
 	)
+
+	fun version(id: Instant): Version? = versions
+		.find { it.creationDate == id }
 
 	data class Ref(val id: String, override val backbone: FormBackbone) : opensavvy.backbone.Ref<Form> {
 		override fun toString() = "Form $id"

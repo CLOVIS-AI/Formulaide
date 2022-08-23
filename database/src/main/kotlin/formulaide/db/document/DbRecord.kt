@@ -40,14 +40,14 @@ suspend fun Database.createRecord(submission: FormSubmission, userEmail: String?
 		)
 	)
 
-	records.insertOne(record)
+	legacyRecords.insertOne(record)
 }
 
 suspend fun Database.findRecord(record: Ref<Record>): Record? =
-	records.findOne(Record::id eq record.id)
+	legacyRecords.findOne(Record::id eq record.id)
 
 suspend fun Database.reviewRecord(review: ReviewRequest, employee: User) {
-	val record = records.findOne(Record::id eq review.record.id)
+	val record = legacyRecords.findOne(Record::id eq review.record.id)
 		?: error("Impossible de trouver le dossier ${review.record.id}")
 	record.form.load {
 		findLegacyForm(it) ?: error("Impossible de trouver le formulaire ${record.form.id}")
@@ -96,7 +96,7 @@ suspend fun Database.reviewRecord(review: ReviewRequest, employee: User) {
 					transition)
 	)
 
-	records.updateOne(Record::id eq record.id, newRecord)
+	legacyRecords.updateOne(Record::id eq record.id, newRecord)
 }
 
 suspend fun Database.findFormsAssignedTo(user: DbUser): List<Form> {
@@ -158,7 +158,7 @@ suspend fun Database.findRecords(
 	val stateFilter = (Record::state eq state)
 		.takeIf { state != null }
 
-	var results = records
+	var results = legacyRecords
 		.find(Record::form / Ref<*>::id eq form.id, stateFilter, and(submissionFilter))
 		.descendingSort(Record::id)
 
@@ -184,5 +184,5 @@ suspend fun Database.deleteRecord(record: Record, user: DbUser) {
 		}
 	}
 
-	records.deleteOne(Record::id eq record.id)
+	legacyRecords.deleteOne(Record::id eq record.id)
 }

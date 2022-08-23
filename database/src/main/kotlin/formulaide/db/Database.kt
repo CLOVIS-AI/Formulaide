@@ -49,11 +49,12 @@ class Database(
 	private val fieldCollection = database.getCollection<FlatField.Container>("fields")
 	private val templateCollection = database.getCollection<Template>("templates2")
 	private val formCollection = database.getCollection<formulaide.core.form.Form>("forms2")
+	private val recordCollection = database.getCollection<DbRecord2>("records2")
 
 	internal val data = database.getCollection<Composite>("data")
 	internal val legacyForms = database.getCollection<Form>("forms")
 	internal val legacySubmissions = database.getCollection<DbSubmission>("submissions")
-	internal val records = database.getCollection<Record>("records")
+	internal val legacyRecords = database.getCollection<Record>("records")
 	internal val uploads = database.getCollection<DbFile>("uploads")
 	internal val alerts = database.getCollection<Alert>("alerts")
 
@@ -87,6 +88,15 @@ class Database(
 		Cache.Default<formulaide.core.form.Form>()
 			.cachedInMemory(job)
 			.expireAfter(10.minutes, job)
+	)
+
+	val records = Records(
+		recordCollection,
+		forms,
+		users,
+		Cache.Default<formulaide.core.record.Record>()
+			.cachedInMemory(job)
+			.expireAfter(30.minutes, job)
 	)
 
 	init {

@@ -24,7 +24,6 @@ class Fields(
 		fields.insertOne(
 			FlatField.Container(
 				id,
-				name,
 				root.flatten(this)
 			)
 		)

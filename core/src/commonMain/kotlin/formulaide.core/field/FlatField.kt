@@ -89,7 +89,6 @@ sealed class FlatField {
 	@Serializable
 	class Container(
 		@SerialName("_id") val id: String,
-		val name: String,
 		val root: FlatField,
 	) {
 
@@ -144,7 +143,6 @@ suspend fun FlatField.resolve(): Field = when (this) {
 
 suspend fun FlatField.Container.resolve() = Field.Container(
 	id,
-	name,
 	root.resolve()
 )
 
@@ -185,7 +183,6 @@ fun Field.flatten(bone: FieldBackbone): FlatField {
 
 fun Field.Container.flatten(bone: FieldBackbone) = FlatField.Container(
 	id,
-	name,
 	root.flatten(bone),
 )
 
