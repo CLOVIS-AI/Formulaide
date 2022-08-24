@@ -1,29 +1,20 @@
 package formulaide.core.form
 
 import formulaide.core.field.Field
-import formulaide.core.field.FlatField
-import formulaide.core.field.resolve
-import kotlinx.serialization.Contextual
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import opensavvy.backbone.Backbone
-import opensavvy.backbone.Ref
-import opensavvy.backbone.Ref.Companion.requestValue
 
 /**
  * A user's submission to a [field container][Field.Container].
  */
 @Serializable
 data class Submission(
-	@SerialName("_id") val id: String,
-	val fields: @Contextual FlatField.Container.Ref,
 	val data: Map<Field.Id, String>,
 ) {
 
 	//region Validation
 
-	suspend fun verify() {
-		checkField(Field.Id.idOf(), fields.requestValue().resolve().root, mandatory = true)
+	fun verify(fields: Field.Container) {
+		checkField(Field.Id.root, fields.root, mandatory = true)
 	}
 
 	private fun checkField(id: Field.Id, field: Field, mandatory: Boolean) {
@@ -85,20 +76,4 @@ data class Submission(
 	}
 
 	//endregion
-
-	data class Ref(val id: String, override val backbone: SubmissionBackbone) : opensavvy.backbone.Ref<Submission> {
-		override fun toString() = "Submission $id"
-	}
-}
-
-interface SubmissionBackbone : Backbone<Submission> {
-	/**
-	 * Creates a new submission.
-	 */
-	suspend fun create(
-		form: Ref<Form>,
-		versionId: String,
-		stepId: String?,
-		data: Map<Field.Id, String>,
-	): Submission.Ref
 }

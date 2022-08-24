@@ -34,6 +34,9 @@ val FormEditor: Screen = Screen(
 		var field: MutableField by remember { mutableStateOf(MutableField.Group("Racine", emptyList(), null)) }
 		FieldEditor(field, onReplace = { field = it })
 
+		if (field !is MutableField.Group)
+			DisplayError("Dans la majorité des cas, il est recommandé que la racine d'un formulaire soit un groupe.")
+
 		SectionTitle("Étapes de validation")
 		P { Text("Choisissez les personnes responsables de la vérification de la validité des saisies.") }
 		P {
