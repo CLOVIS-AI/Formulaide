@@ -16,7 +16,7 @@ config:
   pdf_second_image: "null"
 
   # The domain name on which you will deploy Formulaide.
-  host: "formulaide.girardet.dev"
+  host: "formulaide.opensavvy.dev"
 
   # Formulaide image
   image: "registry.gitlab.com/opensavvy/formulaide/server"

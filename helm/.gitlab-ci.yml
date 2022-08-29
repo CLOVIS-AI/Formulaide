@@ -76,7 +76,7 @@ helm:review:
   variables:
     release: merge-request-$CI_MERGE_REQUEST_IID
     namespace: formulaide-review
-    host: $CI_MERGE_REQUEST_IID.formulaide.girardet.dev
+    host: $CI_MERGE_REQUEST_IID.$FORMULAIDE_DEPLOYMENT_URL
     replicas: 1
   environment:
     name: review/$CI_MERGE_REQUEST_IID
@@ -85,7 +85,7 @@ helm:review:
     on_stop: helm:review-stop
     auto_stop_in: 2 weeks
   rules:
-    - if: $formulaide_no_cluster
+    - if: $FORMULAIDE_DEPLOYMENT_URL == null
       when: never
     - if: $CI_MERGE_REQUEST_EVENT_TYPE == "detached"
     - if: $CI_MERGE_REQUEST_EVENT_TYPE == "merged_result"
@@ -101,11 +101,11 @@ helm:review-stop:
     - helm uninstall merge-request-$CI_MERGE_REQUEST_IID --namespace=formulaide-review
   environment:
     name: review/$CI_MERGE_REQUEST_IID
-    url: $CI_MERGE_REQUEST_IID.formulaide.girardet.dev
+    url: $CI_MERGE_REQUEST_IID.$FORMULAIDE_DEPLOYMENT_URL
     deployment_tier: development
     action: stop
   rules:
-    - if: $formulaide_no_cluster
+    - if: $FORMULAIDE_DEPLOYMENT_URL == null
       when: never
     - if: $CI_MERGE_REQUEST_EVENT_TYPE == "detached"
       when: manual
@@ -121,12 +121,12 @@ helm:production:
   variables:
     release: production
     namespace: formulaide
-    host: formulaide.girardet.dev
+    host: $FORMULAIDE_DEPLOYMENT_URL
     replicas: 2
   environment:
     name: production
     url: https://$host
   rules:
-    - if: $formulaide_no_cluster
+    - if: $FORMULAIDE_DEPLOYMENT_URL == null
       when: never
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
