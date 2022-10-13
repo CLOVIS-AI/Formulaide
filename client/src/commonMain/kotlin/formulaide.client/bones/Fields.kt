@@ -6,16 +6,16 @@ import formulaide.core.field.Field
 import formulaide.core.field.FieldBackbone
 import formulaide.core.field.FlatField
 import formulaide.core.field.flatten
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import opensavvy.backbone.Cache
-import opensavvy.backbone.Data
 import opensavvy.backbone.Ref
-import opensavvy.backbone.Result
+import opensavvy.backbone.RefState
+import opensavvy.cache.Cache
+import opensavvy.state.emitSuccessful
+import opensavvy.state.ensureValid
+import opensavvy.state.state
 
 class Fields(
 	private val client: Client,
-	override val cache: Cache<FlatField.Container>,
+	override val cache: Cache<Ref<FlatField.Container>, FlatField.Container>,
 ) : FieldBackbone {
 	override suspend fun create(name: String, root: Field): FlatField.Container.Ref =
 		client.post(
@@ -25,12 +25,11 @@ class Fields(
 			)
 		)
 
-	override fun directRequest(ref: Ref<FlatField.Container>): Flow<Data<FlatField.Container>> {
-		require(ref is FlatField.Container.Ref) { "$this doesn't support the reference $ref" }
+	override fun directRequest(ref: Ref<FlatField.Container>): RefState<FlatField.Container> = state {
+		ensureValid(ref, ref is FlatField.Container.Ref) { "${this@Fields} doesn't support the reference $ref" }
 
-		return flow {
-			val field: FlatField.Container = client.get("/api/schema/fields/${ref.id}")
-			emit(Data(Result.Success(field), Data.Status.Completed, ref))
-		}
+		val field: FlatField.Container = client.get("/api/schema/fields/${ref.id}")
+
+		emitSuccessful(ref, field)
 	}
 }

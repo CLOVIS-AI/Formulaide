@@ -17,17 +17,20 @@ import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
-import opensavvy.backbone.Cache
-import opensavvy.backbone.cache.MemoryCache.Companion.cachedInMemory
+import opensavvy.backbone.defaultBackboneCache
+import opensavvy.cache.MemoryCache.Companion.cachedInMemory
 
 /**
  * Common behavior between [Anonymous] and [Authenticated].
  */
 sealed class Client(
 	val hostUrl: String,
+	val job: Job = SupervisorJob(),
 ) {
 
 	//region Backbones
@@ -35,33 +38,33 @@ sealed class Client(
 	@Suppress("LeakingThis")
 	val departments = Departments(
 		this,
-		Cache.Default<Department>()
-			.cachedInMemory()
+		defaultBackboneCache<Department>()
+			.cachedInMemory(job)
 	)
 
 	@Suppress("LeakingThis")
 	val users = Users(
 		this,
-		Cache.Default<formulaide.core.User>()
-			.cachedInMemory()
+		defaultBackboneCache<formulaide.core.User>()
+			.cachedInMemory(job)
 	)
 
 	@Suppress("LeakingThis")
 	val fields = Fields(
 		this,
-		Cache.Default()
+		defaultBackboneCache()
 	)
 
 	@Suppress("LeakingThis")
 	val templates = Templates(
 		this,
-		Cache.Default()
+		defaultBackboneCache()
 	)
 
 	@Suppress("LeakingThis")
 	val forms = Forms(
 		this,
-		Cache.Default()
+		defaultBackboneCache()
 	)
 
 	//endregion

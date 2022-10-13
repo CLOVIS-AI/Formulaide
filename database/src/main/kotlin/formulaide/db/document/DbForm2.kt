@@ -2,13 +2,14 @@ package formulaide.db.document
 
 import formulaide.core.form.Form
 import formulaide.core.form.FormBackbone
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import opensavvy.backbone.Cache
-import opensavvy.backbone.Data
 import opensavvy.backbone.Ref
 import opensavvy.backbone.Ref.Companion.expire
-import opensavvy.backbone.Result
+import opensavvy.backbone.RefState
+import opensavvy.cache.Cache
+import opensavvy.state.emitSuccessful
+import opensavvy.state.ensureFound
+import opensavvy.state.ensureValid
+import opensavvy.state.state
 import org.bson.conversions.Bson
 import org.litote.kmongo.coroutine.CoroutineCollection
 import org.litote.kmongo.eq
@@ -18,7 +19,7 @@ import org.litote.kmongo.setValue
 
 class Forms(
 	val forms: CoroutineCollection<Form>,
-	override val cache: Cache<Form>,
+	override val cache: Cache<Ref<Form>, Form>,
 ) : FormBackbone {
 	override suspend fun all(includeClosed: Boolean): List<Form.Ref> {
 		val forms = forms.find(
@@ -69,12 +70,12 @@ class Forms(
 
 	fun fromId(id: String) = Form.Ref(id, this)
 
-	override fun directRequest(ref: Ref<Form>): Flow<Data<Form>> {
-		require(ref is Form.Ref) { "$this doesn't support the reference $ref" }
+	override fun directRequest(ref: Ref<Form>): RefState<Form> = state {
+		ensureValid(ref, ref is Form.Ref) { "${this@Forms} doesn't support the reference $ref" }
 
-		return flow {
-			val result = forms.findOne(Form::id eq ref.id) ?: error("Le formulaire ${ref.id} est introuvable")
-			emit(Data(Result.Success(result), Data.Status.Completed, ref))
-		}
+		val result = forms.findOne(Form::id eq ref.id)
+		ensureFound(ref, result != null) { "Le formulaire ${ref.id} est introuvable" }
+
+		emitSuccessful(ref, result)
 	}
 }

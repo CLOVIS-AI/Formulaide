@@ -9,18 +9,19 @@ import formulaide.core.form.Submission
 import formulaide.core.form.Template
 import formulaide.core.record.Record
 import formulaide.core.record.RecordBackbone
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import opensavvy.backbone.Cache
-import opensavvy.backbone.Data
 import opensavvy.backbone.Ref
 import opensavvy.backbone.Ref.Companion.expire
 import opensavvy.backbone.Ref.Companion.requestValue
-import opensavvy.backbone.Result
+import opensavvy.backbone.RefState
+import opensavvy.cache.Cache
+import opensavvy.state.emitSuccessful
+import opensavvy.state.ensureFound
+import opensavvy.state.ensureValid
+import opensavvy.state.state
 import org.litote.kmongo.*
 import org.litote.kmongo.coroutine.CoroutineCollection
 
@@ -140,7 +141,7 @@ class Records(
 	private val records: CoroutineCollection<DbRecord2>,
 	private val forms: Forms,
 	private val users: Users,
-	override val cache: Cache<Record>,
+	override val cache: Cache<Ref<Record>, Record>,
 ) : RecordBackbone {
 	override suspend fun create(form: Form.Ref, version: Instant, user: User.Ref?, submission: Submission): Record.Ref {
 		val requestedForm = form.requestValue()
@@ -260,24 +261,23 @@ class Records(
 
 	fun fromId(id: String) = Record.Ref(id, this)
 
-	override fun directRequest(ref: Ref<Record>): Flow<Data<Record>> {
-		require(ref is Record.Ref) { "$this doesn't support the reference $ref" }
+	override fun directRequest(ref: Ref<Record>): RefState<Record> = state {
+		ensureValid(ref, ref is Record.Ref) { "${this@Records} doesn't support the reference $ref" }
 
-		return flow {
-			val result =
-				records.findOne(DbRecord2::id eq ref.id.toId()) ?: error("Le dossier ${ref.id} est introuvable")
+		val result = records.findOne(DbRecord2::id eq ref.id.toId())
+		ensureFound(ref, result != null) { "Le dossier ${ref.id} est introuvable" }
 
-			val output = Record(
-				id = result.id.toString(),
-				form = forms.fromId(result.formId.toString()),
-				formVersion = result.formVersion,
-				currentStep = result.currentStep,
-				createdAt = result.createdAt,
-				modifiedAt = result.modifiedAt,
-				snapshots = result.submissions.map { submission ->
-					Record.Snapshot(
-						author = submission.author?.let { users.fromId(it.toString()) },
-						forStep = submission.forStep,
+		val output = Record(
+			id = result.id.toString(),
+			form = forms.fromId(result.formId.toString()),
+			formVersion = result.formVersion,
+			currentStep = result.currentStep,
+			createdAt = result.createdAt,
+			modifiedAt = result.modifiedAt,
+			snapshots = result.submissions.map { submission ->
+				Record.Snapshot(
+					author = submission.author?.let { users.fromId(it.toString()) },
+					forStep = submission.forStep,
 						decision = submission.decision,
 						reason = submission.reason,
 						createdAt = submission.createdAt,
@@ -286,7 +286,6 @@ class Records(
 				}
 			)
 
-			emit(Data(Result.Success(output), Data.Status.Completed, ref))
-		}
+		emitSuccessful(ref, output)
 	}
 }

@@ -12,9 +12,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import opensavvy.backbone.Cache
-import opensavvy.backbone.cache.ExpirationCache.Companion.expireAfter
-import opensavvy.backbone.cache.MemoryCache.Companion.cachedInMemory
+import opensavvy.backbone.defaultBackboneCache
+import opensavvy.cache.ExpirationCache.Companion.expireAfter
+import opensavvy.cache.MemoryCache.Companion.cachedInMemory
 import org.litote.kmongo.coroutine.coroutine
 import org.litote.kmongo.reactivestreams.KMongo
 import kotlin.time.Duration.Companion.minutes
@@ -60,7 +60,7 @@ class Database(
 
 	val departments = Departments(
 		serviceCollection,
-		Cache.Default<Department>()
+		defaultBackboneCache<Department>()
 			.cachedInMemory(job)
 			.expireAfter(1.minutes, job)
 	)
@@ -68,24 +68,24 @@ class Database(
 	val users = Users(
 		this,
 		userCollection,
-		Cache.Default()
+		defaultBackboneCache()
 	)
 
 	val fields = Fields(
 		fieldCollection,
-		Cache.Default(),
+		defaultBackboneCache(),
 	)
 
 	val templates = Templates(
 		templateCollection,
-		Cache.Default<Template>()
+		defaultBackboneCache<Template>()
 			.cachedInMemory(job)
 			.expireAfter(10.minutes, job),
 	)
 
 	val forms = Forms(
 		formCollection,
-		Cache.Default<formulaide.core.form.Form>()
+		defaultBackboneCache<formulaide.core.form.Form>()
 			.cachedInMemory(job)
 			.expireAfter(10.minutes, job)
 	)
@@ -94,7 +94,7 @@ class Database(
 		recordCollection,
 		forms,
 		users,
-		Cache.Default<formulaide.core.record.Record>()
+		defaultBackboneCache<formulaide.core.record.Record>()
 			.cachedInMemory(job)
 			.expireAfter(30.minutes, job)
 	)

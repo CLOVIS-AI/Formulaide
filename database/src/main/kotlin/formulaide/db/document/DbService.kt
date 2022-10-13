@@ -3,13 +3,15 @@ package formulaide.db.document
 import formulaide.api.users.Service
 import formulaide.core.Department
 import formulaide.core.DepartmentBackbone
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.Serializable
-import opensavvy.backbone.Cache
-import opensavvy.backbone.Data
+import opensavvy.backbone.Ref
 import opensavvy.backbone.Ref.Companion.expire
-import opensavvy.backbone.Result
+import opensavvy.backbone.RefState
+import opensavvy.cache.Cache
+import opensavvy.state.emitSuccessful
+import opensavvy.state.ensureFound
+import opensavvy.state.ensureValid
+import opensavvy.state.state
 import org.litote.kmongo.coroutine.CoroutineCollection
 import org.litote.kmongo.eq
 import org.litote.kmongo.setValue
@@ -34,7 +36,7 @@ data class DbService(
 
 class Departments(
 	private val services: CoroutineCollection<DbService>,
-	override val cache: Cache<Department>,
+	override val cache: Cache<Ref<Department>, Department>,
 ) : DepartmentBackbone {
 	override suspend fun all(includeClosed: Boolean): List<Department.Ref> {
 		return services.find(
@@ -66,16 +68,17 @@ class Departments(
 
 	fun fromId(id: Int) = Department.Ref(id.toString(), this)
 
-	override fun directRequest(ref: opensavvy.backbone.Ref<Department>): Flow<Data<Department>> = flow {
-		require(ref is Department.Ref) { "$this doesn't support the reference $ref" }
+	override fun directRequest(ref: Ref<Department>): RefState<Department> = state {
+		ensureValid(ref, ref is Department.Ref) { "${this@Departments} doesn't support the refenrece $ref" }
 
-		val dbService =
-			services.findOne(DbService::id eq ref.id.toInt()) ?: error("Le département demandé n'existe pas : $ref")
+		val dbService = services.findOne(DbService::id eq ref.id.toInt())
+		ensureFound(ref, dbService != null) { "Le département demandé n'existe pas : $ref" }
+
 		val department = Department(
 			dbService.id.toString(),
 			dbService.name,
 			dbService.open,
 		)
-		emit(Data(Result.Success(department), Data.Status.Completed, ref))
+		emitSuccessful(ref, department)
 	}
 }
