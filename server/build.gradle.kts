@@ -10,7 +10,6 @@ plugins {
 }
 
 dependencies {
-	implementation(kotlin("stdlib"))
 	implementation("io.ktor:ktor-server-status-pages:_")
 	implementation("io.ktor:ktor-server-conditional-headers:_")
 	implementation("io.ktor:ktor-server-cors:_")
