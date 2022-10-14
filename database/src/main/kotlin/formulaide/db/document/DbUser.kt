@@ -8,10 +8,8 @@ import kotlinx.serialization.Serializable
 import opensavvy.backbone.*
 import opensavvy.backbone.Ref.Companion.requestValue
 import opensavvy.cache.Cache
-import opensavvy.state.emitSuccessful
-import opensavvy.state.ensureFound
-import opensavvy.state.ensureValid
-import opensavvy.state.state
+import opensavvy.state.*
+import opensavvy.state.Slice.Companion.successful
 import org.bson.conversions.Bson
 import org.litote.kmongo.combine
 import org.litote.kmongo.coroutine.CoroutineCollection
@@ -140,11 +138,11 @@ class Users(
 		)
 	}
 
-	override fun directRequest(ref: Ref<formulaide.core.User>): RefState<formulaide.core.User> = state {
-		ensureValid(ref, ref is formulaide.core.User.Ref) { "${this@Users} doesn't support the reference $ref" }
+	override fun directRequest(ref: Ref<formulaide.core.User>): State<formulaide.core.User> = state {
+		ensureValid(ref is formulaide.core.User.Ref) { "${this@Users} doesn't support the reference $ref" }
 
 		val db = users.findOne(DbUser::email eq ref.email)
-		ensureFound(ref, db != null) { "L'utilisateur $ref n'existe pas" }
+		ensureFound(db != null) { "L'utilisateur $ref n'existe pas" }
 
 		val core = formulaide.core.User(
 			db.email,
@@ -153,7 +151,7 @@ class Users(
 			db.isAdministrator,
 			db.enabled ?: true,
 		)
-		emitSuccessful(ref, core)
+		emit(successful(core))
 	}
 }
 

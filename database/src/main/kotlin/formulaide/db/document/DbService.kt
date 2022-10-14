@@ -6,9 +6,9 @@ import formulaide.core.DepartmentBackbone
 import kotlinx.serialization.Serializable
 import opensavvy.backbone.Ref
 import opensavvy.backbone.Ref.Companion.expire
-import opensavvy.backbone.RefState
-import opensavvy.cache.Cache
-import opensavvy.state.emitSuccessful
+import opensavvy.backbone.RefCache
+import opensavvy.state.Slice.Companion.successful
+import opensavvy.state.State
 import opensavvy.state.ensureFound
 import opensavvy.state.ensureValid
 import opensavvy.state.state
@@ -36,7 +36,7 @@ data class DbService(
 
 class Departments(
 	private val services: CoroutineCollection<DbService>,
-	override val cache: Cache<Ref<Department>, Department>,
+	override val cache: RefCache<Department>,
 ) : DepartmentBackbone {
 	override suspend fun all(includeClosed: Boolean): List<Department.Ref> {
 		return services.find(
@@ -68,17 +68,17 @@ class Departments(
 
 	fun fromId(id: Int) = Department.Ref(id.toString(), this)
 
-	override fun directRequest(ref: Ref<Department>): RefState<Department> = state {
-		ensureValid(ref, ref is Department.Ref) { "${this@Departments} doesn't support the refenrece $ref" }
+	override fun directRequest(ref: Ref<Department>): State<Department> = state {
+		ensureValid(ref is Department.Ref) { "${this@Departments} doesn't support the reference $ref" }
 
 		val dbService = services.findOne(DbService::id eq ref.id.toInt())
-		ensureFound(ref, dbService != null) { "Le département demandé n'existe pas : $ref" }
+		ensureFound(dbService != null) { "Le département demandé n'existe pas : $ref" }
 
 		val department = Department(
 			dbService.id.toString(),
 			dbService.name,
 			dbService.open,
 		)
-		emitSuccessful(ref, department)
+		emit(successful(department))
 	}
 }

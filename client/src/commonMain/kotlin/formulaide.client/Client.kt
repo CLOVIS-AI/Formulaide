@@ -22,7 +22,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
-import opensavvy.backbone.defaultBackboneCache
+import opensavvy.backbone.defaultRefCache
 import opensavvy.cache.MemoryCache.Companion.cachedInMemory
 
 /**
@@ -38,33 +38,33 @@ sealed class Client(
 	@Suppress("LeakingThis")
 	val departments = Departments(
 		this,
-		defaultBackboneCache<Department>()
+		defaultRefCache<Department>()
 			.cachedInMemory(job)
 	)
 
 	@Suppress("LeakingThis")
 	val users = Users(
 		this,
-		defaultBackboneCache<formulaide.core.User>()
+		defaultRefCache<formulaide.core.User>()
 			.cachedInMemory(job)
 	)
 
 	@Suppress("LeakingThis")
 	val fields = Fields(
 		this,
-		defaultBackboneCache()
+		defaultRefCache()
 	)
 
 	@Suppress("LeakingThis")
 	val templates = Templates(
 		this,
-		defaultBackboneCache()
+		defaultRefCache()
 	)
 
 	@Suppress("LeakingThis")
 	val forms = Forms(
 		this,
-		defaultBackboneCache()
+		defaultRefCache()
 	)
 
 	//endregion

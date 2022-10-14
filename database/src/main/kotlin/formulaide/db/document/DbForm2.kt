@@ -4,9 +4,9 @@ import formulaide.core.form.Form
 import formulaide.core.form.FormBackbone
 import opensavvy.backbone.Ref
 import opensavvy.backbone.Ref.Companion.expire
-import opensavvy.backbone.RefState
-import opensavvy.cache.Cache
-import opensavvy.state.emitSuccessful
+import opensavvy.backbone.RefCache
+import opensavvy.state.Slice.Companion.successful
+import opensavvy.state.State
 import opensavvy.state.ensureFound
 import opensavvy.state.ensureValid
 import opensavvy.state.state
@@ -19,7 +19,7 @@ import org.litote.kmongo.setValue
 
 class Forms(
 	val forms: CoroutineCollection<Form>,
-	override val cache: Cache<Ref<Form>, Form>,
+	override val cache: RefCache<Form>,
 ) : FormBackbone {
 	override suspend fun all(includeClosed: Boolean): List<Form.Ref> {
 		val forms = forms.find(
@@ -70,12 +70,12 @@ class Forms(
 
 	fun fromId(id: String) = Form.Ref(id, this)
 
-	override fun directRequest(ref: Ref<Form>): RefState<Form> = state {
-		ensureValid(ref, ref is Form.Ref) { "${this@Forms} doesn't support the reference $ref" }
+	override fun directRequest(ref: Ref<Form>): State<Form> = state {
+		ensureValid(ref is Form.Ref) { "${this@Forms} doesn't support the reference $ref" }
 
 		val result = forms.findOne(Form::id eq ref.id)
-		ensureFound(ref, result != null) { "Le formulaire ${ref.id} est introuvable" }
+		ensureFound(result != null) { "Le formulaire ${ref.id} est introuvable" }
 
-		emitSuccessful(ref, result)
+		emit(successful(result))
 	}
 }

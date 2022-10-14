@@ -6,15 +6,15 @@ import formulaide.core.DepartmentBackbone
 import io.ktor.client.request.*
 import opensavvy.backbone.Ref
 import opensavvy.backbone.Ref.Companion.expire
-import opensavvy.backbone.RefState
-import opensavvy.cache.Cache
-import opensavvy.state.emitSuccessful
+import opensavvy.backbone.RefCache
+import opensavvy.state.Slice.Companion.successful
+import opensavvy.state.State
 import opensavvy.state.ensureValid
 import opensavvy.state.state
 
 class Departments(
 	private val client: Client,
-	override val cache: Cache<Ref<Department>, Department>,
+	override val cache: RefCache<Department>,
 ) : DepartmentBackbone {
 	override suspend fun all(includeClosed: Boolean): List<Department.Ref> {
 		val ids: List<Int> = client.get("/api/departments/list") {
@@ -42,11 +42,11 @@ class Departments(
 		department.expire()
 	}
 
-	override fun directRequest(ref: Ref<Department>): RefState<Department> = state {
-		ensureValid(ref, ref is Department.Ref) { "${this@Departments} doesn't support the reference $ref" }
+	override fun directRequest(ref: Ref<Department>): State<Department> = state {
+		ensureValid(ref is Department.Ref) { "${this@Departments} doesn't support the reference $ref" }
 
 		val response: Department = client.get("/api/departments/${ref.id}")
 
-		emitSuccessful(ref, response)
+		emit(successful(response))
 	}
 }

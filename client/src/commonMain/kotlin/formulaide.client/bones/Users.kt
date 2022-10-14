@@ -11,9 +11,9 @@ import formulaide.core.UserBackbone
 import io.ktor.client.request.*
 import opensavvy.backbone.Ref
 import opensavvy.backbone.Ref.Companion.expire
-import opensavvy.backbone.RefState
 import opensavvy.cache.Cache
-import opensavvy.state.emitSuccessful
+import opensavvy.state.Slice.Companion.successful
+import opensavvy.state.State
 import opensavvy.state.ensureValid
 import opensavvy.state.state
 
@@ -93,8 +93,8 @@ class Users(
 		)
 	}
 
-	override fun directRequest(ref: Ref<User>): RefState<User> = state {
-		ensureValid(ref, ref is User.Ref) { "${this@Users} doesn't support the reference $ref" }
+	override fun directRequest(ref: Ref<User>): State<User> = state {
+		ensureValid(ref is User.Ref) { "${this@Users} doesn't support the reference $ref" }
 
 		val result: User = client.get("/api/users/${ref.email}")
 		val user = User(
@@ -105,6 +105,6 @@ class Users(
 			open = result.open,
 		)
 
-		emitSuccessful(ref, user)
+		emit(successful(user))
 	}
 }

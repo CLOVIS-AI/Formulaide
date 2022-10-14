@@ -16,12 +16,9 @@ import kotlinx.serialization.Serializable
 import opensavvy.backbone.Ref
 import opensavvy.backbone.Ref.Companion.expire
 import opensavvy.backbone.Ref.Companion.requestValue
-import opensavvy.backbone.RefState
-import opensavvy.cache.Cache
-import opensavvy.state.emitSuccessful
-import opensavvy.state.ensureFound
-import opensavvy.state.ensureValid
-import opensavvy.state.state
+import opensavvy.backbone.RefCache
+import opensavvy.state.*
+import opensavvy.state.Slice.Companion.successful
 import org.litote.kmongo.*
 import org.litote.kmongo.coroutine.CoroutineCollection
 
@@ -141,7 +138,7 @@ class Records(
 	private val records: CoroutineCollection<DbRecord2>,
 	private val forms: Forms,
 	private val users: Users,
-	override val cache: Cache<Ref<Record>, Record>,
+	override val cache: RefCache<Record>,
 ) : RecordBackbone {
 	override suspend fun create(form: Form.Ref, version: Instant, user: User.Ref?, submission: Submission): Record.Ref {
 		val requestedForm = form.requestValue()
@@ -261,11 +258,11 @@ class Records(
 
 	fun fromId(id: String) = Record.Ref(id, this)
 
-	override fun directRequest(ref: Ref<Record>): RefState<Record> = state {
-		ensureValid(ref, ref is Record.Ref) { "${this@Records} doesn't support the reference $ref" }
+	override fun directRequest(ref: Ref<Record>): State<Record> = state {
+		ensureValid(ref is Record.Ref) { "${this@Records} doesn't support the reference $ref" }
 
 		val result = records.findOne(DbRecord2::id eq ref.id.toId())
-		ensureFound(ref, result != null) { "Le dossier ${ref.id} est introuvable" }
+		ensureFound(result != null) { "Le dossier ${ref.id} est introuvable" }
 
 		val output = Record(
 			id = result.id.toString(),
@@ -286,6 +283,6 @@ class Records(
 				}
 			)
 
-		emitSuccessful(ref, output)
+		emit(successful(output))
 	}
 }

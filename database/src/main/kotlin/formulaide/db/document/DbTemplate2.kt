@@ -4,9 +4,9 @@ import formulaide.core.form.Template
 import formulaide.core.form.TemplateBackbone
 import opensavvy.backbone.Ref
 import opensavvy.backbone.Ref.Companion.expire
-import opensavvy.backbone.RefState
-import opensavvy.cache.Cache
-import opensavvy.state.emitSuccessful
+import opensavvy.backbone.RefCache
+import opensavvy.state.Slice.Companion.successful
+import opensavvy.state.State
 import opensavvy.state.ensureFound
 import opensavvy.state.ensureValid
 import opensavvy.state.state
@@ -16,7 +16,7 @@ import org.litote.kmongo.coroutine.CoroutineCollection
 
 class Templates(
 	val templates: CoroutineCollection<Template>,
-	override val cache: Cache<Ref<Template>, Template>,
+	override val cache: RefCache<Template>,
 ) : TemplateBackbone {
 	override suspend fun all(): List<Template.Ref> = templates.find()
 		.toList()
@@ -53,13 +53,13 @@ class Templates(
 		template.expire()
 	}
 
-	override fun directRequest(ref: Ref<Template>): RefState<Template> = state {
-		ensureValid(ref, ref is Template.Ref) { "${this@Templates} doesn't support the reference $ref" }
+	override fun directRequest(ref: Ref<Template>): State<Template> = state {
+		ensureValid(ref is Template.Ref) { "${this@Templates} doesn't support the reference $ref" }
 
 		val value = templates.findOne(Template::id eq ref.id)
-		ensureFound(ref, value != null) { "Le modèle ${ref.id} est introuvable" }
+		ensureFound(value != null) { "Le modèle ${ref.id} est introuvable" }
 
-		emitSuccessful(ref, value)
+		emit(successful(value))
 	}
 
 	fun fromId(id: String) = Template.Ref(id, this)
