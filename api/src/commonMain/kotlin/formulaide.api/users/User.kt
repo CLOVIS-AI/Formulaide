@@ -26,6 +26,18 @@ data class User(
 
 	override val id: ReferenceId
 		get() = email.email
+
+	companion object {
+		// Yes, this is a copy-paste of the code in the 'core' module
+		// It will be removed when the Spine migration is complete
+		val User?.role
+			get() = when {
+				this == null -> formulaide.core.User.Role.ANONYMOUS
+				!administrator -> formulaide.core.User.Role.EMPLOYEE
+				administrator -> formulaide.core.User.Role.ADMINISTRATOR
+				else -> error("Should never happen")
+			}
+	}
 }
 
 /**
@@ -50,6 +62,7 @@ fun User.canAccess(form: Form, state: RecordState?): Boolean {
 				}.obj.reviewer.id
 			}
 		}
+
 		is RecordState.Refused, null -> {
 			user.services.any { service -> service.id in form.actions.map { it.reviewer.id } }
 		}

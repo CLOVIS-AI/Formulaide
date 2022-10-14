@@ -1,6 +1,7 @@
 package formulaide.client
 
 import formulaide.api.users.User
+import formulaide.api.users.User.Companion.role
 import formulaide.client.Client.Anonymous
 import formulaide.client.Client.Authenticated
 import formulaide.client.bones.*
@@ -167,6 +168,12 @@ sealed class Client(
 	companion object {
 
 		internal val jsonSerializer = DefaultJson
+
+		val Client.role: formulaide.core.User.Role
+			get() = when (this) {
+				is Anonymous -> formulaide.core.User.Role.ANONYMOUS
+				is Authenticated -> me.role
+			}
 
 	}
 

@@ -21,6 +21,23 @@ data class User(
 	data class Ref(val email: String, override val backbone: UserBackbone) : opensavvy.backbone.Ref<User> {
 		override fun toString() = "User $email"
 	}
+
+	enum class Role {
+		ANONYMOUS,
+		EMPLOYEE,
+		ADMINISTRATOR,
+		;
+
+		companion object {
+			val User?.role
+				get() = when {
+					this == null -> ANONYMOUS
+					!administrator -> EMPLOYEE
+					administrator -> ADMINISTRATOR
+					else -> error("Should never happen")
+				}
+		}
+	}
 }
 
 interface UserBackbone : Backbone<User> {

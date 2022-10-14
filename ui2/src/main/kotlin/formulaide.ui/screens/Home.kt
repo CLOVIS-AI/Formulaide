@@ -4,16 +4,16 @@ import androidx.compose.runtime.*
 import formulaide.api.users.PasswordLogin
 import formulaide.client.Client
 import formulaide.client.routes.login
+import formulaide.core.User
 import formulaide.ui.components.*
 import formulaide.ui.navigation.Screen
 import formulaide.ui.navigation.client
-import formulaide.ui.utils.Role
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 
 val Home: Screen = Screen(
 	"Accueil",
-	Role.ANONYMOUS,
+	User.Role.ANONYMOUS,
 	"?home",
 	icon = "ri-home-line",
 	iconSelected = "ri-home-fill",

@@ -1,16 +1,20 @@
 package formulaide.ui.screens.forms.list
 
 import formulaide.api.data.Form
+import formulaide.api.users.User.Companion.role
 import formulaide.client.Client
 import formulaide.client.routes.listClosedForms
-import formulaide.ui.*
-import formulaide.ui.Role.Companion.role
+import formulaide.core.User
 import formulaide.ui.components.cards.Card
 import formulaide.ui.components.cards.action
 import formulaide.ui.components.inputs.Checkbox
 import formulaide.ui.components.inputs.Field
 import formulaide.ui.components.useAsyncEffect
 import formulaide.ui.components.useAsyncEffectOnce
+import formulaide.ui.refreshForms
+import formulaide.ui.useClient
+import formulaide.ui.useForms
+import formulaide.ui.useUser
 import formulaide.ui.utils.DelegatedProperty.Companion.asDelegated
 import formulaide.ui.utils.useEquals
 import formulaide.ui.utils.useListEquality
@@ -54,7 +58,7 @@ val FormList = FC<Props>("FormList") {
 			clearRecords()
 		}
 
-		if (user.role >= Role.EMPLOYEE) Field {
+		if (user.role >= User.Role.EMPLOYEE) Field {
 			id = "hide-disabled"
 			text = "Formulaires archivés"
 

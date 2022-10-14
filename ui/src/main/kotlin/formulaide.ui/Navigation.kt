@@ -6,7 +6,8 @@ import formulaide.api.data.RecordState
 import formulaide.api.types.Email
 import formulaide.api.types.Ref
 import formulaide.api.users.User
-import formulaide.ui.Role.Companion.role
+import formulaide.api.users.User.Companion.role
+import formulaide.core.User.Role
 import formulaide.ui.components.CrashReporter
 import formulaide.ui.components.StyledButton
 import formulaide.ui.components.TopBar
