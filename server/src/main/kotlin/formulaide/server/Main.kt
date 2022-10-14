@@ -2,6 +2,8 @@ package formulaide.server
 
 import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.LoggerContext
+import formulaide.api.Context
+import formulaide.api.Formulaide2
 import formulaide.api.bones.ApiNewUser
 import formulaide.api.data.Config
 import formulaide.api.types.Email
@@ -33,6 +35,8 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
 import opensavvy.backbone.Ref.Companion.requestValue
+import opensavvy.spine.ktor.server.ContextGenerator
+import opensavvy.state.firstResultOrThrow
 import org.slf4j.LoggerFactory
 
 // New job: the server never dies cleanly, it can only be killed. No need for structure concurrency.
@@ -43,15 +47,26 @@ const val rootServiceName = "Service informatique"
 const val rootUser = "admin@formulaide"
 const val rootPassword = "admin-development-password"
 
+val api2 = Formulaide2()
+val context = ContextGenerator { call ->
+	val principal = call.authentication.principal ?: return@ContextGenerator Context(User.Role.ANONYMOUS, null)
+	require(principal is Auth.AuthPrincipal) { "Authentification non reconnue" }
+
+	val role = if (principal.isAdmin) User.Role.ADMINISTRATOR else User.Role.EMPLOYEE
+	val email = principal.email.email
+	Context(role, email)
+}
+
 fun main(args: Array<String>) {
 	println("Starting up; CLI arguments: ${args.contentDeepToString()}")
 
 	runBlocking {
 		println("Checking that the admin user exists…")
 		val department = database.departments.all()
+			.firstResultOrThrow()
 			.map { it.requestValue() }
 			.firstOrNull { it.name == rootServiceName }
-			?: database.departments.create(rootServiceName).requestValue()
+			?: database.departments.create(rootServiceName).firstResultOrThrow().requestValue()
 
 		val auth = Auth(database)
 

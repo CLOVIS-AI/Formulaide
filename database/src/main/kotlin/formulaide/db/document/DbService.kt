@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
 import opensavvy.backbone.Ref
 import opensavvy.backbone.Ref.Companion.expire
 import opensavvy.backbone.RefCache
+import opensavvy.spine.Id
 import opensavvy.state.Slice.Companion.successful
 import opensavvy.state.State
 import opensavvy.state.ensureFound
@@ -38,35 +39,42 @@ class Departments(
 	private val services: CoroutineCollection<DbService>,
 	override val cache: RefCache<Department>,
 ) : DepartmentBackbone {
-	override suspend fun all(includeClosed: Boolean): List<Department.Ref> {
-		return services.find(
-			(DbService::open eq true).takeIf { !includeClosed }
-		)
+	override fun all(includeClosed: Boolean): State<List<Department.Ref>> = state {
+		val filter = (DbService::open eq true).takeIf { !includeClosed }
+
+		val result = services.find(filter)
 			.toList()
-			.map { Department.Ref(it.id.toString(), this) }
+			.map { Department.Ref(it.id.toString(), this@Departments) }
+
+		emit(successful(result))
 	}
 
-	override suspend fun create(name: String): Department.Ref {
+	override fun create(name: String) = state {
 		var id: Int
 		do {
 			id = Random.nextInt()
 		} while (services.findOne(DbService::id eq id) != null)
 
 		services.insertOne(DbService(name, id, true))
-		return Department.Ref(id.toString(), this)
+
+		emit(successful(Department.Ref(id.toString(), this@Departments)))
 	}
 
-	override suspend fun open(department: Department.Ref) {
+	override fun open(department: Department.Ref) = state<Unit> {
 		services.updateOne(DbService::id eq department.id.toInt(), setValue(DbService::open, true))
 		department.expire()
+		emit(successful(Unit))
 	}
 
-	override suspend fun close(department: Department.Ref) {
+	override fun close(department: Department.Ref) = state<Unit> {
 		services.updateOne(DbService::id eq department.id.toInt(), setValue(DbService::open, false))
 		department.expire()
+		emit(successful(Unit))
 	}
 
 	fun fromId(id: Int) = Department.Ref(id.toString(), this)
+
+	fun fromId(id: Id) = Department.Ref(id.resource.segments[1].segment, this)
 
 	override fun directRequest(ref: Ref<Department>): State<Department> = state {
 		ensureValid(ref is Department.Ref) { "${this@Departments} doesn't support the reference $ref" }

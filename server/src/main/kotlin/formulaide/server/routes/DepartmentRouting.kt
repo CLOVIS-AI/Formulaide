@@ -1,16 +1,25 @@
 package formulaide.server.routes
 
+import formulaide.api.rest.toRest
+import formulaide.api.utils.flatMapSuccesses
+import formulaide.api.utils.mapSuccesses
 import formulaide.core.Department
+import formulaide.core.User
 import formulaide.server.Auth.Companion.Employee
-import formulaide.server.Auth.Companion.requireAdmin
-import formulaide.server.Auth.Companion.requireEmployee
+import formulaide.server.api2
+import formulaide.server.context
 import formulaide.server.database
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.flow.emitAll
+import opensavvy.backbone.Ref.Companion.request
 import opensavvy.backbone.Ref.Companion.requestValue
+import opensavvy.spine.ktor.server.route
+import opensavvy.state.Slice.Companion.successful
+import opensavvy.state.ensureAuthorized
 
 /**
  * Department management.
@@ -20,117 +29,46 @@ import opensavvy.backbone.Ref.Companion.requestValue
 @Suppress("MemberVisibilityCanBePrivate")
 object DepartmentRouting {
 
-	internal fun Routing.enable() = route("/api/departments") {
-		list()
-		id()
-		create()
-	}
-
-	/**
-	 * Endpoint `/api/departments/list`.
-	 *
-	 * ### Get
-	 *
-	 * Lists the available departments.
-	 *
-	 * - Requires employee authentication
-	 * - To include closed departments, set the `closed` optional parameter to `true` (requires administrator authentication)
-	 * - Response: list of department IDs ([Int], see [id])
-	 */
-	fun Route.list() {
-		authenticate(Employee) {
-			get("/list") {
-				val services = when (call.parameters["closed"].toBoolean()) {
-					true -> {
-						call.requireAdmin(database)
-						database.departments.all(includeClosed = true)
-					}
-
-					false -> {
-						call.requireEmployee(database)
-						database.departments.all(includeClosed = false)
-					}
+	internal fun Routing.enable() = authenticate(Employee, optional = true) {
+		route(api2.departments.get, context) {
+			val result = database.departments.all(parameters.includeClosed)
+				.mapSuccesses { list ->
+					list.map { api2.departments.id.idOf(it.id) }
 				}
 
-				call.respond(services)
-			}
+			emitAll(result)
 		}
-	}
 
-	/**
-	 * Endpoint `/api/departments/{id}`.
-	 *
-	 * ### Get
-	 *
-	 * Gets all information about a specific department.
-	 *
-	 * - Requires employee authentication if the department is [open][Department.open]
-	 * - Requires administrator authentication if the department is [closed][Department.open]
-	 * - Response: [Department]
-	 *
-	 * ### Patch
-	 *
-	 * Edits a department.
-	 *
-	 * - Requires administrator authentication
-	 * - Optional parameter `open`:
-	 *    - `true`: opens the department
-	 *    - `false`: closes the department
-	 *    - `null` or omitted: no changes
-	 * - Response: `"Success"`
-	 */
-	fun Route.id() {
-		authenticate(Employee) {
-			get("/{id}") {
-				val id = call.parameters["id"] ?: error("Missing parameter 'id'")
+		route(api2.departments.id.get, context) {
+			val result = database.departments.fromId(id)
+				.request()
+				.flatMapSuccesses {
+					if (!it.open)
+						ensureAuthorized(context.role >= User.Role.ADMINISTRATOR) { "Seuls les administrateurs peuvent accéder à des départements fermés" }
 
-				val service = database.departments.fromId(id.toInt()).requestValue()
-
-				if (!service.open) {
-					call.requireAdmin(database)
-				} else {
-					call.requireEmployee(database)
+					emit(successful(it.toRest()))
 				}
 
-				call.respond(service)
-			}
-
-			patch("/{id}") {
-				call.requireAdmin(database)
-
-				val id = call.parameters["id"] ?: error("Missing parameter 'id'")
-				val open = call.parameters["open"]?.toBooleanStrictOrNull()
-				if (open == true)
-					database.departments.open(database.departments.fromId(id.toInt()))
-				if (open == false)
-					database.departments.close(database.departments.fromId(id.toInt()))
-
-				call.respond("Success")
-			}
+			emitAll(result)
 		}
-	}
 
-	/**
-	 * Endpoint `/api/departments/create`
-	 *
-	 * ### Post
-	 *
-	 * Creates a new department.
-	 *
-	 * - Requires administrator authentication
-	 * - The request body should be the name of the department ([String])
-	 * - Response: [Department]
-	 */
-	fun Route.create() {
-		authenticate(Employee) {
-			post("/create") {
-				call.requireAdmin(database)
+		route(api2.departments.id.open, context) {
+			val ref = database.departments.fromId(id)
+			val result = database.departments.open(ref)
+			emitAll(result)
+		}
 
-				val service = call.receive<String>().removeSurrounding("\"")
-				val created = database.departments.create(service)
+		route(api2.departments.id.close, context) {
+			val ref = database.departments.fromId(id)
+			val result = database.departments.close(ref)
+			emitAll(result)
+		}
 
-				call.respond(created)
-			}
+		route(api2.departments.create, context) {
+			val result = database.departments.create(body.name)
+				.mapSuccesses { api2.departments.id.idOf(it.id) to it.requestValue().toRest() }
+
+			emitAll(result)
 		}
 	}
 }

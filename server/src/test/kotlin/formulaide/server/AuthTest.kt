@@ -6,6 +6,7 @@ import formulaide.api.bones.ApiPasswordLogin
 import formulaide.db.document.toCore
 import kotlinx.coroutines.runBlocking
 import opensavvy.backbone.Ref.Companion.requestValue
+import opensavvy.state.firstResultOrThrow
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -41,7 +42,7 @@ class AuthTest {
 	fun testAuth() = runBlocking {
 		val db = testDatabase()
 		val auth = Auth(db)
-		val service = db.departments.create("Service des tests")
+		val service = db.departments.create("Service des tests").firstResultOrThrow()
 
 		val email = "new${Random.nextInt()}@ville-arcachon.fr"
 		val password = "this is my super-safe password"
