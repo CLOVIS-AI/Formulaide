@@ -27,6 +27,8 @@ kotlin {
 				api(project(":core"))
 				implementation(project(":api"))
 
+				implementation("opensavvy:spine-ktor-client:_")
+
 				implementation(Ktor.client.core)
 				implementation("io.ktor:ktor-client-content-negotiation:_")
 				implementation("io.ktor:ktor-serialization-kotlinx-json:_")

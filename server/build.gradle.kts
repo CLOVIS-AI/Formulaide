@@ -20,6 +20,8 @@ dependencies {
 	implementation(project(":api"))
 	implementation(project(":database"))
 
+	implementation("opensavvy:spine-ktor-server:_")
+
 	implementation(Ktor.server.core)
 	implementation(Ktor.server.netty)
 	implementation("io.ktor:ktor-server-html-builder:_")
