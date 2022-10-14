@@ -144,6 +144,12 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 	}
 
 	routing {
+		if (developmentMode) {
+			trace {
+				application.log.trace(it.buildText())
+			}
+		}
+
 		staticFrontendRoutes()
 
 		with(AuthRouting) { enable(auth) }
