@@ -109,7 +109,7 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 	}
 
 	install(CallLogging) {
-		level = org.slf4j.event.Level.DEBUG
+		level = org.slf4j.event.Level.INFO
 	}
 
 	install(CORS) { //TODO: audit
