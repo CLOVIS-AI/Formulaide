@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package formulaide.client.routes
 
 import formulaide.api.data.Action
@@ -9,9 +11,10 @@ import formulaide.api.fields.FormField
 import formulaide.api.fields.SimpleField.Text
 import formulaide.api.types.Arity
 import formulaide.api.types.Ref
-import formulaide.client.runTest
 import formulaide.client.testAdministrator
 import formulaide.client.testClient
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
 class SubmissionsTest {

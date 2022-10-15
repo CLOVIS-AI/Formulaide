@@ -1,6 +1,9 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package formulaide.client.files
 
-import formulaide.client.runTest
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import java.io.File
 import kotlin.test.assertFails
@@ -10,7 +13,6 @@ class MultipartTestJVM {
 	@Test
 	fun emptyJvm() = runTest {
 		assertFails {
-			@Suppress("BlockingMethodInNonBlockingContext")
 			multipartTest(FileUploadJVM(File.createTempFile("formulaide-multipart-test-jvm",
 			                                                ".txt")))
 		}

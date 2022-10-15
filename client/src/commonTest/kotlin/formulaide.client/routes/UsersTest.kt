@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package formulaide.client.routes
 
 import formulaide.api.types.Email
@@ -5,10 +7,11 @@ import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.users.NewUser
 import formulaide.api.users.PasswordLogin
 import formulaide.api.users.User
-import formulaide.client.runTest
 import formulaide.client.testAdministrator
 import formulaide.client.testClient
 import formulaide.client.testEmployee
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import kotlin.random.Random
 import kotlin.test.*
 
@@ -22,6 +25,7 @@ class UsersTest {
 		)
 		println(login)
 		assertTrue(true) // on failure, exceptions are thrown previously
+		client.job.cancel()
 	}
 
 	@Test
@@ -32,6 +36,7 @@ class UsersTest {
 		)
 		println(token)
 		assertTrue(true) // on failure, exceptions are thrown previously
+		anonymous.job.cancel()
 	}
 
 	@Test
@@ -53,6 +58,8 @@ class UsersTest {
 
 		println(response)
 		assertTrue(true) // on failure, exceptions are thrown previously
+
+		client.job.cancel()
 	}
 
 	@Test
@@ -72,6 +79,8 @@ class UsersTest {
 				)
 			)
 		}
+
+		client.job.cancel()
 	}
 
 	@Test
@@ -83,6 +92,8 @@ class UsersTest {
 		assertFalse(user.administrator)
 		assertEquals("employee@formulaide", user.email.email)
 		assertEquals("Employé", user.fullName)
+
+		client.job.cancel()
 	}
 
 	@Test
@@ -94,6 +105,8 @@ class UsersTest {
 		assertTrue(user.administrator)
 		assertEquals("admin@formulaide", user.email.email)
 		assertEquals("Administrateur", user.fullName)
+
+		client.job.cancel()
 	}
 
 }
