@@ -4,14 +4,12 @@ import formulaide.api.users.User
 import formulaide.core.Department
 import formulaide.core.UserBackbone
 import formulaide.db.Database
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.Serializable
-import opensavvy.backbone.Cache
-import opensavvy.backbone.Data
-import opensavvy.backbone.Ref
+import opensavvy.backbone.*
 import opensavvy.backbone.Ref.Companion.requestValue
-import opensavvy.backbone.Result
+import opensavvy.cache.Cache
+import opensavvy.state.*
+import opensavvy.state.Slice.Companion.successful
 import org.bson.conversions.Bson
 import org.litote.kmongo.combine
 import org.litote.kmongo.coroutine.CoroutineCollection
@@ -44,7 +42,7 @@ data class DbUser(
 class Users(
 	private val database: Database,
 	private val users: CoroutineCollection<DbUser>,
-	override val cache: Cache<formulaide.core.User>,
+	override val cache: Cache<Ref<formulaide.core.User>, formulaide.core.User>,
 ) : UserBackbone {
 	override suspend fun all(includeClosed: Boolean): List<formulaide.core.User.Ref> {
 		val results = users.find(
@@ -140,10 +138,12 @@ class Users(
 		)
 	}
 
-	override fun directRequest(ref: Ref<formulaide.core.User>): Flow<Data<formulaide.core.User>> = flow {
-		require(ref is formulaide.core.User.Ref) { "$this doesn't support the reference $ref" }
+	override fun directRequest(ref: Ref<formulaide.core.User>): State<formulaide.core.User> = state {
+		ensureValid(ref is formulaide.core.User.Ref) { "${this@Users} doesn't support the reference $ref" }
 
-		val db = users.findOne(DbUser::email eq ref.email) ?: error("L'utilisateur $ref n'existe pas")
+		val db = users.findOne(DbUser::email eq ref.email)
+		ensureFound(db != null) { "L'utilisateur $ref n'existe pas" }
+
 		val core = formulaide.core.User(
 			db.email,
 			db.fullName,
@@ -151,7 +151,7 @@ class Users(
 			db.isAdministrator,
 			db.enabled ?: true,
 		)
-		emit(Data(Result.Success(core), Data.Status.Completed, ref))
+		emit(successful(core))
 	}
 }
 

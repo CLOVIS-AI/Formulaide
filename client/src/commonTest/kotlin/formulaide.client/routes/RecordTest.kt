@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package formulaide.client.routes
 
 import formulaide.api.data.Action
@@ -17,10 +19,13 @@ import formulaide.api.types.Ref
 import formulaide.api.types.Ref.Companion.createRef
 import formulaide.api.types.Ref.Companion.load
 import formulaide.api.users.canAccess
-import formulaide.client.runTest
 import formulaide.client.testAdministrator
 import formulaide.client.testEmployee
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import kotlin.test.*
 
 class RecordTest {
@@ -123,17 +128,21 @@ class RecordTest {
 		assertEquals(betaSubmission.root, betaSubmissionActual.root)
 		assertEquals(betaSubmission.data, betaSubmissionActual.data)
 
-		delay(1000)
+		withContext(Dispatchers.Default) {
+			// Force wait to ensure the database has had time to create all necessary objects
+			delay(1000)
+		}
 
-		client.review(ReviewRequest(
-			alphaSubmissionActualList.first().createRef(),
-			RecordStateTransition(
-				timestamp = Long.MAX_VALUE,
-				previousState = RecordState.Action(Ref("0")),
-				nextState = RecordState.Action(Ref("1")),
-				assignee = me.createRef(),
-				reason = null,
-			),
+		client.review(
+			ReviewRequest(
+				alphaSubmissionActualList.first().createRef(),
+				RecordStateTransition(
+					timestamp = Long.MAX_VALUE,
+					previousState = RecordState.Action(Ref("0")),
+					nextState = RecordState.Action(Ref("1")),
+					assignee = me.createRef(),
+					reason = null,
+				),
 			fields = assignedForm.createSubmission(action0) {
 				text(reviewText, "J'accepte le passage à l'étape suivante")
 			}

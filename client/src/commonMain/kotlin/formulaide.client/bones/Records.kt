@@ -8,17 +8,17 @@ import formulaide.core.form.Form
 import formulaide.core.form.Submission
 import formulaide.core.record.Record
 import formulaide.core.record.RecordBackbone
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import kotlinx.datetime.Instant
-import opensavvy.backbone.Cache
-import opensavvy.backbone.Data
 import opensavvy.backbone.Ref
-import opensavvy.backbone.Result
+import opensavvy.backbone.RefCache
+import opensavvy.state.Slice.Companion.successful
+import opensavvy.state.State
+import opensavvy.state.ensureValid
+import opensavvy.state.state
 
 class Records(
 	private val client: Client,
-	override val cache: Cache<Record>,
+	override val cache: RefCache<Record>,
 ) : RecordBackbone {
 	override suspend fun create(form: Form.Ref, version: Instant, user: User.Ref?, submission: Submission): Record.Ref =
 		client.post("/api/records", body = ApiNewRecord(form, version, submission))
@@ -48,12 +48,11 @@ class Records(
 	override suspend fun list(): List<Record.Ref> =
 		client.get("/api/records/")
 
-	override fun directRequest(ref: Ref<Record>): Flow<Data<Record>> {
-		require(ref is Record.Ref) { "$this doesn't support the reference $ref" }
+	override fun directRequest(ref: Ref<Record>): State<Record> = state {
+		ensureValid(ref is Record.Ref) { "${this@Records} doesn't support the reference $ref" }
 
-		return flow {
-			val result: Record = client.get("/api/records/${ref.id}")
-			emit(Data(Result.Success(result), Data.Status.Completed, ref))
-		}
+		val result: Record = client.get("/api/records/${ref.id}")
+
+		emit(successful(result))
 	}
 }

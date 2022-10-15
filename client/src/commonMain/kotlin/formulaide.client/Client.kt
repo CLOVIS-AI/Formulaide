@@ -1,6 +1,9 @@
 package formulaide.client
 
+import formulaide.api.Context
+import formulaide.api.Formulaide2
 import formulaide.api.users.User
+import formulaide.api.users.User.Companion.role
 import formulaide.client.Client.Anonymous
 import formulaide.client.Client.Authenticated
 import formulaide.client.bones.*
@@ -10,6 +13,7 @@ import formulaide.core.Department
 import formulaide.core.RefSerializer
 import io.ktor.client.*
 import io.ktor.client.call.*
+import io.ktor.client.plugins.*
 import io.ktor.client.plugins.auth.*
 import io.ktor.client.plugins.auth.providers.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -17,51 +21,58 @@ import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
-import opensavvy.backbone.Cache
-import opensavvy.backbone.cache.MemoryCache.Companion.cachedInMemory
+import opensavvy.backbone.defaultRefCache
+import opensavvy.cache.MemoryCache.Companion.cachedInMemory
 
 /**
  * Common behavior between [Anonymous] and [Authenticated].
  */
 sealed class Client(
 	val hostUrl: String,
+	val job: Job = SupervisorJob(),
 ) {
+
+	internal val api2 = Formulaide2()
+
+	internal abstract val context: Context
 
 	//region Backbones
 
 	@Suppress("LeakingThis")
 	val departments = Departments(
 		this,
-		Cache.Default<Department>()
-			.cachedInMemory()
+		defaultRefCache<Department>()
+			.cachedInMemory(job)
 	)
 
 	@Suppress("LeakingThis")
 	val users = Users(
 		this,
-		Cache.Default<formulaide.core.User>()
-			.cachedInMemory()
+		defaultRefCache<formulaide.core.User>()
+			.cachedInMemory(job)
 	)
 
 	@Suppress("LeakingThis")
 	val fields = Fields(
 		this,
-		Cache.Default()
+		defaultRefCache()
 	)
 
 	@Suppress("LeakingThis")
 	val templates = Templates(
 		this,
-		Cache.Default()
+		defaultRefCache()
 	)
 
 	@Suppress("LeakingThis")
 	val forms = Forms(
 		this,
-		Cache.Default()
+		defaultRefCache()
 	)
 
 	//endregion
@@ -76,7 +87,7 @@ sealed class Client(
 		body: Any? = null,
 		block: HttpRequestBuilder.() -> Unit = {},
 	): Out {
-		return client.request(hostUrl + url) {
+		return client.request(url) {
 			this.method = method
 
 			if (body != null) {
@@ -152,6 +163,10 @@ sealed class Client(
 			})
 		}
 
+		install(DefaultRequest) {
+			url(hostUrl)
+		}
+
 		expectSuccess = true
 	}
 
@@ -165,12 +180,20 @@ sealed class Client(
 
 		internal val jsonSerializer = DefaultJson
 
+		val Client.role: formulaide.core.User.Role
+			get() = when (this) {
+				is Anonymous -> formulaide.core.User.Role.ANONYMOUS
+				is Authenticated -> me.role
+			}
+
 	}
 
 	class Anonymous private constructor(hostUrl: String) : Client(hostUrl) {
 		companion object {
 			fun connect(hostUrl: String) = Anonymous(hostUrl)
 		}
+
+		override val context = Context(formulaide.core.User.Role.ANONYMOUS, null)
 
 		suspend fun authenticate(token: String) = Authenticated.connect(hostUrl, token)
 	}
@@ -182,6 +205,9 @@ sealed class Client(
 		 */
 		lateinit var me: User
 			private set
+
+		override val context: Context
+			get() = Context(me.role, me.email.email)
 
 		override fun configure(client: HttpClientConfig<*>) = with(client) {
 			super.configure(client)

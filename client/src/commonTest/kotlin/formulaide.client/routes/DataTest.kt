@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package formulaide.client.routes
 
 import formulaide.api.dsl.composite
@@ -8,9 +10,10 @@ import formulaide.api.fields.SimpleField.Text
 import formulaide.api.types.Arity
 import formulaide.api.types.Arity.Companion.mandatory
 import formulaide.api.types.Arity.Companion.optional
-import formulaide.client.runTest
 import formulaide.client.testAdministrator
 import formulaide.client.testEmployee
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
 class DataTest {

@@ -24,10 +24,10 @@ kotlin {
 	sourceSets {
 		val commonMain by getting {
 			dependencies {
-				implementation(kotlin("stdlib-common"))
-
 				api(project(":core"))
 				implementation(project(":api"))
+
+				implementation("opensavvy:spine-ktor-client:_")
 
 				implementation(Ktor.client.core)
 				implementation("io.ktor:ktor-client-content-negotiation:_")
@@ -51,6 +51,7 @@ kotlin {
 			dependencies {
 				implementation(kotlin("test-common"))
 				implementation(kotlin("test-annotations-common"))
+				implementation(KotlinX.coroutines.test)
 			}
 		}
 

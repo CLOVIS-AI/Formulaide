@@ -9,17 +9,17 @@ import formulaide.core.Department
 import formulaide.core.User
 import formulaide.core.UserBackbone
 import io.ktor.client.request.*
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import opensavvy.backbone.Cache
-import opensavvy.backbone.Data
 import opensavvy.backbone.Ref
 import opensavvy.backbone.Ref.Companion.expire
-import opensavvy.backbone.Result
+import opensavvy.cache.Cache
+import opensavvy.state.Slice.Companion.successful
+import opensavvy.state.State
+import opensavvy.state.ensureValid
+import opensavvy.state.state
 
 class Users(
 	private val client: Client,
-	override val cache: Cache<User>,
+	override val cache: Cache<Ref<User>, User>,
 ) : UserBackbone {
 	override suspend fun all(includeClosed: Boolean): List<User.Ref> {
 		val result: List<User.Ref> = client.get("/api/users") {
@@ -93,8 +93,8 @@ class Users(
 		)
 	}
 
-	override fun directRequest(ref: Ref<User>): Flow<Data<User>> = flow {
-		require(ref is User.Ref) { "$this doesn't support the reference $ref" }
+	override fun directRequest(ref: Ref<User>): State<User> = state {
+		ensureValid(ref is User.Ref) { "${this@Users} doesn't support the reference $ref" }
 
 		val result: User = client.get("/api/users/${ref.email}")
 		val user = User(
@@ -105,6 +105,6 @@ class Users(
 			open = result.open,
 		)
 
-		emit(Data(Result.Success(user), Data.Status.Completed, ref))
+		emit(successful(user))
 	}
 }

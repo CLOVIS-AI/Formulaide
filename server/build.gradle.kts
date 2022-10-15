@@ -10,7 +10,6 @@ plugins {
 }
 
 dependencies {
-	implementation(kotlin("stdlib"))
 	implementation("io.ktor:ktor-server-status-pages:_")
 	implementation("io.ktor:ktor-server-conditional-headers:_")
 	implementation("io.ktor:ktor-server-cors:_")
@@ -20,6 +19,8 @@ dependencies {
 
 	implementation(project(":api"))
 	implementation(project(":database"))
+
+	implementation("opensavvy:spine-ktor-server:_")
 
 	implementation(Ktor.server.core)
 	implementation(Ktor.server.netty)

@@ -1,10 +1,11 @@
 package formulaide.ui.screens.data
 
 import formulaide.api.data.CompositeMetadata
+import formulaide.api.users.User.Companion.role
 import formulaide.client.Client
 import formulaide.client.routes.editData
+import formulaide.core.User
 import formulaide.ui.*
-import formulaide.ui.Role.Companion.role
 import formulaide.ui.components.StyledButton
 import formulaide.ui.components.cards.Card
 import formulaide.ui.components.inputs.Checkbox
@@ -25,7 +26,7 @@ val DataList = FC<Props>("DataList") {
 	Card {
 		title = "Groupes"
 
-		if (user.role >= Role.EMPLOYEE) Field {
+		if (user.role >= User.Role.EMPLOYEE) Field {
 			id = "hide-disabled"
 			text = "Groupes archivés"
 
@@ -41,7 +42,7 @@ val DataList = FC<Props>("DataList") {
 				id = "composite-${composite.id}"
 				text = composite.name
 
-				if (user.role >= Role.ADMINISTRATOR) {
+				if (user.role >= User.Role.ADMINISTRATOR) {
 					require(client is Client.Authenticated) { "Le client devrait être connecté." }
 
 					StyledButton {

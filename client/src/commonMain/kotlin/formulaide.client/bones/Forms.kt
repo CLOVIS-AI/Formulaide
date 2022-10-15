@@ -6,16 +6,16 @@ import formulaide.client.Client
 import formulaide.core.form.Form
 import formulaide.core.form.FormBackbone
 import io.ktor.client.request.*
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import opensavvy.backbone.Cache
-import opensavvy.backbone.Data
 import opensavvy.backbone.Ref
-import opensavvy.backbone.Result
+import opensavvy.cache.Cache
+import opensavvy.state.Slice.Companion.successful
+import opensavvy.state.State
+import opensavvy.state.ensureValid
+import opensavvy.state.state
 
 class Forms(
 	private val client: Client,
-	override val cache: Cache<Form>,
+	override val cache: Cache<Ref<Form>, Form>,
 ) : FormBackbone {
 	override suspend fun all(includeClosed: Boolean): List<Form.Ref> =
 		client.get("/api/schema/forms") {
@@ -45,12 +45,11 @@ class Forms(
 		)
 	}
 
-	override fun directRequest(ref: Ref<Form>): Flow<Data<Form>> {
-		require(ref is Form.Ref) { "$this doesn't support the reference $ref" }
+	override fun directRequest(ref: Ref<Form>): State<Form> = state {
+		ensureValid(ref is Form.Ref) { "${this@Forms} doesn't support the reference $ref" }
 
-		return flow {
-			val result: Form = client.get("/api/schema/forms/${ref.id}")
-			emit(Data(Result.Success(result), Data.Status.Completed, ref))
-		}
+		val result: Form = client.get("/api/schema/forms/${ref.id}")
+
+		emit(successful(result))
 	}
 }

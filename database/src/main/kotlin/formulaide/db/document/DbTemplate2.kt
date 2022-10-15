@@ -2,20 +2,21 @@ package formulaide.db.document
 
 import formulaide.core.form.Template
 import formulaide.core.form.TemplateBackbone
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import opensavvy.backbone.Cache
-import opensavvy.backbone.Data
 import opensavvy.backbone.Ref
 import opensavvy.backbone.Ref.Companion.expire
-import opensavvy.backbone.Result
+import opensavvy.backbone.RefCache
+import opensavvy.state.Slice.Companion.successful
+import opensavvy.state.State
+import opensavvy.state.ensureFound
+import opensavvy.state.ensureValid
+import opensavvy.state.state
 import org.bson.conversions.Bson
 import org.litote.kmongo.*
 import org.litote.kmongo.coroutine.CoroutineCollection
 
 class Templates(
 	val templates: CoroutineCollection<Template>,
-	override val cache: Cache<Template>,
+	override val cache: RefCache<Template>,
 ) : TemplateBackbone {
 	override suspend fun all(): List<Template.Ref> = templates.find()
 		.toList()
@@ -52,13 +53,13 @@ class Templates(
 		template.expire()
 	}
 
-	override fun directRequest(ref: Ref<Template>): Flow<Data<Template>> {
-		require(ref is Template.Ref) { "$this doesn't support the reference $ref" }
+	override fun directRequest(ref: Ref<Template>): State<Template> = state {
+		ensureValid(ref is Template.Ref) { "${this@Templates} doesn't support the reference $ref" }
 
-		return flow {
-			val value = templates.findOne(Template::id eq ref.id) ?: error("Le modèle ${ref.id} est introuvable")
-			emit(Data(Result.Success(value), Data.Status.Completed, ref))
-		}
+		val value = templates.findOne(Template::id eq ref.id)
+		ensureFound(value != null) { "Le modèle ${ref.id} est introuvable" }
+
+		emit(successful(value))
 	}
 
 	fun fromId(id: String) = Template.Ref(id, this)

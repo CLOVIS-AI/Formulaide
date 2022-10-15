@@ -1,51 +1,94 @@
 package formulaide.client.bones
 
+import formulaide.api.rest.RestDepartment
+import formulaide.api.utils.mapSuccesses
+import formulaide.api.utils.onEachSuccess
 import formulaide.client.Client
 import formulaide.core.Department
 import formulaide.core.DepartmentBackbone
-import io.ktor.client.request.*
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import opensavvy.backbone.Cache
-import opensavvy.backbone.Data
-import opensavvy.backbone.Ref.Companion.expire
-import opensavvy.backbone.Result
+import kotlinx.coroutines.flow.emitAll
+import opensavvy.backbone.Ref
+import opensavvy.backbone.RefCache
+import opensavvy.spine.Id
+import opensavvy.spine.Parameters
+import opensavvy.spine.ktor.client.request
+import opensavvy.state.State
+import opensavvy.state.ensureValid
+import opensavvy.state.state
 
 class Departments(
 	private val client: Client,
-	override val cache: Cache<Department>,
+	override val cache: RefCache<Department>,
 ) : DepartmentBackbone {
-	override suspend fun all(includeClosed: Boolean): List<Department.Ref> {
-		val ids: List<Int> = client.get("/api/departments/list") {
-			parameter("closed", includeClosed)
+	override fun all(includeClosed: Boolean): State<List<Department.Ref>> {
+		val params = RestDepartment.GetParams().apply {
+			this.includeClosed = includeClosed
 		}
 
-		return ids.map { Department.Ref(it.toString(), this) }
+		return client.client
+			.request(client.api2.departments.get, client.api2.departments.get.idOf(), Unit, params, client.context)
+			.mapSuccesses { list ->
+				list.map { fromId(it) }
+			}
 	}
 
-	override suspend fun create(name: String): Department.Ref {
-		return client.post("/api/departments/create", name)
+	override fun create(name: String): State<Department.Ref> {
+		val input = RestDepartment.New(name)
+
+		return client.client
+			.request(
+				client.api2.departments.create,
+				client.api2.departments.idOf(),
+				input,
+				Parameters.Empty,
+				client.context
+			)
+			.mapSuccesses { (id, department) ->
+				val ref = fromId(id)
+				cache.update(ref to department.toCore(ref.id))
+				ref
+			}
 	}
 
-	override suspend fun open(department: Department.Ref) {
-		client.patch<String>("/api/departments/${department.id}") {
-			parameter("open", true)
-		}
-		department.expire()
+	override fun open(department: Department.Ref): State<Unit> {
+		return client.client
+			.request(
+				client.api2.departments.id.open,
+				client.api2.departments.id.idOf(department.id),
+				Unit,
+				Parameters.Empty,
+				client.context
+			)
+			.onEachSuccess { cache.expire(department) }
 	}
 
-	override suspend fun close(department: Department.Ref) {
-		client.patch<String>("/api/departments/${department.id}") {
-			parameter("open", false)
-		}
-		department.expire()
+	override fun close(department: Department.Ref): State<Unit> {
+		return client.client
+			.request(
+				client.api2.departments.id.close,
+				client.api2.departments.id.idOf(department.id),
+				Unit,
+				Parameters.Empty,
+				client.context
+			)
+			.onEachSuccess { cache.expire(department) }
 	}
 
-	override fun directRequest(ref: opensavvy.backbone.Ref<Department>): Flow<Data<Department>> = flow {
-		require(ref is Department.Ref) { "$this doesn't support the reference $ref" }
+	override fun directRequest(ref: Ref<Department>): State<Department> = state {
+		ensureValid(ref is Department.Ref) { "${this@Departments} doesn't support the reference $ref" }
 
-		val response: Department = client.get("/api/departments/${ref.id}")
+		val result = client.client
+			.request(
+				client.api2.departments.id.get,
+				client.api2.departments.id.idOf(ref.id),
+				Unit,
+				Parameters.Empty,
+				client.context
+			)
+			.mapSuccesses { it.toCore(ref.id) }
 
-		emit(Data(Result.Success(response), Data.Status.Completed, ref))
+		emitAll(result)
 	}
+
+	private fun fromId(id: Id) = Department.Ref(id.resource.segments[1].segment, this)
 }

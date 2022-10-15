@@ -1,12 +1,12 @@
 package formulaide.ui.screens
 
+import formulaide.core.User
 import formulaide.ui.components.Page
 import formulaide.ui.navigation.Screen
-import formulaide.ui.utils.Role
 
 val TemplateList: Screen = Screen(
 	title = "Modèles",
-	requiredRole = Role.EMPLOYEE,
+	requiredRole = User.Role.EMPLOYEE,
 	"?templates",
 	icon = "ri-clipboard-line",
 	iconSelected = "ri-clipboard-fill"

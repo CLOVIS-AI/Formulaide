@@ -4,11 +4,12 @@ import formulaide.api.data.Form
 import formulaide.api.data.FormMetadata
 import formulaide.api.data.RecordState
 import formulaide.api.types.Ref.Companion.createRef
+import formulaide.api.users.User.Companion.role
 import formulaide.api.users.canAccess
 import formulaide.client.Client
 import formulaide.client.routes.editForm
+import formulaide.core.User
 import formulaide.ui.*
-import formulaide.ui.Role.Companion.role
 import formulaide.ui.components.StyledButton
 import formulaide.ui.components.inputs.Nesting
 import formulaide.ui.components.useAsync
@@ -50,7 +51,7 @@ val FormDescription = FC<FormDescriptionProps>("FormDescription") { props ->
 			action = { navigateTo(Screen.SubmitForm(form.createRef())) }
 		}
 
-		if (user.role >= Role.EMPLOYEE && user?.canAccess(form, null) == true)
+		if (user.role >= User.Role.EMPLOYEE && user?.canAccess(form, null) == true)
 			StyledButton {
 				text = when {
 					records.isEmpty() -> "Dossiers "
@@ -61,7 +62,7 @@ val FormDescription = FC<FormDescriptionProps>("FormDescription") { props ->
 				action = { showRecords = !showRecords }
 			}
 
-		if (user.role >= Role.EMPLOYEE)
+		if (user.role >= User.Role.EMPLOYEE)
 			StyledButton {
 				text = "Gestion ${toggle(showAdministration)}"
 				action = { showAdministration = !showAdministration }
@@ -93,7 +94,7 @@ val FormDescription = FC<FormDescriptionProps>("FormDescription") { props ->
 	if (showAdministration) Nesting {
 		+"Gestion :"
 
-		if (user.role >= Role.ADMINISTRATOR) {
+		if (user.role >= User.Role.ADMINISTRATOR) {
 			require(client is Client.Authenticated) // not possible otherwise
 
 			StyledButton {

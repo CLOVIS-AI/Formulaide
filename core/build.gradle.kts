@@ -25,8 +25,6 @@ kotlin {
 	sourceSets {
 		val commonMain by getting {
 			dependencies {
-				implementation(kotlin("stdlib-common"))
-
 				implementation(KotlinX.serialization.core)
 				api("opensavvy:backbone:_")
 			}

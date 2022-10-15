@@ -3,13 +3,16 @@ package formulaide.db.document
 import formulaide.api.users.Service
 import formulaide.core.Department
 import formulaide.core.DepartmentBackbone
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.Serializable
-import opensavvy.backbone.Cache
-import opensavvy.backbone.Data
+import opensavvy.backbone.Ref
 import opensavvy.backbone.Ref.Companion.expire
-import opensavvy.backbone.Result
+import opensavvy.backbone.RefCache
+import opensavvy.spine.Id
+import opensavvy.state.Slice.Companion.successful
+import opensavvy.state.State
+import opensavvy.state.ensureFound
+import opensavvy.state.ensureValid
+import opensavvy.state.state
 import org.litote.kmongo.coroutine.CoroutineCollection
 import org.litote.kmongo.eq
 import org.litote.kmongo.setValue
@@ -34,48 +37,56 @@ data class DbService(
 
 class Departments(
 	private val services: CoroutineCollection<DbService>,
-	override val cache: Cache<Department>,
+	override val cache: RefCache<Department>,
 ) : DepartmentBackbone {
-	override suspend fun all(includeClosed: Boolean): List<Department.Ref> {
-		return services.find(
-			(DbService::open eq true).takeIf { !includeClosed }
-		)
+	override fun all(includeClosed: Boolean): State<List<Department.Ref>> = state {
+		val filter = (DbService::open eq true).takeIf { !includeClosed }
+
+		val result = services.find(filter)
 			.toList()
-			.map { Department.Ref(it.id.toString(), this) }
+			.map { Department.Ref(it.id.toString(), this@Departments) }
+
+		emit(successful(result))
 	}
 
-	override suspend fun create(name: String): Department.Ref {
+	override fun create(name: String) = state {
 		var id: Int
 		do {
 			id = Random.nextInt()
 		} while (services.findOne(DbService::id eq id) != null)
 
 		services.insertOne(DbService(name, id, true))
-		return Department.Ref(id.toString(), this)
+
+		emit(successful(Department.Ref(id.toString(), this@Departments)))
 	}
 
-	override suspend fun open(department: Department.Ref) {
+	override fun open(department: Department.Ref) = state<Unit> {
 		services.updateOne(DbService::id eq department.id.toInt(), setValue(DbService::open, true))
 		department.expire()
+		emit(successful(Unit))
 	}
 
-	override suspend fun close(department: Department.Ref) {
+	override fun close(department: Department.Ref) = state<Unit> {
 		services.updateOne(DbService::id eq department.id.toInt(), setValue(DbService::open, false))
 		department.expire()
+		emit(successful(Unit))
 	}
 
 	fun fromId(id: Int) = Department.Ref(id.toString(), this)
 
-	override fun directRequest(ref: opensavvy.backbone.Ref<Department>): Flow<Data<Department>> = flow {
-		require(ref is Department.Ref) { "$this doesn't support the reference $ref" }
+	fun fromId(id: Id) = Department.Ref(id.resource.segments[1].segment, this)
 
-		val dbService =
-			services.findOne(DbService::id eq ref.id.toInt()) ?: error("Le département demandé n'existe pas : $ref")
+	override fun directRequest(ref: Ref<Department>): State<Department> = state {
+		ensureValid(ref is Department.Ref) { "${this@Departments} doesn't support the reference $ref" }
+
+		val dbService = services.findOne(DbService::id eq ref.id.toInt())
+		ensureFound(dbService != null) { "Le département demandé n'existe pas : $ref" }
+
 		val department = Department(
 			dbService.id.toString(),
 			dbService.name,
 			dbService.open,
 		)
-		emit(Data(Result.Success(department), Data.Status.Completed, ref))
+		emit(successful(department))
 	}
 }

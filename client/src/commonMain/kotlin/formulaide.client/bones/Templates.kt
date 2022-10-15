@@ -5,16 +5,16 @@ import formulaide.api.bones.ApiTemplateEdition
 import formulaide.client.Client
 import formulaide.core.form.Template
 import formulaide.core.form.TemplateBackbone
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import opensavvy.backbone.Cache
-import opensavvy.backbone.Data
 import opensavvy.backbone.Ref
-import opensavvy.backbone.Result
+import opensavvy.cache.Cache
+import opensavvy.state.Slice.Companion.successful
+import opensavvy.state.State
+import opensavvy.state.ensureValid
+import opensavvy.state.state
 
 class Templates(
 	private val client: Client,
-	override val cache: Cache<Template>,
+	override val cache: Cache<Ref<Template>, Template>,
 ) : TemplateBackbone {
 	override suspend fun all(): List<Template.Ref> =
 		client.get("/api/schema/templates")
@@ -39,12 +39,11 @@ class Templates(
 		)
 	}
 
-	override fun directRequest(ref: Ref<Template>): Flow<Data<Template>> {
-		require(ref is Template.Ref) { "$this doesn't support the reference $ref" }
+	override fun directRequest(ref: Ref<Template>): State<Template> = state {
+		ensureValid(ref is Template.Ref) { "${this@Templates} doesn't support the reference $ref" }
 
-		return flow {
-			val result: Template = client.get("/api/schema/templates/${ref.id}")
-			emit(Data(Result.Success(result), Data.Status.Completed, ref))
-		}
+		val result: Template = client.get("/api/schema/templates/${ref.id}")
+
+		emit(successful(result))
 	}
 }
