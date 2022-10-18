@@ -187,6 +187,42 @@ client-jvm-test:
     reports:
       junit: client/build/test-results/jvmTest/**/TEST-*.xml
 
+client2-js-test:
+  image: $JS_CHROME_IMAGE
+  stage: test
+  extends: [ .gradle, .with-database ]
+  needs: [ docker-js-chrome, server-bin ]
+  dependencies: [ server-bin ]
+  before_script:
+    - *prepare_gradle
+    - mv server/build/distributions/server*.tar server.tar
+    - tar -xf server.tar
+  script:
+    - "formulaide_allow_init=true formulaide_allow_unsafe_cookie=true ./server-*/bin/server --init &"
+    - sleep 5
+    - "./gradlew :api2:client2:jsBrowserTest"
+  artifacts:
+    reports:
+      junit: api2/client2/build/test-results/jsBrowserTest/**/TEST-*.xml
+
+client2-jvm-test:
+  image: $JDK_IMAGE
+  stage: test
+  extends: [ .gradle, .with-database ]
+  needs: [ server-bin ]
+  dependencies: [ server-bin ]
+  before_script:
+    - *prepare_gradle
+    - mv server/build/distributions/server*.tar server.tar
+    - tar -xf server.tar
+  script:
+    - "formulaide_allow_init=true formulaide_allow_unsafe_cookie=true ./server-*/bin/server --init &"
+    - sleep 5
+    - "./gradlew :api2:client2:jvmTest"
+  artifacts:
+    reports:
+      junit: api2/client2/build/test-results/jvmTest/**/TEST-*.xml
+
 ui-test:
   image: $JS_CHROME_IMAGE
   stage: test
@@ -264,6 +300,20 @@ database-test:
   artifacts:
     reports:
       junit: database/build/test-results/test/**/TEST-*.xml
+  coverage: '/^Coverage:\s(\d+\.\d+%)/'
+
+database2-test:
+  image: $JDK_IMAGE
+  stage: test
+  extends: [ .gradle, .with-database ]
+  needs: [ ]
+  before_script:
+    - *prepare_gradle
+  script:
+    - "./gradlew :database2:test :database2:printCoverage"
+  artifacts:
+    reports:
+      junit: database2/build/test-results/test/**/TEST-*.xml
   coverage: '/^Coverage:\s(\d+\.\d+%)/'
 
 server-test:
