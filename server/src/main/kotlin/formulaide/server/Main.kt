@@ -3,7 +3,7 @@ package formulaide.server
 import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.LoggerContext
 import formulaide.api.Context
-import formulaide.api.Formulaide2
+import formulaide.api.Formulaide1
 import formulaide.api.bones.ApiNewUser
 import formulaide.api.data.Config
 import formulaide.api.types.Email
@@ -47,7 +47,7 @@ const val rootServiceName = "Service informatique"
 const val rootUser = "admin@formulaide"
 const val rootPassword = "admin-development-password"
 
-val api2 = Formulaide2()
+val api2 = Formulaide1()
 val context = ContextGenerator { call ->
 	val principal = call.authentication.principal ?: return@ContextGenerator Context(User.Role.ANONYMOUS, null)
 	require(principal is Auth.AuthPrincipal) { "Authentification non reconnue" }
