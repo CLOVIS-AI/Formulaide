@@ -1,23 +1,38 @@
 package opensavvy.formulaide.database
 
-import org.litote.kmongo.coroutine.CoroutineDatabase
+import opensavvy.backbone.defaultRefCache
+import opensavvy.cache.ExpirationCache.Companion.expireAfter
+import opensavvy.cache.MemoryCache.Companion.cachedInMemory
+import opensavvy.formulaide.core.Department
+import opensavvy.formulaide.database.document.Departments
+import org.litote.kmongo.coroutine.CoroutineClient
 import org.litote.kmongo.coroutine.coroutine
 import org.litote.kmongo.reactivestreams.KMongo
+import kotlin.coroutines.CoroutineContext
+import kotlin.time.Duration.Companion.minutes
 
-class Database {
+class Database(context: CoroutineContext) {
 
-	private val database: CoroutineDatabase
+	private val client: CoroutineClient
 
 	init {
 		val host = getParam("formulaide_host")
 		val port = getParam("formulaide_port")
-		val name = getParam("formulaide_database") + "2"
 		val username = getParam("formulaide_username")
 		val password = getParam("formulaide_password")
 
-		database = KMongo.createClient("mongodb://$username:$password@$host:$port").coroutine
-			.getDatabase(name)
+		client = KMongo.createClient("mongodb://$username:$password@$host:$port")
+			.coroutine
 	}
+
+	private val database = client.getDatabase(getParam("formulaide_database") + "2")
+
+	val departments = Departments(
+		database.getCollection("departments"),
+		defaultRefCache<Department>()
+			.cachedInMemory(context)
+			.expireAfter(1.minutes, context)
+	)
 
 	private fun getParam(environmentVariable: String): String =
 		System.getenv(environmentVariable)

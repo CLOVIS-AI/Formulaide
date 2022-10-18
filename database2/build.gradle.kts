@@ -15,8 +15,7 @@ dependencies {
 
 	implementation("org.litote.kmongo:kmongo-coroutine-serialization:_")
 
-	implementation(KotlinX.serialization.json)
-
+	implementation("opensavvy:logger:_")
 	implementation("ch.qos.logback:logback-classic:_")
 
 	testImplementation(Kotlin.test)
