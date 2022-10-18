@@ -11,6 +11,8 @@ plugins {
 	id("de.fayard.refreshVersions") version "0.50.2"
 }
 
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+
 // Formulaide 1.0
 include(
 	"core",

@@ -16,7 +16,7 @@ kotlin {
 		val commonMain by getting {
 			dependencies {
 				api(KotlinX.serialization.json)
-				api(project(":core2"))
+				api(projects.core2)
 				api("opensavvy:spine:_")
 			}
 		}

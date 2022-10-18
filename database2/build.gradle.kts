@@ -9,19 +9,19 @@ plugins {
 }
 
 dependencies {
-	implementation(kotlin("stdlib"))
-	testImplementation(kotlin("test"))
-	testImplementation(kotlin("test-junit"))
-
-	api(project(":core2"))
+	api(projects.core2)
 
 	api(KotlinX.coroutines.core)
-	testImplementation(KotlinX.coroutines.test)
+
 	implementation("org.litote.kmongo:kmongo-coroutine-serialization:_")
 
 	implementation(KotlinX.serialization.json)
 
 	implementation("ch.qos.logback:logback-classic:_")
+
+	testImplementation(Kotlin.test)
+	testImplementation(Kotlin.test.junit)
+	testImplementation(KotlinX.coroutines.test)
 }
 
 tasks.jacocoTestReport {

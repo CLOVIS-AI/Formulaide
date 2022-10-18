@@ -24,8 +24,8 @@ kotlin {
 	sourceSets {
 		val commonMain by getting {
 			dependencies {
-				api(project(":core2"))
-				implementation(project(":api2:common"))
+				api(projects.core2)
+				implementation(projects.api2.common)
 
 				implementation("opensavvy:spine-ktor-client:_")
 

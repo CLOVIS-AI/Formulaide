@@ -16,8 +16,8 @@ dependencies {
 	testImplementation(kotlin("test"))
 	testImplementation(kotlin("test-junit"))
 
-	implementation(project(":api2:common"))
-	implementation(project(":database2"))
+	implementation(projects.api2.common)
+	implementation(projects.database2)
 
 	implementation("opensavvy:spine-ktor-server:_")
 
