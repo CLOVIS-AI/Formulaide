@@ -29,12 +29,12 @@ import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
 import opensavvy.backbone.Ref.Companion.requestValue
+import opensavvy.formulaide.api.server.departments
 import opensavvy.spine.ktor.server.ContextGenerator
 import opensavvy.state.firstResultOrThrow
 import org.slf4j.LoggerFactory
@@ -188,5 +188,9 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 				)
 			)
 		}
+
+		val database2 = opensavvy.formulaide.database.Database(Job())
+
+		departments(database2)
 	}
 }

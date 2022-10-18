@@ -37,6 +37,8 @@ kotlin {
 				implementation(Ktor.client.auth)
 
 				implementation(KotlinX.serialization.json)
+
+				implementation("opensavvy:logger:_")
 			}
 		}
 
