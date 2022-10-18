@@ -11,10 +11,24 @@ plugins {
 	id("de.fayard.refreshVersions") version "0.50.2"
 }
 
-include("core")
-include("api")
-include("client")
-include("server")
-include("database")
-include("ui")
-include("ui2")
+// Formulaide 1.0
+include(
+	"core",
+	"api",
+	"client",
+	"server",
+	"database",
+	"ui",
+)
+
+// Formulaide 2.0
+include(
+	"core2",
+	"api2",
+	"api2:common",
+	"api2:client",
+	"api2:server",
+	"server2",
+	"database2",
+	"ui2",
+)
