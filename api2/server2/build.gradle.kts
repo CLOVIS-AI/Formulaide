@@ -28,10 +28,6 @@ dependencies {
 	implementation("ch.qos.logback:logback-classic:_")
 	implementation("io.ktor:ktor-server-call-logging:_")
 
-	implementation("io.ktor:ktor-server-auth:_")
-	implementation("io.ktor:ktor-server-auth-jwt:_")
-	implementation("at.favre.lib:bcrypt:_")
-
 	implementation(KotlinX.coroutines.core)
 	testImplementation(KotlinX.coroutines.test)
 
