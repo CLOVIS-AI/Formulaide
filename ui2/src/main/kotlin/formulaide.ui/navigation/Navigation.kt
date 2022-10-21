@@ -1,8 +1,6 @@
 package formulaide.ui.navigation
 
 import androidx.compose.runtime.*
-import formulaide.client.Client
-import formulaide.client.Client.Companion.role
 import formulaide.ui.screens.FormList
 import formulaide.ui.screens.Home
 import formulaide.ui.screens.TemplateList
@@ -10,6 +8,7 @@ import formulaide.ui.theme.RailButton
 import formulaide.ui.theme.ThemeSelector
 import kotlinx.browser.document
 import kotlinx.browser.window
+import opensavvy.formulaide.core.User
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Nav
@@ -116,7 +115,7 @@ private fun NavigationRail() = Nav(
 	}
 
 	NavigationArea("settings") {
-		if (client is Client.Authenticated)
+		if (client.role >= User.Role.EMPLOYEE)
 			LogOutButton()
 
 		ThemeSelector()

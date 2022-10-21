@@ -43,6 +43,9 @@ dependencies {
 
 	implementation(project(":core"))
 	implementation(project(":client"))
+
+	implementation(project(":core2"))
+	implementation(project(":api2:client2"))
 }
 
 val copyTailwindConfig = tasks.register<Copy>("copyTailwindConfig") {

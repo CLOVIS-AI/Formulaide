@@ -2,29 +2,29 @@ package formulaide.ui.navigation
 
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.Snapshot
-import formulaide.client.Client
 import formulaide.ui.screens.Home
 import formulaide.ui.theme.RailButton
 import kotlinx.browser.window
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import opensavvy.formulaide.api.client.Client
+import opensavvy.formulaide.core.User
+import opensavvy.state.firstResultOrThrow
 
 internal val productionUrl = window.location.protocol + "//" + window.location.host
 internal const val localDevelopmentUrl = "http://localhost:8000"
 
-private fun generateClient(production: Boolean): Client = when (production) {
-	true -> Client.Anonymous.connect(productionUrl)
-	false -> Client.Anonymous.connect(localDevelopmentUrl)
-}
-
-var client: Client by mutableStateOf(generateClient(production = true))
+var client: Client by mutableStateOf(Client(productionUrl))
 
 @Composable
 fun SelectProductionOrTest() {
 	LaunchedEffect(client) {
 		try {
-			client.forms.all()
+			client.ping()
+				.onEach { console.log("Pinging the server…", it) }
+				.firstResultOrThrow()
 		} catch (e: Exception) {
-			client = generateClient(production = false)
+			client = Client(localDevelopmentUrl)
 		}
 	}
 }
@@ -40,10 +40,11 @@ fun LogOutButton() {
 		selected = false,
 		action = {
 			scope.launch {
-				(client as? Client.Authenticated)?.logout()
+				if (client.role >= User.Role.EMPLOYEE)
+					client.users.logOut().firstResultOrThrow()
 
 				Snapshot.withMutableSnapshot {
-					client = generateClient(production = true)
+					client = Client(productionUrl)
 					currentScreen = Home
 				}
 			}

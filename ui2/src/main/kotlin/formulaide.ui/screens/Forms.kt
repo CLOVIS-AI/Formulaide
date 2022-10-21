@@ -1,8 +1,6 @@
 package formulaide.ui.screens
 
 import androidx.compose.runtime.*
-import formulaide.client.Client.Companion.role
-import formulaide.core.User
 import formulaide.core.form.Form
 import formulaide.ui.components.*
 import formulaide.ui.navigation.Screen
@@ -10,6 +8,7 @@ import formulaide.ui.navigation.client
 import formulaide.ui.navigation.currentScreen
 import formulaide.ui.theme.RailButton
 import kotlinx.coroutines.launch
+import opensavvy.formulaide.core.User
 import org.jetbrains.compose.web.dom.Li
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
@@ -37,8 +36,8 @@ val FormList: Screen = Screen(
 	var showPublic by remember { mutableStateOf(true) }
 
 	var forms by remember { mutableStateOf(emptyList<Form.Ref>()) }
-	suspend fun reloadForms() {
-		forms = client.forms.all(includeClosed = showArchived)
+	fun reloadForms() {
+		forms = emptyList()
 	}
 
 	val scope = rememberCoroutineScope()

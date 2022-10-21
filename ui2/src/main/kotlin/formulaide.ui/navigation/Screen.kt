@@ -1,7 +1,7 @@
 package formulaide.ui.navigation
 
 import androidx.compose.runtime.Composable
-import formulaide.core.User
+import opensavvy.formulaide.core.User
 
 data class Screen(
 	val title: String,

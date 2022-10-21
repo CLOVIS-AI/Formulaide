@@ -1,13 +1,17 @@
 package formulaide.ui.screens
 
 import androidx.compose.runtime.*
-import formulaide.api.users.PasswordLogin
-import formulaide.client.Client
-import formulaide.client.routes.login
-import formulaide.core.User
 import formulaide.ui.components.*
 import formulaide.ui.navigation.Screen
 import formulaide.ui.navigation.client
+import formulaide.ui.utils.rememberEmptyState
+import formulaide.ui.utils.rememberState
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.onEach
+import opensavvy.backbone.Ref.Companion.request
+import opensavvy.formulaide.core.User
+import opensavvy.state.Slice.Companion.valueOrNull
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 
@@ -21,17 +25,15 @@ val Home: Screen = Screen(
 	Page(
 		"Formulaide",
 	) {
-		when (client) {
-			is Client.Anonymous -> LoginPage()
-			is Client.Authenticated -> HomePage()
+		when (client.role) {
+			User.Role.ANONYMOUS -> LoginPage()
+			else -> HomePage()
 		}
 	}
 }
 
 @Composable
 private fun LoginPage() {
-	var error by remember { mutableStateOf<Throwable?>(null) }
-
 	P {
 		Text("Identifiez-vous pour avoir accès à l'espace employé :")
 	}
@@ -39,34 +41,39 @@ private fun LoginPage() {
 	var email by remember { mutableStateOf("") }
 	var password by remember { mutableStateOf("") }
 
+	var result by rememberEmptyState()
+
 	TextField("Adresse mail", email, onChange = { email = it })
 	PasswordField("Mot de passe", password, onChange = { password = it })
 
 	ButtonContainer {
 		MainButton(
 			onClick = {
-				try {
-					error = null
-					val token = client.login(PasswordLogin(password, email))
-					client = (client as Client.Anonymous).authenticate(token.token)
-				} catch (e: Throwable) {
-					error = e
-				}
+				client.users.logIn(email, password)
+					.onEach { result = it }
+					.collect()
 			}
 		) {
 			Text("Connexion")
+			Loading(result)
 		}
 	}
 
-	if (error != null)
-		DisplayError(error!!)
+	DisplayError(result)
 }
 
 @Composable
 private fun HomePage() {
-	val client = client as Client.Authenticated
+	val meRef by rememberState(client) { client.users.me() }
+	val me by rememberState(meRef) { meRef.valueOrNull?.request() ?: flowOf() }
 
-	P {
-		Text("Bonjour, ${client.me.fullName}.")
-	}
+	val name = me.valueOrNull?.name
+
+	if (name != null)
+		P {
+			Text("Bonjour, ${me.valueOrNull?.name}.")
+		}
+
+	DisplayError(meRef)
+	DisplayError(me)
 }
