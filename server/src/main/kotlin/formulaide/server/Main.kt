@@ -50,6 +50,8 @@ const val rootServiceName = "Service informatique"
 const val rootUser = "admin@formulaide"
 const val rootPassword = "admin-development-password"
 
+val database2 = opensavvy.formulaide.database.Database(Job())
+
 val api2 = Formulaide1()
 val context = ContextGenerator { call ->
 	val principal = call.authentication.principal ?: return@ContextGenerator Context(User.Role.ANONYMOUS, null)
@@ -89,6 +91,8 @@ fun main(args: Array<String>) {
 		} else {
 			println("The administrator account ($rootUser) already exists.")
 		}
+
+		database2.users.createServiceAccounts()
 	}
 
 	println("Disable MongoDB request logging…")
@@ -192,7 +196,6 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 			)
 		}
 
-		val database2 = opensavvy.formulaide.database.Database(Job())
 		val context = context(database2)
 
 		ping(context)

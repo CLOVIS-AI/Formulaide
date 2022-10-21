@@ -301,4 +301,20 @@ class Users(
 		emit(successful(user))
 	}
 
+	suspend fun createServiceAccounts() {
+		val adminEmail = "admin@formulaide"
+		val adminPassword = "admin-development-password"
+
+		val result = users.findOne(User::email eq adminEmail)
+		if (result == null) {
+			log.warn { "The default user does not exist. Generating it…" }
+			val (user, temporaryPassword) = database.users
+				.create(adminEmail, "Administrateur [DANGEREUX, FERMEZ CE COMPTE]", emptySet(), administrator = true)
+				.firstResultOrThrow()
+
+			database.users.setPassword(user, temporaryPassword, adminPassword)
+				.firstResultOrThrow()
+		}
+	}
+
 }
