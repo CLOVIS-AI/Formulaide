@@ -3,7 +3,7 @@ package opensavvy.formulaide.api
 import opensavvy.formulaide.api.Formulaide2.DepartmentsEndpoint.DepartmentEndpoint
 import opensavvy.formulaide.api.Formulaide2.UsersEndpoint.MeEndpoint
 import opensavvy.formulaide.api.Formulaide2.UsersEndpoint.UserEndpoint
-import opensavvy.formulaide.api.utils.bind
+import opensavvy.formulaide.state.bind
 import opensavvy.spine.Id
 import opensavvy.spine.Parameters
 import opensavvy.spine.Route

@@ -6,10 +6,10 @@ import opensavvy.backbone.Ref.Companion.expire
 import opensavvy.backbone.RefCache
 import opensavvy.formulaide.api.Department
 import opensavvy.formulaide.api.api2
-import opensavvy.formulaide.api.utils.flatMapSuccess
-import opensavvy.formulaide.api.utils.flatten
-import opensavvy.formulaide.api.utils.mapSuccess
 import opensavvy.formulaide.core.AbstractDepartments
+import opensavvy.formulaide.state.flatMapSuccess
+import opensavvy.formulaide.state.flatten
+import opensavvy.formulaide.state.mapSuccess
 import opensavvy.spine.Parameters
 import opensavvy.spine.ktor.client.request
 import opensavvy.state.Slice.Companion.pending
