@@ -25,6 +25,11 @@ class Client(
 	context: CoroutineContext = SupervisorJob(),
 ) {
 
+	/**
+	 * `true` if this [Client] is connected to the development server.
+	 */
+	val isDevelopment = "localhost" in hostUrl
+
 	internal val http = HttpClient {
 		install(ContentNegotiation) {
 			json()

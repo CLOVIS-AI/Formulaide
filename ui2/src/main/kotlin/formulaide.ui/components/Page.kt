@@ -1,6 +1,7 @@
 package formulaide.ui.components
 
 import androidx.compose.runtime.Composable
+import formulaide.ui.navigation.client
 import formulaide.ui.theme.Theme
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Article
@@ -44,6 +45,10 @@ fun Page(
 			}
 		) {
 			header()
+		}
+
+		if (client.isDevelopment) {
+			DisplayError("Le serveur de production n'est pas disponible.")
 		}
 	}
 
