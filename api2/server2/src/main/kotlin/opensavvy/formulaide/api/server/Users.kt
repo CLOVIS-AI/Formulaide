@@ -1,6 +1,7 @@
 package opensavvy.formulaide.api.server
 
 import io.ktor.server.routing.*
+import io.ktor.util.date.*
 import kotlinx.coroutines.flow.emitAll
 import opensavvy.backbone.Ref.Companion.request
 import opensavvy.formulaide.api.Context
@@ -19,6 +20,7 @@ import opensavvy.state.Slice.Companion.successful
 import opensavvy.state.ensureAuthenticated
 import opensavvy.state.ensureAuthorized
 import opensavvy.state.firstResultOrNull
+import java.time.Duration
 
 fun Routing.users(database: Database, contextGenerator: ContextGenerator<Context>, developmentMode: Boolean) {
 
@@ -130,10 +132,11 @@ fun Routing.users(database: Database, contextGenerator: ContextGenerator<Context
 			name = "session",
 			value = "${ref.id}:$token",
 			path = "/v2",
-			secure = !developmentMode,
+			expires = GMTDate() + Duration.ofDays(2).toMillis(),
 			httpOnly = true,
 			extensions = mapOf(
-				"SameSite" to "Strict",
+				"SameSite" to if (developmentMode) "None" else "Strict",
+				"Secure" to null,
 			)
 		)
 

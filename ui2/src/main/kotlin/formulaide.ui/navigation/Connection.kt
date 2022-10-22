@@ -12,7 +12,7 @@ import opensavvy.formulaide.core.User
 import opensavvy.state.firstResultOrThrow
 
 internal val productionUrl = window.location.protocol + "//" + window.location.host
-internal const val localDevelopmentUrl = "http://localhost:8000"
+internal const val localDevelopmentUrl = "https://api.localhost:8443"
 
 var client: Client by mutableStateOf(Client(productionUrl))
 

@@ -112,8 +112,10 @@ val serializer = Json(DefaultJson) {
 fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = false) {
 	val auth = Auth(database)
 
-	if (developmentMode)
+	if (developmentMode) {
 		System.err.println("WARNING. The server is running in development mode. This is NOT safe for production. See https://ktor.io/docs/development-mode.html")
+		log.info("Responding behind Caddy at https://api.localhost:8443")
+	}
 	if (allowUnsafeCookie)
 		System.err.println("WARNING. The server has been allowed to create non-safe HTTP cookies. Remove the environment variable 'formulaide_allow_unsafe_cookie' for production use.")
 
