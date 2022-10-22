@@ -11,7 +11,7 @@ import opensavvy.state.StateBuilder
 import opensavvy.state.ensureAuthenticated
 import opensavvy.state.ensureAuthorized
 
-class Formulaide2 : Service("v2") {
+class Formulaide1 : Service("v1") {
 
 	//region Departments
 

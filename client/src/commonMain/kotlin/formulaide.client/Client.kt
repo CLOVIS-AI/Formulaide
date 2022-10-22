@@ -1,7 +1,7 @@
 package formulaide.client
 
 import formulaide.api.Context
-import formulaide.api.Formulaide2
+import formulaide.api.Formulaide1
 import formulaide.api.users.User
 import formulaide.api.users.User.Companion.role
 import formulaide.client.Client.Anonymous
@@ -37,7 +37,7 @@ sealed class Client(
 	val job: Job = SupervisorJob(),
 ) {
 
-	internal val api2 = Formulaide2()
+	internal val api2 = Formulaide1()
 
 	internal abstract val context: Context
 

@@ -1,7 +1,6 @@
 plugins {
 	kotlin("jvm")
 	kotlin("plugin.serialization")
-	id("application")
 
 	id("org.jetbrains.dokka")
 
@@ -17,10 +16,7 @@ dependencies {
 	testImplementation(kotlin("test"))
 	testImplementation(kotlin("test-junit"))
 
-	implementation(project(":api"))
-	implementation(project(":database"))
-
-	implementation(projects.api2.server2)
+	implementation(projects.api2.common)
 	implementation(projects.database2)
 
 	implementation("opensavvy:spine-ktor-server:_")
@@ -43,16 +39,6 @@ dependencies {
 	testImplementation("io.ktor:ktor-server-tests-jvm:_")
 }
 
-application {
-	mainClass.set("formulaide.server.MainKt")
-}
-
-tasks.named<JavaExec>("run") {
-	description = "Runs this project as a JVM application (development mode)"
-
-	jvmArgs = listOf("-Dio.ktor.development=true")
-}
-
 jacoco {
 	toolVersion = "0.8.8"
 }
@@ -65,33 +51,4 @@ tasks.jacocoTestReport {
 		csv.required.set(false)
 		html.required.set(true)
 	}
-}
-
-tasks.create<Copy>("copyFrontend") {
-	dependsOn(":ui:browserProductionWebpack")
-
-	from("${project(":ui").buildDir}/distributions")
-	into("${project.buildDir}/resources/main/front")
-	exclude("ui.js", "ui.js.map")
-}
-
-tasks.create<Copy>("copyFrontendJs") {
-	dependsOn(":ui:browserProductionWebpack", ":ui:jsMinify")
-
-	from("${project(":ui").buildDir}/distributions-minified")
-	into("${project.buildDir}/resources/main/front")
-	include("ui.min.js")
-	rename { "ui.js" }
-}
-
-tasks.create<Copy>("copyFrontend2") {
-	dependsOn(":ui2:browserProductionWebpack")
-
-	from("${project(":ui2").buildDir}/distributions")
-	into("${project.buildDir}/resources/main/beta")
-}
-
-tasks.processResources {
-	if (!project.hasProperty("devMode"))
-		dependsOn("copyFrontend", "copyFrontendJs", "copyFrontend2")
 }

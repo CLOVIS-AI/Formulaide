@@ -1,11 +1,8 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Server » Run" type="GradleRunConfiguration" factoryName="Gradle">
-    <output_file path="$PROJECT_DIR$/server/build/server.logs" is_save="true" />
-    <log_file alias="logs" path="$PROJECT_DIR$/server/build/server.logs" />
+  <configuration default="false" name="Database 2 » Test" type="GradleRunConfiguration" factoryName="Gradle">
     <ExternalSystemSettings>
       <option name="env">
         <map>
-          <entry key="formulaide_jwt_secret" value="the secret used by IDEA" />
           <entry key="formulaide_database" value="formulaide" />
           <entry key="formulaide_host" value="localhost" />
           <entry key="formulaide_password" value="development-password" />
@@ -14,15 +11,15 @@
         </map>
       </option>
       <option name="executionName" />
-      <option name="externalProjectPath" value="$PROJECT_DIR$/server" />
+      <option name="externalProjectPath" value="$PROJECT_DIR$" />
       <option name="externalSystemIdString" value="GRADLE" />
-      <option name="scriptParameters" value="-PdevMode" />
+      <option name="scriptParameters" value="" />
       <option name="taskDescriptions">
         <list />
       </option>
       <option name="taskNames">
         <list>
-          <option value="run" />
+          <option value=":database2:test" />
         </list>
       </option>
       <option name="vmOptions" value="" />
