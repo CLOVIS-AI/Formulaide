@@ -98,7 +98,7 @@ class Users(
 					is Status.Failed -> emit(Slice(status, it.progression))
 				}
 			}
-			.firstResultOrNull() ?: throw StateBuilderCancellation()
+			.firstResultOrNull() ?: shortCircuit()
 
 		val verified = dbUser.tokens.any {
 			verifier.verify(token.toCharArray(), it.toCharArray()).verified
@@ -163,7 +163,7 @@ class Users(
 					is Status.Failed -> emit(Slice(status, it.progression))
 				}
 			}
-			.firstResultOrNull() ?: throw StateBuilderCancellation()
+			.firstResultOrNull() ?: shortCircuit()
 
 		val hashedToken = dbUser.tokens.find {
 			verifier.verify(token.toCharArray(), it).verified

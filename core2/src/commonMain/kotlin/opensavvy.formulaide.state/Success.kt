@@ -67,12 +67,12 @@ suspend fun <T, O> StateBuilder<O>.bind(slice: Slice<T>): T {
 		is Status.Successful -> status.value
 		is Status.Failed -> {
 			emit(Slice(status, progression))
-			throw StateBuilderCancellation()
+			shortCircuit()
 		}
 
 		is Status.Pending -> {
 			emit(Slice(status, progression))
-			throw StateBuilderCancellation()
+			shortCircuit()
 		}
 	}
 }
