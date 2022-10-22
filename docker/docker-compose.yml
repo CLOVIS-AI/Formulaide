@@ -35,7 +35,7 @@ services:
       formulaide_jwt_secret: "some basic secret"
 
   proxy:
-    image: "caddy:2.4.3-alpine"
+    image: "caddy:2.6.2-alpine"
     depends_on: [ server ]
     networks: [ internal-proxy ]
     volumes:
