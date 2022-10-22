@@ -25,6 +25,11 @@ services:
       ME_CONFIG_MONGODB_ADMINUSERNAME: "root"
       ME_CONFIG_MONGODB_ADMINPASSWORD: "development-password"
 
+  proxy:
+    command: "caddy reverse-proxy --from api.localhost --to 172.17.0.1:8000"
+    ports:
+      - "8443:443"
+
 networks:
   database:
     name: database_dev
