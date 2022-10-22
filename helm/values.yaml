@@ -49,6 +49,10 @@ mongodb:
   # The DNS name of the database.
   nameOverride: "formulaide-database"
 
+  nodeSelector:
+    # The database will only run on nodes that have the label 'database'
+    database: "true"
+
   persistence:
     size: 1Gi
 
