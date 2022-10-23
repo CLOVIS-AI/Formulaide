@@ -66,3 +66,8 @@ tasks.named("compileKotlinJs") {
 	dependsOn(copyTailwindConfig)
 	dependsOn(copyPostcssConfig)
 }
+
+// This dependency should be added by the Kotlin plugin, but apparently in this version it doesn't
+tasks.named("browserDevelopmentRun") {
+	dependsOn("developmentExecutableCompileSync")
+}
