@@ -2,7 +2,6 @@ stages:
   - docker      # Docker images necessary for the next stages
   - build       # Binary generation
   - docker-bin  # Docker images that contain binaries
-  - review      # Start the review app
   - test        # Tests, documentation
   - deploy      # Final container generation
 
@@ -45,12 +44,14 @@ include:
     - echo -n $CI_JOB_TOKEN | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
   tags:
     - docker
+  interruptible: true
 
 .docker-latest:
   extends: .docker-build
   variables:
     GIT_STRATEGY: none
   stage: deploy
+  interruptible: false
 
 .with-database:
   services:
@@ -96,6 +97,7 @@ dokka:
     paths:
       - build/dokka/htmlMultiModule/
     expose_as: 'Documentation'
+  interruptible: true
 
 latex:
   image: clovisai/latex:latest
@@ -115,6 +117,7 @@ latex:
   artifacts:
     paths:
       - public/docs/
+  interruptible: true
 
 server-bin:
   image: $JDK_IMAGE
@@ -129,6 +132,7 @@ server-bin:
   artifacts:
     paths:
       - server/build/distributions
+  interruptible: true
 
 # *** Docker Binaries *** #
 
@@ -148,6 +152,7 @@ server-bin-docker:
       -f $CI_PROJECT_DIR/server/Dockerfile
       .
     - docker push $SERVER_BIN_IMAGE
+  interruptible: true
 
 # *** Test *** #
 
@@ -168,6 +173,7 @@ client-js-test:
   artifacts:
     reports:
       junit: client/build/test-results/jsBrowserTest/**/TEST-*.xml
+  interruptible: true
 
 client-jvm-test:
   image: $JDK_IMAGE
@@ -186,6 +192,7 @@ client-jvm-test:
   artifacts:
     reports:
       junit: client/build/test-results/jvmTest/**/TEST-*.xml
+  interruptible: true
 
 client2-js-test:
   image: $JS_CHROME_IMAGE
@@ -204,6 +211,7 @@ client2-js-test:
   artifacts:
     reports:
       junit: api2/client2/build/test-results/jsBrowserTest/**/TEST-*.xml
+  interruptible: true
 
 client2-jvm-test:
   image: $JDK_IMAGE
@@ -222,6 +230,7 @@ client2-jvm-test:
   artifacts:
     reports:
       junit: api2/client2/build/test-results/jvmTest/**/TEST-*.xml
+  interruptible: true
 
 ui-test:
   image: $JS_CHROME_IMAGE
@@ -235,6 +244,7 @@ ui-test:
   artifacts:
     reports:
       junit: ui/build/test-results/browserTest/**/TEST-*.xml
+  interruptible: true
 
 api-js-test:
   image: $JS_CHROME_IMAGE
@@ -248,6 +258,7 @@ api-js-test:
   artifacts:
     reports:
       junit: api/build/test-results/browserTest/**/TEST-*.xml
+  interruptible: true
 
 api-jvm-test:
   image: $JDK_IMAGE
@@ -261,6 +272,7 @@ api-jvm-test:
   artifacts:
     reports:
       junit: api/build/test-results/test/**/TEST-*.xml
+  interruptible: true
 
 core-js-test:
   image: $JS_CHROME_IMAGE
@@ -274,6 +286,7 @@ core-js-test:
   artifacts:
     reports:
       junit: core/build/test-results/browserTest/**/TEST-*.xml
+  interruptible: true
 
 core-jvm-test:
   image: $JDK_IMAGE
@@ -287,6 +300,7 @@ core-jvm-test:
   artifacts:
     reports:
       junit: core/build/test-results/test/**/TEST-*.xml
+  interruptible: true
 
 database-test:
   image: $JDK_IMAGE
@@ -301,6 +315,7 @@ database-test:
     reports:
       junit: database/build/test-results/test/**/TEST-*.xml
   coverage: '/^Coverage:\s(\d+\.\d+%)/'
+  interruptible: true
 
 database2-test:
   image: $JDK_IMAGE
@@ -315,6 +330,7 @@ database2-test:
     reports:
       junit: database2/build/test-results/test/**/TEST-*.xml
   coverage: '/^Coverage:\s(\d+\.\d+%)/'
+  interruptible: true
 
 server-test:
   image: $JDK_IMAGE
@@ -329,6 +345,7 @@ server-test:
     reports:
       junit: server/build/test-results/test/**/TEST-*.xml
   coverage: '/^Coverage:\s(\d+\.\d+%)/'
+  interruptible: true
 
 container_scanning:
   needs: [ server-bin-docker ]
@@ -336,6 +353,7 @@ container_scanning:
   variables:
     DOCKER_IMAGE: $SERVER_BIN_IMAGE
     CS_DEFAULT_BRANCH_IMAGE: $SERVER_BIN_IMAGE_LATEST
+  interruptible: true
 
 qodana:
   stage: test
@@ -350,6 +368,7 @@ qodana:
       - qodana/
     expose_as: 'Qodana report'
   allow_failure: true
+  interruptible: true
 
 # *** Deploy *** #
 
@@ -396,6 +415,7 @@ pages:
       - public
   only:
     - main
+  interruptible: false
 
 telegram:
   stage: deploy
@@ -406,3 +426,4 @@ telegram:
     - announce-telegram changelog "$CHAT_IDS"
   only:
     - main
+  interruptible: false
