@@ -30,10 +30,10 @@ class Departments(
 		}
 
 		val result = client.http
-			.request(api2.departments.get, api2.departments.idOf(), Unit, parameters, client.context)
+			.request(api2.departments.get, api2.departments.idOf(), Unit, parameters, client.context.value)
 			.mapSuccess { list ->
 				list.map { id ->
-					api2.departments.id.idFrom(id, client.context)
+					api2.departments.id.idFrom(id, client.context.value)
 						.mapSuccess { CoreDepartment.Ref(it, this@Departments) }
 				}
 			}
@@ -50,9 +50,9 @@ class Departments(
 		)
 
 		val result = client.http
-			.request(api2.departments.create, api2.departments.idOf(), input, Parameters.Empty, client.context)
+			.request(api2.departments.create, api2.departments.idOf(), input, Parameters.Empty, client.context.value)
 			.mapSuccess { (id, _) -> id }
-			.flatMapSuccess { emit(api2.departments.id.idFrom(it, client.context)) }
+			.flatMapSuccess { emit(api2.departments.id.idFrom(it, client.context.value)) }
 			.mapSuccess { CoreDepartment.Ref(it, this@Departments) }
 
 		emitAll(result)
@@ -67,7 +67,7 @@ class Departments(
 				api2.departments.id.idOf(department.id),
 				Department.EditVisibility(open = true),
 				Parameters.Empty,
-				client.context
+				client.context.value
 			)
 
 		department.expire()
@@ -84,7 +84,7 @@ class Departments(
 				api2.departments.id.idOf(department.id),
 				Department.EditVisibility(open = false),
 				Parameters.Empty,
-				client.context
+				client.context.value
 			)
 
 		department.expire()
@@ -97,7 +97,13 @@ class Departments(
 		ensureValid(ref is CoreDepartment.Ref) { "${this@Departments} n'accepte pas la référence $ref" }
 
 		val result = client.http
-			.request(api2.departments.id.get, api2.departments.id.idOf(ref.id), Unit, Parameters.Empty, client.context)
+			.request(
+				api2.departments.id.get,
+				api2.departments.id.idOf(ref.id),
+				Unit,
+				Parameters.Empty,
+				client.context.value
+			)
 			.mapSuccess {
 				CoreDepartment(
 					name = it.name,

@@ -5,11 +5,11 @@ import formulaide.ui.components.*
 import formulaide.ui.navigation.Screen
 import formulaide.ui.navigation.client
 import formulaide.ui.utils.rememberEmptyState
-import formulaide.ui.utils.rememberState
+import formulaide.ui.utils.rememberRef
+import formulaide.ui.utils.role
+import formulaide.ui.utils.user
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.onEach
-import opensavvy.backbone.Ref.Companion.request
 import opensavvy.formulaide.core.User
 import opensavvy.state.Slice.Companion.valueOrNull
 import org.jetbrains.compose.web.dom.P
@@ -64,16 +64,23 @@ private fun LoginPage() {
 
 @Composable
 private fun HomePage() {
-	val meRef by rememberState(client) { client.users.me() }
-	val me by rememberState(meRef) { meRef.valueOrNull?.request() ?: flowOf() }
+	val me by rememberRef(client.user)
 
 	val name = me.valueOrNull?.name
 
-	if (name != null)
+	if (name != null) {
 		P {
 			Text("Bonjour, ${me.valueOrNull?.name}.")
 		}
 
-	DisplayError(meRef)
+		P {
+			when (me.valueOrNull?.role) {
+				User.Role.EMPLOYEE -> Text("Vous êtes un employé.")
+				User.Role.ADMINISTRATOR -> Text("Vous êtes administrateur.")
+				else -> {}
+			}
+		}
+	}
+
 	DisplayError(me)
 }

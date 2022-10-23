@@ -5,10 +5,13 @@ import androidx.compose.runtime.snapshots.Snapshot
 import formulaide.ui.screens.Home
 import formulaide.ui.theme.RailButton
 import kotlinx.browser.window
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import opensavvy.backbone.Ref.Companion.request
+import opensavvy.formulaide.api.Context
 import opensavvy.formulaide.api.client.Client
 import opensavvy.formulaide.core.User
+import opensavvy.state.Status
+import opensavvy.state.firstResult
 import opensavvy.state.firstResultOrThrow
 
 internal val productionUrl = window.location.protocol + "//" + window.location.host
@@ -18,14 +21,24 @@ var client: Client by mutableStateOf(Client(productionUrl))
 
 @Composable
 fun SelectProductionOrTest() {
-	LaunchedEffect(client) {
-		try {
-			client.ping()
-				.onEach { console.log("Pinging the server…", it) }
-				.firstResultOrThrow()
-		} catch (e: Exception) {
-			client = Client(localDevelopmentUrl)
+	LaunchedEffect(Unit) {
+		var candidate = client
+
+		if (candidate.ping().firstResult().status !is Status.Successful) {
+			console.warn("Could not ping the production server, switching to the development server…")
+			candidate = Client(localDevelopmentUrl)
 		}
+
+		val myRef = candidate.users.me().firstResult().status
+		if (myRef is Status.Successful) {
+			val me = myRef.value.request().firstResult().status
+			if (me is Status.Successful) {
+				console.info("We're currently logged in")
+				candidate.context.value = Context(myRef.value, me.value.role)
+			}
+		}
+
+		client = candidate
 	}
 }
 
@@ -40,7 +53,7 @@ fun LogOutButton() {
 		selected = false,
 		action = {
 			scope.launch {
-				if (client.role >= User.Role.EMPLOYEE)
+				if (client.context.value.role >= User.Role.EMPLOYEE)
 					client.users.logOut().firstResultOrThrow()
 
 				Snapshot.withMutableSnapshot {

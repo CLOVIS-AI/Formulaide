@@ -5,6 +5,7 @@ import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emitAll
 import opensavvy.backbone.defaultRefCache
 import opensavvy.cache.ExpirationCache.Companion.expireAfter
@@ -40,10 +41,8 @@ class Client(
 		}
 	}
 
-	internal var context = Context(null, User.Role.ANONYMOUS)
-
-	val role = this.context.role
-	val user = this.context.user
+	var context = MutableStateFlow(Context(null, User.Role.ANONYMOUS))
+		internal set
 
 	val departments = Departments(
 		this,
@@ -59,7 +58,7 @@ class Client(
 	)
 
 	fun ping(): State<Unit> = state {
-		val result = http.request(api2.ping.get, api2.ping.idOf(), Unit, Parameters.Empty, context)
+		val result = http.request(api2.ping.get, api2.ping.idOf(), Unit, Parameters.Empty, context.value)
 		emitAll(result)
 	}
 }

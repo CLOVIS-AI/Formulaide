@@ -31,10 +31,10 @@ class Users(
 		}
 
 		val result = client.http
-			.request(api2.users.get, api2.users.idOf(), Unit, parameters, client.context)
+			.request(api2.users.get, api2.users.idOf(), Unit, parameters, client.context.value)
 			.mapSuccess { list ->
 				list.map {
-					CoreUser.Ref(bind(api2.users.id.idFrom(it, client.context)), this@Users)
+					CoreUser.Ref(bind(api2.users.id.idFrom(it, client.context.value)), this@Users)
 				}
 			}
 
@@ -48,9 +48,9 @@ class Users(
 	 */
 	fun me(): State<CoreUser.Ref> = state {
 		val result = client.http
-			.request(api2.users.me.get, api2.users.me.idOf(), Unit, Parameters.Empty, client.context)
+			.request(api2.users.me.get, api2.users.me.idOf(), Unit, Parameters.Empty, client.context.value)
 			.mapSuccess {
-				CoreUser.Ref(bind(api2.users.id.idFrom(it, client.context)), this@Users)
+				CoreUser.Ref(bind(api2.users.id.idFrom(it, client.context.value)), this@Users)
 			}
 
 		emitAll(result)
@@ -68,14 +68,14 @@ class Users(
 		)
 
 		val result = client.http
-			.request(api2.users.me.logIn, api2.users.me.idOf(), body, Parameters.Empty, client.context)
+			.request(api2.users.me.logIn, api2.users.me.idOf(), body, Parameters.Empty, client.context.value)
 			.flatMapSuccess { (id, _) ->
-				val ref = CoreUser.Ref(bind(api2.users.id.idFrom(id, client.context)), this@Users)
+				val ref = CoreUser.Ref(bind(api2.users.id.idFrom(id, client.context.value)), this@Users)
 				ref.expire()
 				emitAll(ref.request().mapSuccess { ref to it })
 			}
 			.onEachSuccess { (ref, user) ->
-				client.context = Context(ref, user.role)
+				client.context.value = Context(ref, user.role)
 			}
 			.mapSuccess { }
 
@@ -87,11 +87,11 @@ class Users(
 	 */
 	fun logOut(): State<Unit> = state {
 		val result = client.http
-			.request(api2.users.me.logOut, api2.users.me.idOf(), Unit, Parameters.Empty, client.context)
+			.request(api2.users.me.logOut, api2.users.me.idOf(), Unit, Parameters.Empty, client.context.value)
 			.onEachSuccess {
 				client.users.cache.expireAll()
 				client.departments.cache.expireAll()
-				client.context = Context(user = null, role = CoreUser.Role.ANONYMOUS)
+				client.context.value = Context(user = null, role = CoreUser.Role.ANONYMOUS)
 			}
 			.mapSuccess { }
 
@@ -112,9 +112,12 @@ class Users(
 		)
 
 		val result = client.http
-			.request(api2.users.create, api2.users.idOf(), body, Parameters.Empty, client.context)
+			.request(api2.users.create, api2.users.idOf(), body, Parameters.Empty, client.context.value)
 			.mapSuccess { (id, password) ->
-				CoreUser.Ref(bind(api2.users.id.idFrom(id, client.context)), this@Users) to password.singleUsePassword
+				CoreUser.Ref(
+					bind(api2.users.id.idFrom(id, client.context.value)),
+					this@Users
+				) to password.singleUsePassword
 			}
 
 		emitAll(result)
@@ -133,7 +136,7 @@ class Users(
 		)
 
 		val result = client.http
-			.request(api2.users.id.edit, api2.users.id.idOf(user.id), body, Parameters.Empty, client.context)
+			.request(api2.users.id.edit, api2.users.id.idOf(user.id), body, Parameters.Empty, client.context.value)
 			.onEachSuccess { user.expire() }
 
 		emitAll(result)
@@ -149,14 +152,20 @@ class Users(
 		)
 
 		val result = client.http
-			.request(api2.users.me.editPassword, api2.users.me.idOf(), body, Parameters.Empty, client.context)
+			.request(api2.users.me.editPassword, api2.users.me.idOf(), body, Parameters.Empty, client.context.value)
 
 		emitAll(result)
 	}
 
 	override fun resetPassword(user: CoreUser.Ref): State<String> = state {
 		val result = client.http
-			.request(api2.users.id.resetPassword, api2.users.id.idOf(user.id), Unit, Parameters.Empty, client.context)
+			.request(
+				api2.users.id.resetPassword,
+				api2.users.id.idOf(user.id),
+				Unit,
+				Parameters.Empty,
+				client.context.value
+			)
 			.mapSuccess { it.singleUsePassword }
 
 		emitAll(result)
@@ -166,7 +175,7 @@ class Users(
 		ensureValid(ref is CoreUser.Ref) { "${this@Users} n'accepte pas la référence $ref" }
 
 		val result = client.http
-			.request(api2.users.id.get, api2.users.id.idOf(ref.id), Unit, Parameters.Empty, client.context)
+			.request(api2.users.id.get, api2.users.id.idOf(ref.id), Unit, Parameters.Empty, client.context.value)
 			.mapSuccess { user ->
 				CoreUser(
 					email = user.email,
@@ -177,7 +186,7 @@ class Users(
 							bind(
 								api2.departments.id.idFrom(
 									it,
-									client.context
+									client.context.value
 								)
 							), client.departments
 						)

@@ -6,6 +6,7 @@ import formulaide.ui.screens.Home
 import formulaide.ui.screens.TemplateList
 import formulaide.ui.theme.RailButton
 import formulaide.ui.theme.ThemeSelector
+import formulaide.ui.utils.role
 import kotlinx.browser.document
 import kotlinx.browser.window
 import opensavvy.formulaide.core.User
@@ -101,7 +102,8 @@ private fun NavigationRail() = Nav(
 	}
 
 	NavigationArea("screens") {
-		val visibleScreens by remember { derivedStateOf { screens.filter { client.role >= it.requiredRole } } }
+		val role = client.role
+		val visibleScreens by remember { derivedStateOf { screens.filter { role >= it.requiredRole } } }
 
 		for (screen in visibleScreens) {
 			RailButton(
