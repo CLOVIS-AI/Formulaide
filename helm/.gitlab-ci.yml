@@ -133,3 +133,4 @@ helm:production:
     - if: $FORMULAIDE_DEPLOYMENT_URL == null
       when: never
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+  resource_group: "production"
