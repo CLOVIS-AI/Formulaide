@@ -25,10 +25,6 @@ variables:
       -f "$dockerfile"
       "$docker_context"
     - docker push $image:$build_version
-  only:
-    - merge_requests
-    - main
-    - tags
 
 .docker-rename:
   extends: [ .docker ]
@@ -44,12 +40,12 @@ variables:
   extends: [ .docker-rename ]
   variables:
     new_version: latest
-  only:
-    - main
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_BRANCH_DEFAULT
 
 .docker-rename-tag:
   extends: [ .docker-rename ]
   variables:
     new_version: $GIT_COMMIT_TAG
-  only:
-    - tags
+  rules:
+    - if: $CI_COMMIT_TAG

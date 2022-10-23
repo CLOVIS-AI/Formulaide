@@ -29,10 +29,6 @@ helm:package:
     when: always
     paths:
       - helm/formulaide-*.tgz
-  only:
-    - merge_requests
-    - main
-    - tags
   interruptible: true
 
 helm:publish:
