@@ -231,7 +231,7 @@ class Formulaide2 : Service("v2") {
 				ensureValid(input.newPassword !in blacklist) { "Le mot de passe choisi est trop simple à deviner." }
 			}
 
-			val logIn = create<User.LogInForm, Unit, Parameters.Empty>()
+			val logIn = create<User.LogInForm, User, Parameters.Empty>()
 
 			val logOut = delete<Unit>()
 

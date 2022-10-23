@@ -2,6 +2,8 @@ package opensavvy.formulaide.api.client
 
 import io.ktor.client.*
 import io.ktor.client.plugins.*
+import io.ktor.client.plugins.auth.*
+import io.ktor.client.plugins.auth.providers.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.SupervisorJob
@@ -31,6 +33,8 @@ class Client(
 	 */
 	val isDevelopment = "localhost" in hostUrl
 
+	internal var token: String? = null
+
 	internal val http = HttpClient {
 		install(ContentNegotiation) {
 			json()
@@ -38,6 +42,18 @@ class Client(
 
 		install(DefaultRequest) {
 			url(hostUrl)
+		}
+
+		install(Auth) {
+			bearer {
+				refreshTokens {
+					// when Ktor receives a 401, it retries with the token
+					// if we're running on a platform where we can access HttpOnly cookies, we inject the value in the Authorization header
+					token?.let { token ->
+						BearerTokens(token, "unused-refresh-token")
+					}
+				}
+			}
 		}
 	}
 

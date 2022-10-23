@@ -27,6 +27,7 @@ dependencies {
 	implementation("io.ktor:ktor-serialization-kotlinx-json:_")
 	implementation("ch.qos.logback:logback-classic:_")
 	implementation("io.ktor:ktor-server-call-logging:_")
+	implementation("opensavvy:logger:_")
 
 	implementation(KotlinX.coroutines.core)
 	testImplementation(KotlinX.coroutines.test)

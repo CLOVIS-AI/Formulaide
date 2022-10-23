@@ -18,7 +18,7 @@ class DepartmentsTest {
 
 	@Test
 	fun create() = runTest {
-		val client = testClient()
+		val client = testAdministrator()
 
 		log.info { "Getting the original list…" }
 		val before = client.departments.list().firstResultOrThrow()
@@ -41,7 +41,7 @@ class DepartmentsTest {
 
 	@Test
 	fun open() = runTest {
-		val client = testClient()
+		val client = testAdministrator()
 
 		log.info { "Creating a new department…" }
 		val ref = client.departments.create("Test department opening").firstResultOrThrow()

@@ -1,5 +1,7 @@
 package opensavvy.formulaide.api.server
 
+import io.ktor.server.application.*
+import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.util.date.*
 import kotlinx.coroutines.flow.emitAll
@@ -140,11 +142,25 @@ fun Routing.users(database: Database, contextGenerator: ContextGenerator<Context
 			)
 		)
 
-		emit(successful(api2.users.id.idOf(ref.id) to Unit))
+		val id = api2.users.id.idOf(ref.id)
+
+		emitAll(
+			ref.request()
+				.mapSuccess {
+					id to opensavvy.formulaide.api.User(
+						it.email,
+						it.name,
+						it.open,
+						it.departments.mapTo(HashSet()) { dept -> api2.departments.id.idOf(dept.id) },
+						it.administrator,
+						it.forceResetPassword,
+					)
+				}
+		)
 	}
 
 	route(api2.users.me.logOut, contextGenerator) {
-		val session = call.request.cookies["session"]
+		val session = getToken(call)
 		ensureAuthenticated(session != null) { "Le cookie de session n'a pas été envoyé" }
 
 		val (id, token) = session.split(':', limit = 2)
@@ -167,10 +183,17 @@ suspend inline fun ResponseStateBuilder<*, *, *, Context>.ensureAdministrator(la
 	return ref
 }
 
+private fun getToken(call: ApplicationCall): String? =
+	call.request.cookies["session"]
+		?: call.request.header("Authorization") // format: 'bearer <session>'
+			?.split(' ', limit = 2)
+			?.getOrNull(1)
+
 fun context(database: Database) = ContextGenerator { call ->
 	val anonymous = Context(user = null, role = User.Role.ANONYMOUS)
 
-	val session = call.request.cookies["session"] ?: return@ContextGenerator anonymous
+	val session = getToken(call)
+		?: return@ContextGenerator anonymous
 	val (id, token) = session.split(':', limit = 2)
 
 	val ref = User.Ref(id, database.users)

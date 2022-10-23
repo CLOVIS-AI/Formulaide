@@ -1,9 +1,9 @@
 package opensavvy.formulaide.api.client
 
+import io.ktor.http.*
 import kotlinx.coroutines.flow.emitAll
 import opensavvy.backbone.Ref
 import opensavvy.backbone.Ref.Companion.expire
-import opensavvy.backbone.Ref.Companion.request
 import opensavvy.backbone.RefCache
 import opensavvy.formulaide.api.Context
 import opensavvy.formulaide.api.User
@@ -11,7 +11,6 @@ import opensavvy.formulaide.api.api2
 import opensavvy.formulaide.core.AbstractUsers
 import opensavvy.formulaide.core.Department
 import opensavvy.formulaide.state.bind
-import opensavvy.formulaide.state.flatMapSuccess
 import opensavvy.formulaide.state.mapSuccess
 import opensavvy.formulaide.state.onEachSuccess
 import opensavvy.spine.Parameters
@@ -68,14 +67,24 @@ class Users(
 		)
 
 		val result = client.http
-			.request(api2.users.me.logIn, api2.users.me.idOf(), body, Parameters.Empty, client.context.value)
-			.flatMapSuccess { (id, _) ->
+			.request(
+				api2.users.me.logIn,
+				api2.users.me.idOf(),
+				body,
+				Parameters.Empty,
+				client.context.value,
+				onResponse = { response ->
+					// Find the cookie in the response and store it in RAM.
+					// When using the official frontend, the cookie is HttpOnly and thus invisible from our code
+					// During automated testing or when running on the JVM, the cookie is found
+					response.setCookie().find { it.name == "session" }
+						?.value
+						?.let { client.token = it }
+				})
+			.onEachSuccess { (id, user) ->
 				val ref = CoreUser.Ref(bind(api2.users.id.idFrom(id, client.context.value)), this@Users)
-				ref.expire()
-				emitAll(ref.request().mapSuccess { ref to it })
-			}
-			.onEachSuccess { (ref, user) ->
-				client.context.value = Context(ref, user.role)
+				client.context.value =
+					Context(ref, if (user.administrator) CoreUser.Role.ADMINISTRATOR else CoreUser.Role.EMPLOYEE)
 			}
 			.mapSuccess { }
 
@@ -91,6 +100,7 @@ class Users(
 			.onEachSuccess {
 				client.users.cache.expireAll()
 				client.departments.cache.expireAll()
+				client.token = null
 				client.context.value = Context(user = null, role = CoreUser.Role.ANONYMOUS)
 			}
 			.mapSuccess { }
