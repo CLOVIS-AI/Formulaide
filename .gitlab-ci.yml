@@ -14,6 +14,7 @@ variables:
   SERVER_BIN_IMAGE_TAG: "$CI_REGISTRY_IMAGE/server:$CI_COMMIT_TAG"
 
 include:
+  - template: Security/SAST.gitlab-ci.yml
   - template: Security/Container-Scanning.gitlab-ci.yml
   - local: ".gitlab/ci/docker.gitlab-ci.yml"
   - local: ".gitlab/ci/env.gitlab-ci.yml"
