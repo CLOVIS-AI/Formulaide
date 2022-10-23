@@ -29,10 +29,7 @@ helm:package:
     when: always
     paths:
       - helm/formulaide-*.tgz
-  only:
-    - merge_requests
-    - main
-    - tags
+  interruptible: true
 
 helm:publish:
   image: $CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX/curlimages/curl:latest
@@ -50,6 +47,7 @@ helm:publish:
     - if: $CI_COMMIT_TAG
       variables:
         channel: stable
+  interruptible: false
 
 .k8s:
   image: $helm_image
@@ -69,10 +67,11 @@ helm:publish:
       --namespace=$namespace
       --wait
       --atomic
+  interruptible: false
 
 helm:review:
   extends: [ .k8s ]
-  stage: review
+  needs: [ helm:package, environment, server-bin-docker, helm:docker-build ]
   variables:
     release: merge-request-$CI_MERGE_REQUEST_IID
     namespace: formulaide-review
@@ -92,7 +91,7 @@ helm:review:
 
 helm:review-stop:
   extends: [ .k8s ]
-  stage: review
+  needs: [ helm:package, environment, server-bin-docker, helm:docker-build ]
   variables:
     GIT_STRATEGY: none
   script:
@@ -130,3 +129,4 @@ helm:production:
     - if: $FORMULAIDE_DEPLOYMENT_URL == null
       when: never
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+  resource_group: "production"

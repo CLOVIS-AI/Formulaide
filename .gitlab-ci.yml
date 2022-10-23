@@ -2,7 +2,6 @@ stages:
   - docker      # Docker images necessary for the next stages
   - build       # Binary generation
   - docker-bin  # Docker images that contain binaries
-  - review      # Start the review app
   - test        # Tests, documentation
   - deploy      # Final container generation
 
@@ -15,15 +14,19 @@ variables:
   SERVER_BIN_IMAGE_TAG: "$CI_REGISTRY_IMAGE/server:$CI_COMMIT_TAG"
 
 include:
+  - template: Security/SAST.gitlab-ci.yml
   - template: Security/Container-Scanning.gitlab-ci.yml
-
-  # This template is required to use merge request pipelines.
-  # See https://docs.gitlab.com/ee/ci/pipelines/merge_request_pipelines.html#configure-pipelines-for-merge-requests
-  - template: 'Workflows/MergeRequest-Pipelines.gitlab-ci.yml'
-
+  - template: Security/Dependency-Scanning.gitlab-ci.yml
   - local: ".gitlab/ci/docker.gitlab-ci.yml"
   - local: ".gitlab/ci/env.gitlab-ci.yml"
   - local: "helm/.gitlab-ci.yml"
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_PIPELINE_SOURCE == 'schedule'
+    - if: $CI_COMMIT_REF_PROTECTED
+    - if: $CI_COMMIT_TAG
 
 # *** Phantom Jobs *** #
 
@@ -45,12 +48,14 @@ include:
     - echo -n $CI_JOB_TOKEN | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
   tags:
     - docker
+  interruptible: true
 
 .docker-latest:
   extends: .docker-build
   variables:
     GIT_STRATEGY: none
   stage: deploy
+  interruptible: false
 
 .with-database:
   services:
@@ -96,6 +101,7 @@ dokka:
     paths:
       - build/dokka/htmlMultiModule/
     expose_as: 'Documentation'
+  interruptible: true
 
 latex:
   image: clovisai/latex:latest
@@ -115,6 +121,7 @@ latex:
   artifacts:
     paths:
       - public/docs/
+  interruptible: true
 
 server-bin:
   image: $JDK_IMAGE
@@ -129,6 +136,7 @@ server-bin:
   artifacts:
     paths:
       - server/build/distributions
+  interruptible: true
 
 # *** Docker Binaries *** #
 
@@ -148,6 +156,7 @@ server-bin-docker:
       -f $CI_PROJECT_DIR/server/Dockerfile
       .
     - docker push $SERVER_BIN_IMAGE
+  interruptible: true
 
 # *** Test *** #
 
@@ -168,6 +177,7 @@ client-js-test:
   artifacts:
     reports:
       junit: client/build/test-results/jsBrowserTest/**/TEST-*.xml
+  interruptible: true
 
 client-jvm-test:
   image: $JDK_IMAGE
@@ -186,6 +196,7 @@ client-jvm-test:
   artifacts:
     reports:
       junit: client/build/test-results/jvmTest/**/TEST-*.xml
+  interruptible: true
 
 client2-js-test:
   image: $JS_CHROME_IMAGE
@@ -204,6 +215,7 @@ client2-js-test:
   artifacts:
     reports:
       junit: api2/client2/build/test-results/jsBrowserTest/**/TEST-*.xml
+  interruptible: true
 
 client2-jvm-test:
   image: $JDK_IMAGE
@@ -222,6 +234,7 @@ client2-jvm-test:
   artifacts:
     reports:
       junit: api2/client2/build/test-results/jvmTest/**/TEST-*.xml
+  interruptible: true
 
 ui-test:
   image: $JS_CHROME_IMAGE
@@ -235,6 +248,7 @@ ui-test:
   artifacts:
     reports:
       junit: ui/build/test-results/browserTest/**/TEST-*.xml
+  interruptible: true
 
 api-js-test:
   image: $JS_CHROME_IMAGE
@@ -248,6 +262,7 @@ api-js-test:
   artifacts:
     reports:
       junit: api/build/test-results/browserTest/**/TEST-*.xml
+  interruptible: true
 
 api-jvm-test:
   image: $JDK_IMAGE
@@ -261,6 +276,7 @@ api-jvm-test:
   artifacts:
     reports:
       junit: api/build/test-results/test/**/TEST-*.xml
+  interruptible: true
 
 core-js-test:
   image: $JS_CHROME_IMAGE
@@ -274,6 +290,7 @@ core-js-test:
   artifacts:
     reports:
       junit: core/build/test-results/browserTest/**/TEST-*.xml
+  interruptible: true
 
 core-jvm-test:
   image: $JDK_IMAGE
@@ -287,6 +304,7 @@ core-jvm-test:
   artifacts:
     reports:
       junit: core/build/test-results/test/**/TEST-*.xml
+  interruptible: true
 
 database-test:
   image: $JDK_IMAGE
@@ -301,6 +319,7 @@ database-test:
     reports:
       junit: database/build/test-results/test/**/TEST-*.xml
   coverage: '/^Coverage:\s(\d+\.\d+%)/'
+  interruptible: true
 
 database2-test:
   image: $JDK_IMAGE
@@ -315,6 +334,7 @@ database2-test:
     reports:
       junit: database2/build/test-results/test/**/TEST-*.xml
   coverage: '/^Coverage:\s(\d+\.\d+%)/'
+  interruptible: true
 
 server-test:
   image: $JDK_IMAGE
@@ -329,6 +349,7 @@ server-test:
     reports:
       junit: server/build/test-results/test/**/TEST-*.xml
   coverage: '/^Coverage:\s(\d+\.\d+%)/'
+  interruptible: true
 
 container_scanning:
   needs: [ server-bin-docker ]
@@ -336,6 +357,7 @@ container_scanning:
   variables:
     DOCKER_IMAGE: $SERVER_BIN_IMAGE
     CS_DEFAULT_BRANCH_IMAGE: $SERVER_BIN_IMAGE_LATEST
+  interruptible: true
 
 qodana:
   stage: test
@@ -350,6 +372,7 @@ qodana:
       - qodana/
     expose_as: 'Qodana report'
   allow_failure: true
+  interruptible: true
 
 # *** Deploy *** #
 
@@ -359,8 +382,8 @@ docker-js-chrome-latest:
     - docker pull $JS_CHROME_IMAGE
     - docker tag $JS_CHROME_IMAGE $JS_CHROME_IMAGE_LATEST
     - docker push $JS_CHROME_IMAGE_LATEST
-  only:
-    - main
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_BRANCH_DEFAULT
 
 server-bin-docker-latest:
   extends: .docker-latest
@@ -368,8 +391,8 @@ server-bin-docker-latest:
     - docker pull $SERVER_BIN_IMAGE
     - docker tag $SERVER_BIN_IMAGE $SERVER_BIN_IMAGE_LATEST
     - docker push $SERVER_BIN_IMAGE_LATEST
-  only:
-    - main
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_BRANCH_DEFAULT
 
 server-bin-docker-tag:
   extends: .docker-latest
@@ -377,8 +400,8 @@ server-bin-docker-tag:
     - docker pull $SERVER_BIN_IMAGE
     - docker tag $SERVER_BIN_IMAGE $SERVER_BIN_IMAGE_TAG
     - docker push $SERVER_BIN_IMAGE_TAG
-  only:
-    - tags
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_BRANCH_DEFAULT
 
 pages:
   image: alpine:latest
@@ -394,8 +417,10 @@ pages:
   artifacts:
     paths:
       - public
-  only:
-    - main
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_BRANCH_DEFAULT
+    - if: $CI_COMMIT_TAG
+  interruptible: false
 
 telegram:
   stage: deploy
@@ -404,5 +429,6 @@ telegram:
   script:
     - git changelog --format telegram-html --incoming >changelog
     - announce-telegram changelog "$CHAT_IDS"
-  only:
-    - main
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_BRANCH_DEFAULT
+  interruptible: false
