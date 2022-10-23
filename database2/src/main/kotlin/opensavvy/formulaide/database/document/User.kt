@@ -1,6 +1,7 @@
 package opensavvy.formulaide.database.document
 
 import at.favre.lib.crypto.bcrypt.BCrypt
+import at.favre.lib.crypto.bcrypt.BCrypt.MIN_COST
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -147,7 +148,10 @@ class Users(
 		// The password is correct, create a new token for them
 
 		val token = UUID.randomUUID().toString() // 128 bits, 122 bits are crypto-secure
-		val hashedToken = hasher.hashToString(12, token.toCharArray())
+		val hashedToken = hasher.hashToString(
+			MIN_COST,
+			token.toCharArray()
+		) // it's a secure random value, brute force attacks are impossible
 		users.updateOne(User::id eq dbUser.id, addToSet(User::tokens, hashedToken))
 
 		userCache.expire(ref)
