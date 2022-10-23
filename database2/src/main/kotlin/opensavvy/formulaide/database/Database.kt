@@ -4,7 +4,9 @@ import opensavvy.backbone.defaultRefCache
 import opensavvy.cache.ExpirationCache.Companion.expireAfter
 import opensavvy.cache.MemoryCache.Companion.cachedInMemory
 import opensavvy.formulaide.core.Department
+import opensavvy.formulaide.core.User
 import opensavvy.formulaide.database.document.Departments
+import opensavvy.formulaide.database.document.Users
 import org.litote.kmongo.coroutine.CoroutineClient
 import org.litote.kmongo.coroutine.coroutine
 import org.litote.kmongo.reactivestreams.KMongo
@@ -32,6 +34,15 @@ class Database(context: CoroutineContext) {
 		defaultRefCache<Department>()
 			.cachedInMemory(context)
 			.expireAfter(1.minutes, context)
+	)
+
+	val users = Users(
+		database.getCollection("users"),
+		defaultRefCache<User>()
+			.cachedInMemory(context)
+			.expireAfter(5.minutes, context),
+		context,
+		this,
 	)
 
 	private fun getParam(environmentVariable: String): String =

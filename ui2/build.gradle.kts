@@ -43,6 +43,9 @@ dependencies {
 
 	implementation(project(":core"))
 	implementation(project(":client"))
+
+	implementation(project(":core2"))
+	implementation(project(":api2:client2"))
 }
 
 val copyTailwindConfig = tasks.register<Copy>("copyTailwindConfig") {
@@ -62,4 +65,9 @@ val copyPostcssConfig = tasks.register<Copy>("copyPostcssConfig") {
 tasks.named("compileKotlinJs") {
 	dependsOn(copyTailwindConfig)
 	dependsOn(copyPostcssConfig)
+}
+
+// This dependency should be added by the Kotlin plugin, but apparently in this version it doesn't
+tasks.named("browserDevelopmentRun") {
+	dependsOn("developmentExecutableCompileSync")
 }

@@ -1,8 +1,8 @@
 package formulaide.ui.screens
 
-import formulaide.core.User
 import formulaide.ui.components.Page
 import formulaide.ui.navigation.Screen
+import opensavvy.formulaide.core.User
 
 val TemplateList: Screen = Screen(
 	title = "Modèles",

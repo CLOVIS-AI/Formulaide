@@ -34,7 +34,10 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
 import opensavvy.backbone.Ref.Companion.requestValue
+import opensavvy.formulaide.api.server.context
 import opensavvy.formulaide.api.server.departments
+import opensavvy.formulaide.api.server.ping
+import opensavvy.formulaide.api.server.users
 import opensavvy.spine.ktor.server.ContextGenerator
 import opensavvy.state.firstResultOrThrow
 import org.slf4j.LoggerFactory
@@ -46,6 +49,8 @@ val allowUnsafeCookie = System.getenv("formulaide_allow_unsafe_cookie").toBoolea
 const val rootServiceName = "Service informatique"
 const val rootUser = "admin@formulaide"
 const val rootPassword = "admin-development-password"
+
+val database2 = opensavvy.formulaide.database.Database(Job())
 
 val api2 = Formulaide1()
 val context = ContextGenerator { call ->
@@ -86,6 +91,8 @@ fun main(args: Array<String>) {
 		} else {
 			println("The administrator account ($rootUser) already exists.")
 		}
+
+		database2.users.createServiceAccounts()
 	}
 
 	println("Disable MongoDB request logging…")
@@ -105,8 +112,10 @@ val serializer = Json(DefaultJson) {
 fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = false) {
 	val auth = Auth(database)
 
-	if (developmentMode)
+	if (developmentMode) {
 		System.err.println("WARNING. The server is running in development mode. This is NOT safe for production. See https://ktor.io/docs/development-mode.html")
+		log.info("Responding behind Caddy at https://api.localhost:8443")
+	}
 	if (allowUnsafeCookie)
 		System.err.println("WARNING. The server has been allowed to create non-safe HTTP cookies. Remove the environment variable 'formulaide_allow_unsafe_cookie' for production use.")
 
@@ -189,8 +198,10 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 			)
 		}
 
-		val database2 = opensavvy.formulaide.database.Database(Job())
+		val context = context(database2)
 
-		departments(database2)
+		ping(context)
+		departments(database2, context)
+		users(database2, context, developmentMode)
 	}
 }

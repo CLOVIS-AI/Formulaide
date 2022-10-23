@@ -2,30 +2,43 @@ package formulaide.ui.navigation
 
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.Snapshot
-import formulaide.client.Client
 import formulaide.ui.screens.Home
 import formulaide.ui.theme.RailButton
 import kotlinx.browser.window
 import kotlinx.coroutines.launch
+import opensavvy.backbone.Ref.Companion.request
+import opensavvy.formulaide.api.Context
+import opensavvy.formulaide.api.client.Client
+import opensavvy.formulaide.core.User
+import opensavvy.state.Status
+import opensavvy.state.firstResult
+import opensavvy.state.firstResultOrThrow
 
 internal val productionUrl = window.location.protocol + "//" + window.location.host
-internal const val localDevelopmentUrl = "http://localhost:8000"
+internal const val localDevelopmentUrl = "https://api.localhost:8443"
 
-private fun generateClient(production: Boolean): Client = when (production) {
-	true -> Client.Anonymous.connect(productionUrl)
-	false -> Client.Anonymous.connect(localDevelopmentUrl)
-}
-
-var client: Client by mutableStateOf(generateClient(production = true))
+var client: Client by mutableStateOf(Client(productionUrl))
 
 @Composable
 fun SelectProductionOrTest() {
-	LaunchedEffect(client) {
-		try {
-			client.forms.all()
-		} catch (e: Exception) {
-			client = generateClient(production = false)
+	LaunchedEffect(Unit) {
+		var candidate = client
+
+		if (candidate.ping().firstResult().status !is Status.Successful) {
+			console.warn("Could not ping the production server, switching to the development server…")
+			candidate = Client(localDevelopmentUrl)
 		}
+
+		val myRef = candidate.users.me().firstResult().status
+		if (myRef is Status.Successful) {
+			val me = myRef.value.request().firstResult().status
+			if (me is Status.Successful) {
+				console.info("We're currently logged in")
+				candidate.context.value = Context(myRef.value, me.value.role)
+			}
+		}
+
+		client = candidate
 	}
 }
 
@@ -40,10 +53,11 @@ fun LogOutButton() {
 		selected = false,
 		action = {
 			scope.launch {
-				(client as? Client.Authenticated)?.logout()
+				if (client.context.value.role >= User.Role.EMPLOYEE)
+					client.users.logOut().firstResultOrThrow()
 
 				Snapshot.withMutableSnapshot {
-					client = generateClient(production = true)
+					client = Client(productionUrl)
 					currentScreen = Home
 				}
 			}

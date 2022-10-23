@@ -10,6 +10,16 @@ fun main() {
 	js("require('./styles.css')")
 	js("require('remixicon/fonts/remixicon.css')")
 
+	// Language=JavaScript
+	js(
+		"""
+		window.originalFetch = window.fetch;
+  		window.fetch = function (resource, init) {
+      		return window.originalFetch(resource, Object.assign({ credentials: 'include' }, init || {}));
+  		};
+	"""
+	)
+
 	loadNavigation()
 
 	renderComposable(rootElementId = "root") {

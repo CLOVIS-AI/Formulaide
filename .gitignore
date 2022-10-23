@@ -7,3 +7,6 @@ build
 # Docker files
 docker/database
 docker/*.zip
+
+# JS lock
+/kotlin-js-store

@@ -12,9 +12,14 @@
 /*.iml
 /gradle.xml
 /misc.xml
+/modules
 /modules.xml
 /artifacts/
 /jarRepositories.xml
+/.name
+/kotlinScripting.xml
+/kotlinc.xml
 
 # Generated automatically by IDEA
 /vcs.xml
+/uiDesigner.xml

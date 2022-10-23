@@ -6,6 +6,11 @@
       <option name="env">
         <map>
           <entry key="formulaide_jwt_secret" value="the secret used by IDEA" />
+          <entry key="formulaide_database" value="formulaide" />
+          <entry key="formulaide_host" value="localhost" />
+          <entry key="formulaide_password" value="development-password" />
+          <entry key="formulaide_port" value="27017" />
+          <entry key="formulaide_username" value="root" />
         </map>
       </option>
       <option name="executionName" />

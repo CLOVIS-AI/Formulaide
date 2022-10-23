@@ -4,11 +4,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import formulaide.core.User
 import formulaide.ui.components.*
 import formulaide.ui.components.editor.FieldEditor
 import formulaide.ui.components.editor.MutableField
 import formulaide.ui.navigation.Screen
+import opensavvy.formulaide.core.User
 import org.jetbrains.compose.web.css.marginTop
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Div

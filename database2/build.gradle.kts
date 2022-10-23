@@ -18,6 +18,8 @@ dependencies {
 	implementation("opensavvy:logger:_")
 	implementation("ch.qos.logback:logback-classic:_")
 
+	implementation("at.favre.lib:bcrypt:_")
+
 	testImplementation(Kotlin.test)
 	testImplementation(Kotlin.test.junit)
 	testImplementation(KotlinX.coroutines.test)

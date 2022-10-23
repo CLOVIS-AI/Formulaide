@@ -34,6 +34,14 @@ services:
       # Si plusieurs répliques du serveur existent, elles peuvent avoir un secret différent (à condition que le load balancer soit stable : un client connecté auprès d'une réplique sera refusé par les autres).
       formulaide_jwt_secret: "some basic secret"
 
+  proxy:
+    image: "caddy:2.6.2-alpine"
+    depends_on: [ server ]
+    networks: [ internal-proxy ]
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
 volumes:
   data:
     name: data
