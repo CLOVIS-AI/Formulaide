@@ -1,5 +1,7 @@
 package opensavvy.formulaide.core
 
+import opensavvy.formulaide.core.Field.*
+
 /**
  * A field in a form or a template.
  *
@@ -36,6 +38,15 @@ sealed class Field {
 			.values
 			.asSequence()
 
+	/**
+	 * Origin of this field.
+	 *
+	 * If this field was imported from a [Template], this stores the version of that template.
+	 *
+	 * If this field was not imported from a template, it is `null`.
+	 */
+	abstract val importedFrom: Template.Version.Ref?
+
 	protected fun verify() {
 		require(label.isNotBlank()) { "Le libellé d'un champ ne peut pas être vide : '$label'" }
 	}
@@ -53,6 +64,7 @@ sealed class Field {
 	 */
 	data class Label(
 		override val label: String,
+		override val importedFrom: Template.Version.Ref?,
 	) : Field() {
 		override val indexedFields: Map<Int, Field>
 			get() = emptyMap()
@@ -72,6 +84,7 @@ sealed class Field {
 	data class Input(
 		override val label: String,
 		val input: InputConstraints,
+		override val importedFrom: Template.Version.Ref?,
 	) : Field() {
 		override val indexedFields: Map<Int, Field>
 			get() = emptyMap()
@@ -89,6 +102,7 @@ sealed class Field {
 	data class Choice(
 		override val label: String,
 		override val indexedFields: Map<Int, Field>,
+		override val importedFrom: Template.Version.Ref?,
 	) : Field() {
 
 		init {
@@ -104,6 +118,7 @@ sealed class Field {
 	data class Group(
 		override val label: String,
 		override val indexedFields: Map<Int, Field>,
+		override val importedFrom: Template.Version.Ref?,
 	) : Field() {
 
 		init {
@@ -120,6 +135,7 @@ sealed class Field {
 		override val label: String,
 		val child: Field,
 		val allowed: UIntRange,
+		override val importedFrom: Template.Version.Ref?,
 	) : Field() {
 
 		init {
