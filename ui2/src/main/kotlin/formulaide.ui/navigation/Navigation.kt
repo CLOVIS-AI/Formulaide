@@ -1,10 +1,7 @@
 package formulaide.ui.navigation
 
 import androidx.compose.runtime.*
-import formulaide.ui.screens.DepartmentList
-import formulaide.ui.screens.FormList
-import formulaide.ui.screens.Home
-import formulaide.ui.screens.TemplateList
+import formulaide.ui.screens.*
 import formulaide.ui.theme.RailButton
 import formulaide.ui.theme.ThemeSelector
 import formulaide.ui.utils.role
@@ -33,6 +30,7 @@ val screens = listOf(
 	TemplateList,
 	FormList,
 	DepartmentList,
+	UserList,
 )
 
 @Composable
