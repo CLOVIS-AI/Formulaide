@@ -103,7 +103,7 @@ private fun NavigationRail() = Nav(
 
 	NavigationArea("screens") {
 		val role = client.role
-		val visibleScreens by remember { derivedStateOf { screens.filter { role >= it.requiredRole } } }
+		val visibleScreens by derivedStateOf { screens.filter { role >= it.requiredRole } }
 
 		for (screen in visibleScreens) {
 			RailButton(
