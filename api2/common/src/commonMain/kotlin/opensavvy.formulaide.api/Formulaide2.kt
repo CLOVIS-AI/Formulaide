@@ -1,6 +1,10 @@
 package opensavvy.formulaide.api
 
 import opensavvy.formulaide.api.Formulaide2.DepartmentsEndpoint.DepartmentEndpoint
+import opensavvy.formulaide.api.Formulaide2.FormsEndpoint.FormEndpoint
+import opensavvy.formulaide.api.Formulaide2.FormsEndpoint.FormEndpoint.FormVersionEndpoint
+import opensavvy.formulaide.api.Formulaide2.TemplatesEndpoint.TemplateEndpoint
+import opensavvy.formulaide.api.Formulaide2.TemplatesEndpoint.TemplateEndpoint.TemplateVersionEndpoint
 import opensavvy.formulaide.api.Formulaide2.UsersEndpoint.MeEndpoint
 import opensavvy.formulaide.api.Formulaide2.UsersEndpoint.UserEndpoint
 import opensavvy.formulaide.state.bind
@@ -242,6 +246,184 @@ class Formulaide2 : Service("v2") {
 	}
 
 	val users = UsersEndpoint()
+
+	//endregion
+	//region Templates
+
+	/**
+	 * The template collection management endpoint: `/v2/templates`.
+	 *
+	 * ### GET
+	 *
+	 * Lists the existing templates.
+	 *
+	 * - Query parameters: [Template.GetParams]
+	 * - Response: list of identifiers of the various templates
+	 *
+	 * Authorization: public
+	 *
+	 * ### POST
+	 *
+	 * Creates a new template.
+	 *
+	 * - Body: [Template.New]
+	 * - Response: identifier of the created template
+	 *
+	 * Authorization: administrator
+	 *
+	 * ### Sub-resources
+	 *
+	 * - Access a template: [TemplateEndpoint]
+	 */
+	inner class TemplatesEndpoint : StaticResource<List<Id>, Template.GetParams, Context>("templates") {
+
+		val create = create<Template.New, Unit, Parameters.Empty>()
+
+		/**
+		 * The template management endpoint: `v2/templates/{template}`.
+		 *
+		 * ### GET
+		 *
+		 * Accesses a template.
+		 *
+		 * - Response: [Template]
+		 *
+		 * Authorization: public
+		 *
+		 * ### POST
+		 *
+		 * Creates a new version for that template.
+		 *
+		 * - Body: [Template.Version]
+		 *
+		 * Authorization: administrator
+		 *
+		 * ### PATCH
+		 *
+		 * Edits a template.
+		 *
+		 * - Body: [Template.Edit]
+		 *
+		 * Authorization: administrator
+		 *
+		 * ### Sub-resources
+		 *
+		 * - Access a specific version of a form: [TemplateVersionEndpoint]
+		 */
+		inner class TemplateEndpoint : DynamicResource<Template, Context>("template") {
+
+			val create = create<Template.Version, Unit, Parameters.Empty>()
+
+			val edit = edit<Template.Edit, Parameters.Empty>()
+
+			/**
+			 * The template version endpoint: `v2/templates/{template}/{version}`.
+			 *
+			 * ### GET
+			 *
+			 * Accesses that version.
+			 *
+			 * - Response: [Template.Version]
+			 *
+			 * Authorization: public
+			 */
+			inner class TemplateVersionEndpoint : DynamicResource<Template.Version, Context>("version")
+
+			val version = TemplateVersionEndpoint()
+		}
+
+		val id = TemplateEndpoint()
+	}
+
+	val templates = TemplatesEndpoint()
+
+	//endregion
+	//region Forms
+
+	/**
+	 * The form collection management endpoint: `v2/forms`.
+	 *
+	 * ### GET
+	 *
+	 * Lists the existing forms.
+	 *
+	 * - Query parameters: [Form.GetParams]
+	 * - Response: list of identifiers of the various forms
+	 *
+	 * Authorization: public
+	 *
+	 * ### POST
+	 *
+	 * Creates a new form.
+	 *
+	 * - Body: [Form.New]
+	 * - Response: identifier of the form
+	 *
+	 * Authorization: administrator
+	 *
+	 * ### Sub-resources
+	 *
+	 * - Access to the form: [FormEndpoint]
+	 */
+	inner class FormsEndpoint : StaticResource<List<Id>, Form.GetParams, Context>("forms") {
+
+		val create = create<Form.New, Unit, Parameters.Empty>()
+
+		/**
+		 * The form management endpoint: `v2/forms/{form}`.
+		 *
+		 * ### GET
+		 *
+		 * Accesses a specific form.
+		 *
+		 * - Response: [Form]
+		 *
+		 * Authorization: public
+		 *
+		 * ### POST
+		 *
+		 * Creates a new version of that form.
+		 *
+		 * - Body: [Form.Version]
+		 *
+		 * Authorization: administrator
+		 *
+		 * ### PATCH
+		 *
+		 * Edits a form.
+		 *
+		 * - Body: [Form.Edit]
+		 *
+		 * Authorization: administrator
+		 *
+		 * ### Sub-resources
+		 *
+		 * - Access a specific version: [FormVersionEndpoint]
+		 */
+		inner class FormEndpoint : DynamicResource<Form, Context>("form") {
+
+			val create = create<Form.Version, Unit, Parameters.Empty>()
+
+			val edit = edit<Form.Edit, Parameters.Empty>()
+
+			/**
+			 * The form version management endpoint: `v2/forms/{form}/{version}`.
+			 *
+			 * ### GET
+			 *
+			 * Accesses the version of the form.
+			 *
+			 * Authorization: public
+			 */
+			inner class FormVersionEndpoint : DynamicResource<Form.Version, Context>("version")
+
+			val version = FormVersionEndpoint()
+		}
+
+		val id = FormEndpoint()
+	}
+
+	val forms = FormsEndpoint()
 
 	//endregion
 
