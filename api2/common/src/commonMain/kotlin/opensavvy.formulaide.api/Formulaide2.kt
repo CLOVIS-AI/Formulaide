@@ -316,6 +316,11 @@ class Formulaide2 : Service("v2") {
 
 			val edit = edit<Template.Edit, Parameters.Empty>()
 
+			suspend fun idFrom(id: Id, context: Context) = state {
+				validateId(id, context)
+				emit(successful(id.resource.segments.last().segment))
+			}.firstResult()
+
 			/**
 			 * The template version endpoint: `v2/templates/{template}/{version}`.
 			 *
@@ -327,7 +332,13 @@ class Formulaide2 : Service("v2") {
 			 *
 			 * Authorization: public
 			 */
-			inner class TemplateVersionEndpoint : DynamicResource<Template.Version, Context>("version")
+			inner class TemplateVersionEndpoint : DynamicResource<Template.Version, Context>("version") {
+				suspend fun idFrom(id: Id, context: Context) = state {
+					validateId(id, context)
+					val size = id.resource.segments.size
+					emit(successful(id.resource.segments[size - 2].segment to id.resource.segments[size - 1].segment))
+				}.firstResult()
+			}
 
 			val version = TemplateVersionEndpoint()
 		}

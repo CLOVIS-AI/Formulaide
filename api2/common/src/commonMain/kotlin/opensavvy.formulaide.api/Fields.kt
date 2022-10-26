@@ -1,9 +1,15 @@
 package opensavvy.formulaide.api
 
+import kotlinx.datetime.toInstant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import opensavvy.formulaide.api.Field.*
+import opensavvy.formulaide.core.AbstractTemplateVersions
+import opensavvy.formulaide.core.AbstractTemplates
+import opensavvy.formulaide.core.InputConstraints
+import opensavvy.formulaide.core.Template
 import opensavvy.spine.Id
+import opensavvy.formulaide.core.Field as CoreField
 
 /**
  * Fields in a form.
@@ -121,3 +127,110 @@ sealed class Field {
 		override val children: Map<Int, Field> get() = List(max.toInt()) { it to child }.toMap()
 	}
 }
+
+//region Core -> API
+
+fun CoreField.toApi(): Field {
+	val imported = importedFrom?.let {
+		api2.templates.id.version.idOf(it.template.id, it.version.toString())
+	}
+
+	return when (this) {
+		is CoreField.Arity -> {
+			Arity(
+				label,
+				child.toApi(),
+				allowed.first,
+				allowed.last,
+				imported,
+			)
+		}
+
+		is CoreField.Choice -> Choice(
+			label,
+			indexedFields.mapValues { (_, v) -> v.toApi() },
+			imported,
+		)
+
+		is CoreField.Group -> Group(
+			label,
+			indexedFields.mapValues { (_, v) -> v.toApi() },
+			imported,
+		)
+
+		is CoreField.Input -> Input(
+			label,
+			imported,
+			when (val input = input) {
+				is InputConstraints.Boolean -> Input.Constraints.Boolean
+				is InputConstraints.Date -> Input.Constraints.Date
+				is InputConstraints.Email -> Input.Constraints.Email
+				is InputConstraints.Integer -> Input.Constraints.Integer(input.min, input.max)
+				is InputConstraints.Phone -> Input.Constraints.Phone
+				is InputConstraints.Text -> Input.Constraints.Text(input.maxLength)
+				is InputConstraints.Time -> Input.Constraints.Time
+			}
+		)
+
+		is CoreField.Label -> Label(
+			label,
+			imported,
+		)
+	}
+}
+
+//endregion
+//region API -> Core
+
+fun Field.toCore(templates: AbstractTemplates, templateVersions: AbstractTemplateVersions): CoreField {
+	val imported = importedFrom?.let {
+		val idSize = it.resource.segments.size
+		val templateId = it.resource.segments[idSize - 2].segment
+		val versionId = it.resource.segments[idSize - 1].segment
+
+		val template = Template.Ref(templateId, templates)
+		Template.Version.Ref(template, versionId.toInstant(), templateVersions)
+	}
+
+	return when (this) {
+		is Arity -> CoreField.Arity(
+			label,
+			child.toCore(templates, templateVersions),
+			min..max,
+			imported,
+		)
+
+		is Choice -> CoreField.Choice(
+			label,
+			children.mapValues { (_, v) -> v.toCore(templates, templateVersions) },
+			imported,
+		)
+
+		is Group -> CoreField.Group(
+			label,
+			children.mapValues { (_, v) -> v.toCore(templates, templateVersions) },
+			imported,
+		)
+
+		is Input -> CoreField.Input(
+			label,
+			when (val input = input) {
+				is Input.Constraints.Boolean -> InputConstraints.Boolean
+				is Input.Constraints.Date -> InputConstraints.Date
+				is Input.Constraints.Email -> InputConstraints.Email
+				is Input.Constraints.Integer -> InputConstraints.Integer(input.min, input.max)
+				is Input.Constraints.Phone -> InputConstraints.Phone
+				is Input.Constraints.Text -> InputConstraints.Text(input.maxLength)
+				is Input.Constraints.Time -> InputConstraints.Time
+			},
+			imported,
+		)
+
+		is Label -> CoreField.Label(
+			label,
+			imported,
+		)
+	}
+}
+
+//endregion

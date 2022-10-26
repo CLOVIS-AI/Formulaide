@@ -169,5 +169,5 @@ class Templates internal constructor(
 		}
 	}
 
-	internal val versions = Versions(versionCache)
+	val versions = Versions(versionCache)
 }
