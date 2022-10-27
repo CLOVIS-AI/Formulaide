@@ -1,8 +1,8 @@
 package formulaide.ui.components.editor
 
 import androidx.compose.runtime.*
-import formulaide.core.field.Field
 import formulaide.ui.components.TextButton
+import opensavvy.formulaide.core.Field
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
 

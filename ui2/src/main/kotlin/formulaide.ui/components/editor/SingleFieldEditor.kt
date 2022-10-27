@@ -3,12 +3,12 @@ package formulaide.ui.components.editor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import formulaide.core.field.Field
-import formulaide.core.field.InputConstraints
 import formulaide.ui.components.TextButton
 import formulaide.ui.components.TextField
 import formulaide.ui.theme.Theme
 import formulaide.ui.theme.shade
+import opensavvy.formulaide.core.Field
+import opensavvy.formulaide.core.InputConstraints
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
@@ -38,18 +38,17 @@ fun SingleFieldEditor(
 		}
 	) {
 		var label by field.label
-		val source by field.source
 
 		TextField("Libellé", label, onChange = { label = it })
 
-		if (source == null) {
+		if (field.importedFrom == null) {
 			SelectFieldType(field, onReplace = { onReplace(id, it) })
 			FieldMetadataEditor(field)
 		}
 
 		ChildChooser(field, onSelect = { onSelect(Field.Id(id.parts + it)) })
 
-		if (source == null && (field is MutableField.Group || field is MutableField.Choice))
+		if (field.importedFrom == null && (field is MutableField.Group || field is MutableField.Choice))
 			TextButton(onClick = {
 				val newId = field.fields.keys.maxOrNull()?.plus(1) ?: 0
 				(field.fields as MutableMap)[newId] = MutableField.Input("", InputConstraints.Text(), null)

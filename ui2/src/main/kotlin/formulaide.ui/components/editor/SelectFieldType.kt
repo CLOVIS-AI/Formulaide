@@ -3,31 +3,31 @@ package formulaide.ui.components.editor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import formulaide.core.field.InputConstraints
 import formulaide.ui.components.ChipContainer
 import formulaide.ui.components.FilterChip
+import opensavvy.formulaide.core.InputConstraints
 
 @Composable
 fun SelectFieldType(field: MutableField, onReplace: (MutableField) -> Unit) {
 	ChipContainer {
 		FilterChip("Label", field is MutableField.Label, onUpdate = {
 			if (it) {
-				onReplace(MutableField.Label(field.label.value, field.source.value))
+				onReplace(MutableField.Label(field.label.value, field.importedFrom))
 			}
 		})
 		FilterChip("Saisie", field is MutableField.Input, onUpdate = {
 			if (it) {
-				onReplace(MutableField.Input(field.label.value, InputConstraints.Text(), field.source.value))
+				onReplace(MutableField.Input(field.label.value, InputConstraints.Text(), field.importedFrom))
 			}
 		})
 		FilterChip("Choix", field is MutableField.Choice, onUpdate = {
 			if (it) {
-				onReplace(MutableField.Choice(field.label.value, emptyList(), field.source.value))
+				onReplace(MutableField.Choice(field.label.value, emptyList(), field.importedFrom))
 			}
 		})
 		FilterChip("Groupe", field is MutableField.Group, onUpdate = {
 			if (it) {
-				onReplace(MutableField.Group(field.label.value, emptyList(), field.source.value))
+				onReplace(MutableField.Group(field.label.value, emptyList(), field.importedFrom))
 			}
 		})
 		FilterChip("Plusieurs réponses", field is MutableField.List, onUpdate = {
@@ -37,7 +37,7 @@ fun SelectFieldType(field: MutableField, onReplace: (MutableField) -> Unit) {
 						field.label.value,
 						MutableField.Input("", InputConstraints.Text(), null),
 						0u..2u,
-						field.source.value
+						field.importedFrom
 					)
 				)
 			}
