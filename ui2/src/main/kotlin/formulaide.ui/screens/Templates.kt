@@ -75,6 +75,13 @@ private fun ShowTemplate(ref: Template.Ref) {
 
 		ButtonContainer {
 			TextButton(
+				{ currentScreen = TemplateNewVersion(ref) },
+				enabled = template != null
+			) {
+				Text("Nouvelle version")
+			}
+
+			TextButton(
 				{ client.templates.edit(ref, open = !template!!.open).firstResultOrNull() },
 				enabled = template != null
 			) {
