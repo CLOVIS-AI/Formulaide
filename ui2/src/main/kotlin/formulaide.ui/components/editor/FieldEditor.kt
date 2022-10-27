@@ -1,10 +1,7 @@
 package formulaide.ui.components.editor
 
 import androidx.compose.runtime.*
-import formulaide.ui.components.TextButton
 import opensavvy.formulaide.core.Field
-import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Text
 
 @Composable
 fun FieldEditor(
@@ -16,6 +13,7 @@ fun FieldEditor(
 
 	FieldSelector(root, selectedId, onSelect = { selectedId = it })
 	SingleFieldEditor(
+		root,
 		selectedId,
 		selected,
 		onReplace = { target, newValue ->
@@ -33,57 +31,14 @@ fun FieldEditor(
 	)
 }
 
-private fun findFieldById(parent: MutableField, id: Field.Id, depth: Int = 0, last: Int = id.parts.size): MutableField =
+fun findFieldById(parent: MutableField, id: Field.Id, depth: Int = 0, last: Int = id.parts.size): MutableField =
 	when {
 		depth >= last -> parent
 		parent is MutableField.List -> findFieldById(parent.field.value, id, depth + 1, last)
 		else -> {
 			val head = id.parts[depth]
 			val child = parent.fields[head]
-				?: error("Could not find child of $parent with ID $id, this should not be possible")
+				?: error("Could not find child of $parent with ID $id, this should not be possible.")
 			findFieldById(child, id, depth + 1, last)
 		}
 	}
-
-@Composable
-private fun FieldSelector(
-	root: MutableField,
-	selected: Field.Id,
-	onSelect: (Field.Id) -> Unit,
-) = Div {
-	var parent = root
-	SingleFieldSelector(root, onSelect = { onSelect(Field.Id.root) }, isLast = false)
-
-	for ((i, fieldId) in selected.parts.withIndex()) {
-		val field = parent.fields[fieldId]
-			?: error("Could not find child of $parent with ID $fieldId, this should not be possible")
-
-		Text(" › ")
-		SingleFieldSelector(
-			field,
-			onSelect = { onSelect(Field.Id(selected.parts.subList(0, i + 1))) },
-			isLast = i >= selected.parts.size - 1
-		)
-
-		parent = field
-	}
-}
-
-@Composable
-private fun SingleFieldSelector(
-	field: MutableField,
-	isLast: Boolean,
-	onSelect: () -> Unit,
-) {
-	TextButton(
-		onClick = { onSelect() },
-		enabled = !isLast,
-	) {
-		val name by field.label
-
-		if (name.isBlank())
-			Text("Libellé manquant")
-		else
-			Text(name)
-	}
-}

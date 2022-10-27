@@ -11,7 +11,7 @@ import opensavvy.formulaide.core.Template
  *
  * See [Field]'s documentation to learn more about each field.
  *
- * This type is compose-aware: it doesn't need to be wrapped inside a [State].
+ * This type manages its own mutability in a manner that Compose understands.
  */
 sealed class MutableField(
 	label: String,
@@ -23,6 +23,10 @@ sealed class MutableField(
 	abstract val fields: Map<Int, MutableField>
 
 	abstract fun toField(): Field
+
+	override fun toString() = "${this::class.simpleName}(${label.value}, [${
+		fields.toList().joinToString { (id, field) -> "($id: $field)" }
+	}])"
 
 	class Label(
 		label: String,
