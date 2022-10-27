@@ -152,5 +152,21 @@ sealed class Field {
 	}
 
 	//endregion
+	//region Specific
+
+	data class Id(val parts: List<Int>) {
+
+		operator fun plus(other: Id) = Id(parts + other.parts)
+
+		operator fun plus(other: Int) = Id(parts + other)
+
+		override fun toString() = "Field.Id(${parts.joinToString(separator = ":")})"
+
+		companion object {
+			val root = Id(emptyList())
+		}
+	}
+
+	//endregion
 
 }
