@@ -1,4 +1,6 @@
-FROM openjdk:18-alpine
+FROM alpine:latest
+
+RUN apk add --no-cache openjdk17-jre-headless
 
 COPY build/distributions/server-*.tar /home/server/server.tar
 RUN cd /home/server/ && \
