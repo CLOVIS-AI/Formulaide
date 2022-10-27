@@ -11,8 +11,11 @@ import org.jetbrains.compose.web.dom.Text
 
 @Composable
 fun Loading(data: Slice<Any>) {
-	val progression = data.progression
+	Loading(data.progression)
+}
 
+@Composable
+fun Loading(progression: Progression) {
 	if (progression is Progression.Loading) {
 		Div(
 			{

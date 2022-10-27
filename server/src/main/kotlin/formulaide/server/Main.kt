@@ -34,10 +34,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
 import opensavvy.backbone.Ref.Companion.requestValue
-import opensavvy.formulaide.api.server.context
-import opensavvy.formulaide.api.server.departments
-import opensavvy.formulaide.api.server.ping
-import opensavvy.formulaide.api.server.users
+import opensavvy.formulaide.api.server.*
 import opensavvy.spine.ktor.server.ContextGenerator
 import opensavvy.state.firstResultOrThrow
 import org.slf4j.LoggerFactory
@@ -203,5 +200,6 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 		ping(context)
 		departments(database2, context)
 		users(database2, context, developmentMode)
+		templates(database2, context)
 	}
 }

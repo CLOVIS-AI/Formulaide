@@ -1,9 +1,7 @@
 package formulaide.ui.navigation
 
 import androidx.compose.runtime.*
-import formulaide.ui.screens.FormList
-import formulaide.ui.screens.Home
-import formulaide.ui.screens.TemplateList
+import formulaide.ui.screens.*
 import formulaide.ui.theme.RailButton
 import formulaide.ui.theme.ThemeSelector
 import formulaide.ui.utils.role
@@ -27,10 +25,17 @@ var currentScreen: Screen
 		_currentScreen = value
 	}
 
-val screens = listOf(
+val rootScreens = listOf(
 	Home,
 	TemplateList,
 	FormList,
+	DepartmentList,
+	UserList,
+)
+
+val allScreens = rootScreens + listOf(
+	FormEditor,
+	TemplateCreator,
 )
 
 @Composable
@@ -103,7 +108,7 @@ private fun NavigationRail() = Nav(
 
 	NavigationArea("screens") {
 		val role = client.role
-		val visibleScreens by remember { derivedStateOf { screens.filter { role >= it.requiredRole } } }
+		val visibleScreens by derivedStateOf { rootScreens.filter { role >= it.requiredRole } }
 
 		for (screen in visibleScreens) {
 			RailButton(
@@ -149,7 +154,7 @@ fun loadNavigation() {
 	console.log("Loading the navigation system... Requested route: $params")
 
 	val target = params.getOrNull(0) ?: Home.route
-	val screen = screens
+	val screen = allScreens
 		.firstOrNull { it.route.startsWith(target) }
 	console.log("...it refers to the screen $screen")
 

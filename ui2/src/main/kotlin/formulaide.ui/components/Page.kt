@@ -3,6 +3,7 @@ package formulaide.ui.components
 import androidx.compose.runtime.Composable
 import formulaide.ui.navigation.client
 import formulaide.ui.theme.Theme
+import opensavvy.state.Progression
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Article
 import org.jetbrains.compose.web.dom.Div
@@ -12,6 +13,7 @@ import org.jetbrains.compose.web.dom.Text
 @Composable
 fun Page(
 	title: String,
+	progression: Progression = Progression.Done,
 	header: (@Composable () -> Unit)? = null,
 	block: @Composable () -> Unit,
 ) = Article {
@@ -35,6 +37,8 @@ fun Page(
 			}
 		) {
 			Text(title)
+
+			Loading(progression)
 		}
 
 		if (header != null) Div(

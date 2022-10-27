@@ -2,79 +2,84 @@ package formulaide.ui.components.editor
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.toMutableStateMap
-import formulaide.core.field.Field
-import formulaide.core.field.InputConstraints
-import formulaide.core.field.LocalFieldId
+import opensavvy.formulaide.core.Field
+import opensavvy.formulaide.core.InputConstraints
+import opensavvy.formulaide.core.Template
 
 /**
  * Mutable implementation of [Field].
  *
  * See [Field]'s documentation to learn more about each field.
  *
- * This type is compose-aware: it doesn't need to be wrapped inside a [State].
+ * This type manages its own mutability in a manner that Compose understands.
  */
-sealed class MutableField(label: String, source: Pair<Field.Container, Field.Id>?) {
+sealed class MutableField(
+	label: String,
+	val importedFrom: Template.Version.Ref?,
+) {
 
 	val label = mutableStateOf(label)
 
 	abstract val fields: Map<Int, MutableField>
 
-	val source = mutableStateOf(source)
-
 	abstract fun toField(): Field
+
+	override fun toString() = "${this::class.simpleName}(${label.value}, [${
+		fields.toList().joinToString { (id, field) -> "($id: $field)" }
+	}])"
 
 	class Label(
 		label: String,
-		source: Pair<Field.Container, Field.Id>?,
-	) : MutableField(label, source) {
+		importedFrom: Template.Version.Ref?,
+	) : MutableField(label, importedFrom) {
 		override val fields: Map<Int, MutableField> = emptyMap()
 
 		override fun toField() = Field.Label(
 			label.value,
-			source.value,
+			importedFrom,
 		)
 	}
 
 	class Input(
 		label: String,
 		input: InputConstraints,
-		source: Pair<Field.Container, Field.Id>?,
-	) : MutableField(label, source) {
+		importedFrom: Template.Version.Ref?,
+	) : MutableField(label, importedFrom) {
 		var input = mutableStateOf(input)
 		override val fields: Map<Int, MutableField> = emptyMap()
 
 		override fun toField() = Field.Input(
 			label.value,
 			input.value,
-			source.value,
+			importedFrom,
 		)
 	}
 
 	class Choice(
 		label: String,
-		fields: Iterable<Pair<LocalFieldId, MutableField>>,
-		source: Pair<Field.Container, Field.Id>?,
-	) : MutableField(label, source) {
+		fields: Iterable<Pair<Int, MutableField>>,
+		importedFrom: Template.Version.Ref?,
+	) : MutableField(label, importedFrom) {
 		override val fields = fields.toMutableStateMap()
 
 		override fun toField() = Field.Choice(
 			label.value,
 			fields.mapValues { (_, v) -> v.toField() },
-			source.value,
+			importedFrom,
 		)
 	}
 
 	class Group(
 		label: String,
-		fields: Iterable<Pair<LocalFieldId, MutableField>>,
-		source: Pair<Field.Container, Field.Id>?,
-	) : MutableField(label, source) {
+		fields: Iterable<Pair<Int, MutableField>>,
+		importedFrom: Template.Version.Ref?,
+	) : MutableField(label, importedFrom) {
 		override val fields = fields.toMutableStateMap()
 
 		override fun toField() = Field.Group(
 			label.value,
 			fields.mapValues { (_, v) -> v.toField() },
-			source.value,
+			importedFrom,
 		)
 	}
 
@@ -82,19 +87,19 @@ sealed class MutableField(label: String, source: Pair<Field.Container, Field.Id>
 		label: String,
 		field: MutableField,
 		allowed: UIntRange,
-		source: Pair<Field.Container, Field.Id>?,
-	) : MutableField(label, source) {
+		importedFrom: Template.Version.Ref?,
+	) : MutableField(label, importedFrom) {
 		val field = mutableStateOf(field)
 		val min = mutableStateOf(allowed.first)
 		val max = mutableStateOf(allowed.last)
 		override val fields: Map<Int, MutableField>
 			get() = List(max.value.toInt()) { it to this.field.value }.toMap()
 
-		override fun toField() = Field.List(
+		override fun toField() = Field.Arity(
 			label.value,
 			field.value.toField(),
 			min.value..max.value,
-			source.value,
+			importedFrom,
 		)
 	}
 
@@ -105,11 +110,11 @@ sealed class MutableField(label: String, source: Pair<Field.Container, Field.Id>
 			.toList()
 
 		fun Field.toMutable(): MutableField = when (this) {
-			is Field.Choice -> Choice(label, indexedFields.toMutable(), sourceId)
-			is Field.Group -> Group(label, indexedFields.toMutable(), sourceId)
-			is Field.Input -> Input(label, input, sourceId)
-			is Field.Label -> Label(label, sourceId)
-			is Field.List -> List(label, field.toMutable(), allowed, sourceId)
+			is Field.Choice -> Choice(label, indexedFields.toMutable(), importedFrom)
+			is Field.Group -> Group(label, indexedFields.toMutable(), importedFrom)
+			is Field.Input -> Input(label, input, importedFrom)
+			is Field.Label -> Label(label, importedFrom)
+			is Field.Arity -> List(label, child.toMutable(), allowed, importedFrom)
 		}
 	}
 }

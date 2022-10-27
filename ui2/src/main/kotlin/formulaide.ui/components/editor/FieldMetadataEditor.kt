@@ -3,8 +3,8 @@ package formulaide.ui.components.editor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import formulaide.core.field.InputConstraints
 import formulaide.ui.components.NumberField
+import opensavvy.formulaide.core.InputConstraints
 
 @Composable
 fun FieldMetadataEditor(

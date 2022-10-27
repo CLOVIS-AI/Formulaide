@@ -35,7 +35,7 @@ private fun AbstractButton(
 			}
 
 			style {
-				display(DisplayStyle.Flex)
+				display(DisplayStyle.LegacyInlineFlex)
 				gap(4.px)
 				marginTop(4.px)
 				marginBottom(4.px)
