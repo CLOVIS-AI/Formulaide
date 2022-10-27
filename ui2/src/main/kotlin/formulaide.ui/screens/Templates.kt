@@ -4,6 +4,8 @@ import androidx.compose.runtime.*
 import formulaide.ui.components.*
 import formulaide.ui.navigation.Screen
 import formulaide.ui.navigation.client
+import formulaide.ui.navigation.currentScreen
+import formulaide.ui.theme.RailButton
 import formulaide.ui.utils.rememberRef
 import formulaide.ui.utils.rememberState
 import opensavvy.formulaide.core.Template
@@ -17,7 +19,17 @@ val TemplateList: Screen = Screen(
 	requiredRole = User.Role.EMPLOYEE,
 	"?templates",
 	icon = "ri-clipboard-line",
-	iconSelected = "ri-clipboard-fill"
+	iconSelected = "ri-clipboard-fill",
+	actions = {
+		if (client.context.value.role >= User.Role.ADMINISTRATOR) {
+			RailButton(
+				TemplateCreator.icon,
+				TemplateCreator.iconSelected,
+				"Créer un formulaire",
+				selected = false,
+			) { currentScreen = TemplateCreator }
+		}
+	}
 ) {
 	var showArchived by remember { mutableStateOf(false) }
 	var forceRefresh by remember { mutableStateOf(0) }
