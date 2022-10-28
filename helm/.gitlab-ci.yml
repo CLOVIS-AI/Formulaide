@@ -67,6 +67,7 @@ helm:publish:
       --namespace=$namespace
       --wait
       --atomic
+  retry: 1
   interruptible: false
 
 helm:review:
