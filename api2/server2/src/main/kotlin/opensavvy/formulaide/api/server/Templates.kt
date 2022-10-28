@@ -28,6 +28,8 @@ fun Routing.templates(database: Database, contextGenerator: ContextGenerator<Con
 	}
 
 	route(api2.templates.create, contextGenerator) {
+		ensureAdministrator { "Seuls les administrateurs peuvent créer des modèles" }
+
 		val result = database.templates.create(
 			body.name, Template.Version(
 				body.firstVersion.creationDate,
@@ -40,6 +42,8 @@ fun Routing.templates(database: Database, contextGenerator: ContextGenerator<Con
 	}
 
 	route(api2.templates.id.create, contextGenerator) {
+		ensureAdministrator { "Seuls les administrateurs peuvent créer des versions de modèles" }
+
 		val templateId = bind(api2.templates.id.idFrom(id, context))
 
 		val result = database.templates.createVersion(
@@ -55,6 +59,8 @@ fun Routing.templates(database: Database, contextGenerator: ContextGenerator<Con
 	}
 
 	route(api2.templates.id.edit, contextGenerator) {
+		ensureAdministrator { "Seuls les administrateurs peuvent modifier des modèles" }
+
 		val templateId = bind(api2.templates.id.idFrom(id, context))
 
 		val result = database.templates.edit(
