@@ -1,0 +1,8 @@
+.gradle:
+  variables:
+    formulaide_jwt_secret: "the jwt secret used by gitlab"
+    GRADLE_USER_HOME: $CI_PROJECT_DIR/.gradle
+  cache:
+    paths:
+      - .gradle/wrapper
+      - .gradle/caches

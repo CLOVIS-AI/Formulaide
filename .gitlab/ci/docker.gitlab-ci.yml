@@ -6,6 +6,8 @@ variables:
   services:
     - name: $CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX/docker:dind
       alias: docker
+  variables:
+    DOCKER_BUILDKIT: 1
   before_script:
     - echo -n $CI_JOB_TOKEN | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
     - echo -n $CI_DEPENDENCY_PROXY_PASSWORD | docker login -u $CI_DEPENDENCY_PROXY_USER --password-stdin $CI_DEPENDENCY_PROXY_SERVER
@@ -16,10 +18,10 @@ variables:
   extends: [ .docker ]
   stage: docker
   script:
-    - docker pull $image:latest || true
     - >
       docker build
       --pull
+      --build-arg BUILDKIT_INLINE_CACHE=1
       --cache-from $image:latest
       --tag $image:$build_version
       -f "$dockerfile"
@@ -41,7 +43,7 @@ variables:
   variables:
     new_version: latest
   rules:
-    - if: $CI_COMMIT_REF_NAME == $CI_BRANCH_DEFAULT
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
 
 .docker-rename-tag:
   extends: [ .docker-rename ]

@@ -6,12 +6,9 @@ stages:
   - deploy      # Final container generation
 
 variables:
-  JDK_IMAGE: "openjdk:11"
-  JS_CHROME_IMAGE: "$CI_REGISTRY_IMAGE/js-chrome:build-$CI_PIPELINE_IID"
-  JS_CHROME_IMAGE_LATEST: "$CI_REGISTRY_IMAGE/js-chrome:latest"
-  SERVER_BIN_IMAGE: "$CI_REGISTRY_IMAGE/server:build-$CI_PIPELINE_IID"
-  SERVER_BIN_IMAGE_LATEST: "$CI_REGISTRY_IMAGE/server:latest"
-  SERVER_BIN_IMAGE_TAG: "$CI_REGISTRY_IMAGE/server:$CI_COMMIT_TAG"
+  jdk_image: "openjdk:11"
+  js_chrome: "$CI_REGISTRY_IMAGE/js-chrome"
+  server_bin: "$CI_REGISTRY_IMAGE/server"
 
 include:
   - template: Security/SAST.gitlab-ci.yml
@@ -19,43 +16,17 @@ include:
   - template: Security/Dependency-Scanning.gitlab-ci.yml
   - local: ".gitlab/ci/docker.gitlab-ci.yml"
   - local: ".gitlab/ci/env.gitlab-ci.yml"
+  - local: ".gitlab/ci/gradle.gitlab-ci.yml"
   - local: "helm/.gitlab-ci.yml"
 
 workflow:
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
     - if: $CI_PIPELINE_SOURCE == 'schedule'
-    - if: $CI_COMMIT_REF_PROTECTED
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
     - if: $CI_COMMIT_TAG
 
 # *** Phantom Jobs *** #
-
-.gradle:
-  before_script: &prepare_gradle
-    - export GRADLE_USER_HOME=$(pwd)/.gradle
-    - export formulaide_jwt_secret="the jwt secret used by gitlab"
-  cache:
-    paths:
-      - .gradle/wrapper
-      - .gradle/caches
-
-.docker-build:
-  image: docker:19.03
-  services:
-    - docker:dind
-  stage: docker
-  before_script:
-    - echo -n $CI_JOB_TOKEN | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
-  tags:
-    - docker
-  interruptible: true
-
-.docker-latest:
-  extends: .docker-build
-  variables:
-    GIT_STRATEGY: none
-  stage: deploy
-  interruptible: false
 
 .with-database:
   services:
@@ -74,26 +45,18 @@ workflow:
 docker-js-chrome:
   extends: .docker-build
   stage: docker
-  script:
-    - docker pull $JS_CHROME_IMAGE_LATEST || true
-    - >
-      docker build
-      --pull
-      --cache-from $JS_CHROME_IMAGE_LATEST
-      --tag $JS_CHROME_IMAGE
-      -f $CI_PROJECT_DIR/client/build.dockerfile
-      .
-    - docker push $JS_CHROME_IMAGE
+  variables:
+    image: $js_chrome
+    dockerfile: client/build.dockerfile
+    docker_context: client
 
 # *** Build *** #
 
 dokka:
-  image: $JDK_IMAGE
+  image: $jdk_image
   stage: build
   extends: [ .gradle ]
   needs: [ ]
-  before_script:
-    - *prepare_gradle
   script:
     # ui:assemble is needed because of https://github.com/Kotlin/dokka/issues/1455
     - "./gradlew ui:mainClasses ui2:mainClasses dokkaHtmlMultiModule"
@@ -124,12 +87,10 @@ latex:
   interruptible: true
 
 server-bin:
-  image: $JDK_IMAGE
+  image: $jdk_image
   extends: [ .gradle ]
   stage: build
   needs: [ ]
-  before_script:
-    - *prepare_gradle
   script:
     - echo -e "Formulaide $CI_COMMIT_REF_NAME par $CI_PROJECT_NAMESPACE\nCommit $CI_COMMIT_SHA" >> ui/src/main/resources/version.txt
     - "./gradlew server:assembleDist"
@@ -145,29 +106,21 @@ server-bin-docker:
   stage: docker-bin
   dependencies: [ server-bin ]
   needs: [ server-bin ]
-  script:
-    - docker pull $SERVER_BIN_IMAGE_LATEST || true
-    - cd server
-    - >
-      docker build
-      --pull
-      --cache-from $SERVER_BIN_IMAGE_LATEST
-      --tag $SERVER_BIN_IMAGE
-      -f $CI_PROJECT_DIR/server/Dockerfile
-      .
-    - docker push $SERVER_BIN_IMAGE
+  variables:
+    image: $server_bin
+    dockerfile: server/Dockerfile
+    docker_context: server
   interruptible: true
 
 # *** Test *** #
 
 client-js-test:
-  image: $JS_CHROME_IMAGE
+  image: $js_chrome:$build_version
   stage: test
   extends: [ .gradle, .with-database ]
   needs: [ docker-js-chrome, server-bin ]
   dependencies: [ server-bin ]
   before_script:
-    - *prepare_gradle
     - mv server/build/distributions/server*.tar server.tar
     - tar -xf server.tar
   script:
@@ -180,13 +133,12 @@ client-js-test:
   interruptible: true
 
 client-jvm-test:
-  image: $JDK_IMAGE
+  image: $jdk_image
   stage: test
   extends: [ .gradle, .with-database ]
   needs: [ server-bin ]
   dependencies: [ server-bin ]
   before_script:
-    - *prepare_gradle
     - mv server/build/distributions/server*.tar server.tar
     - tar -xf server.tar
   script:
@@ -199,13 +151,12 @@ client-jvm-test:
   interruptible: true
 
 client2-js-test:
-  image: $JS_CHROME_IMAGE
+  image: $js_chrome:$build_version
   stage: test
   extends: [ .gradle, .with-database ]
   needs: [ docker-js-chrome, server-bin ]
   dependencies: [ server-bin ]
   before_script:
-    - *prepare_gradle
     - mv server/build/distributions/server*.tar server.tar
     - tar -xf server.tar
   script:
@@ -218,13 +169,12 @@ client2-js-test:
   interruptible: true
 
 client2-jvm-test:
-  image: $JDK_IMAGE
+  image: $jdk_image
   stage: test
   extends: [ .gradle, .with-database ]
   needs: [ server-bin ]
   dependencies: [ server-bin ]
   before_script:
-    - *prepare_gradle
     - mv server/build/distributions/server*.tar server.tar
     - tar -xf server.tar
   script:
@@ -237,12 +187,10 @@ client2-jvm-test:
   interruptible: true
 
 ui-test:
-  image: $JS_CHROME_IMAGE
+  image: $js_chrome:$build_version
   stage: test
   extends: [ .gradle ]
   needs: [ docker-js-chrome ]
-  before_script:
-    - *prepare_gradle
   script:
     - "./gradlew :ui:browserTest"
   artifacts:
@@ -251,12 +199,10 @@ ui-test:
   interruptible: true
 
 api-js-test:
-  image: $JS_CHROME_IMAGE
+  image: $js_chrome:$build_version
   stage: test
   extends: [ .gradle ]
   needs: [ docker-js-chrome ]
-  before_script:
-    - *prepare_gradle
   script:
     - "./gradlew :api:jsBrowserTest"
   artifacts:
@@ -265,12 +211,10 @@ api-js-test:
   interruptible: true
 
 api-jvm-test:
-  image: $JDK_IMAGE
+  image: $jdk_image
   stage: test
   extends: [ .gradle ]
   needs: [ ]
-  before_script:
-    - *prepare_gradle
   script:
     - "./gradlew :api:jvmTest"
   artifacts:
@@ -279,12 +223,10 @@ api-jvm-test:
   interruptible: true
 
 core-js-test:
-  image: $JS_CHROME_IMAGE
+  image: $js_chrome:$build_version
   stage: test
   extends: [ .gradle ]
   needs: [ docker-js-chrome ]
-  before_script:
-    - *prepare_gradle
   script:
     - "./gradlew :core:jsBrowserTest"
   artifacts:
@@ -293,12 +235,10 @@ core-js-test:
   interruptible: true
 
 core-jvm-test:
-  image: $JDK_IMAGE
+  image: $jdk_image
   stage: test
   extends: [ .gradle ]
   needs: [ ]
-  before_script:
-    - *prepare_gradle
   script:
     - "./gradlew :core:jvmTest"
   artifacts:
@@ -307,12 +247,10 @@ core-jvm-test:
   interruptible: true
 
 database-test:
-  image: $JDK_IMAGE
+  image: $jdk_image
   stage: test
   extends: [ .gradle, .with-database ]
   needs: [ ]
-  before_script:
-    - *prepare_gradle
   script:
     - "./gradlew :database:test :database:printCoverage"
   artifacts:
@@ -322,12 +260,10 @@ database-test:
   interruptible: true
 
 database2-test:
-  image: $JDK_IMAGE
+  image: $jdk_image
   stage: test
   extends: [ .gradle, .with-database ]
   needs: [ ]
-  before_script:
-    - *prepare_gradle
   script:
     - "./gradlew :database2:test :database2:printCoverage"
   artifacts:
@@ -337,12 +273,10 @@ database2-test:
   interruptible: true
 
 server-test:
-  image: $JDK_IMAGE
+  image: $jdk_image
   stage: test
   extends: [ .gradle, .with-database ]
   needs: [ ]
-  before_script:
-    - *prepare_gradle
   script:
     - "./gradlew :server:test :server:printCoverage"
   artifacts:
@@ -355,8 +289,8 @@ container_scanning:
   needs: [ server-bin-docker ]
   stage: test
   variables:
-    DOCKER_IMAGE: $SERVER_BIN_IMAGE
-    CS_DEFAULT_BRANCH_IMAGE: $SERVER_BIN_IMAGE_LATEST
+    DOCKER_IMAGE: $server_bin:$build_version
+    CS_DEFAULT_BRANCH_IMAGE: $server_bin:latest
   interruptible: true
 
 qodana:
@@ -377,31 +311,24 @@ qodana:
 # *** Deploy *** #
 
 docker-js-chrome-latest:
-  extends: .docker-latest
-  script:
-    - docker pull $JS_CHROME_IMAGE
-    - docker tag $JS_CHROME_IMAGE $JS_CHROME_IMAGE_LATEST
-    - docker push $JS_CHROME_IMAGE_LATEST
-  rules:
-    - if: $CI_COMMIT_REF_NAME == $CI_BRANCH_DEFAULT
+  extends: .docker-rename-latest
+  variables:
+    image: $js_chrome
+  interruptible: true
 
 server-bin-docker-latest:
-  extends: .docker-latest
-  script:
-    - docker pull $SERVER_BIN_IMAGE
-    - docker tag $SERVER_BIN_IMAGE $SERVER_BIN_IMAGE_LATEST
-    - docker push $SERVER_BIN_IMAGE_LATEST
-  rules:
-    - if: $CI_COMMIT_REF_NAME == $CI_BRANCH_DEFAULT
+  extends: .docker-rename-latest
+  variables:
+    image: $server_bin
+  interruptible: false
+  resource_group: server-docker-latest
 
 server-bin-docker-tag:
-  extends: .docker-latest
-  script:
-    - docker pull $SERVER_BIN_IMAGE
-    - docker tag $SERVER_BIN_IMAGE $SERVER_BIN_IMAGE_TAG
-    - docker push $SERVER_BIN_IMAGE_TAG
-  rules:
-    - if: $CI_COMMIT_REF_NAME == $CI_BRANCH_DEFAULT
+  extends: .docker-rename-tag
+  variables:
+    image: $server_bin
+  interruptible: false
+  resource_group: server-docker-tag
 
 pages:
   image: alpine:latest
@@ -418,7 +345,7 @@ pages:
     paths:
       - public
   rules:
-    - if: $CI_COMMIT_REF_NAME == $CI_BRANCH_DEFAULT
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
     - if: $CI_COMMIT_TAG
   interruptible: false
 
@@ -430,5 +357,5 @@ telegram:
     - git changelog --format telegram-html --incoming >changelog
     - announce-telegram changelog "$CHAT_IDS"
   rules:
-    - if: $CI_COMMIT_REF_NAME == $CI_BRANCH_DEFAULT
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
   interruptible: false
