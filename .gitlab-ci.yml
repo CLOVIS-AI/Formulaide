@@ -25,7 +25,7 @@ workflow:
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
     - if: $CI_PIPELINE_SOURCE == 'schedule'
-    - if: $CI_COMMIT_REF_NAME == $CI_BRANCH_DEFAULT
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
     - if: $CI_COMMIT_TAG
 
 # *** Phantom Jobs *** #
@@ -383,7 +383,7 @@ docker-js-chrome-latest:
     - docker tag $JS_CHROME_IMAGE $JS_CHROME_IMAGE_LATEST
     - docker push $JS_CHROME_IMAGE_LATEST
   rules:
-    - if: $CI_COMMIT_REF_NAME == $CI_BRANCH_DEFAULT
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
 
 server-bin-docker-latest:
   extends: .docker-latest
@@ -392,7 +392,7 @@ server-bin-docker-latest:
     - docker tag $SERVER_BIN_IMAGE $SERVER_BIN_IMAGE_LATEST
     - docker push $SERVER_BIN_IMAGE_LATEST
   rules:
-    - if: $CI_COMMIT_REF_NAME == $CI_BRANCH_DEFAULT
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
 
 server-bin-docker-tag:
   extends: .docker-latest
@@ -401,7 +401,7 @@ server-bin-docker-tag:
     - docker tag $SERVER_BIN_IMAGE $SERVER_BIN_IMAGE_TAG
     - docker push $SERVER_BIN_IMAGE_TAG
   rules:
-    - if: $CI_COMMIT_REF_NAME == $CI_BRANCH_DEFAULT
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
 
 pages:
   image: alpine:latest
@@ -418,7 +418,7 @@ pages:
     paths:
       - public
   rules:
-    - if: $CI_COMMIT_REF_NAME == $CI_BRANCH_DEFAULT
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
     - if: $CI_COMMIT_TAG
   interruptible: false
 
@@ -430,5 +430,5 @@ telegram:
     - git changelog --format telegram-html --incoming >changelog
     - announce-telegram changelog "$CHAT_IDS"
   rules:
-    - if: $CI_COMMIT_REF_NAME == $CI_BRANCH_DEFAULT
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
   interruptible: false

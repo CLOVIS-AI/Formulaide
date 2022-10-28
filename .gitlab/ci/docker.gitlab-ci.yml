@@ -43,7 +43,7 @@ variables:
   variables:
     new_version: latest
   rules:
-    - if: $CI_COMMIT_REF_NAME == $CI_BRANCH_DEFAULT
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
 
 .docker-rename-tag:
   extends: [ .docker-rename ]
