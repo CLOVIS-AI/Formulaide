@@ -22,6 +22,7 @@ val UserList: Screen = Screen(
 ) {
 	val departments by rememberState(client) { client.departments.list() }
 
+	var showEmployees by remember { mutableStateOf(true) }
 	var showArchived by remember { mutableStateOf(false) }
 	var enableDepartmentFilters by remember { mutableStateOf(false) }
 	val showDepartments = remember { mutableStateListOf<Department.Ref>() }
@@ -33,6 +34,7 @@ val UserList: Screen = Screen(
 		header = {
 			ChipContainerContainer {
 				ChipContainer {
+					FilterChip("Employés", showEmployees, onUpdate = { showEmployees = it })
 					FilterChip("Archivés", showArchived, onUpdate = { showArchived = it })
 					FilterChip("Par département", enableDepartmentFilters, onUpdate = { enableDepartmentFilters = it })
 
@@ -66,12 +68,15 @@ val UserList: Screen = Screen(
 			val slice by rememberRef(user)
 			val userData = slice.valueOrNull
 
+			val userIsAdmin = userData?.administrator ?: false
 			val userDepartments = userData?.departments ?: emptySet()
 
-			if (!enableDepartmentFilters)
-				ShowUser(user)
-			else if (userDepartments.any { it in showDepartments })
-				ShowUser(user)
+			if (showEmployees || userIsAdmin) {
+				if (!enableDepartmentFilters)
+					ShowUser(user)
+				else if (userDepartments.any { it in showDepartments })
+					ShowUser(user)
+			}
 		}
 	}
 }
