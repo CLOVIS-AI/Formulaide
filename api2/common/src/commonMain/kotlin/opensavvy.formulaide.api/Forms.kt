@@ -37,7 +37,7 @@ class Form(
 	class New(
 		val name: String,
 		val public: Boolean,
-		val firstVersion: List<Id>,
+		val firstVersion: Version,
 	)
 
 	@Serializable
