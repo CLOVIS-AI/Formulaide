@@ -23,11 +23,11 @@ val FormList: Screen = Screen(
 	actions = {
 		if (client.context.value.role >= User.Role.ADMINISTRATOR) {
 			RailButton(
-				FormEditor.icon,
-				FormEditor.iconSelected,
+				FormCreator.icon,
+				FormCreator.iconSelected,
 				"Créer un formulaire",
 				selected = false,
-			) { currentScreen = FormEditor }
+			) { currentScreen = FormCreator }
 		}
 	}
 ) {

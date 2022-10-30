@@ -34,7 +34,7 @@ val rootScreens = listOf(
 )
 
 val allScreens = rootScreens + listOf(
-	FormEditor,
+	FormCreator,
 	TemplateCreator,
 )
 

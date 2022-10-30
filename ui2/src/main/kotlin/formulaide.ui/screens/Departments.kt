@@ -8,9 +8,8 @@ import formulaide.ui.utils.rememberRef
 import formulaide.ui.utils.rememberState
 import opensavvy.formulaide.core.Department
 import opensavvy.formulaide.core.User
-import opensavvy.state.Progression
 import opensavvy.state.Slice.Companion.valueOrNull
-import org.jetbrains.compose.web.dom.P
+import opensavvy.state.firstResultOrThrow
 import org.jetbrains.compose.web.dom.Text
 
 val DepartmentList: Screen = Screen(
@@ -24,8 +23,13 @@ val DepartmentList: Screen = Screen(
 	}
 ) {
 	var showArchived by remember { mutableStateOf(false) }
+	var forceRefresh by remember { mutableStateOf(0) }
 
-	val departments by rememberState(client, showArchived) { client.departments.list(includeClosed = showArchived) }
+	val departments by rememberState(
+		client,
+		showArchived,
+		forceRefresh
+	) { client.departments.list(includeClosed = showArchived) }
 
 	Page(
 		title = "Départements",
@@ -36,7 +40,10 @@ val DepartmentList: Screen = Screen(
 				}
 
 				ChipContainer {
-					RefreshButton { client.departments.cache.expireAll() }
+					RefreshButton {
+						client.departments.cache.expireAll()
+						forceRefresh++
+					}
 				}
 			}
 
@@ -54,14 +61,21 @@ private fun ShowDepartment(ref: Department.Ref) {
 	val slice by rememberRef(ref)
 	val department = slice.valueOrNull
 
-	P {
-		if (department != null) {
-			Text(department.name)
+	Paragraph(department?.name ?: "", loading = slice.progression) {
+		ButtonContainer {
+			TextButton(
+				{
+					if (department!!.open)
+						ref.close().firstResultOrThrow()
+					else
+						ref.open().firstResultOrThrow()
+				},
+				enabled = department != null,
+			) {
+				Text(if (department?.open != false) "Fermer" else "Réouvrir")
+			}
 		}
 
-		if (slice.progression !is Progression.Done)
-			Loading(slice)
+		DisplayError(slice)
 	}
-
-	DisplayError(slice)
 }
