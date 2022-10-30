@@ -39,6 +39,7 @@ workflow:
     formulaide_database: "formulaide"
     formulaide_username: "root"
     formulaide_password: "development-password"
+  retry: 2
 
 # *** Docker *** #
 
