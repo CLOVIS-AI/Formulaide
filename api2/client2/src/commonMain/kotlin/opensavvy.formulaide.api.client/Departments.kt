@@ -10,6 +10,7 @@ import opensavvy.formulaide.core.AbstractDepartments
 import opensavvy.formulaide.state.flatMapSuccess
 import opensavvy.formulaide.state.flatten
 import opensavvy.formulaide.state.mapSuccess
+import opensavvy.formulaide.state.onEachSuccess
 import opensavvy.spine.Parameters
 import opensavvy.spine.ktor.client.request
 import opensavvy.state.Slice.Companion.pending
@@ -69,8 +70,7 @@ class Departments(
 				Parameters.Empty,
 				client.context.value
 			)
-
-		department.expire()
+			.onEachSuccess { department.expire() }
 
 		emitAll(result)
 	}
@@ -86,8 +86,7 @@ class Departments(
 				Parameters.Empty,
 				client.context.value
 			)
-
-		department.expire()
+			.onEachSuccess { department.expire() }
 
 		emitAll(result)
 	}
