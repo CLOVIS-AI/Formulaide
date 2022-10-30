@@ -4,8 +4,12 @@ import androidx.compose.runtime.*
 import formulaide.ui.components.*
 import formulaide.ui.navigation.Screen
 import formulaide.ui.navigation.client
+import formulaide.ui.navigation.currentScreen
+import formulaide.ui.theme.RailButton
 import formulaide.ui.utils.rememberRef
 import formulaide.ui.utils.rememberState
+import formulaide.ui.utils.role
+import formulaide.ui.utils.user
 import opensavvy.formulaide.core.Department
 import opensavvy.formulaide.core.User
 import opensavvy.state.Progression
@@ -19,6 +23,16 @@ val UserList: Screen = Screen(
 	"?users",
 	icon = "ri-user-line",
 	iconSelected = "ri-user-fill",
+	actions = {
+		if (client.context.value.role >= User.Role.ADMINISTRATOR) {
+			RailButton(
+				UserCreator.icon,
+				UserCreator.iconSelected,
+				"Créer un utilisateur",
+				selected = false,
+			) { currentScreen = UserCreator }
+		}
+	}
 ) {
 	val departments by rememberState(client) { client.departments.list() }
 
