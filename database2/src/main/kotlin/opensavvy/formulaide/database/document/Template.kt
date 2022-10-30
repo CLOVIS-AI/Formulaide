@@ -161,7 +161,7 @@ class Templates internal constructor(
 					CoreTemplate.Version(
 						it.creationDate,
 						it.title,
-						it.field.toDb(this@Templates, this@Versions)
+						it.field.toCore(this@Templates, this@Versions)
 					)
 				}
 

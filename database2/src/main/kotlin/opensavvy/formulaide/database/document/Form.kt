@@ -189,12 +189,12 @@ class Forms internal constructor(
 					CoreForm.Version(
 						version.creationDate,
 						version.title,
-						version.field.toDb(database.templates, database.templates.versions),
+						version.field.toCore(database.templates, database.templates.versions),
 						version.steps.map { step ->
 							CoreForm.Step(
 								step.id,
 								Department.Ref(step.department, database.departments),
-								step.field?.toDb(database.templates, database.templates.versions),
+								step.field?.toCore(database.templates, database.templates.versions),
 							)
 						}
 					)
