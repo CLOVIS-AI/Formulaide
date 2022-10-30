@@ -4,6 +4,8 @@ import androidx.compose.runtime.*
 import formulaide.ui.components.*
 import formulaide.ui.navigation.Screen
 import formulaide.ui.navigation.client
+import formulaide.ui.navigation.currentScreen
+import formulaide.ui.theme.RailButton
 import formulaide.ui.utils.rememberRef
 import formulaide.ui.utils.rememberState
 import opensavvy.formulaide.core.Department
@@ -20,7 +22,12 @@ val DepartmentList: Screen = Screen(
 	icon = "ri-building-line",
 	iconSelected = "ri-building-fill",
 	actions = {
-
+		RailButton(
+			DepartmentCreator.icon,
+			DepartmentCreator.iconSelected,
+			"Créer un département",
+			selected = false,
+		) { currentScreen = DepartmentCreator }
 	}
 ) {
 	var showArchived by remember { mutableStateOf(false) }
