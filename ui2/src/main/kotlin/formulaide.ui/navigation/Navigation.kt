@@ -38,6 +38,7 @@ val allScreens = rootScreens + listOf(
 	TemplateCreator,
 	DepartmentCreator,
 	UserCreator,
+	PasswordModification,
 )
 
 @Composable
