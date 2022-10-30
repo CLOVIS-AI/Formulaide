@@ -6,6 +6,7 @@ import formulaide.ui.navigation.Screen
 import formulaide.ui.navigation.client
 import formulaide.ui.utils.rememberRef
 import formulaide.ui.utils.rememberState
+import opensavvy.formulaide.core.Department
 import opensavvy.formulaide.core.User
 import opensavvy.state.Progression
 import opensavvy.state.Slice.Companion.valueOrNull
@@ -19,7 +20,11 @@ val UserList: Screen = Screen(
 	icon = "ri-user-line",
 	iconSelected = "ri-user-fill",
 ) {
+	val departments by rememberState(client) { client.departments.list() }
+
 	var showArchived by remember { mutableStateOf(false) }
+	var enableDepartmentFilters by remember { mutableStateOf(false) }
+	val showDepartments = remember { mutableStateListOf<Department.Ref>() }
 
 	val users by rememberState(client, showArchived) { client.users.list(includeClosed = showArchived) }
 
@@ -29,6 +34,24 @@ val UserList: Screen = Screen(
 			ChipContainerContainer {
 				ChipContainer {
 					FilterChip("Archivés", showArchived, onUpdate = { showArchived = it })
+					FilterChip("Par département", enableDepartmentFilters, onUpdate = { enableDepartmentFilters = it })
+
+					if (enableDepartmentFilters) {
+						for (department in departments.valueOrNull ?: emptyList()) {
+							val slice by rememberRef(department)
+							val depName = slice.valueOrNull?.name
+							if (depName != null) {
+								val enabled = department in showDepartments
+								FilterChip(
+									depName,
+									enabled,
+									onUpdate = {
+										if (enabled) showDepartments.remove(department)
+										else showDepartments.add(department)
+									})
+							}
+						}
+					}
 				}
 
 				ChipContainer {
@@ -40,7 +63,15 @@ val UserList: Screen = Screen(
 		}
 	) {
 		for (user in users.valueOrNull ?: emptyList()) {
-			ShowUser(user)
+			val slice by rememberRef(user)
+			val userData = slice.valueOrNull
+
+			val userDepartments = userData?.departments ?: emptySet()
+
+			if (!enableDepartmentFilters)
+				ShowUser(user)
+			else if (userDepartments.any { it in showDepartments })
+				ShowUser(user)
 		}
 	}
 }
