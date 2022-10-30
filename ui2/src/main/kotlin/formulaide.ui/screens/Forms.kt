@@ -85,6 +85,12 @@ private fun ShowForm(ref: opensavvy.formulaide.core.Form.Ref) {
 
 		ButtonContainer {
 			TextButton(
+				{ currentScreen = FormNewVersion(ref) }
+			) {
+				Text("Nouvelle version")
+			}
+
+			TextButton(
 				{ client.forms.edit(ref, public = !form!!.public).firstResultOrNull() },
 				enabled = form != null
 			) {
