@@ -6,7 +6,7 @@
 config:
   # When a user uses the 'report a problem' button, Formulaide generates an email in the user's client, that is pre-filled
   # to be sent at this address:
-  report_email: "contact-project+opensavvy-formulaide-33369420-issue-@incoming.gitlab.com"  # this is the OpenSavvy Formulaide Service Desk on GitLab
+  report_email: "formulaide@opensavvy.dev"  # this is the OpenSavvy Formulaide Service Desk on GitLab
 
   # The target of the help link in the homepage
   help_page: "https://opensavvy.gitlab.io/formulaide/docs/user-guide.pdf"

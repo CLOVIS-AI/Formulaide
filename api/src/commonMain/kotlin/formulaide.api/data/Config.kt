@@ -15,7 +15,7 @@ data class Config(
 ) {
 
 	companion object {
-		val defaultReportEmail = Email("contact-project+opensavvy-formulaide-33369420-issue-@incoming.gitlab.com")
+		val defaultReportEmail = Email("formulaide@opensavvy.dev")
 		const val defaultHelpUrl = "https://opensavvy.gitlab.io/formulaide/docs/user-guide.pdf"
 	}
 }

@@ -21,7 +21,7 @@ services:
       formulaide_database: "formulaide"
       formulaide_username: "root"
       formulaide_password: "development-password"
-      formulaide_report_email: "contact-project+opensavvy-formulaide-33369420-issue-@incoming.gitlab.com"
+      formulaide_report_email: "formulaide@opensavvy.dev"
       formulaide_help_url: "https://opensavvy.gitlab.io/formulaide/docs/user-guide.pdf"
       # Images affichées dans les récépissés en PDF
       formulaide_pdf_image_left_url: ""
