@@ -87,7 +87,12 @@ class Forms internal constructor(
 		if (!includePrivate)
 			filters += Form::public eq true
 
-		val result = forms.find(and(filters))
+		val filter = if (filters.isNotEmpty())
+			and(filters)
+		else
+			null
+
+		val result = forms.find(filter)
 			.batchSize(10)
 			.toList()
 			.map { CoreForm.Ref(it.id, this@Forms) }
