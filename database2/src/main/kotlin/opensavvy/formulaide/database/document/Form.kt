@@ -116,17 +116,19 @@ class Forms internal constructor(
 
 	override fun createVersion(
 		form: CoreForm.Ref,
-		new: CoreForm.Version,
-	): State<Unit> = state {
+		version: CoreForm.Version,
+	): State<CoreForm.Version.Ref> = state {
+		val creationDate = Clock.System.now()
+
 		forms.updateOne(
 			Form::id eq form.id,
-			push(Form::versions, new.copy(creationDate = Clock.System.now()).toDb())
+			push(Form::versions, version.copy(creationDate = creationDate).toDb())
 		)
 
 		cache.expire(form)
 		formCache.expire(form)
 
-		emit(successful(Unit))
+		emit(successful(CoreForm.Version.Ref(form, creationDate, versions)))
 	}
 
 	override fun edit(
@@ -204,5 +206,5 @@ class Forms internal constructor(
 		}
 	}
 
-	private val versions = Versions(versionCache)
+	val versions = Versions(versionCache)
 }
