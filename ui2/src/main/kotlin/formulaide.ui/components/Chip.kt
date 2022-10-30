@@ -98,7 +98,7 @@ fun ChipContainer(
 	{
 		classes("chip-container")
 		style {
-			display(DisplayStyle.Flex)
+			display(DisplayStyle.LegacyInlineFlex)
 			flexDirection(FlexDirection.Row)
 			gap(5.px)
 		}
