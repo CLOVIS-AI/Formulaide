@@ -12,8 +12,9 @@ import formulaide.ui.utils.role
 import formulaide.ui.utils.user
 import opensavvy.formulaide.core.Department
 import opensavvy.formulaide.core.User
-import opensavvy.state.Progression
 import opensavvy.state.Slice.Companion.valueOrNull
+import opensavvy.state.firstResultOrNull
+import opensavvy.state.onEachSuccess
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 
@@ -49,7 +50,7 @@ val UserList: Screen = Screen(
 			ChipContainerContainer {
 				ChipContainer {
 					FilterChip("Employés", showEmployees, onUpdate = { showEmployees = it })
-					FilterChip("Archivés", showArchived, onUpdate = { showArchived = it })
+					FilterChip("Clôturés", showArchived, onUpdate = { showArchived = it })
 					FilterChip("Par département", enableDepartmentFilters, onUpdate = { enableDepartmentFilters = it })
 
 					if (enableDepartmentFilters) {
@@ -100,13 +101,62 @@ private fun ShowUser(ref: User.Ref) {
 	val slice by rememberRef(ref)
 	val user = slice.valueOrNull
 
-	P {
-		if (user != null) {
-			Text("${user.name}, ${user.email}")
+	val departments = user?.departments ?: emptySet()
+
+	Paragraph(user?.name ?: "", loading = slice.progression) {
+		P { Text(user?.email ?: "") }
+
+		P {
+			Text("Départements :")
+			val allDepartments by rememberState(client) { client.departments.list() }
+			ChipContainer {
+				for (department in allDepartments.valueOrNull ?: emptyList()) {
+					val deptSlice by rememberRef(department)
+					val depName = deptSlice.valueOrNull?.name
+					if (depName != null) {
+						val enabled = department in departments
+						FilterChip(
+							depName,
+							enabled,
+							onUpdate = {
+								if (enabled) client.users.edit(ref, departments = departments - department)
+									.firstResultOrNull()
+								else client.users.edit(ref, departments = departments + department).firstResultOrNull()
+							})
+					}
+				}
+			}
 		}
 
-		if (slice.progression !is Progression.Done)
-			Loading(slice)
+		var password by remember { mutableStateOf<String?>(null) }
+		if (password != null)
+			P { Text("Mot de passe à usage unique : $password") }
+
+		ButtonContainer {
+			if (client.role >= User.Role.ADMINISTRATOR && ref != client.user) {
+				TextButton(onClick = {
+					client.users.resetPassword(ref)
+						.onEachSuccess { password = it }
+						.firstResultOrNull()
+				}) {
+					Text("Réinitialiser le mot de passe")
+				}
+
+				TextButton(onClick = {
+					client.users.edit(ref, administrator = !user!!.administrator)
+						.firstResultOrNull()
+				}, enabled = user != null) {
+					Text(if (user?.administrator != false) "Retirer les privilèges" else "Donner les droits d'administration")
+				}
+
+				TextButton(onClick = {
+					client.users.edit(ref, open = !user!!.open)
+						.firstResultOrNull()
+				}, enabled = user != null) {
+					Text(if (user?.open != false) "Clôturer" else "Réactiver")
+				}
+			}
+		}
 	}
 
 	DisplayError(slice)
