@@ -417,6 +417,11 @@ class Formulaide2 : Service("v2") {
 
 			val edit = edit<Form.Edit, Parameters.Empty>()
 
+			suspend fun idFrom(id: Id, context: Context) = state {
+				validateId(id, context)
+				emit(successful(id.resource.segments.last().segment))
+			}.firstResult()
+
 			/**
 			 * The form version management endpoint: `v2/forms/{form}/{version}`.
 			 *
@@ -426,7 +431,13 @@ class Formulaide2 : Service("v2") {
 			 *
 			 * Authorization: public
 			 */
-			inner class FormVersionEndpoint : DynamicResource<Form.Version, Context>("version")
+			inner class FormVersionEndpoint : DynamicResource<Form.Version, Context>("version") {
+				suspend fun idFrom(id: Id, context: Context) = state {
+					validateId(id, context)
+					val size = id.resource.segments.size
+					emit(successful(id.resource.segments[size - 2].segment to id.resource.segments[size - 1].segment))
+				}.firstResult()
+			}
 
 			val version = FormVersionEndpoint()
 		}
