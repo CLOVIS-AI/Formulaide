@@ -15,6 +15,7 @@ import opensavvy.cache.MemoryCache.Companion.cachedInMemory
 import opensavvy.formulaide.api.Context
 import opensavvy.formulaide.api.api2
 import opensavvy.formulaide.core.Department
+import opensavvy.formulaide.core.Form
 import opensavvy.formulaide.core.Template
 import opensavvy.formulaide.core.User
 import opensavvy.spine.Parameters
@@ -86,6 +87,20 @@ class Client(
 		defaultRefCache<Template.Version>()
 			.cachedInMemory(context)
 			.expireAfter(30.minutes, context),
+	)
+
+	val forms = Forms(
+		this,
+		defaultRefCache<Form>()
+			.cachedInMemory(context)
+			.expireAfter(10.minutes, context)
+	)
+
+	val formVersions = FormVersions(
+		this,
+		defaultRefCache<Form.Version>()
+			.cachedInMemory(context)
+			.expireAfter(30.minutes, context)
 	)
 
 	fun ping(): State<Unit> = state {

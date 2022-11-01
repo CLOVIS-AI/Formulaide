@@ -1,22 +1,30 @@
 package formulaide.ui.screens
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import formulaide.ui.components.*
-import formulaide.ui.components.editor.FieldEditor
-import formulaide.ui.components.editor.MutableField
+import formulaide.ui.components.editor.*
 import formulaide.ui.navigation.Screen
+import formulaide.ui.navigation.client
+import formulaide.ui.navigation.currentScreen
+import formulaide.ui.utils.rememberState
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.onEach
+import kotlinx.datetime.Clock
+import opensavvy.formulaide.core.Form
 import opensavvy.formulaide.core.User
-import org.jetbrains.compose.web.css.marginTop
-import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.P
+import opensavvy.formulaide.state.mapSuccess
+import opensavvy.formulaide.state.onEachSuccess
+import opensavvy.state.Slice
+import opensavvy.state.Slice.Companion.pending
+import opensavvy.state.Slice.Companion.successful
+import opensavvy.state.Slice.Companion.valueOrNull
+import opensavvy.state.flatMapSuccess
+import opensavvy.state.state
 import org.jetbrains.compose.web.dom.Text
 
-val FormEditor: Screen = Screen(
-	"Éditeur de formulaire",
+val FormCreator: Screen = Screen(
+	"Nouveau formulaire",
 	User.Role.ADMINISTRATOR,
 	"?edit-form",
 	"ri-add-line",
@@ -27,44 +35,58 @@ val FormEditor: Screen = Screen(
 		"Nouveau formulaire",
 	) {
 		var name by remember { mutableStateOf("") }
-
 		TextField("Nom", name, onChange = { name = it })
 
-		SectionTitle("Champs")
+		var versionName by remember { mutableStateOf("Première version") }
+		TextField("Title de la première version", versionName, onChange = { versionName = it })
+
 		var field: MutableField by remember { mutableStateOf(MutableField.Group("Racine", emptyList(), null)) }
-		FieldEditor(field, onReplace = { field = it })
+		Paragraph("Champs") {
+			FieldEditor(field, onReplace = { field = it })
 
-		if (field !is MutableField.Group)
-			DisplayError("Dans la majorité des cas, il est recommandé que la racine d'un formulaire soit un groupe.")
-
-		SectionTitle("Étapes de validation")
-		P { Text("Choisissez les personnes responsables de la vérification de la validité des saisies.") }
-		P {
-			Text(
-				"""Chaque étape représente le tampon métaphorique d'un membre du département sélectionné.
-				|Chaque saisie devra parcourir chaque étape une à une.
-				|Une saisie peut être refusée lors de n'importe quelle étape.
-			""".trimMargin()
-			)
+			if (field !is MutableField.Group)
+				DisplayError("Dans la majorité des cas, il est recommandé que la racine d'un formulaire soit un groupe.")
 		}
 
-		var steps by remember { mutableStateOf(emptyList<String>()) }
+		val departments by rememberState(client) { client.departments.list() }
+		val steps = remember { mutableStateListOf<MutableStep>() }
 
-		//TODO action editor
+		StepsEditor(steps)
 
-		Div(
-			{
-				style {
-					marginTop(20.px)
-				}
+		var progression: Slice<Unit> by remember { mutableStateOf(pending()) }
+
+		ButtonContainer {
+			SecondaryButton(onClick = {
+				steps += Form.Step(
+					steps.maxOfOrNull { it.id }?.plus(1) ?: 1,
+					departments.valueOrNull?.firstOrNull() ?: return@SecondaryButton,
+					null,
+				).toMutable()
+			}) {
+				Text("Ajouter une étape de validation")
 			}
-		) {
-			if (steps.isEmpty())
-				DisplayError("Un formulaire doit contenir au moins une étape.")
-			else
-				MainButton(onClick = {}) {
-					Text("Créer")
-				}
+
+			MainButton(onClick = {
+				state {
+					val version =
+						Form.Version(Clock.System.now(), versionName, field.toField(), steps.map { it.toCore() })
+					emit(successful(version))
+				}.flatMapSuccess { emitAll(client.forms.create(name, public = false, it)) }
+					.mapSuccess { /* we don't care about the value */ }
+					.onEach { progression = it }
+					.onEachSuccess { currentScreen = FormList }
+					.collect()
+			}) {
+				Text("Créer ce formulaire")
+			}
 		}
+
+		if (steps.isEmpty())
+			DisplayError("Un formulaire doit contenir au moins une étape")
+
+		if (departments.valueOrNull?.isEmpty() != false)
+			DisplayError("Il est nécessaire de créer un département avant de créer un formulaire")
+
+		DisplayError(progression)
 	}
 }

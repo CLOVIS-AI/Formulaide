@@ -201,5 +201,6 @@ fun Application.formulaide(@Suppress("UNUSED_PARAMETER") testing: Boolean = fals
 		departments(database2, context)
 		users(database2, context, developmentMode)
 		templates(database2, context)
+		forms(database2, context)
 	}
 }

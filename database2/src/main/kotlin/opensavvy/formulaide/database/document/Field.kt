@@ -143,8 +143,8 @@ internal fun CoreField.toDb(): Field {
 //endregion
 //region Db -> Core
 
-internal fun Field.toDb(templates: Templates, templateVersions: Templates.Versions): CoreField {
-	val indexed = children.mapValues { (_, value) -> value.toDb(templates, templateVersions) }
+internal fun Field.toCore(templates: Templates, templateVersions: Templates.Versions): CoreField {
+	val indexed = children.mapValues { (_, value) -> value.toCore(templates, templateVersions) }
 	val importedFrom = if (fromTemplate != null && fromVersion != null) {
 		Template.Version.Ref(Template.Ref(fromTemplate!!, templates), fromVersion!!, templateVersions)
 	} else null
@@ -152,7 +152,7 @@ internal fun Field.toDb(templates: Templates, templateVersions: Templates.Versio
 	return when (this) {
 		is Field.Arity -> CoreField.Arity(
 			label,
-			child.toDb(templates, templateVersions),
+			child.toCore(templates, templateVersions),
 			min..max,
 			importedFrom
 		)

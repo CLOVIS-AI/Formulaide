@@ -62,7 +62,7 @@ interface AbstractForms : Backbone<Form> {
 	 *
 	 * Only administrators can create new versions.
 	 */
-	fun createVersion(form: Form.Ref, new: Form.Version): State<Unit>
+	fun createVersion(form: Form.Ref, version: Form.Version): State<Form.Version.Ref>
 
 	/**
 	 * Edits a form.

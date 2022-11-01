@@ -378,7 +378,9 @@ class Formulaide2 : Service("v2") {
 	 */
 	inner class FormsEndpoint : StaticResource<List<Id>, Form.GetParams, Context>("forms") {
 
-		val create = create<Form.New, Unit, Parameters.Empty>()
+		val create = create<Form.New, Unit, Parameters.Empty> { _, body, _, _ ->
+			ensureValid(body.firstVersion.steps.isNotEmpty()) { "Un formulaire doit contenir au moins une étape de validation" }
+		}
 
 		/**
 		 * The form management endpoint: `v2/forms/{form}`.
@@ -413,9 +415,16 @@ class Formulaide2 : Service("v2") {
 		 */
 		inner class FormEndpoint : DynamicResource<Form, Context>("form") {
 
-			val create = create<Form.Version, Unit, Parameters.Empty>()
+			val create = create<Form.Version, Unit, Parameters.Empty> { _, body, _, _ ->
+				ensureValid(body.steps.isNotEmpty()) { "Un formulaire doit contenir au moins une étape de validation" }
+			}
 
 			val edit = edit<Form.Edit, Parameters.Empty>()
+
+			suspend fun idFrom(id: Id, context: Context) = state {
+				validateId(id, context)
+				emit(successful(id.resource.segments.last().segment))
+			}.firstResult()
 
 			/**
 			 * The form version management endpoint: `v2/forms/{form}/{version}`.
@@ -426,7 +435,13 @@ class Formulaide2 : Service("v2") {
 			 *
 			 * Authorization: public
 			 */
-			inner class FormVersionEndpoint : DynamicResource<Form.Version, Context>("version")
+			inner class FormVersionEndpoint : DynamicResource<Form.Version, Context>("version") {
+				suspend fun idFrom(id: Id, context: Context) = state {
+					validateId(id, context)
+					val size = id.resource.segments.size
+					emit(successful(id.resource.segments[size - 2].segment to id.resource.segments[size - 1].segment))
+				}.firstResult()
+			}
 
 			val version = FormVersionEndpoint()
 		}

@@ -87,7 +87,12 @@ class Forms internal constructor(
 		if (!includePrivate)
 			filters += Form::public eq true
 
-		val result = forms.find(and(filters))
+		val filter = if (filters.isNotEmpty())
+			and(filters)
+		else
+			null
+
+		val result = forms.find(filter)
 			.batchSize(10)
 			.toList()
 			.map { CoreForm.Ref(it.id, this@Forms) }
@@ -116,17 +121,19 @@ class Forms internal constructor(
 
 	override fun createVersion(
 		form: CoreForm.Ref,
-		new: CoreForm.Version,
-	): State<Unit> = state {
+		version: CoreForm.Version,
+	): State<CoreForm.Version.Ref> = state {
+		val creationDate = Clock.System.now()
+
 		forms.updateOne(
 			Form::id eq form.id,
-			push(Form::versions, new.copy(creationDate = Clock.System.now()).toDb())
+			push(Form::versions, version.copy(creationDate = creationDate).toDb())
 		)
 
 		cache.expire(form)
 		formCache.expire(form)
 
-		emit(successful(Unit))
+		emit(successful(CoreForm.Version.Ref(form, creationDate, versions)))
 	}
 
 	override fun edit(
@@ -189,12 +196,12 @@ class Forms internal constructor(
 					CoreForm.Version(
 						version.creationDate,
 						version.title,
-						version.field.toDb(database.templates, database.templates.versions),
+						version.field.toCore(database.templates, database.templates.versions),
 						version.steps.map { step ->
 							CoreForm.Step(
 								step.id,
 								Department.Ref(step.department, database.departments),
-								step.field?.toDb(database.templates, database.templates.versions),
+								step.field?.toCore(database.templates, database.templates.versions),
 							)
 						}
 					)
@@ -204,5 +211,5 @@ class Forms internal constructor(
 		}
 	}
 
-	private val versions = Versions(versionCache)
+	val versions = Versions(versionCache)
 }

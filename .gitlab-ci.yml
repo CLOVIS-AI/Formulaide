@@ -39,6 +39,7 @@ workflow:
     formulaide_database: "formulaide"
     formulaide_username: "root"
     formulaide_password: "development-password"
+  retry: 2
 
 # *** Docker *** #
 
@@ -312,12 +313,14 @@ qodana:
 
 docker-js-chrome-latest:
   extends: .docker-rename-latest
+  needs: [ docker-js-chrome ]
   variables:
     image: $js_chrome
   interruptible: true
 
 server-bin-docker-latest:
   extends: .docker-rename-latest
+  needs: [ server-bin-docker ]
   variables:
     image: $server_bin
   interruptible: false
@@ -325,6 +328,7 @@ server-bin-docker-latest:
 
 server-bin-docker-tag:
   extends: .docker-rename-tag
+  needs: [ server-bin-docker ]
   variables:
     image: $server_bin
   interruptible: false
