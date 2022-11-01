@@ -8,13 +8,9 @@ import formulaide.ui.components.*
 import formulaide.ui.navigation.Screen
 import formulaide.ui.navigation.client
 import formulaide.ui.navigation.currentScreen
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.onEach
+import formulaide.ui.utils.orReport
+import formulaide.ui.utils.rememberPossibleFailure
 import opensavvy.formulaide.core.User
-import opensavvy.formulaide.state.mapSuccess
-import opensavvy.formulaide.state.onEachSuccess
-import opensavvy.state.Slice
-import opensavvy.state.Slice.Companion.pending
 import org.jetbrains.compose.web.dom.Text
 
 val DepartmentCreator: Screen = Screen(
@@ -29,20 +25,17 @@ val DepartmentCreator: Screen = Screen(
 		var name by remember { mutableStateOf("") }
 		TextField("Nom", name, onChange = { name = it })
 
-		var progression: Slice<Unit> by remember { mutableStateOf(pending()) }
+		val failure = rememberPossibleFailure()
 
 		ButtonContainer {
 			MainButton(onClick = {
-				client.departments.create(name)
-					.mapSuccess { }
-					.onEach { progression = it }
-					.onEachSuccess { currentScreen = DepartmentList }
-					.collect()
+				client.departments.create(name).orReport(failure)
+				currentScreen = DepartmentList
 			}) {
 				Text("Créer ce département")
 			}
 		}
 
-		DisplayError(progression)
+		DisplayError(failure)
 	}
 }

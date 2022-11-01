@@ -10,9 +10,8 @@ import opensavvy.backbone.Ref.Companion.request
 import opensavvy.formulaide.api.Context
 import opensavvy.formulaide.api.client.Client
 import opensavvy.formulaide.core.User
-import opensavvy.state.Status
-import opensavvy.state.firstResult
-import opensavvy.state.firstResultOrThrow
+import opensavvy.state.firstValueOrNull
+import opensavvy.state.slice.valueOrNull
 
 internal val productionUrl = window.location.protocol + "//" + window.location.host
 internal const val localDevelopmentUrl = "https://api.localhost:8443"
@@ -24,17 +23,17 @@ fun SelectProductionOrTest() {
 	LaunchedEffect(Unit) {
 		var candidate = client
 
-		if (candidate.ping().firstResult().status !is Status.Successful) {
+		if (candidate.ping().isLeft()) {
 			console.warn("Could not ping the production server, switching to the development server…")
 			candidate = Client(localDevelopmentUrl)
 		}
 
-		val myRef = candidate.users.me().firstResult().status
-		if (myRef is Status.Successful) {
-			val me = myRef.value.request().firstResult().status
-			if (me is Status.Successful) {
+		val myRef = candidate.users.me().orNull()
+		if (myRef != null) {
+			val me = myRef.request().firstValueOrNull()
+			if (me != null) {
 				console.info("We're currently logged in")
-				candidate.context.value = Context(myRef.value, me.value.role)
+				candidate.context.value = Context(myRef, me.role)
 			}
 		}
 
@@ -54,7 +53,7 @@ fun LogOutButton() {
 		action = {
 			scope.launch {
 				if (client.context.value.role >= User.Role.EMPLOYEE)
-					client.users.logOut().firstResultOrThrow()
+					client.users.logOut().valueOrNull
 
 				Snapshot.withMutableSnapshot {
 					client = Client(productionUrl)

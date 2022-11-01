@@ -1,12 +1,13 @@
 package formulaide.ui.components
 
 import androidx.compose.runtime.*
+import arrow.core.Either
 import formulaide.ui.theme.Theme
 import formulaide.ui.theme.shade
 import io.ktor.client.plugins.*
 import io.ktor.client.statement.*
-import opensavvy.state.Slice
-import opensavvy.state.Status
+import opensavvy.state.Failure
+import opensavvy.state.slice.Slice
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 
@@ -37,23 +38,17 @@ fun DisplayError(error: String) = P(
 }
 
 @Composable
-fun DisplayError(data: Slice<Any>) {
-	val status = data.status
+fun DisplayError(failure: Failure?) {
+	if (failure != null) {
+		val statusMessage = failure.message
+		val cause = failure.cause
 
-	if (status is Status.Failed) {
-		val statusMessage = status.message ?: "Erreur inconnue"
-		val cause = status.cause
-
-		val message = when (status) {
-			is Status.StandardFailure -> when (status.kind) {
-				Status.StandardFailure.Kind.Invalid -> "Invalide : $statusMessage"
-				Status.StandardFailure.Kind.Unauthenticated -> "Réservé aux utilisateurs connectés : $statusMessage"
-				Status.StandardFailure.Kind.Unauthorized -> "Droits manquants : $statusMessage"
-				Status.StandardFailure.Kind.NotFound -> "Introuvable : $statusMessage"
-				Status.StandardFailure.Kind.Unknown -> statusMessage
-			}
-
-			else -> statusMessage
+		val message = when (failure.kind) {
+			Failure.Kind.Invalid -> "Invalide : $statusMessage"
+			Failure.Kind.Unauthenticated -> "Réservé aux utilisateurs connectés : $statusMessage"
+			Failure.Kind.Unauthorized -> "Droits manquants : $statusMessage"
+			Failure.Kind.NotFound -> "Introuvable : $statusMessage"
+			Failure.Kind.Unknown -> statusMessage
 		}
 
 		DisplayError(message)
@@ -61,4 +56,17 @@ fun DisplayError(data: Slice<Any>) {
 		if (cause != null)
 			DisplayError(cause)
 	}
+}
+
+@Composable
+fun DisplayError(data: Slice<Any>?) {
+	if (data is Either.Left) {
+		DisplayError(data.value)
+	}
+}
+
+@Composable
+fun DisplayError(failure: State<Failure?>) {
+	val current by failure
+	DisplayError(current)
 }

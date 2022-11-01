@@ -10,15 +10,11 @@ import formulaide.ui.components.editor.MutableField
 import formulaide.ui.navigation.Screen
 import formulaide.ui.navigation.client
 import formulaide.ui.navigation.currentScreen
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.onEach
+import formulaide.ui.utils.rememberPossibleFailure
+import formulaide.ui.utils.runOrReport
 import kotlinx.datetime.Clock
 import opensavvy.formulaide.core.Template
 import opensavvy.formulaide.core.User
-import opensavvy.state.*
-import opensavvy.state.Slice.Companion.pending
-import opensavvy.state.Slice.Companion.successful
 import org.jetbrains.compose.web.dom.Text
 
 val TemplateCreator: Screen = Screen(
@@ -43,23 +39,20 @@ val TemplateCreator: Screen = Screen(
 			FieldEditor(field, onReplace = { field = it })
 		}
 
-		var progression: Slice<Unit> by remember { mutableStateOf(pending()) }
+		val failure = rememberPossibleFailure()
 
 		ButtonContainer {
 			MainButton(onClick = {
-				state {
+				runOrReport(failure) {
 					val version = Template.Version(Clock.System.now(), versionName, field.toField())
-					emit(successful(version))
-				}.flatMapSuccess { emitAll(client.templates.create(name, it)) }
-					.mapSuccess { /* we don't care about the value */ }
-					.onEach { progression = it }
-					.onEachSuccess { currentScreen = TemplateList }
-					.collect()
+					client.templates.create(name, version).bind()
+					currentScreen = TemplateList
+				}
 			}) {
 				Text("Créer ce modèle")
 			}
 		}
 
-		DisplayError(progression)
+		DisplayError(failure)
 	}
 }

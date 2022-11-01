@@ -6,12 +6,13 @@ import formulaide.ui.navigation.Screen
 import formulaide.ui.navigation.client
 import formulaide.ui.navigation.currentScreen
 import formulaide.ui.theme.RailButton
+import formulaide.ui.utils.orReport
+import formulaide.ui.utils.rememberPossibleFailure
 import formulaide.ui.utils.rememberRef
-import formulaide.ui.utils.rememberState
+import formulaide.ui.utils.rememberSlice
 import opensavvy.formulaide.core.Department
 import opensavvy.formulaide.core.User
-import opensavvy.state.Slice.Companion.valueOrNull
-import opensavvy.state.firstResultOrThrow
+import opensavvy.state.slice.valueOrNull
 import org.jetbrains.compose.web.dom.Text
 
 val DepartmentList: Screen = Screen(
@@ -30,12 +31,10 @@ val DepartmentList: Screen = Screen(
 	}
 ) {
 	var showArchived by remember { mutableStateOf(false) }
-	var forceRefresh by remember { mutableStateOf(0) }
 
-	val departments by rememberState(
+	val (departments, refresh) = rememberSlice(
 		client,
-		showArchived,
-		forceRefresh
+		showArchived
 	) { client.departments.list(includeClosed = showArchived) }
 
 	Page(
@@ -49,7 +48,7 @@ val DepartmentList: Screen = Screen(
 				ChipContainer {
 					RefreshButton {
 						client.departments.cache.expireAll()
-						forceRefresh++
+						refresh()
 					}
 				}
 			}
@@ -57,7 +56,7 @@ val DepartmentList: Screen = Screen(
 			DisplayError(departments)
 		}
 	) {
-		for (department in departments.valueOrNull ?: emptyList()) {
+		for (department in departments?.valueOrNull ?: emptyList()) {
 			ShowDepartment(department)
 		}
 	}
@@ -66,16 +65,18 @@ val DepartmentList: Screen = Screen(
 @Composable
 private fun ShowDepartment(ref: Department.Ref) {
 	val slice by rememberRef(ref)
-	val department = slice.valueOrNull
+	val department = slice?.valueOrNull
 
-	Paragraph(department?.name ?: "", loading = slice.progression) {
+	val failure = rememberPossibleFailure()
+
+	Paragraph(department?.name ?: "") {
 		ButtonContainer {
 			TextButton(
 				{
 					if (department!!.open)
-						ref.close().firstResultOrThrow()
+						ref.close().orReport(failure)
 					else
-						ref.open().firstResultOrThrow()
+						ref.open().orReport(failure)
 				},
 				enabled = department != null,
 			) {
@@ -84,5 +85,6 @@ private fun ShowDepartment(ref: Department.Ref) {
 		}
 
 		DisplayError(slice)
+		DisplayError(failure)
 	}
 }

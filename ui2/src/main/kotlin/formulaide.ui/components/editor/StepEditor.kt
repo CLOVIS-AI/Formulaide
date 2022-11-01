@@ -7,8 +7,8 @@ import formulaide.ui.components.Paragraph
 import formulaide.ui.components.TextButton
 import formulaide.ui.navigation.client
 import formulaide.ui.utils.rememberRef
-import formulaide.ui.utils.rememberState
-import opensavvy.state.Slice.Companion.valueOrNull
+import formulaide.ui.utils.rememberSlice
+import opensavvy.state.slice.valueOrNull
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
@@ -18,20 +18,20 @@ fun StepEditor(
 	step: MutableStep,
 	onDelete: () -> Unit,
 ) {
-	val departments by rememberState(client) { client.departments.list() }
+	val (departments, _) = rememberSlice(client) { client.departments.list() }
 
 	Paragraph("Étape ${step.id}") {
 		P {
 			Text("Agents responsables de cette étape :")
 
 			Div {
-				for (department in departments.valueOrNull ?: emptyList()) {
+				for (department in departments?.valueOrNull ?: emptyList()) {
 					TextButton(
 						{ step.reviewer = department },
 						enabled = department != step.reviewer
 					) {
 						val slice by rememberRef(department)
-						Text(slice.valueOrNull?.name ?: "")
+						Text(slice?.valueOrNull?.name ?: "")
 					}
 				}
 			}

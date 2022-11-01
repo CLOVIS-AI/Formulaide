@@ -6,12 +6,9 @@ import formulaide.ui.navigation.Screen
 import formulaide.ui.navigation.client
 import formulaide.ui.navigation.currentScreen
 import formulaide.ui.theme.RailButton
-import formulaide.ui.utils.rememberRef
-import formulaide.ui.utils.rememberState
-import formulaide.ui.utils.role
+import formulaide.ui.utils.*
 import opensavvy.formulaide.core.User
-import opensavvy.state.Slice.Companion.valueOrNull
-import opensavvy.state.firstResultOrNull
+import opensavvy.state.slice.valueOrNull
 import org.jetbrains.compose.web.dom.Text
 
 val FormList: Screen = Screen(
@@ -35,13 +32,11 @@ val FormList: Screen = Screen(
 
 	var showArchived by remember { mutableStateOf(false) }
 	var showPrivate by remember { mutableStateOf(role >= User.Role.EMPLOYEE) }
-	var forceRefresh by remember { mutableStateOf(0) }
 
-	val forms by rememberState(
+	val (forms, refresh) = rememberSlice(
 		client,
 		showArchived,
-		showPrivate,
-		forceRefresh,
+		showPrivate
 	) { client.forms.list(includeClosed = showArchived, includePrivate = showPrivate) }
 
 	Page(
@@ -61,7 +56,7 @@ val FormList: Screen = Screen(
 				ChipContainer {
 					RefreshButton {
 						client.forms.cache.expireAll()
-						forceRefresh++
+						refresh()
 					}
 				}
 			}
@@ -69,7 +64,7 @@ val FormList: Screen = Screen(
 			DisplayError(forms)
 		}
 	) {
-		for (form in forms.valueOrNull ?: emptyList()) {
+		for (form in forms?.valueOrNull ?: emptyList()) {
 			ShowForm(form)
 		}
 	}
@@ -78,10 +73,12 @@ val FormList: Screen = Screen(
 @Composable
 private fun ShowForm(ref: opensavvy.formulaide.core.Form.Ref) {
 	val slice by rememberRef(ref)
-	val form = slice.valueOrNull
+	val form = slice?.valueOrNull
 
-	Paragraph(form?.name ?: "", loading = slice.progression) {
+	Paragraph(form?.name ?: "") {
 		Text("${form?.versions?.size ?: 1} versions")
+
+		val failure = rememberPossibleFailure()
 
 		ButtonContainer {
 			TextButton(
@@ -91,14 +88,14 @@ private fun ShowForm(ref: opensavvy.formulaide.core.Form.Ref) {
 			}
 
 			TextButton(
-				{ client.forms.edit(ref, public = !form!!.public).firstResultOrNull() },
+				{ client.forms.edit(ref, public = !form!!.public).orReport(failure) },
 				enabled = form != null
 			) {
 				Text(if (form?.public != false) "Rendre privé" else "Rendre public")
 			}
 
 			TextButton(
-				{ client.forms.edit(ref, open = !form!!.open).firstResultOrNull() },
+				{ client.forms.edit(ref, open = !form!!.open).orReport(failure) },
 				enabled = form != null,
 			) {
 				Text(if (form?.open != false) "Archiver" else "Désarchiver")
@@ -106,5 +103,6 @@ private fun ShowForm(ref: opensavvy.formulaide.core.Form.Ref) {
 		}
 
 		DisplayError(slice)
+		DisplayError(failure)
 	}
 }
