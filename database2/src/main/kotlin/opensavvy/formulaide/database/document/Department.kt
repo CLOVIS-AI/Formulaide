@@ -6,12 +6,9 @@ import opensavvy.backbone.Ref
 import opensavvy.backbone.Ref.Companion.expire
 import opensavvy.backbone.RefCache
 import opensavvy.formulaide.core.AbstractDepartments
-import opensavvy.state.Slice.Companion.pending
-import opensavvy.state.Slice.Companion.successful
-import opensavvy.state.State
-import opensavvy.state.ensureFound
-import opensavvy.state.ensureValid
-import opensavvy.state.state
+import opensavvy.state.Progression.Companion.loading
+import opensavvy.state.ProgressionReporter.Companion.report
+import opensavvy.state.slice.*
 import org.litote.kmongo.*
 import org.litote.kmongo.coroutine.CoroutineCollection
 import opensavvy.formulaide.core.Department as CoreDepartment
@@ -28,8 +25,8 @@ class Departments internal constructor(
 	override val cache: RefCache<CoreDepartment>,
 ) : AbstractDepartments {
 
-	override fun list(includeClosed: Boolean): State<List<CoreDepartment.Ref>> = state {
-		emit(pending(0.0))
+	override suspend fun list(includeClosed: Boolean): Slice<List<CoreDepartment.Ref>> = slice {
+		report(loading(0.0))
 
 		val filter = if (includeClosed)
 			null
@@ -41,34 +38,32 @@ class Departments internal constructor(
 			.toList()
 			.map { CoreDepartment.Ref(it.id, this@Departments) }
 
-		emit(successful(result))
+		result
 	}
 
-	override fun create(name: String): State<CoreDepartment.Ref> = state {
-		emit(pending(0.0))
+	override suspend fun create(name: String): Slice<CoreDepartment.Ref> = slice {
+		report(loading(0.0))
 
 		val id = newId<Department>().toString()
 		departments.insertOne(Department(id, name, open = true))
 
-		emit(successful(CoreDepartment.Ref(id, this@Departments)))
+		CoreDepartment.Ref(id, this@Departments)
 	}
 
-	override fun open(department: CoreDepartment.Ref): State<Unit> = state {
-		emit(pending(0.0))
+	override suspend fun open(department: CoreDepartment.Ref): Slice<Unit> = slice {
+		report(loading(0.0))
 		departments.updateOne(Department::id eq department.id, setValue(Department::open, true))
 		department.expire()
-		emit(successful(Unit))
 	}
 
-	override fun close(department: CoreDepartment.Ref): State<Unit> = state {
-		emit(pending(0.0))
+	override suspend fun close(department: CoreDepartment.Ref): Slice<Unit> = slice {
+		report(loading(0.0))
 		departments.updateOne(Department::id eq department.id, setValue(Department::open, false))
 		department.expire()
-		emit(successful(Unit))
 	}
 
-	override fun directRequest(ref: Ref<CoreDepartment>): State<CoreDepartment> = state {
-		emit(pending(0.0))
+	override suspend fun directRequest(ref: Ref<CoreDepartment>): Slice<CoreDepartment> = slice {
+		report(loading(0.0))
 		ensureValid(ref is CoreDepartment.Ref) { "${this@Departments} n'accepte pas la référence $ref" }
 
 		val department = departments.findOne(Department::id eq ref.id)
@@ -78,6 +73,6 @@ class Departments internal constructor(
 			name = department.name,
 			open = department.open,
 		)
-		emit(successful(result))
+		result
 	}
 }

@@ -5,11 +5,10 @@ import formulaide.core.form.TemplateBackbone
 import opensavvy.backbone.Ref
 import opensavvy.backbone.Ref.Companion.expire
 import opensavvy.backbone.RefCache
-import opensavvy.state.Slice.Companion.successful
-import opensavvy.state.State
-import opensavvy.state.ensureFound
-import opensavvy.state.ensureValid
-import opensavvy.state.state
+import opensavvy.state.slice.Slice
+import opensavvy.state.slice.ensureFound
+import opensavvy.state.slice.ensureValid
+import opensavvy.state.slice.slice
 import org.bson.conversions.Bson
 import org.litote.kmongo.*
 import org.litote.kmongo.coroutine.CoroutineCollection
@@ -53,13 +52,13 @@ class Templates(
 		template.expire()
 	}
 
-	override fun directRequest(ref: Ref<Template>): State<Template> = state {
+	override suspend fun directRequest(ref: Ref<Template>): Slice<Template> = slice {
 		ensureValid(ref is Template.Ref) { "${this@Templates} doesn't support the reference $ref" }
 
 		val value = templates.findOne(Template::id eq ref.id)
 		ensureFound(value != null) { "Le modèle ${ref.id} est introuvable" }
 
-		emit(successful(value))
+		value
 	}
 
 	fun fromId(id: String) = Template.Ref(id, this)

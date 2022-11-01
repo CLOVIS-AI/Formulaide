@@ -14,12 +14,12 @@ import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import kotlinx.coroutines.flow.emitAll
 import opensavvy.backbone.Ref.Companion.request
-import opensavvy.backbone.Ref.Companion.requestValue
+import opensavvy.backbone.Ref.Companion.requestValueOrThrow
 import opensavvy.spine.ktor.server.route
-import opensavvy.state.Slice.Companion.successful
-import opensavvy.state.ensureAuthorized
+import opensavvy.state.firstValueOrThrow
+import opensavvy.state.slice.ensureAuthorized
+import opensavvy.state.slice.successful
 
 /**
  * Department management.
@@ -34,9 +34,9 @@ object DepartmentRouting {
 			val result = database.departments.all(parameters.includeClosed)
 				.mapSuccesses { list ->
 					list.map { api2.departments.id.idOf(it.id) }
-				}
+				}.firstValueOrThrow()
 
-			emitAll(result)
+			result
 		}
 
 		route(api2.departments.id.get, context) {
@@ -49,26 +49,26 @@ object DepartmentRouting {
 					emit(successful(it.toRest()))
 				}
 
-			emitAll(result)
+			result.firstValueOrThrow()
 		}
 
 		route(api2.departments.id.open, context) {
 			val ref = database.departments.fromId(id)
 			val result = database.departments.open(ref)
-			emitAll(result)
+			result.firstValueOrThrow()
 		}
 
 		route(api2.departments.id.close, context) {
 			val ref = database.departments.fromId(id)
 			val result = database.departments.close(ref)
-			emitAll(result)
+			result.firstValueOrThrow()
 		}
 
 		route(api2.departments.create, context) {
 			val result = database.departments.create(body.name)
-				.mapSuccesses { api2.departments.id.idOf(it.id) to it.requestValue().toRest() }
+				.mapSuccesses { api2.departments.id.idOf(it.id) to it.requestValueOrThrow().toRest() }
 
-			emitAll(result)
+			result.firstValueOrThrow()
 		}
 	}
 }

@@ -2,7 +2,7 @@ package opensavvy.formulaide.core
 
 import kotlinx.datetime.Instant
 import opensavvy.backbone.Backbone
-import opensavvy.state.State
+import opensavvy.state.slice.Slice
 
 class Template(
 	val name: String,
@@ -40,28 +40,28 @@ interface AbstractTemplates : Backbone<Template> {
 	/**
 	 * Lists all templates.
 	 */
-	fun list(includeClosed: Boolean = false): State<List<Template.Ref>>
+	suspend fun list(includeClosed: Boolean = false): Slice<List<Template.Ref>>
 
 	/**
 	 * Creates a new template.
 	 *
 	 * Only administrators can create templates.
 	 */
-	fun create(name: String, firstVersion: Template.Version): State<Template.Ref>
+	suspend fun create(name: String, firstVersion: Template.Version): Slice<Template.Ref>
 
 	/**
 	 * Creates a new version of a given template.
 	 *
 	 * Only administrators can create new versions.
 	 */
-	fun createVersion(template: Template.Ref, version: Template.Version): State<Template.Version.Ref>
+	suspend fun createVersion(template: Template.Ref, version: Template.Version): Slice<Template.Version.Ref>
 
 	/**
 	 * Edits a form.
 	 *
 	 * Only administrators can edit forms.
 	 */
-	fun edit(template: Template.Ref, name: String? = null, open: Boolean? = null): State<Unit>
+	suspend fun edit(template: Template.Ref, name: String? = null, open: Boolean? = null): Slice<Unit>
 
 }
 

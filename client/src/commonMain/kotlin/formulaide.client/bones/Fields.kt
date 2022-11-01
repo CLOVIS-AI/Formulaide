@@ -8,10 +8,9 @@ import formulaide.core.field.FlatField
 import formulaide.core.field.flatten
 import opensavvy.backbone.Ref
 import opensavvy.backbone.RefCache
-import opensavvy.state.Slice.Companion.successful
-import opensavvy.state.State
-import opensavvy.state.ensureValid
-import opensavvy.state.state
+import opensavvy.state.slice.Slice
+import opensavvy.state.slice.ensureValid
+import opensavvy.state.slice.slice
 
 class Fields(
 	private val client: Client,
@@ -25,11 +24,11 @@ class Fields(
 			)
 		)
 
-	override fun directRequest(ref: Ref<FlatField.Container>): State<FlatField.Container> = state {
+	override suspend fun directRequest(ref: Ref<FlatField.Container>): Slice<FlatField.Container> = slice {
 		ensureValid(ref is FlatField.Container.Ref) { "${this@Fields} doesn't support the reference $ref" }
 
 		val field: FlatField.Container = client.get("/api/schema/fields/${ref.id}")
 
-		emit(successful(field))
+		field
 	}
 }

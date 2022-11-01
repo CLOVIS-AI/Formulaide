@@ -7,16 +7,13 @@ import opensavvy.formulaide.api.Formulaide2.TemplatesEndpoint.TemplateEndpoint
 import opensavvy.formulaide.api.Formulaide2.TemplatesEndpoint.TemplateEndpoint.TemplateVersionEndpoint
 import opensavvy.formulaide.api.Formulaide2.UsersEndpoint.MeEndpoint
 import opensavvy.formulaide.api.Formulaide2.UsersEndpoint.UserEndpoint
-import opensavvy.formulaide.state.bind
 import opensavvy.spine.Id
 import opensavvy.spine.Parameters
 import opensavvy.spine.Route
 import opensavvy.spine.Route.Companion.div
 import opensavvy.spine.Service
-import opensavvy.state.Slice.Companion.successful
-import opensavvy.state.ensureValid
-import opensavvy.state.firstResult
-import opensavvy.state.state
+import opensavvy.state.slice.ensureValid
+import opensavvy.state.slice.slice
 
 val api2 = Formulaide2()
 
@@ -89,10 +86,10 @@ class Formulaide2 : Service("v2") {
 
 			val visibility = edit<Department.EditVisibility, Parameters.Empty>(Route / "open")
 
-			suspend fun idFrom(id: Id, context: Context) = state {
+			suspend fun idFrom(id: Id, context: Context) = slice {
 				validateId(id, context)
-				emit(successful(id.resource.segments.last().segment))
-			}.firstResult()
+				id.resource.segments.last().segment
+			}
 
 		}
 
@@ -169,7 +166,7 @@ class Formulaide2 : Service("v2") {
 		inner class UserEndpoint : DynamicResource<User, Context>("user") {
 
 			val edit = edit<User.Edit, Parameters.Empty> { id, body, _, context ->
-				val targetUserId = bind(idFrom(id, context))
+				val targetUserId = idFrom(id, context).bind()
 				val myUserId = context.user?.id
 
 				if (body.open != null || body.administrator != null)
@@ -178,10 +175,10 @@ class Formulaide2 : Service("v2") {
 
 			val resetPassword = action<Unit, User.TemporaryPassword, Parameters.Empty>(Route / "resetPassword")
 
-			suspend fun idFrom(id: Id, context: Context) = state {
+			suspend fun idFrom(id: Id, context: Context) = slice {
 				validateId(id, context)
-				emit(successful(id.resource.segments.last().segment))
-			}.firstResult()
+				id.resource.segments.last().segment
+			}
 		}
 
 		/**
@@ -316,10 +313,10 @@ class Formulaide2 : Service("v2") {
 
 			val edit = edit<Template.Edit, Parameters.Empty>()
 
-			suspend fun idFrom(id: Id, context: Context) = state {
+			suspend fun idFrom(id: Id, context: Context) = slice {
 				validateId(id, context)
-				emit(successful(id.resource.segments.last().segment))
-			}.firstResult()
+				id.resource.segments.last().segment
+			}
 
 			/**
 			 * The template version endpoint: `v2/templates/{template}/{version}`.
@@ -333,11 +330,11 @@ class Formulaide2 : Service("v2") {
 			 * Authorization: public
 			 */
 			inner class TemplateVersionEndpoint : DynamicResource<Template.Version, Context>("version") {
-				suspend fun idFrom(id: Id, context: Context) = state {
+				suspend fun idFrom(id: Id, context: Context) = slice {
 					validateId(id, context)
 					val size = id.resource.segments.size
-					emit(successful(id.resource.segments[size - 2].segment to id.resource.segments[size - 1].segment))
-				}.firstResult()
+					id.resource.segments[size - 2].segment to id.resource.segments[size - 1].segment
+				}
 			}
 
 			val version = TemplateVersionEndpoint()
@@ -421,10 +418,10 @@ class Formulaide2 : Service("v2") {
 
 			val edit = edit<Form.Edit, Parameters.Empty>()
 
-			suspend fun idFrom(id: Id, context: Context) = state {
+			suspend fun idFrom(id: Id, context: Context) = slice {
 				validateId(id, context)
-				emit(successful(id.resource.segments.last().segment))
-			}.firstResult()
+				id.resource.segments.last().segment
+			}
 
 			/**
 			 * The form version management endpoint: `v2/forms/{form}/{version}`.
@@ -436,11 +433,11 @@ class Formulaide2 : Service("v2") {
 			 * Authorization: public
 			 */
 			inner class FormVersionEndpoint : DynamicResource<Form.Version, Context>("version") {
-				suspend fun idFrom(id: Id, context: Context) = state {
+				suspend fun idFrom(id: Id, context: Context) = slice {
 					validateId(id, context)
 					val size = id.resource.segments.size
-					emit(successful(id.resource.segments[size - 2].segment to id.resource.segments[size - 1].segment))
-				}.firstResult()
+					id.resource.segments[size - 2].segment to id.resource.segments[size - 1].segment
+				}
 			}
 
 			val version = FormVersionEndpoint()

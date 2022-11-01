@@ -5,8 +5,8 @@ import formulaide.api.bones.ApiNewUser
 import formulaide.api.bones.ApiPasswordLogin
 import formulaide.db.document.toCore
 import kotlinx.coroutines.runBlocking
-import opensavvy.backbone.Ref.Companion.requestValue
-import opensavvy.state.firstResultOrThrow
+import opensavvy.backbone.Ref.Companion.requestValueOrThrow
+import opensavvy.state.firstValueOrThrow
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -42,7 +42,7 @@ class AuthTest {
 	fun testAuth() = runBlocking {
 		val db = testDatabase()
 		val auth = Auth(db)
-		val service = db.departments.create("Service des tests").firstResultOrThrow()
+		val service = db.departments.create("Service des tests").firstValueOrThrow()
 
 		val email = "new${Random.nextInt()}@ville-arcachon.fr"
 		val password = "this is my super-safe password"
@@ -59,7 +59,7 @@ class AuthTest {
 		// Checking token validity
 
 		assertEquals(
-			dbUser1.requestValue(),
+			dbUser1.requestValueOrThrow(),
 			dbUser2.toCore(db),
 			"I should retrieve the same user as the one that was created"
 		)

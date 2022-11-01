@@ -6,12 +6,13 @@ import formulaide.ui.navigation.Screen
 import formulaide.ui.navigation.client
 import formulaide.ui.navigation.currentScreen
 import formulaide.ui.theme.RailButton
+import formulaide.ui.utils.orReport
+import formulaide.ui.utils.rememberPossibleFailure
 import formulaide.ui.utils.rememberRef
-import formulaide.ui.utils.rememberState
+import formulaide.ui.utils.rememberSlice
 import opensavvy.formulaide.core.Template
 import opensavvy.formulaide.core.User
-import opensavvy.state.Slice.Companion.valueOrNull
-import opensavvy.state.firstResultOrNull
+import opensavvy.state.slice.valueOrNull
 import org.jetbrains.compose.web.dom.Text
 
 val TemplateList: Screen = Screen(
@@ -32,13 +33,10 @@ val TemplateList: Screen = Screen(
 	}
 ) {
 	var showArchived by remember { mutableStateOf(false) }
-	var forceRefresh by remember { mutableStateOf(0) }
 
-	val templates by rememberState(
-		client,
-		forceRefresh,
-		showArchived
-	) { client.templates.list(includeClosed = showArchived) }
+	val (templates, refresh) = rememberSlice(client, showArchived) {
+		client.templates.list(includeClosed = showArchived)
+	}
 
 	Page(
 		title = "Modèles",
@@ -51,7 +49,7 @@ val TemplateList: Screen = Screen(
 				ChipContainer {
 					RefreshButton {
 						client.templates.cache.expireAll()
-						forceRefresh++
+						refresh()
 					}
 				}
 			}
@@ -59,7 +57,7 @@ val TemplateList: Screen = Screen(
 			DisplayError(templates)
 		}
 	) {
-		for (template in templates.valueOrNull ?: emptyList()) {
+		for (template in templates?.valueOrNull ?: emptyList()) {
 			ShowTemplate(template)
 		}
 	}
@@ -68,10 +66,12 @@ val TemplateList: Screen = Screen(
 @Composable
 private fun ShowTemplate(ref: Template.Ref) {
 	val slice by rememberRef(ref)
-	val template = slice.valueOrNull
+	val template = slice?.valueOrNull
 
-	Paragraph(template?.name ?: "", loading = slice.progression) {
+	Paragraph(template?.name ?: "") {
 		Text("${template?.versions?.size ?: "1"} versions")
+
+		val failure = rememberPossibleFailure()
 
 		ButtonContainer {
 			TextButton(
@@ -82,7 +82,7 @@ private fun ShowTemplate(ref: Template.Ref) {
 			}
 
 			TextButton(
-				{ client.templates.edit(ref, open = !template!!.open).firstResultOrNull() },
+				{ client.templates.edit(ref, open = !template!!.open).orReport(failure) },
 				enabled = template != null
 			) {
 				Text(if (template?.open != false) "Archiver" else "Désarchiver")
@@ -90,5 +90,6 @@ private fun ShowTemplate(ref: Template.Ref) {
 		}
 
 		DisplayError(slice)
+		DisplayError(failure)
 	}
 }

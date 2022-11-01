@@ -6,21 +6,13 @@ import formulaide.ui.components.editor.*
 import formulaide.ui.navigation.Screen
 import formulaide.ui.navigation.client
 import formulaide.ui.navigation.currentScreen
-import formulaide.ui.utils.rememberState
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.onEach
+import formulaide.ui.utils.rememberPossibleFailure
+import formulaide.ui.utils.rememberSlice
+import formulaide.ui.utils.runOrReport
 import kotlinx.datetime.Clock
 import opensavvy.formulaide.core.Form
 import opensavvy.formulaide.core.User
-import opensavvy.formulaide.state.mapSuccess
-import opensavvy.formulaide.state.onEachSuccess
-import opensavvy.state.Slice
-import opensavvy.state.Slice.Companion.pending
-import opensavvy.state.Slice.Companion.successful
-import opensavvy.state.Slice.Companion.valueOrNull
-import opensavvy.state.flatMapSuccess
-import opensavvy.state.state
+import opensavvy.state.slice.valueOrNull
 import org.jetbrains.compose.web.dom.Text
 
 val FormCreator: Screen = Screen(
@@ -48,18 +40,18 @@ val FormCreator: Screen = Screen(
 				DisplayError("Dans la majorité des cas, il est recommandé que la racine d'un formulaire soit un groupe.")
 		}
 
-		val departments by rememberState(client) { client.departments.list() }
+		val (departments, _) = rememberSlice(client) { client.departments.list() }
 		val steps = remember { mutableStateListOf<MutableStep>() }
 
 		StepsEditor(steps)
 
-		var progression: Slice<Unit> by remember { mutableStateOf(pending()) }
+		val failure = rememberPossibleFailure()
 
 		ButtonContainer {
 			SecondaryButton(onClick = {
 				steps += Form.Step(
 					steps.maxOfOrNull { it.id }?.plus(1) ?: 1,
-					departments.valueOrNull?.firstOrNull() ?: return@SecondaryButton,
+					departments?.valueOrNull?.firstOrNull() ?: return@SecondaryButton,
 					null,
 				).toMutable()
 			}) {
@@ -67,15 +59,12 @@ val FormCreator: Screen = Screen(
 			}
 
 			MainButton(onClick = {
-				state {
+				runOrReport(failure) {
 					val version =
 						Form.Version(Clock.System.now(), versionName, field.toField(), steps.map { it.toCore() })
-					emit(successful(version))
-				}.flatMapSuccess { emitAll(client.forms.create(name, public = false, it)) }
-					.mapSuccess { /* we don't care about the value */ }
-					.onEach { progression = it }
-					.onEachSuccess { currentScreen = FormList }
-					.collect()
+					client.forms.create(name, public = false, version).bind()
+					currentScreen = FormList
+				}
 			}) {
 				Text("Créer ce formulaire")
 			}
@@ -84,9 +73,9 @@ val FormCreator: Screen = Screen(
 		if (steps.isEmpty())
 			DisplayError("Un formulaire doit contenir au moins une étape")
 
-		if (departments.valueOrNull?.isEmpty() != false)
+		if (departments?.valueOrNull?.isEmpty() != false)
 			DisplayError("Il est nécessaire de créer un département avant de créer un formulaire")
 
-		DisplayError(progression)
+		DisplayError(failure)
 	}
 }

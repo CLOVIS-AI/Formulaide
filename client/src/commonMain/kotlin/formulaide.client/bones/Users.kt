@@ -12,10 +12,9 @@ import io.ktor.client.request.*
 import opensavvy.backbone.Ref
 import opensavvy.backbone.Ref.Companion.expire
 import opensavvy.cache.Cache
-import opensavvy.state.Slice.Companion.successful
-import opensavvy.state.State
-import opensavvy.state.ensureValid
-import opensavvy.state.state
+import opensavvy.state.slice.Slice
+import opensavvy.state.slice.ensureValid
+import opensavvy.state.slice.slice
 
 class Users(
 	private val client: Client,
@@ -93,7 +92,7 @@ class Users(
 		)
 	}
 
-	override fun directRequest(ref: Ref<User>): State<User> = state {
+	override suspend fun directRequest(ref: Ref<User>): Slice<User> = slice {
 		ensureValid(ref is User.Ref) { "${this@Users} doesn't support the reference $ref" }
 
 		val result: User = client.get("/api/users/${ref.email}")
@@ -105,6 +104,6 @@ class Users(
 			open = result.open,
 		)
 
-		emit(successful(user))
+		user
 	}
 }

@@ -1,6 +1,6 @@
 package opensavvy.formulaide.database.document
 
-import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
@@ -13,7 +13,7 @@ import opensavvy.cache.MemoryCache.Companion.cachedInMemory
 import opensavvy.formulaide.core.AbstractTemplateVersions
 import opensavvy.formulaide.core.AbstractTemplates
 import opensavvy.state.*
-import opensavvy.state.Slice.Companion.successful
+import opensavvy.state.slice.*
 import org.bson.conversions.Bson
 import org.litote.kmongo.*
 import org.litote.kmongo.coroutine.CoroutineCollection
@@ -53,15 +53,15 @@ class Templates internal constructor(
 	context: CoroutineContext,
 ) : AbstractTemplates {
 	private val templateCache = CacheAdapter<CoreTemplate.Ref, Template> {
-		state {
+		slice {
 			val template = templates.findOne(Template::id eq it.id)
 			ensureFound(template != null) { "Le modèle ${it.id} est introuvable" }
-			emit(successful(template))
+			template
 		}
 	}.cachedInMemory(context)
 		.expireAfter(2.minutes, context)
 
-	override fun list(includeClosed: Boolean): State<List<CoreTemplate.Ref>> = state {
+	override suspend fun list(includeClosed: Boolean): Slice<List<CoreTemplate.Ref>> = slice {
 		val filter = if (includeClosed)
 			null
 		else
@@ -72,10 +72,10 @@ class Templates internal constructor(
 			.toList()
 			.map { CoreTemplate.Ref(it.id, this@Templates) }
 
-		emit(successful(result))
+		result
 	}
 
-	override fun create(name: String, firstVersion: CoreTemplate.Version): State<CoreTemplate.Ref> = state {
+	override suspend fun create(name: String, firstVersion: CoreTemplate.Version): Slice<CoreTemplate.Ref> = slice {
 		val id = newId<Template>().toString()
 		templates.insertOne(
 			Template(
@@ -86,13 +86,13 @@ class Templates internal constructor(
 			)
 		)
 
-		emit(successful(CoreTemplate.Ref(id, this@Templates)))
+		CoreTemplate.Ref(id, this@Templates)
 	}
 
-	override fun createVersion(
+	override suspend fun createVersion(
 		template: CoreTemplate.Ref,
 		version: CoreTemplate.Version,
-	): State<CoreTemplate.Version.Ref> = state {
+	): Slice<CoreTemplate.Version.Ref> = slice {
 		val creationDate = Clock.System.now()
 
 		templates.updateOne(
@@ -103,18 +103,14 @@ class Templates internal constructor(
 		templateCache.expire(template)
 		cache.expire(template)
 
-		emit(
-			successful(
-				CoreTemplate.Version.Ref(
-					CoreTemplate.Ref(template.id, this@Templates),
-					creationDate,
-					versions
-				)
-			)
+		CoreTemplate.Version.Ref(
+			CoreTemplate.Ref(template.id, this@Templates),
+			creationDate,
+			versions
 		)
 	}
 
-	override fun edit(template: CoreTemplate.Ref, name: String?, open: Boolean?): State<Unit> = state {
+	override suspend fun edit(template: CoreTemplate.Ref, name: String?, open: Boolean?): Slice<Unit> = slice {
 		val updates = ArrayList<Bson>()
 
 		if (name != null)
@@ -127,45 +123,35 @@ class Templates internal constructor(
 
 		templateCache.expire(template)
 		cache.expire(template)
-		emit(successful(Unit))
 	}
 
-	override fun directRequest(ref: Ref<CoreTemplate>): State<CoreTemplate> = state {
+	override suspend fun directRequest(ref: Ref<CoreTemplate>): Slice<CoreTemplate> = slice {
 		ensureValid(ref is CoreTemplate.Ref) { "${this@Templates} n'accepte pas la référence $ref" }
 
-		val result = templateCache[ref]
-			.mapSuccess { template ->
-				CoreTemplate(
-					template.name,
-					template.versions.map { CoreTemplate.Version.Ref(ref, it.creationDate, versions) },
-					template.open,
-				)
-			}
-
-		emitAll(result)
+		val template = templateCache[ref].first().bind()
+		CoreTemplate(
+			template.name,
+			template.versions.map { CoreTemplate.Version.Ref(ref, it.creationDate, versions) },
+			template.open,
+		)
 	}
 
 	inner class Versions internal constructor(
 		override val cache: RefCache<CoreTemplate.Version>,
 	) : AbstractTemplateVersions {
-		override fun directRequest(ref: Ref<CoreTemplate.Version>): State<CoreTemplate.Version> = state {
+		override suspend fun directRequest(ref: Ref<CoreTemplate.Version>): Slice<CoreTemplate.Version> = slice {
 			ensureValid(ref is CoreTemplate.Version.Ref) { "${this@Templates} n'accepte pas la référence $ref" }
 
-			val result = templateCache[ref.template]
-				.flatMapSuccess { template ->
-					val version = template.versions.find { it.creationDate == ref.version }
-					ensureFound(version != null) { "La version ${ref.version} du modèle ${ref.template.id} est introuvable" }
-					emit(successful(version))
-				}
-				.mapSuccess {
-					CoreTemplate.Version(
-						it.creationDate,
-						it.title,
-						it.field.toCore(this@Templates, this@Versions)
-					)
-				}
+			val template = templateCache[ref.template].first().bind()
 
-			emitAll(result)
+			val version = template.versions.find { it.creationDate == ref.version }
+			ensureFound(version != null) { "La version ${ref.version} du modèle ${ref.template.id} est introuvable" }
+
+			CoreTemplate.Version(
+				version.creationDate,
+				version.title,
+				version.field.toCore(this@Templates, this@Versions)
+			)
 		}
 	}
 

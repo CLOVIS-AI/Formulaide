@@ -4,15 +4,13 @@ import androidx.compose.runtime.*
 import formulaide.ui.components.*
 import formulaide.ui.navigation.Screen
 import formulaide.ui.navigation.client
+import formulaide.ui.utils.rememberPossibleFailure
 import formulaide.ui.utils.rememberRef
-import formulaide.ui.utils.rememberState
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.onEach
+import formulaide.ui.utils.rememberSlice
+import formulaide.ui.utils.runOrReport
 import opensavvy.formulaide.core.Department
 import opensavvy.formulaide.core.User
-import opensavvy.state.Slice
-import opensavvy.state.Slice.Companion.valueOrNull
-import opensavvy.state.mapSuccess
+import opensavvy.state.slice.valueOrNull
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 
@@ -25,7 +23,7 @@ val UserCreator: Screen = Screen(
 	parent = UserList,
 ) {
 	Page("Nouvel utilisateur") {
-		val allDepartments by rememberState(client) { client.departments.list() }
+		val (allDepartments) = rememberSlice(client) { client.departments.list() }
 
 		var name by remember { mutableStateOf("") }
 		TextField("Nom complet", name, onChange = { name = it })
@@ -43,9 +41,9 @@ val UserCreator: Screen = Screen(
 		P {
 			Text("Départements")
 			ChipContainer {
-				for (department in allDepartments.valueOrNull ?: emptyList()) {
+				for (department in allDepartments?.valueOrNull ?: emptyList()) {
 					val slice by rememberRef(department)
-					val departmentName = slice.valueOrNull?.name
+					val departmentName = slice?.valueOrNull?.name
 					if (departmentName != null) {
 						val enabled = department in departments
 						FilterChip(
@@ -58,23 +56,24 @@ val UserCreator: Screen = Screen(
 			}
 		}
 
-		var progression: Slice<Unit> by remember { mutableStateOf(Slice.pending()) }
+		val failure = rememberPossibleFailure()
 		var password by remember { mutableStateOf<String?>(null) }
 
 		ButtonContainer {
 			MainButton(onClick = {
-				client.users.create(email.trim(), name.trim(), departments.toSet(), administrator)
-					.mapSuccess { (_, it) -> password = it }
-					.onEach { progression = it }
-					.collect()
+				runOrReport(failure) {
+					val (_, it) = client.users.create(email.trim(), name.trim(), departments.toSet(), administrator)
+						.bind()
+					password = it
+				}
 			}) {
 				Text("Créer cet utilisateur")
 			}
 		}
 
-		DisplayError(progression)
+		DisplayError(failure)
 
-		if (password != null) Paragraph("Identifiants", loading = progression.progression) {
+		if (password != null) Paragraph("Identifiants") {
 			Text("L'utilisateur a bien été créé. Veuillez lui communiquer ses identifiants :")
 			P { Text("• Adresse électronique : $email") }
 			P { Text("• Mot de passe à usage unique : $password") }

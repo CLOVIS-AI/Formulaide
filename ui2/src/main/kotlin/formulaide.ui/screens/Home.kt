@@ -5,14 +5,9 @@ import formulaide.ui.components.*
 import formulaide.ui.navigation.Screen
 import formulaide.ui.navigation.client
 import formulaide.ui.navigation.currentScreen
-import formulaide.ui.utils.rememberEmptyState
-import formulaide.ui.utils.rememberRef
-import formulaide.ui.utils.role
-import formulaide.ui.utils.user
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.onEach
+import formulaide.ui.utils.*
 import opensavvy.formulaide.core.User
-import opensavvy.state.Slice.Companion.valueOrNull
+import opensavvy.state.slice.valueOrNull
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 
@@ -30,7 +25,7 @@ val Home: Screen = Screen(
 
 		when {
 			client.role == User.Role.ANONYMOUS -> LoginPage()
-			me.valueOrNull?.forceResetPassword ?: false -> {
+			me?.valueOrNull?.forceResetPassword ?: false -> {
 				P { Text("Vous vous êtes connectés avec un mot de passe à usage unique. Choisissez un nouveau mot de passe pour pouvoir continuer à utiliser votre compte.") }
 				PasswordModificationPage()
 			}
@@ -49,7 +44,7 @@ private fun LoginPage() {
 	var email by remember { mutableStateOf("") }
 	var password by remember { mutableStateOf("") }
 
-	var result by rememberEmptyState()
+	val failure = rememberPossibleFailure()
 
 	TextField("Adresse mail", email, onChange = { email = it })
 	PasswordField("Mot de passe", password, onChange = { password = it })
@@ -57,32 +52,29 @@ private fun LoginPage() {
 	ButtonContainer {
 		MainButton(
 			onClick = {
-				client.users.logIn(email, password)
-					.onEach { result = it }
-					.collect()
+				client.users.logIn(email, password).orReport(failure)
 			}
 		) {
 			Text("Connexion")
-			Loading(result)
 		}
 	}
 
-	DisplayError(result)
+	DisplayError(failure)
 }
 
 @Composable
 private fun HomePage() {
 	val me by rememberRef(client.user)
 
-	val name = me.valueOrNull?.name
+	val name = me?.valueOrNull?.name
 
 	if (name != null) {
 		P {
-			Text("Bonjour, ${me.valueOrNull?.name}.")
+			Text("Bonjour, ${me?.valueOrNull?.name}.")
 		}
 
 		P {
-			when (me.valueOrNull?.role) {
+			when (me?.valueOrNull?.role) {
 				User.Role.EMPLOYEE -> Text("Vous êtes un employé.")
 				User.Role.ADMINISTRATOR -> Text("Vous êtes administrateur.")
 				else -> {}

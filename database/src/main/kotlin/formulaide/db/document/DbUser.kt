@@ -9,7 +9,7 @@ import opensavvy.backbone.*
 import opensavvy.backbone.Ref.Companion.requestValue
 import opensavvy.cache.Cache
 import opensavvy.state.*
-import opensavvy.state.Slice.Companion.successful
+import opensavvy.state.slice.*
 import org.bson.conversions.Bson
 import org.litote.kmongo.combine
 import org.litote.kmongo.coroutine.CoroutineCollection
@@ -138,7 +138,7 @@ class Users(
 		)
 	}
 
-	override fun directRequest(ref: Ref<formulaide.core.User>): State<formulaide.core.User> = state {
+	override suspend fun directRequest(ref: Ref<formulaide.core.User>): Slice<formulaide.core.User> = slice {
 		ensureValid(ref is formulaide.core.User.Ref) { "${this@Users} doesn't support the reference $ref" }
 
 		val db = users.findOne(DbUser::email eq ref.email)
@@ -151,7 +151,7 @@ class Users(
 			db.isAdministrator,
 			db.enabled ?: true,
 		)
-		emit(successful(core))
+		core
 	}
 }
 

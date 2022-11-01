@@ -5,7 +5,7 @@ import formulaide.api.types.Ref
 import formulaide.api.users.*
 import formulaide.client.Client
 import formulaide.core.Department
-import opensavvy.backbone.Ref.Companion.requestValue
+import opensavvy.backbone.Ref.Companion.requestValueOrThrow
 
 private fun formulaide.core.User.toLegacy() = User(
 	Email(email),
@@ -52,7 +52,7 @@ suspend fun Client.Authenticated.createUser(newUser: NewUser) {
  * > See [Client.departments]
  */
 suspend fun Client.Authenticated.getMe(): User =
-	users.me().requestValue().toLegacy()
+	users.me().requestValueOrThrow().toLegacy()
 
 /**
  * Edits a [user]'s information.
@@ -69,7 +69,7 @@ suspend fun Client.Authenticated.editUser(
 ): User {
 	val ref = formulaide.core.User.Ref(user.id, users)
 	users.edit(ref, enabled, administrator, services.map { Department.Ref(it.id, departments) }.toSet())
-	return ref.requestValue().toLegacy()
+	return ref.requestValueOrThrow().toLegacy()
 }
 
 /**
@@ -93,5 +93,5 @@ suspend fun Client.Authenticated.editPassword(edit: PasswordEdit) {
  */
 suspend fun Client.Authenticated.listUsers(evenDisabled: Boolean = false): List<User> =
 	users.all(evenDisabled)
-		.map { it.requestValue() }
+		.map { it.requestValueOrThrow() }
 		.map { it.toLegacy() }

@@ -11,10 +11,9 @@ import formulaide.core.record.RecordBackbone
 import kotlinx.datetime.Instant
 import opensavvy.backbone.Ref
 import opensavvy.backbone.RefCache
-import opensavvy.state.Slice.Companion.successful
-import opensavvy.state.State
-import opensavvy.state.ensureValid
-import opensavvy.state.state
+import opensavvy.state.slice.Slice
+import opensavvy.state.slice.ensureValid
+import opensavvy.state.slice.slice
 
 class Records(
 	private val client: Client,
@@ -48,11 +47,11 @@ class Records(
 	override suspend fun list(): List<Record.Ref> =
 		client.get("/api/records/")
 
-	override fun directRequest(ref: Ref<Record>): State<Record> = state {
+	override suspend fun directRequest(ref: Ref<Record>): Slice<Record> = slice {
 		ensureValid(ref is Record.Ref) { "${this@Records} doesn't support the reference $ref" }
 
 		val result: Record = client.get("/api/records/${ref.id}")
 
-		emit(successful(result))
+		result
 	}
 }

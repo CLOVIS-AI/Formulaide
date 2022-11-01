@@ -2,7 +2,6 @@ package formulaide.ui.components
 
 import androidx.compose.runtime.Composable
 import opensavvy.state.Progression
-import opensavvy.state.Slice
 import org.jetbrains.compose.web.css.DisplayStyle
 import org.jetbrains.compose.web.css.display
 import org.jetbrains.compose.web.dom.Div
@@ -10,12 +9,7 @@ import org.jetbrains.compose.web.dom.I
 import org.jetbrains.compose.web.dom.Text
 
 @Composable
-fun Loading(data: Slice<Any>) {
-	Loading(data.progression)
-}
-
-@Composable
-fun Loading(progression: Progression) {
+fun Loading(progression: Progression = Progression.loading()) {
 	if (progression is Progression.Loading) {
 		Div(
 			{

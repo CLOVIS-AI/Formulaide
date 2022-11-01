@@ -5,17 +5,13 @@ import formulaide.core.form.FormBackbone
 import opensavvy.backbone.Ref
 import opensavvy.backbone.Ref.Companion.expire
 import opensavvy.backbone.RefCache
-import opensavvy.state.Slice.Companion.successful
-import opensavvy.state.State
-import opensavvy.state.ensureFound
-import opensavvy.state.ensureValid
-import opensavvy.state.state
+import opensavvy.state.slice.Slice
+import opensavvy.state.slice.ensureFound
+import opensavvy.state.slice.ensureValid
+import opensavvy.state.slice.slice
 import org.bson.conversions.Bson
+import org.litote.kmongo.*
 import org.litote.kmongo.coroutine.CoroutineCollection
-import org.litote.kmongo.eq
-import org.litote.kmongo.newId
-import org.litote.kmongo.push
-import org.litote.kmongo.setValue
 
 class Forms(
 	val forms: CoroutineCollection<Form>,
@@ -64,18 +60,18 @@ class Forms(
 		if (open != null)
 			updates.add(setValue(Form::open, open))
 
-		forms.updateOne(Form::id eq form.id, org.litote.kmongo.combine(updates))
+		forms.updateOne(Form::id eq form.id, combine(updates))
 		form.expire()
 	}
 
 	fun fromId(id: String) = Form.Ref(id, this)
 
-	override fun directRequest(ref: Ref<Form>): State<Form> = state {
+	override suspend fun directRequest(ref: Ref<Form>): Slice<Form> = slice {
 		ensureValid(ref is Form.Ref) { "${this@Forms} doesn't support the reference $ref" }
 
 		val result = forms.findOne(Form::id eq ref.id)
-		ensureFound(result != null) { "Le formulaire ${ref.id} est introuvable" }
+		ensureFound(result != null) { "Le formulaire ${MongoOperator.id} est introuvable" }
 
-		emit(successful(result))
+		result
 	}
 }

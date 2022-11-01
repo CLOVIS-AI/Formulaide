@@ -1,7 +1,7 @@
 package opensavvy.formulaide.core
 
 import opensavvy.backbone.Backbone
-import opensavvy.state.State
+import opensavvy.state.slice.Slice
 
 data class User(
 	val email: String,
@@ -43,7 +43,7 @@ interface AbstractUsers : Backbone<User> {
 	 *
 	 * Requires administrator authorization.
 	 */
-	fun list(includeClosed: Boolean = false): State<List<User.Ref>>
+	suspend fun list(includeClosed: Boolean = false): Slice<List<User.Ref>>
 
 	/**
 	 * Creates a new user.
@@ -52,12 +52,12 @@ interface AbstractUsers : Backbone<User> {
 	 *
 	 * @return Reference to the created user and the generated single-use password.
 	 */
-	fun create(
+	suspend fun create(
 		email: String,
 		fullName: String,
 		departments: Set<Department.Ref>,
 		administrator: Boolean,
-	): State<Pair<User.Ref, String>>
+	): Slice<Pair<User.Ref, String>>
 
 	/**
 	 * Edits [user].
@@ -66,12 +66,12 @@ interface AbstractUsers : Backbone<User> {
 	 *
 	 * Requires administrator authorization.
 	 */
-	fun edit(
+	suspend fun edit(
 		user: User.Ref,
 		open: Boolean? = null,
 		administrator: Boolean? = null,
 		departments: Set<Department.Ref>? = null,
-	): State<Unit>
+	): Slice<Unit>
 
 	/**
 	 * Resets [user]'s password.
@@ -80,6 +80,6 @@ interface AbstractUsers : Backbone<User> {
 	 *
 	 * @return A new single-use password.
 	 */
-	fun resetPassword(user: User.Ref): State<String>
+	suspend fun resetPassword(user: User.Ref): Slice<String>
 
 }

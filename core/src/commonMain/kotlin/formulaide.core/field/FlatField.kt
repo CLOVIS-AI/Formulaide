@@ -4,7 +4,7 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import opensavvy.backbone.Backbone
-import opensavvy.backbone.Ref.Companion.requestValue
+import opensavvy.backbone.Ref.Companion.requestValueOrThrow
 
 /**
  * Flat representation of the [Field] hierarchy used in the API.
@@ -119,7 +119,7 @@ private suspend fun resolveSource(
 		null
 	} else {
 		requireNotNull(field) { "Le conteneur est non-nul ($container), mais le champ l'est : $field" }
-		val source = container.requestValue().resolve()
+		val source = container.requestValueOrThrow().resolve()
 		source to field
 	}
 

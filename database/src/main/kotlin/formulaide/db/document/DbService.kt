@@ -3,16 +3,14 @@ package formulaide.db.document
 import formulaide.api.users.Service
 import formulaide.core.Department
 import formulaide.core.DepartmentBackbone
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.Serializable
 import opensavvy.backbone.Ref
 import opensavvy.backbone.Ref.Companion.expire
 import opensavvy.backbone.RefCache
 import opensavvy.spine.Id
-import opensavvy.state.Slice.Companion.successful
-import opensavvy.state.State
-import opensavvy.state.ensureFound
-import opensavvy.state.ensureValid
-import opensavvy.state.state
+import opensavvy.state.slice.*
 import org.litote.kmongo.coroutine.CoroutineCollection
 import org.litote.kmongo.eq
 import org.litote.kmongo.setValue
@@ -39,7 +37,7 @@ class Departments(
 	private val services: CoroutineCollection<DbService>,
 	override val cache: RefCache<Department>,
 ) : DepartmentBackbone {
-	override fun all(includeClosed: Boolean): State<List<Department.Ref>> = state {
+	override fun all(includeClosed: Boolean): Flow<Slice<List<Department.Ref>>> = flow {
 		val filter = (DbService::open eq true).takeIf { !includeClosed }
 
 		val result = services.find(filter)
@@ -49,7 +47,7 @@ class Departments(
 		emit(successful(result))
 	}
 
-	override fun create(name: String) = state {
+	override fun create(name: String) = flow {
 		var id: Int
 		do {
 			id = Random.nextInt()
@@ -60,13 +58,13 @@ class Departments(
 		emit(successful(Department.Ref(id.toString(), this@Departments)))
 	}
 
-	override fun open(department: Department.Ref) = state<Unit> {
+	override fun open(department: Department.Ref) = flow<Slice<Unit>> {
 		services.updateOne(DbService::id eq department.id.toInt(), setValue(DbService::open, true))
 		department.expire()
 		emit(successful(Unit))
 	}
 
-	override fun close(department: Department.Ref) = state<Unit> {
+	override fun close(department: Department.Ref) = flow<Slice<Unit>> {
 		services.updateOne(DbService::id eq department.id.toInt(), setValue(DbService::open, false))
 		department.expire()
 		emit(successful(Unit))
@@ -76,7 +74,7 @@ class Departments(
 
 	fun fromId(id: Id) = Department.Ref(id.resource.segments[1].segment, this)
 
-	override fun directRequest(ref: Ref<Department>): State<Department> = state {
+	override suspend fun directRequest(ref: Ref<Department>): Slice<Department> = slice {
 		ensureValid(ref is Department.Ref) { "${this@Departments} doesn't support the reference $ref" }
 
 		val dbService = services.findOne(DbService::id eq ref.id.toInt())
@@ -87,6 +85,6 @@ class Departments(
 			dbService.name,
 			dbService.open,
 		)
-		emit(successful(department))
+		department
 	}
 }

@@ -1,34 +1,30 @@
 package formulaide.api.utils
 
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.transform
-import opensavvy.state.*
+import arrow.core.Either
+import arrow.core.left
+import kotlinx.coroutines.flow.*
+import opensavvy.state.slice.Slice
+import opensavvy.state.slice.slice
 
-fun <I, O> State<I>.mapSuccesses(transform: suspend (I) -> O): State<O> = map {
-	val (status, progression) = it
-
-	val newStatus: Status<O> = when (status) {
-		is Status.Failed -> status
-		is Status.Pending -> status
-		is Status.Successful -> Status.Successful(transform(status.value))
-	}
-
-	Slice(newStatus, progression)
-}
-
-fun <I, O> State<I>.flatMapSuccesses(transform: suspend StateBuilder<O>.(I) -> Unit): State<O> = transform {
-	val (status, progression) = it
-
-	when (status) {
-		is Status.Failed -> emit(Slice(status, progression))
-		is Status.Pending -> emit(Slice(status, progression))
-		is Status.Successful -> emitAll(state { transform(status.value) })
+fun <I, O> Flow<Slice<I>>.mapSuccesses(transform: suspend (I) -> O): Flow<Slice<O>> = map {
+	slice {
+		transform(it.bind())
 	}
 }
 
-fun <I> State<I>.onEachSuccess(action: suspend (I) -> Unit) = onEach { slice ->
-	(slice.status as? Status.Successful)
-		?.let { action(it.value) }
+fun <I, O> Flow<Slice<I>>.flatMapSuccesses(transform: suspend FlowCollector<Slice<O>>.(I) -> Unit): Flow<Slice<O>> =
+	transform { slice ->
+		slice.fold(
+			ifLeft = {
+				emit(it.left())
+			},
+			ifRight = {
+				transform(it)
+			}
+		)
+	}
+
+fun <I> Flow<Slice<I>>.onEachSuccess(action: suspend (I) -> Unit) = onEach { slice ->
+	if (slice is Either.Right)
+		action(slice.value)
 }

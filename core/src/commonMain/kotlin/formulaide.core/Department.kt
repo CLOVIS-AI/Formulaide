@@ -1,7 +1,8 @@
 package formulaide.core
 
+import kotlinx.coroutines.flow.Flow
 import opensavvy.backbone.Backbone
-import opensavvy.state.State
+import opensavvy.state.slice.Slice
 
 /**
  * A company department, for example "Human resources" or "IT management".
@@ -26,14 +27,14 @@ interface DepartmentBackbone : Backbone<Department> {
 	 * In that case, closed departments are included in the results.
 	 * Otherwise, only open departments are returned.
 	 */
-	fun all(includeClosed: Boolean = false): State<List<Department.Ref>>
+	fun all(includeClosed: Boolean = false): Flow<Slice<List<Department.Ref>>>
 
 	/**
 	 * Creates a new department.
 	 *
 	 * Requires administrator authentication.
 	 */
-	fun create(name: String): State<Department.Ref>
+	fun create(name: String): Flow<Slice<Department.Ref>>
 
 	/**
 	 * Opens the [department] (sets [Department.open] to `true`).
@@ -42,7 +43,7 @@ interface DepartmentBackbone : Backbone<Department> {
 	 *
 	 * If the department is already open, does nothing.
 	 */
-	fun open(department: Department.Ref): State<Unit>
+	fun open(department: Department.Ref): Flow<Slice<Unit>>
 
 	/**
 	 * Closes the [department] (sets [Department.open] to `false`).
@@ -51,5 +52,5 @@ interface DepartmentBackbone : Backbone<Department> {
 	 *
 	 * If the department is already closed, does nothing.
 	 */
-	fun close(department: Department.Ref): State<Unit>
+	fun close(department: Department.Ref): Flow<Slice<Unit>>
 }

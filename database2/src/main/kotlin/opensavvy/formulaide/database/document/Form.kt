@@ -1,7 +1,7 @@
 package opensavvy.formulaide.database.document
 
 import com.mongodb.client.model.Filters.and
-import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
@@ -16,7 +16,7 @@ import opensavvy.formulaide.core.AbstractForms
 import opensavvy.formulaide.core.Department
 import opensavvy.formulaide.database.Database
 import opensavvy.state.*
-import opensavvy.state.Slice.Companion.successful
+import opensavvy.state.slice.*
 import org.bson.conversions.Bson
 import org.litote.kmongo.*
 import org.litote.kmongo.coroutine.CoroutineCollection
@@ -66,19 +66,20 @@ class Forms internal constructor(
 	context: CoroutineContext,
 	private val database: Database,
 ) : AbstractForms {
+
 	private val formCache = CacheAdapter<CoreForm.Ref, Form> {
-		state {
+		slice {
 			val form = forms.findOne(Form::id eq it.id)
 			ensureFound(form != null) { "Le modèle ${it.id} est introuvable" }
-			emit(successful(form))
+			form
 		}
 	}.cachedInMemory(context)
 		.expireAfter(5.minutes, context)
 
-	override fun list(
+	override suspend fun list(
 		includeClosed: Boolean,
 		includePrivate: Boolean,
-	): State<List<CoreForm.Ref>> = state {
+	): Slice<List<CoreForm.Ref>> = slice {
 		val filters = ArrayList<Bson>()
 
 		if (!includeClosed)
@@ -97,14 +98,14 @@ class Forms internal constructor(
 			.toList()
 			.map { CoreForm.Ref(it.id, this@Forms) }
 
-		emit(successful(result))
+		result
 	}
 
-	override fun create(
+	override suspend fun create(
 		name: String,
 		public: Boolean,
 		firstVersion: CoreForm.Version,
-	): State<CoreForm.Ref> = state {
+	): Slice<CoreForm.Ref> = slice {
 		val id = newId<Form>().toString()
 		forms.insertOne(
 			Form(
@@ -116,13 +117,13 @@ class Forms internal constructor(
 			)
 		)
 
-		emit(successful(CoreForm.Ref(id, this@Forms)))
+		CoreForm.Ref(id, this@Forms)
 	}
 
-	override fun createVersion(
+	override suspend fun createVersion(
 		form: CoreForm.Ref,
 		version: CoreForm.Version,
-	): State<CoreForm.Version.Ref> = state {
+	): Slice<CoreForm.Version.Ref> = slice {
 		val creationDate = Clock.System.now()
 
 		forms.updateOne(
@@ -133,15 +134,15 @@ class Forms internal constructor(
 		cache.expire(form)
 		formCache.expire(form)
 
-		emit(successful(CoreForm.Version.Ref(form, creationDate, versions)))
+		CoreForm.Version.Ref(form, creationDate, versions)
 	}
 
-	override fun edit(
+	override suspend fun edit(
 		form: CoreForm.Ref,
 		name: String?,
 		public: Boolean?,
 		open: Boolean?,
-	): State<Unit> = state {
+	): Slice<Unit> = slice {
 		val updates = ArrayList<Bson>()
 
 		if (name != null)
@@ -160,54 +161,44 @@ class Forms internal constructor(
 
 		cache.expire(form)
 		formCache.expire(form)
-
-		emit(successful(Unit))
 	}
 
-	override fun directRequest(ref: Ref<CoreForm>): State<CoreForm> = state {
+	override suspend fun directRequest(ref: Ref<CoreForm>): Slice<CoreForm> = slice {
 		ensureValid(ref is CoreForm.Ref) { "${this@Forms} n'accepte pas la référence $ref" }
 
-		val result = formCache[ref]
-			.mapSuccess { form ->
-				CoreForm(
-					form.name,
-					form.public,
-					form.open,
-					form.versions.map { CoreForm.Version.Ref(ref, it.creationDate, versions) }
-				)
-			}
+		val result = formCache[ref].first().bind()
 
-		emitAll(result)
+		CoreForm(
+			result.name,
+			result.public,
+			result.open,
+			result.versions.map { CoreForm.Version.Ref(ref, it.creationDate, versions) }
+		)
 	}
 
 	inner class Versions internal constructor(
 		override val cache: RefCache<CoreForm.Version>,
 	) : AbstractFormVersions {
-		override fun directRequest(ref: Ref<CoreForm.Version>): State<CoreForm.Version> = state {
+		override suspend fun directRequest(ref: Ref<CoreForm.Version>): Slice<CoreForm.Version> = slice {
 			ensureValid(ref is CoreForm.Version.Ref) { "${this@Versions} n'accepte pas la référence $ref" }
 
-			val result = formCache[ref.form]
-				.flatMapSuccess { form ->
-					val version = form.versions.find { it.creationDate == ref.version }
-					ensureFound(version != null) { "La version ${ref.version} du formulaire ${ref.form.id} est introuvable" }
-					emit(successful(version))
-				}
-				.mapSuccess { version ->
-					CoreForm.Version(
-						version.creationDate,
-						version.title,
-						version.field.toCore(database.templates, database.templates.versions),
-						version.steps.map { step ->
-							CoreForm.Step(
-								step.id,
-								Department.Ref(step.department, database.departments),
-								step.field?.toCore(database.templates, database.templates.versions),
-							)
-						}
+			val forms = formCache[ref.form].first().bind()
+
+			val version = forms.versions.find { it.creationDate == ref.version }
+			ensureFound(version != null) { "La version ${ref.version} du formulaire ${ref.form.id} est introuvable" }
+
+			CoreForm.Version(
+				version.creationDate,
+				version.title,
+				version.field.toCore(database.templates, database.templates.versions),
+				version.steps.map { step ->
+					CoreForm.Step(
+						step.id,
+						Department.Ref(step.department, database.departments),
+						step.field?.toCore(database.templates, database.templates.versions),
 					)
 				}
-
-			emitAll(result)
+			)
 		}
 	}
 

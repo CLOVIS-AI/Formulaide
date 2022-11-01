@@ -7,20 +7,14 @@ import formulaide.ui.components.editor.MutableField.Companion.toMutable
 import formulaide.ui.navigation.Screen
 import formulaide.ui.navigation.client
 import formulaide.ui.navigation.currentScreen
+import formulaide.ui.utils.rememberPossibleFailure
 import formulaide.ui.utils.rememberRef
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.onEach
+import formulaide.ui.utils.runOrReport
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toJSDate
 import opensavvy.formulaide.core.Form
 import opensavvy.formulaide.core.User
-import opensavvy.formulaide.state.mapSuccess
-import opensavvy.formulaide.state.onEachSuccess
-import opensavvy.state.Slice
-import opensavvy.state.Slice.Companion.valueOrNull
-import opensavvy.state.flatMapSuccess
-import opensavvy.state.state
+import opensavvy.state.slice.valueOrNull
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 
@@ -33,7 +27,7 @@ fun FormNewVersion(ref: Form.Ref): Screen = Screen(
 	parent = FormList,
 ) {
 	val slice by rememberRef(ref)
-	val form = slice.valueOrNull
+	val form = slice?.valueOrNull
 
 	val title = if (form != null)
 		"Nouvelle version du formulaire « ${form.name} »"
@@ -42,7 +36,6 @@ fun FormNewVersion(ref: Form.Ref): Screen = Screen(
 
 	Page(
 		title,
-		progression = slice.progression,
 		header = {
 			DisplayError(slice)
 		}
@@ -61,7 +54,7 @@ fun FormNewVersion(ref: Form.Ref): Screen = Screen(
 			for (versionRef in form?.versions ?: emptyList()) {
 				P {
 					val versionSlice by rememberRef(versionRef)
-					val version = versionSlice.valueOrNull
+					val version = versionSlice?.valueOrNull
 
 					Text("•")
 					TextButton(onClick = {
@@ -72,7 +65,7 @@ fun FormNewVersion(ref: Form.Ref): Screen = Screen(
 						if (version != null)
 							Text(version.title)
 						else
-							Loading(versionSlice)
+							Loading()
 					}
 					Text("créée le ${versionRef.version.toJSDate().toLocaleString()}")
 
@@ -87,24 +80,21 @@ fun FormNewVersion(ref: Form.Ref): Screen = Screen(
 
 		StepsEditor(steps)
 
-		var progression: Slice<Unit> by remember { mutableStateOf(Slice.pending()) }
+		val failure = rememberPossibleFailure()
 
 		ButtonContainer {
 			MainButton(onClick = {
-				state {
+				runOrReport(failure) {
 					val version =
 						Form.Version(Clock.System.now(), versionName, field.toField(), steps.map { it.toCore() })
-					emit(Slice.successful(version))
-				}.flatMapSuccess { emitAll(client.forms.createVersion(ref, it)) }
-					.mapSuccess { }
-					.onEach { progression = it }
-					.onEachSuccess { currentScreen = FormList }
-					.collect()
+					client.forms.createVersion(ref, version).bind()
+					currentScreen = FormList
+				}
 			}) {
 				Text("Créer cette version")
 			}
 		}
 
-		DisplayError(progression)
+		DisplayError(failure)
 	}
 }

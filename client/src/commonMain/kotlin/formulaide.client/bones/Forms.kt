@@ -8,10 +8,9 @@ import formulaide.core.form.FormBackbone
 import io.ktor.client.request.*
 import opensavvy.backbone.Ref
 import opensavvy.cache.Cache
-import opensavvy.state.Slice.Companion.successful
-import opensavvy.state.State
-import opensavvy.state.ensureValid
-import opensavvy.state.state
+import opensavvy.state.slice.Slice
+import opensavvy.state.slice.ensureValid
+import opensavvy.state.slice.slice
 
 class Forms(
 	private val client: Client,
@@ -45,11 +44,11 @@ class Forms(
 		)
 	}
 
-	override fun directRequest(ref: Ref<Form>): State<Form> = state {
+	override suspend fun directRequest(ref: Ref<Form>): Slice<Form> = slice {
 		ensureValid(ref is Form.Ref) { "${this@Forms} doesn't support the reference $ref" }
 
 		val result: Form = client.get("/api/schema/forms/${ref.id}")
 
-		emit(successful(result))
+		result
 	}
 }

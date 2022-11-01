@@ -11,22 +11,14 @@ import formulaide.ui.components.editor.MutableField.Companion.toMutable
 import formulaide.ui.navigation.Screen
 import formulaide.ui.navigation.client
 import formulaide.ui.navigation.currentScreen
+import formulaide.ui.utils.rememberPossibleFailure
 import formulaide.ui.utils.rememberRef
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.onEach
+import formulaide.ui.utils.runOrReport
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toJSDate
 import opensavvy.formulaide.core.Template
 import opensavvy.formulaide.core.User
-import opensavvy.formulaide.state.mapSuccess
-import opensavvy.formulaide.state.onEachSuccess
-import opensavvy.state.Slice
-import opensavvy.state.Slice.Companion.pending
-import opensavvy.state.Slice.Companion.successful
-import opensavvy.state.Slice.Companion.valueOrNull
-import opensavvy.state.flatMapSuccess
-import opensavvy.state.state
+import opensavvy.state.slice.valueOrNull
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 
@@ -39,7 +31,7 @@ fun TemplateNewVersion(ref: Template.Ref): Screen = Screen(
 	parent = TemplateList,
 ) {
 	val slice by rememberRef(ref)
-	val template = slice.valueOrNull
+	val template = slice?.valueOrNull
 
 	val title = if (template != null)
 		"Nouvelle version du modèle « ${template.name} »"
@@ -48,7 +40,6 @@ fun TemplateNewVersion(ref: Template.Ref): Screen = Screen(
 
 	Page(
 		title,
-		progression = slice.progression,
 		header = {
 			DisplayError(slice)
 		}
@@ -66,14 +57,14 @@ fun TemplateNewVersion(ref: Template.Ref): Screen = Screen(
 			for (versionRef in template?.versions ?: emptyList()) {
 				P {
 					val versionSlice by rememberRef(versionRef)
-					val version = versionSlice.valueOrNull
+					val version = versionSlice?.valueOrNull
 
 					Text("•")
 					TextButton(onClick = { field = version!!.field.toMutable() }, version != null) {
 						if (version != null)
 							Text(version.title)
 						else
-							Loading(versionSlice)
+							Loading()
 					}
 					Text("créée le ${versionRef.version.toJSDate().toLocaleString()}")
 
@@ -86,23 +77,20 @@ fun TemplateNewVersion(ref: Template.Ref): Screen = Screen(
 			FieldEditor(field, onReplace = { field = it })
 		}
 
-		var progression: Slice<Unit> by remember { mutableStateOf(pending()) }
+		val failure = rememberPossibleFailure()
 
 		ButtonContainer {
 			MainButton(onClick = {
-				state {
+				runOrReport(failure) {
 					val version = Template.Version(Clock.System.now(), versionName, field.toField())
-					emit(successful(version))
-				}.flatMapSuccess { emitAll(client.templates.createVersion(ref, it)) }
-					.mapSuccess { }
-					.onEach { progression = it }
-					.onEachSuccess { currentScreen = TemplateList }
-					.collect()
+					client.templates.createVersion(ref, version).bind()
+					currentScreen = TemplateList
+				}
 			}) {
 				Text("Créer cette version")
 			}
 		}
 
-		DisplayError(progression)
+		DisplayError(failure)
 	}
 }

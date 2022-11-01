@@ -14,6 +14,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import opensavvy.backbone.Ref.Companion.requestValue
+import opensavvy.backbone.Ref.Companion.requestValueOrThrow
 
 /**
  * The record and submission management endpoint: `/api/records`.
@@ -140,8 +141,8 @@ object RecordRouting {
 
 				val body = call.receive<ApiRecordReview>()
 
-				val record = ref.requestValue()
-				val form = record.form.requestValue().version(record.formVersion)
+				val record = ref.requestValueOrThrow()
+				val form = record.form.requestValueOrThrow().version(record.formVersion)
 					?: error("La version ${record.formVersion} du formulaire ${record.form} est introuvable")
 
 				val nextStep = when (val decision = body.decision) {

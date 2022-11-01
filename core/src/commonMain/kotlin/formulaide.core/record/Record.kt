@@ -10,7 +10,7 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import opensavvy.backbone.Backbone
-import opensavvy.backbone.Ref.Companion.requestValue
+import opensavvy.backbone.Ref.Companion.requestValueOrThrow
 import kotlin.js.JsName
 
 /**
@@ -59,13 +59,13 @@ class Record(
 			if (fields != null) {
 				val submission =
 					checkNotNull(snapshot.submission) { "L'étape ${snapshot.forStep ?: "initiale"} nécessite une saisie" }
-				submission.verify(fields.requestValue().resolve())
+				submission.verify(fields.requestValueOrThrow().resolve())
 			}
 		}
 	}
 
 	@JsName("getFormVersion")
-	suspend fun formVersion() = form.requestValue().versions.first { it.creationDate == formVersion }
+	suspend fun formVersion() = form.requestValueOrThrow().versions.first { it.creationDate == formVersion }
 
 	@JsName("getCurrentStep")
 	suspend fun currentStep() = currentStep?.let { formVersion().reviewSteps.first { it.id == currentStep } }
