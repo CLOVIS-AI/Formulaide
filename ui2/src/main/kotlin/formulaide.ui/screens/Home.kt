@@ -4,6 +4,7 @@ import androidx.compose.runtime.*
 import formulaide.ui.components.*
 import formulaide.ui.navigation.Screen
 import formulaide.ui.navigation.client
+import formulaide.ui.navigation.currentScreen
 import formulaide.ui.utils.rememberEmptyState
 import formulaide.ui.utils.rememberRef
 import formulaide.ui.utils.role
@@ -25,8 +26,15 @@ val Home: Screen = Screen(
 	Page(
 		"Formulaide",
 	) {
-		when (client.role) {
-			User.Role.ANONYMOUS -> LoginPage()
+		val me by rememberRef(client.user)
+
+		when {
+			client.role == User.Role.ANONYMOUS -> LoginPage()
+			me.valueOrNull?.forceResetPassword ?: false -> {
+				P { Text("Vous vous êtes connectés avec un mot de passe à usage unique. Choisissez un nouveau mot de passe pour pouvoir continuer à utiliser votre compte.") }
+				PasswordModificationPage()
+			}
+
 			else -> HomePage()
 		}
 	}
@@ -79,6 +87,10 @@ private fun HomePage() {
 				User.Role.ADMINISTRATOR -> Text("Vous êtes administrateur.")
 				else -> {}
 			}
+		}
+
+		if (client.role >= User.Role.EMPLOYEE) {
+			SecondaryButton({ currentScreen = PasswordModification }) { Text("Modifier mon mot de passe") }
 		}
 	}
 

@@ -1,11 +1,13 @@
 package formulaide.ui.components
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import formulaide.ui.theme.Theme
 import formulaide.ui.theme.shade
 import formulaide.ui.utils.animateColor
 import formulaide.ui.utils.animateDouble
 import formulaide.ui.utils.animateShade
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.web.css.*
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
@@ -16,9 +18,11 @@ import org.jetbrains.compose.web.dom.Text
 fun FilterChip(
 	text: String,
 	enabled: Boolean,
-	onUpdate: (Boolean) -> Unit,
+	onUpdate: suspend (Boolean) -> Unit,
 	onRemove: (() -> Unit)? = null,
 ) {
+	val scope = rememberCoroutineScope()
+
 	val enabledTransition = animateDouble(if (enabled) 1.0 else 0.0)
 
 	val borderColor = animateColor(
@@ -69,7 +73,7 @@ fun FilterChip(
 
 		Button(
 			{
-				onClick { onUpdate(!enabled) }
+				onClick { scope.launch { onUpdate(!enabled) } }
 			}
 		) {
 			Text(text)
@@ -94,7 +98,7 @@ fun ChipContainer(
 	{
 		classes("chip-container")
 		style {
-			display(DisplayStyle.Flex)
+			display(DisplayStyle.LegacyInlineFlex)
 			flexDirection(FlexDirection.Row)
 			gap(5.px)
 		}
