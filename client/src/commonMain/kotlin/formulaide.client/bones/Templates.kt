@@ -7,10 +7,9 @@ import formulaide.core.form.Template
 import formulaide.core.form.TemplateBackbone
 import opensavvy.backbone.Ref
 import opensavvy.cache.Cache
-import opensavvy.state.Slice.Companion.successful
-import opensavvy.state.State
-import opensavvy.state.ensureValid
-import opensavvy.state.state
+import opensavvy.state.slice.Slice
+import opensavvy.state.slice.ensureValid
+import opensavvy.state.slice.slice
 
 class Templates(
 	private val client: Client,
@@ -39,11 +38,11 @@ class Templates(
 		)
 	}
 
-	override fun directRequest(ref: Ref<Template>): State<Template> = state {
+	override suspend fun directRequest(ref: Ref<Template>): Slice<Template> = slice {
 		ensureValid(ref is Template.Ref) { "${this@Templates} doesn't support the reference $ref" }
 
 		val result: Template = client.get("/api/schema/templates/${ref.id}")
 
-		emit(successful(result))
+		result
 	}
 }

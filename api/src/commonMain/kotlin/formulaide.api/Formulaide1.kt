@@ -1,5 +1,6 @@
 package formulaide.api
 
+import arrow.core.continuations.EffectScope
 import formulaide.api.rest.RestDepartment
 import formulaide.core.User
 import opensavvy.spine.Id
@@ -7,9 +8,9 @@ import opensavvy.spine.Parameters
 import opensavvy.spine.Route
 import opensavvy.spine.Route.Companion.div
 import opensavvy.spine.Service
-import opensavvy.state.StateBuilder
-import opensavvy.state.ensureAuthenticated
-import opensavvy.state.ensureAuthorized
+import opensavvy.state.Failure
+import opensavvy.state.slice.ensureAuthenticated
+import opensavvy.state.slice.ensureAuthorized
 
 class Formulaide1 : Service("v1") {
 
@@ -17,11 +18,11 @@ class Formulaide1 : Service("v1") {
 
 	inner class DepartmentsEndpoint : StaticResource<List<Id>, RestDepartment.GetParams, Context>("departments") {
 
-		override suspend fun StateBuilder<Nothing>.validateId(id: Id, context: Context) {
+		override suspend fun EffectScope<Failure>.validateId(id: Id, context: Context) {
 			ensureAuthenticated(context.role >= User.Role.EMPLOYEE) { "Seuls les employés peuvent accéder aux départements" }
 		}
 
-		override suspend fun StateBuilder<List<Id>>.validateGetParams(
+		override suspend fun EffectScope<Failure>.validateGetParams(
 			id: Id,
 			params: RestDepartment.GetParams,
 			context: Context,

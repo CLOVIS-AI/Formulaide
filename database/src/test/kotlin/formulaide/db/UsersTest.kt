@@ -4,7 +4,8 @@ import formulaide.db.document.DbUser
 import formulaide.db.document.toCore
 import kotlinx.coroutines.runBlocking
 import opensavvy.backbone.Ref.Companion.requestValue
-import opensavvy.state.firstResultOrThrow
+import opensavvy.backbone.Ref.Companion.requestValueOrThrow
+import opensavvy.state.firstValueOrThrow
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -17,7 +18,7 @@ class UsersTest {
 	fun createUser() = runBlocking {
 		val db = testDatabase()
 		val email = "random${Random.nextInt()}@gmail.fr"
-		val service = db.testService().firstResultOrThrow()
+		val service = db.testService().firstValueOrThrow()
 
 		val expected = DbUser(
 			Random.nextInt().toString(),
@@ -34,7 +35,7 @@ class UsersTest {
 			setOf(service),
 			administrator = false,
 			password = "123456789"
-		).requestValue()
+		).requestValueOrThrow()
 		assertEquals(expected.toCore(db), actual)
 	}
 
@@ -42,7 +43,7 @@ class UsersTest {
 	fun createDuplicateUser() = runBlocking {
 		val db = testDatabase()
 		val email = "random${Random.nextInt()}@gmail.fr"
-		val service = db.testService().firstResultOrThrow()
+		val service = db.testService().firstValueOrThrow()
 
 		db.users.create(
 			email,
@@ -68,7 +69,7 @@ class UsersTest {
 	fun findUser() = runBlocking {
 		val db = testDatabase()
 		val email = "random+${Random.nextInt()}@email.fr"
-		val service = db.testService().firstResultOrThrow()
+		val service = db.testService().firstValueOrThrow()
 
 		db.users.create(
 			email,
@@ -78,7 +79,7 @@ class UsersTest {
 			password = "123456789"
 		).requestValue()
 
-		val found = db.users.fromId(email).requestValue()
+		val found = db.users.fromId(email).requestValueOrThrow()
 
 		assertEquals(email, found.email)
 	}

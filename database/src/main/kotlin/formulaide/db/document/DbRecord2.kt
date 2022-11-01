@@ -15,10 +15,10 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import opensavvy.backbone.Ref
 import opensavvy.backbone.Ref.Companion.expire
-import opensavvy.backbone.Ref.Companion.requestValue
+import opensavvy.backbone.Ref.Companion.requestValueOrThrow
 import opensavvy.backbone.RefCache
 import opensavvy.state.*
-import opensavvy.state.Slice.Companion.successful
+import opensavvy.state.slice.*
 import org.litote.kmongo.*
 import org.litote.kmongo.coroutine.CoroutineCollection
 
@@ -141,12 +141,12 @@ class Records(
 	override val cache: RefCache<Record>,
 ) : RecordBackbone {
 	override suspend fun create(form: Form.Ref, version: Instant, user: User.Ref?, submission: Submission): Record.Ref {
-		val requestedForm = form.requestValue()
+		val requestedForm = form.requestValueOrThrow()
 
 		val requestedVersion = requestedForm.versions.find { it.creationDate == version }
 		requireNotNull(requestedVersion) { "La version sélectionnée ($version) du formulaire ${form.id} (${requestedForm.name}) ne correspond à aucune version existante : ${requestedForm.versions}" }
 
-		val fields = requestedVersion.fields.requestValue().resolve()
+		val fields = requestedVersion.fields.requestValueOrThrow().resolve()
 		val now = Clock.System.now()
 
 		val record = DbRecord2(
@@ -178,10 +178,10 @@ class Records(
 		val requestedRecord = records.findOneById(record.id)
 			?: error("Impossible de modifier la saisie initiale d'un dossier n'existant pas : $record")
 
-		val requestedForm = forms.fromId(requestedRecord.formId.toString()).requestValue()
+		val requestedForm = forms.fromId(requestedRecord.formId.toString()).requestValueOrThrow()
 		val requestedVersion = requestedForm.versions.find { it.creationDate == requestedRecord.formVersion }
 			?: error("Impossible de trouver la version ${requestedRecord.formVersion} du formulaire $requestedForm")
-		val requestedFields = requestedVersion.fields.requestValue().resolve()
+		val requestedFields = requestedVersion.fields.requestValueOrThrow().resolve()
 
 		val now = Clock.System.now()
 
@@ -219,7 +219,7 @@ class Records(
 		val requestedRecord = records.findOneById(record.id)
 			?: error("Impossible de modifier la saisie initiale d'un dossier n'existant pas : $record")
 
-		val requestedForm = forms.fromId(requestedRecord.formId.toString()).requestValue()
+		val requestedForm = forms.fromId(requestedRecord.formId.toString()).requestValueOrThrow()
 		val requestedVersion = requestedForm.versions.find { it.creationDate == requestedRecord.formVersion }
 			?: error("Impossible de trouver la version ${requestedRecord.formVersion} du formulaire $requestedForm")
 		val requestedFields = requestedVersion.reviewSteps.find { it.id == requestedRecord.currentStep }
@@ -238,7 +238,7 @@ class Records(
 						decision = decision,
 						reason = reason,
 						data = if (requestedFields.fields != null) submission!!.toDb(
-							requestedFields.fields!!.requestValue().resolve()
+							requestedFields.fields!!.requestValueOrThrow().resolve()
 						) else null,
 						importedData = emptyList(), //TODO in #124
 					)
@@ -258,7 +258,7 @@ class Records(
 
 	fun fromId(id: String) = Record.Ref(id, this)
 
-	override fun directRequest(ref: Ref<Record>): State<Record> = state {
+	override suspend fun directRequest(ref: Ref<Record>): Slice<Record> = slice {
 		ensureValid(ref is Record.Ref) { "${this@Records} doesn't support the reference $ref" }
 
 		val result = records.findOne(DbRecord2::id eq ref.id.toId())
@@ -283,6 +283,6 @@ class Records(
 				}
 			)
 
-		emit(successful(output))
+		output
 	}
 }

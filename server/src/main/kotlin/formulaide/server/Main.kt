@@ -33,10 +33,10 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
-import opensavvy.backbone.Ref.Companion.requestValue
+import opensavvy.backbone.Ref.Companion.requestValueOrThrow
 import opensavvy.formulaide.api.server.*
 import opensavvy.spine.ktor.server.ContextGenerator
-import opensavvy.state.firstResultOrThrow
+import opensavvy.state.firstValueOrThrow
 import org.slf4j.LoggerFactory
 
 // New job: the server never dies cleanly, it can only be killed. No need for structure concurrency.
@@ -65,10 +65,10 @@ fun main(args: Array<String>) {
 	runBlocking {
 		println("Checking that the admin user exists…")
 		val department = database.departments.all()
-			.firstResultOrThrow()
-			.map { it.requestValue() }
+			.firstValueOrThrow()
+			.map { it.requestValueOrThrow() }
 			.firstOrNull { it.name == rootServiceName }
-			?: database.departments.create(rootServiceName).firstResultOrThrow().requestValue()
+			?: database.departments.create(rootServiceName).firstValueOrThrow().requestValueOrThrow()
 
 		val auth = Auth(database)
 

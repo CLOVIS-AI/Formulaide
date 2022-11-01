@@ -1,80 +1,78 @@
 package formulaide.client.bones
 
 import formulaide.api.rest.RestDepartment
-import formulaide.api.utils.mapSuccesses
-import formulaide.api.utils.onEachSuccess
 import formulaide.client.Client
 import formulaide.core.Department
 import formulaide.core.DepartmentBackbone
-import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import opensavvy.backbone.Ref
 import opensavvy.backbone.RefCache
 import opensavvy.spine.Id
 import opensavvy.spine.Parameters
 import opensavvy.spine.ktor.client.request
-import opensavvy.state.State
-import opensavvy.state.ensureValid
-import opensavvy.state.state
+import opensavvy.state.slice.*
 
 class Departments(
 	private val client: Client,
 	override val cache: RefCache<Department>,
 ) : DepartmentBackbone {
-	override fun all(includeClosed: Boolean): State<List<Department.Ref>> {
+	override fun all(includeClosed: Boolean): Flow<Slice<List<Department.Ref>>> = flow {
 		val params = RestDepartment.GetParams().apply {
 			this.includeClosed = includeClosed
 		}
 
-		return client.client
+		val list = client.client
 			.request(client.api2.departments.get, client.api2.departments.get.idOf(), Unit, params, client.context)
-			.mapSuccesses { list ->
-				list.map { fromId(it) }
-			}
+			.valueOrThrow
+
+		emit(successful(list.map { fromId(it) }))
 	}
 
-	override fun create(name: String): State<Department.Ref> {
+	override fun create(name: String): Flow<Slice<Department.Ref>> = flow {
 		val input = RestDepartment.New(name)
 
-		return client.client
+		val (id, department) = client.client
 			.request(
 				client.api2.departments.create,
 				client.api2.departments.idOf(),
 				input,
 				Parameters.Empty,
 				client.context
-			)
-			.mapSuccesses { (id, department) ->
-				val ref = fromId(id)
-				cache.update(ref to department.toCore(ref.id))
-				ref
-			}
+			).valueOrThrow
+
+		val ref = fromId(id)
+		cache.update(ref to department.toCore(ref.id))
+		emit(successful(ref))
 	}
 
-	override fun open(department: Department.Ref): State<Unit> {
-		return client.client
+	override fun open(department: Department.Ref): Flow<Slice<Unit>> = flow {
+		client.client
 			.request(
 				client.api2.departments.id.open,
 				client.api2.departments.id.idOf(department.id),
 				Unit,
 				Parameters.Empty,
 				client.context
-			)
-			.onEachSuccess { cache.expire(department) }
+			).valueOrThrow
+		cache.expire(department)
+		emit(successful(Unit))
 	}
 
-	override fun close(department: Department.Ref): State<Unit> {
-		return client.client
+	override fun close(department: Department.Ref): Flow<Slice<Unit>> = flow {
+		client.client
 			.request(
 				client.api2.departments.id.close,
 				client.api2.departments.id.idOf(department.id),
 				Unit,
 				Parameters.Empty,
 				client.context
-			)
-			.onEachSuccess { cache.expire(department) }
+			).valueOrThrow
+		cache.expire(department)
+		emit(successful(Unit))
 	}
 
-	override fun directRequest(ref: Ref<Department>): State<Department> = state {
+	override suspend fun directRequest(ref: Ref<Department>): Slice<Department> = slice {
 		ensureValid(ref is Department.Ref) { "${this@Departments} doesn't support the reference $ref" }
 
 		val result = client.client
@@ -84,10 +82,9 @@ class Departments(
 				Unit,
 				Parameters.Empty,
 				client.context
-			)
-			.mapSuccesses { it.toCore(ref.id) }
+			).bind()
 
-		emitAll(result)
+		result.toCore(ref.id)
 	}
 
 	private fun fromId(id: Id) = Department.Ref(id.resource.segments[1].segment, this)

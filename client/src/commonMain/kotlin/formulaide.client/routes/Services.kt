@@ -4,8 +4,8 @@ import formulaide.api.bones.toLegacy
 import formulaide.api.users.Service
 import formulaide.client.Client
 import formulaide.core.Department
-import opensavvy.backbone.Ref.Companion.requestValue
-import opensavvy.state.firstResultOrThrow
+import opensavvy.backbone.Ref.Companion.requestValueOrThrow
+import opensavvy.state.firstValueOrThrow
 
 /**
  * Finds the list of all services.
@@ -16,8 +16,8 @@ import opensavvy.state.firstResultOrThrow
  */
 suspend fun Client.Authenticated.listServices(): Set<Service> =
 	departments.all()
-		.firstResultOrThrow()
-		.map { it.requestValue() }
+		.firstValueOrThrow()
+		.map { it.requestValueOrThrow() }
 		.map { it.toLegacy() }
 		.toSet()
 
@@ -30,8 +30,8 @@ suspend fun Client.Authenticated.listServices(): Set<Service> =
  */
 suspend fun Client.Authenticated.listAllServices(): List<Service> =
 	departments.all(includeClosed = true)
-		.firstResultOrThrow()
-		.map { it.requestValue() }
+		.firstValueOrThrow()
+		.map { it.requestValueOrThrow() }
 		.map { it.toLegacy() }
 
 /**
@@ -43,8 +43,8 @@ suspend fun Client.Authenticated.listAllServices(): List<Service> =
  */
 suspend fun Client.Authenticated.createService(name: String): Service {
 	val ref = departments.create(name)
-		.firstResultOrThrow()
-	return ref.requestValue().toLegacy()
+		.firstValueOrThrow()
+	return ref.requestValueOrThrow().toLegacy()
 }
 
 /**
@@ -56,8 +56,8 @@ suspend fun Client.Authenticated.createService(name: String): Service {
  */
 suspend fun Client.Authenticated.closeService(service: Service): Service {
 	val ref = Department.Ref(service.id, departments)
-	departments.close(ref).firstResultOrThrow()
-	return ref.requestValue().toLegacy()
+	departments.close(ref).firstValueOrThrow()
+	return ref.requestValueOrThrow().toLegacy()
 }
 
 /**
@@ -69,6 +69,6 @@ suspend fun Client.Authenticated.closeService(service: Service): Service {
  */
 suspend fun Client.Authenticated.reopenService(service: Service): Service {
 	val ref = Department.Ref(service.id, departments)
-	departments.open(ref).firstResultOrThrow()
-	return ref.requestValue().toLegacy()
+	departments.open(ref).firstValueOrThrow()
+	return ref.requestValueOrThrow().toLegacy()
 }
