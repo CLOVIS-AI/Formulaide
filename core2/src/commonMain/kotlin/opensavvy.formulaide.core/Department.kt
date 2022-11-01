@@ -1,7 +1,7 @@
 package opensavvy.formulaide.core
 
 import opensavvy.backbone.Backbone
-import opensavvy.state.State
+import opensavvy.state.slice.Slice
 
 /**
  * A company department, for example "Human resources" or "IT management".
@@ -14,10 +14,10 @@ data class Department(
 		override fun toString() = "Département $id"
 
 		/** See [AbstractDepartments.open]. */
-		fun open(): State<Unit> = backbone.open(this)
+		suspend fun open() = backbone.open(this)
 
 		/** See [AbstractDepartments.close]. */
-		fun close(): State<Unit> = backbone.close(this)
+		suspend fun close() = backbone.close(this)
 	}
 }
 
@@ -29,14 +29,14 @@ interface AbstractDepartments : Backbone<Department> {
 	 * If [includeClosed] is `true`, requires administrator authentication.
 	 * Otherwise, closed departments are not included in the results.
 	 */
-	fun list(includeClosed: Boolean = false): State<List<Department.Ref>>
+	suspend fun list(includeClosed: Boolean = false): Slice<List<Department.Ref>>
 
 	/**
 	 * Creates a new department named [name].
 	 *
 	 * Requires administrator authentication.
 	 */
-	fun create(name: String): State<Department.Ref>
+	suspend fun create(name: String): Slice<Department.Ref>
 
 	/**
 	 * Opens the [department].
@@ -44,7 +44,7 @@ interface AbstractDepartments : Backbone<Department> {
 	 * Requires administrator authentication.
 	 * If the department is already open, does nothing.
 	 */
-	fun open(department: Department.Ref): State<Unit>
+	suspend fun open(department: Department.Ref): Slice<Unit>
 
 	/**
 	 * Closes the [department].
@@ -52,6 +52,6 @@ interface AbstractDepartments : Backbone<Department> {
 	 * Requires administrator authentication.
 	 * If the department is already closed, does nothing.
 	 */
-	fun close(department: Department.Ref): State<Unit>
+	suspend fun close(department: Department.Ref): Slice<Unit>
 
 }

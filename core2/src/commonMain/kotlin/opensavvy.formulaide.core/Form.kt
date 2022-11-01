@@ -2,7 +2,7 @@ package opensavvy.formulaide.core
 
 import kotlinx.datetime.Instant
 import opensavvy.backbone.Backbone
-import opensavvy.state.State
+import opensavvy.state.slice.Slice
 
 class Form(
 	val name: String,
@@ -48,28 +48,28 @@ interface AbstractForms : Backbone<Form> {
 	/**
 	 * Lists all forms.
 	 */
-	fun list(includeClosed: Boolean = false, includePrivate: Boolean = false): State<List<Form.Ref>>
+	suspend fun list(includeClosed: Boolean = false, includePrivate: Boolean = false): Slice<List<Form.Ref>>
 
 	/**
 	 * Creates a new form.
 	 *
 	 * Only administrators can create new forms.
 	 */
-	fun create(name: String, public: Boolean, firstVersion: Form.Version): State<Form.Ref>
+	suspend fun create(name: String, public: Boolean, firstVersion: Form.Version): Slice<Form.Ref>
 
 	/**
 	 * Creates a new version of a given form.
 	 *
 	 * Only administrators can create new versions.
 	 */
-	fun createVersion(form: Form.Ref, version: Form.Version): State<Form.Version.Ref>
+	suspend fun createVersion(form: Form.Ref, version: Form.Version): Slice<Form.Version.Ref>
 
 	/**
 	 * Edits a form.
 	 *
 	 * Only administrators can edit forms.
 	 */
-	fun edit(form: Form.Ref, name: String? = null, public: Boolean? = null, open: Boolean? = null): State<Unit>
+	suspend fun edit(form: Form.Ref, name: String? = null, public: Boolean? = null, open: Boolean? = null): Slice<Unit>
 
 }
 
