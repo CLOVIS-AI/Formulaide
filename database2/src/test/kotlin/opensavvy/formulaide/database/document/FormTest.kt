@@ -7,7 +7,7 @@ import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
-import opensavvy.backbone.Ref.Companion.requestValue
+import opensavvy.backbone.Ref.Companion.requestValueOrThrow
 import opensavvy.formulaide.core.Field
 import opensavvy.formulaide.core.Form
 import opensavvy.formulaide.core.InputConstraints
@@ -15,7 +15,7 @@ import opensavvy.formulaide.core.Template
 import opensavvy.formulaide.database.testDatabase
 import opensavvy.logger.Logger.Companion.info
 import opensavvy.logger.loggerFor
-import opensavvy.state.firstResultOrThrow
+import opensavvy.state.slice.valueOrThrow
 import kotlin.test.Test
 
 class FormTest {
@@ -30,7 +30,7 @@ class FormTest {
 
 		val dept = database.departments
 			.create("Department for the form test")
-			.firstResultOrThrow()
+			.valueOrThrow
 
 		log.info { "Creating the identity template…" }
 
@@ -45,7 +45,7 @@ class FormTest {
 
 		val identity = database.templates
 			.create("Identities for forms", Template.Version(Clock.System.now(), "First version", identityFields))
-			.firstResultOrThrow()
+			.valueOrThrow
 
 		log.info { "Creating a new form…" }
 
@@ -58,7 +58,7 @@ class FormTest {
 						0 to Field.Input("First name", InputConstraints.Text(maxLength = 20u), importedFrom = null),
 						1 to Field.Input("Last name", InputConstraints.Text(maxLength = 20u), importedFrom = null),
 					),
-					importedFrom = identity.requestValue().versions.first()
+					importedFrom = identity.requestValueOrThrow().versions.first()
 				),
 				1 to Field.Input("Idea", InputConstraints.Text(maxLength = 256u), importedFrom = null),
 			),
@@ -77,13 +77,13 @@ class FormTest {
 					)
 				)
 			)
-			.firstResultOrThrow()
+			.valueOrThrow
 
 		log.info { "Closing…" }
 
-		database.departments.close(dept).firstResultOrThrow()
-		database.templates.edit(identity, open = false).firstResultOrThrow()
-		database.forms.edit(request, open = false).firstResultOrThrow()
+		database.departments.close(dept).valueOrThrow
+		database.templates.edit(identity, open = false).valueOrThrow
+		database.forms.edit(request, open = false).valueOrThrow
 
 		currentCoroutineContext().cancelChildren()
 	}

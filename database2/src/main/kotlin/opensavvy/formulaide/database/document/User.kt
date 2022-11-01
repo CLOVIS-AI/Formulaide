@@ -3,7 +3,7 @@ package opensavvy.formulaide.database.document
 import at.favre.lib.crypto.bcrypt.BCrypt
 import at.favre.lib.crypto.bcrypt.BCrypt.MIN_COST
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -20,7 +20,7 @@ import opensavvy.logger.Logger.Companion.info
 import opensavvy.logger.Logger.Companion.warn
 import opensavvy.logger.loggerFor
 import opensavvy.state.*
-import opensavvy.state.Slice.Companion.successful
+import opensavvy.state.slice.*
 import org.bson.conversions.Bson
 import org.litote.kmongo.*
 import org.litote.kmongo.coroutine.CoroutineCollection
@@ -65,24 +65,24 @@ class Users(
 	private val verifier = BCrypt.verifyer()
 
 	private val userCache: Cache<CoreUser.Ref, User> = CacheAdapter<CoreUser.Ref, User> {
-		state {
+		slice {
 			val user = users.findOne(User::id eq it.id)
 			ensureFound(user != null) { "Utilisateur introuvable : $it" }
-			emit(successful(user))
+			user
 		}
 	}.cachedInMemory(context)
 		.expireAfter(2.minutes, context)
 
-	override fun list(includeClosed: Boolean): State<List<CoreUser.Ref>> = state {
+	override suspend fun list(includeClosed: Boolean): Slice<List<CoreUser.Ref>> = slice {
 		val filter = if (includeClosed)
 			null
 		else
 			User::open eq true
 
-		val result = users.find(filter)
+		users.find(filter)
 			.batchSize(10)
 			.toList()
-		emit(successful(result.map { CoreUser.Ref(it.id, this@Users) }))
+			.map { CoreUser.Ref(it.id, this@Users) }
 	}
 
 	/**
@@ -90,23 +90,13 @@ class Users(
 	 *
 	 * If it is, returns [Unit].
 	 */
-	fun verifyToken(user: CoreUser.Ref, token: String): State<Unit> = state {
-		val dbUser = userCache[user]
-			.onEach {
-				when (val status = it.status) {
-					is Status.Successful -> {}
-					is Status.Pending -> emit(Slice(status, it.progression))
-					is Status.Failed -> emit(Slice(status, it.progression))
-				}
-			}
-			.firstResultOrNull() ?: shortCircuit()
+	suspend fun verifyToken(user: CoreUser.Ref, token: String): Slice<Unit> = slice {
+		val dbUser = userCache[user].first().bind()
 
 		val verified = dbUser.tokens.any {
 			verifier.verify(token.toCharArray(), it.toCharArray()).verified
 		}
 		ensureAuthenticated(verified) { "Le token de connexion est invalide" }
-
-		emit(successful(Unit))
 	}
 
 	/**
@@ -114,7 +104,7 @@ class Users(
 	 *
 	 * If it is, returns a token they can use to authenticate.
 	 */
-	fun logIn(email: String, password: String): State<Pair<CoreUser.Ref, String>> = state {
+	suspend fun logIn(email: String, password: String): Slice<Pair<CoreUser.Ref, String>> = slice {
 		val dbUser = users.findOne(User::email eq email)
 		ensureAuthenticated(dbUser != null) {
 			log.warn(email) { "Someone attempted to log in with an email that matches no user." }
@@ -155,19 +145,11 @@ class Users(
 		users.updateOne(User::id eq dbUser.id, addToSet(User::tokens, hashedToken))
 
 		userCache.expire(ref)
-		emit(successful(ref to token))
+		ref to token
 	}
 
-	fun logOut(user: CoreUser.Ref, token: String): State<Unit> = state {
-		val dbUser = userCache[user]
-			.onEach {
-				when (val status = it.status) {
-					is Status.Successful -> {}
-					is Status.Pending -> emit(Slice(status, it.progression))
-					is Status.Failed -> emit(Slice(status, it.progression))
-				}
-			}
-			.firstResultOrNull() ?: shortCircuit()
+	suspend fun logOut(user: CoreUser.Ref, token: String): Slice<Unit> = slice {
+		val dbUser = userCache[user].first().bind()
 
 		val hashedToken = dbUser.tokens.find {
 			verifier.verify(token.toCharArray(), it).verified
@@ -178,16 +160,14 @@ class Users(
 			userCache.expire(user)
 			// cache.expire(ref) <- useless, because it doesn't store the token
 		} // else: the token they sent is invalid anyway, they're already logged out
-
-		emit(successful(Unit))
 	}
 
-	override fun create(
+	override suspend fun create(
 		email: String,
 		fullName: String,
 		departments: Set<Department.Ref>,
 		administrator: Boolean,
-	): State<Pair<CoreUser.Ref, String>> = state {
+	): Slice<Pair<CoreUser.Ref, String>> = slice {
 		log.info { "New user creation request for email '$email'" }
 
 		// Checking that the email address is available
@@ -216,15 +196,15 @@ class Users(
 			)
 		)
 
-		emit(successful(CoreUser.Ref(id, this@Users) to randomPassword))
+		CoreUser.Ref(id, this@Users) to randomPassword
 	}
 
-	override fun edit(
+	override suspend fun edit(
 		user: CoreUser.Ref,
 		open: Boolean?,
 		administrator: Boolean?,
 		departments: Set<Department.Ref>?,
-	): State<Unit> = state {
+	): Slice<Unit> = slice {
 		val edit = ArrayList<Bson>()
 
 		if (open != null)
@@ -241,10 +221,9 @@ class Users(
 		users.updateOne(User::id eq user.id, combine(edit))
 		userCache.expire(user)
 		cache.expire(user)
-		emit(successful(Unit))
 	}
 
-	fun setPassword(user: CoreUser.Ref, oldPassword: String, newPassword: String): State<Unit> = state {
+	suspend fun setPassword(user: CoreUser.Ref, oldPassword: String, newPassword: String): Slice<Unit> = slice {
 		log.info(user) { "Password modification request received." }
 
 		val dbUser = users.findOne(User::id eq user.id)
@@ -265,10 +244,9 @@ class Users(
 
 		userCache.expire(user)
 		cache.expire(user)
-		emit(successful(Unit))
 	}
 
-	override fun resetPassword(user: CoreUser.Ref): State<String> = state {
+	override suspend fun resetPassword(user: CoreUser.Ref): Slice<String> = slice {
 		log.info(user) { "Received a password reset request." }
 
 		val randomPassword = UUID.randomUUID().toString()
@@ -284,10 +262,10 @@ class Users(
 
 		userCache.expire(user)
 		cache.expire(user)
-		emit(successful(randomPassword))
+		randomPassword
 	}
 
-	override fun directRequest(ref: Ref<CoreUser>): State<CoreUser> = state {
+	override suspend fun directRequest(ref: Ref<CoreUser>): Slice<CoreUser> = slice {
 		ensureValid(ref is CoreUser.Ref) { "${this@Users} n'accepte pas la référence $ref" }
 
 		val result = users.findOne(User::id eq ref.id)
@@ -302,10 +280,10 @@ class Users(
 			forceResetPassword = result.singleUsePassword,
 		)
 
-		emit(successful(user))
+		user
 	}
 
-	suspend fun createServiceAccounts() {
+	suspend fun createServiceAccounts() = slice {
 		val adminEmail = "admin@formulaide"
 		val adminPassword = "admin-development-password"
 
@@ -314,10 +292,9 @@ class Users(
 			log.warn { "The default user does not exist. Generating it…" }
 			val (user, temporaryPassword) = database.users
 				.create(adminEmail, "Administrateur [DANGEREUX, FERMEZ CE COMPTE]", emptySet(), administrator = true)
-				.firstResultOrThrow()
+				.bind()
 
-			database.users.setPassword(user, temporaryPassword, adminPassword)
-				.firstResultOrThrow()
+			database.users.setPassword(user, temporaryPassword, adminPassword).bind()
 		}
 	}
 

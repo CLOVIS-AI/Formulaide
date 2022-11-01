@@ -7,7 +7,7 @@ import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
-import opensavvy.backbone.Ref.Companion.requestValue
+import opensavvy.backbone.Ref.Companion.requestValueOrThrow
 import opensavvy.formulaide.core.Field.Group
 import opensavvy.formulaide.core.Field.Input
 import opensavvy.formulaide.core.InputConstraints
@@ -15,7 +15,7 @@ import opensavvy.formulaide.core.Template
 import opensavvy.formulaide.database.testDatabase
 import opensavvy.logger.Logger.Companion.info
 import opensavvy.logger.loggerFor
-import opensavvy.state.firstResultOrThrow
+import opensavvy.state.slice.valueOrThrow
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -41,13 +41,13 @@ class TemplateTest {
 
 		val city = database.templates
 			.create("Cities", Template.Version(Clock.System.now(), "First version", cityFields))
-			.firstResultOrThrow()
+			.valueOrThrow
 
 		run {
-			val data = city.requestValue()
+			val data = city.requestValueOrThrow()
 			assertEquals("Cities", data.name)
 			assertEquals(1, data.versions.size)
-			assertEquals(cityFields, data.versions.first().requestValue().field)
+			assertEquals(cityFields, data.versions.first().requestValueOrThrow().field)
 		}
 
 		log.info { "Creating the identity template…" }
@@ -63,7 +63,7 @@ class TemplateTest {
 						0 to Input("Postal code", InputConstraints.Text(maxLength = 5u), importedFrom = null),
 						1 to Input("Name", InputConstraints.Text(maxLength = 50u), importedFrom = null)
 					),
-					importedFrom = city.requestValue().versions.first()
+					importedFrom = city.requestValueOrThrow().versions.first()
 				)
 			),
 			importedFrom = null
@@ -71,13 +71,13 @@ class TemplateTest {
 
 		val identity = database.templates
 			.create("Identities", Template.Version(Clock.System.now(), "First version", identityFields))
-			.firstResultOrThrow()
+			.valueOrThrow
 
 		run {
-			val data = identity.requestValue()
+			val data = identity.requestValueOrThrow()
 			assertEquals("Identities", data.name)
 			assertEquals(1, data.versions.size)
-			assertEquals(identityFields, data.versions.first().requestValue().field)
+			assertEquals(identityFields, data.versions.first().requestValueOrThrow().field)
 		}
 
 		log.info { "Creating a new version…" }
@@ -94,7 +94,7 @@ class TemplateTest {
 						0 to Input("Postal code", InputConstraints.Text(maxLength = 5u), importedFrom = null),
 						1 to Input("Name", InputConstraints.Text(maxLength = 50u), importedFrom = null)
 					),
-					importedFrom = city.requestValue().versions.first()
+					importedFrom = city.requestValueOrThrow().versions.first()
 				)
 			),
 			importedFrom = null
@@ -104,22 +104,22 @@ class TemplateTest {
 
 		database.templates
 			.createVersion(identity, Template.Version(Clock.System.now(), "Second version", identityFields2))
-			.firstResultOrThrow()
+			.valueOrThrow
 
 		run {
-			val data = identity.requestValue()
+			val data = identity.requestValueOrThrow()
 			assertEquals("Identities", data.name)
 			assertEquals(2, data.versions.size)
 
 			val (first, second) = data.versions.sortedBy { it.version }
-			assertEquals(identityFields, first.requestValue().field)
-			assertEquals(identityFields2, second.requestValue().field)
+			assertEquals(identityFields, first.requestValueOrThrow().field)
+			assertEquals(identityFields2, second.requestValueOrThrow().field)
 		}
 
 		log.info { "Closing…" }
 
-		database.templates.edit(city, open = false).firstResultOrThrow()
-		database.templates.edit(identity, open = false).firstResultOrThrow()
+		database.templates.edit(city, open = false).valueOrThrow
+		database.templates.edit(identity, open = false).valueOrThrow
 
 		currentCoroutineContext().cancelChildren()
 	}
