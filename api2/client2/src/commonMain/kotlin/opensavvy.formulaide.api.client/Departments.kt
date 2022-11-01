@@ -1,22 +1,18 @@
 package opensavvy.formulaide.api.client
 
-import kotlinx.coroutines.flow.emitAll
 import opensavvy.backbone.Ref
 import opensavvy.backbone.Ref.Companion.expire
 import opensavvy.backbone.RefCache
 import opensavvy.formulaide.api.Department
 import opensavvy.formulaide.api.api2
 import opensavvy.formulaide.core.AbstractDepartments
-import opensavvy.formulaide.state.flatMapSuccess
-import opensavvy.formulaide.state.flatten
-import opensavvy.formulaide.state.mapSuccess
-import opensavvy.formulaide.state.onEachSuccess
 import opensavvy.spine.Parameters
 import opensavvy.spine.ktor.client.request
-import opensavvy.state.Slice.Companion.pending
-import opensavvy.state.State
-import opensavvy.state.ensureValid
-import opensavvy.state.state
+import opensavvy.state.Progression.Companion.loading
+import opensavvy.state.ProgressionReporter.Companion.report
+import opensavvy.state.slice.Slice
+import opensavvy.state.slice.ensureValid
+import opensavvy.state.slice.slice
 import opensavvy.formulaide.core.Department as CoreDepartment
 
 class Departments(
@@ -24,61 +20,54 @@ class Departments(
 	override val cache: RefCache<CoreDepartment>,
 ) : AbstractDepartments {
 
-	override fun list(includeClosed: Boolean): State<List<CoreDepartment.Ref>> = state {
-		emit(pending(0.0))
+	override suspend fun list(includeClosed: Boolean): Slice<List<CoreDepartment.Ref>> = slice {
+		report(loading(0.0))
 		val parameters = Department.GetParams().apply {
 			this.includeClosed = includeClosed
 		}
 
-		val result = client.http
+		val list = client.http
 			.request(api2.departments.get, api2.departments.idOf(), Unit, parameters, client.context.value)
-			.mapSuccess { list ->
-				list.map { id ->
-					api2.departments.id.idFrom(id, client.context.value)
-						.mapSuccess { CoreDepartment.Ref(it, this@Departments) }
-				}
-			}
-			.flatten()
+			.bind()
 
-		emitAll(result)
+		list.map { id ->
+			CoreDepartment.Ref(api2.departments.id.idFrom(id, client.context.value).bind(), this@Departments)
+		}
 	}
 
-	override fun create(name: String): State<CoreDepartment.Ref> = state {
-		emit(pending(0.0))
+	override suspend fun create(name: String): Slice<CoreDepartment.Ref> = slice {
+		report(loading(0.0))
 
 		val input = Department.New(
 			name,
 		)
 
-		val result = client.http
+		val (id, _) = client.http
 			.request(api2.departments.create, api2.departments.idOf(), input, Parameters.Empty, client.context.value)
-			.mapSuccess { (id, _) -> id }
-			.flatMapSuccess { emit(api2.departments.id.idFrom(it, client.context.value)) }
-			.mapSuccess { CoreDepartment.Ref(it, this@Departments) }
+			.bind()
 
-		emitAll(result)
+		CoreDepartment.Ref(api2.departments.id.idFrom(id, client.context.value).bind(), this@Departments)
 	}
 
-	override fun open(department: CoreDepartment.Ref): State<Unit> = state {
-		emit(pending(0.0))
+	override suspend fun open(department: CoreDepartment.Ref): Slice<Unit> = slice {
+		report(loading(0.0))
 
-		val result = client.http
+		client.http
 			.request(
 				api2.departments.id.visibility,
 				api2.departments.id.idOf(department.id),
 				Department.EditVisibility(open = true),
 				Parameters.Empty,
 				client.context.value
-			)
-			.onEachSuccess { department.expire() }
+			).bind()
 
-		emitAll(result)
+		department.expire()
 	}
 
-	override fun close(department: CoreDepartment.Ref): State<Unit> = state {
-		emit(pending(0.0))
+	override suspend fun close(department: CoreDepartment.Ref): Slice<Unit> = slice {
+		report(loading(0.0))
 
-		val result = client.http
+		client.http
 			.request(
 				api2.departments.id.visibility,
 				api2.departments.id.idOf(department.id),
@@ -86,13 +75,12 @@ class Departments(
 				Parameters.Empty,
 				client.context.value
 			)
-			.onEachSuccess { department.expire() }
 
-		emitAll(result)
+		department.expire()
 	}
 
-	override fun directRequest(ref: Ref<CoreDepartment>): State<CoreDepartment> = state {
-		emit(pending(0.0))
+	override suspend fun directRequest(ref: Ref<CoreDepartment>): Slice<CoreDepartment> = slice {
+		report(loading(0.0))
 		ensureValid(ref is CoreDepartment.Ref) { "${this@Departments} n'accepte pas la référence $ref" }
 
 		val result = client.http
@@ -102,14 +90,11 @@ class Departments(
 				Unit,
 				Parameters.Empty,
 				client.context.value
-			)
-			.mapSuccess {
-				CoreDepartment(
-					name = it.name,
-					open = it.open,
-				)
-			}
+			).bind()
 
-		emitAll(result)
+		CoreDepartment(
+			name = result.name,
+			open = result.open,
+		)
 	}
 }

@@ -4,7 +4,7 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.util.date.*
-import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.first
 import opensavvy.backbone.Ref.Companion.request
 import opensavvy.formulaide.api.Context
 import opensavvy.formulaide.api.User.TemporaryPassword
@@ -12,16 +12,12 @@ import opensavvy.formulaide.api.api2
 import opensavvy.formulaide.core.Department
 import opensavvy.formulaide.core.User
 import opensavvy.formulaide.database.Database
-import opensavvy.formulaide.state.bind
-import opensavvy.formulaide.state.mapSuccess
-import opensavvy.formulaide.state.onEachNotSuccess
 import opensavvy.spine.ktor.server.ContextGenerator
 import opensavvy.spine.ktor.server.ResponseStateBuilder
 import opensavvy.spine.ktor.server.route
-import opensavvy.state.Slice.Companion.successful
-import opensavvy.state.ensureAuthenticated
-import opensavvy.state.ensureAuthorized
-import opensavvy.state.firstResultOrNull
+import opensavvy.state.firstValueOrNull
+import opensavvy.state.slice.ensureAuthenticated
+import opensavvy.state.slice.ensureAuthorized
 import java.time.Duration
 
 fun Routing.users(database: Database, contextGenerator: ContextGenerator<Context>, developmentMode: Boolean) {
@@ -29,106 +25,91 @@ fun Routing.users(database: Database, contextGenerator: ContextGenerator<Context
 	route(api2.users.get, contextGenerator) {
 		ensureAdministrator { "Seuls les administrateurs peuvent accéder à la liste des utilisateurs" }
 
-		val result = database.users.list(parameters.includeClosed)
-			.mapSuccess { list -> list.map { api2.users.id.idOf(it.id) } }
-
-		emitAll(result)
+		database.users.list(parameters.includeClosed).bind()
+			.map { api2.users.id.idOf(it.id) }
 	}
 
 	route(api2.users.create, contextGenerator) {
 		ensureAdministrator { "Seuls les administrateurs peuvent créer des utilisateurs" }
 
-		val result = database.users.create(
+		val (ref, password) = database.users.create(
 			body.email,
 			body.name,
 			body.departments.mapTo(HashSet()) {
 				Department.Ref(
-					bind(api2.departments.id.idFrom(it, context)),
+					api2.departments.id.idFrom(it, context).bind(),
 					database.departments
 				)
 			},
 			body.administrator,
-		)
-			.mapSuccess { (ref, password) -> api2.users.id.idOf(ref.id) to TemporaryPassword(password) }
+		).bind()
 
-		emitAll(result)
+		api2.users.id.idOf(ref.id) to TemporaryPassword(password)
 	}
 
 	route(api2.users.id.get, contextGenerator) {
 		val user = ensureEmployee { "Seuls les employés peuvent accéder à leur page" }
-		val requestedId = bind(api2.users.id.idFrom(id, context))
+		val requestedId = api2.users.id.idFrom(id, context).bind()
 
 		if (user.id != requestedId)
 			ensureAdministrator { "Seuls les administrateurs peuvent accéder à la page d'autres utilisateurs qu'eux-même" }
 
 		val result = User.Ref(requestedId, database.users)
-			.request()
-			.mapSuccess {
-				opensavvy.formulaide.api.User(
-					it.email,
-					it.name,
-					it.open,
-					it.departments.mapTo(HashSet()) { dept -> api2.departments.id.idOf(dept.id) },
-					it.administrator,
-					it.forceResetPassword,
-				)
-			}
+			.request().first().bind()
 
-		emitAll(result)
+		opensavvy.formulaide.api.User(
+			result.email,
+			result.name,
+			result.open,
+			result.departments.mapTo(HashSet()) { dept -> api2.departments.id.idOf(dept.id) },
+			result.administrator,
+			result.forceResetPassword,
+		)
 	}
 
 	route(api2.users.id.edit, contextGenerator) {
 		ensureAdministrator { "Seuls les administrateurs peuvent modifier les utilisateurs" }
 
-		val requestedId = bind(api2.users.id.idFrom(id, context))
+		val requestedId = api2.users.id.idFrom(id, context).bind()
 		val ref = User.Ref(requestedId, database.users)
 
-		val result = database.users.edit(
+		database.users.edit(
 			ref,
 			open = body.open,
 			administrator = body.administrator,
 			departments = body.departments?.mapTo(HashSet()) {
 				Department.Ref(
-					bind(api2.departments.id.idFrom(it, context)),
+					api2.departments.id.idFrom(it, context).bind(),
 					database.departments,
 				)
 			}
-		)
-
-		emitAll(result)
+		).bind()
 	}
 
 	route(api2.users.id.resetPassword, contextGenerator) {
 		ensureAdministrator { "Seuls les administrateurs peuvent réinitialiser le mot de passe d'un utilisateur" }
 
-		val requestedId = bind(api2.users.id.idFrom(id, context))
+		val requestedId = api2.users.id.idFrom(id, context).bind()
 		val ref = User.Ref(requestedId, database.users)
 
-		val result = database.users.resetPassword(ref)
-			.mapSuccess { TemporaryPassword(it) }
-
-		emitAll(result)
+		val result = database.users.resetPassword(ref).bind()
+		TemporaryPassword(result)
 	}
 
 	route(api2.users.me.get, contextGenerator) {
 		val ref = ensureEmployee { "Seuls les employés peuvent demander leur identifiant" }
 
-		emit(successful(api2.users.id.idOf(ref.id)))
+		api2.users.id.idOf(ref.id)
 	}
 
 	route(api2.users.me.editPassword, contextGenerator) {
 		val ref = ensureEmployee { "Seuls les employés peuvent modifier leur mot de passe" }
 
-		val result = database.users.setPassword(ref, body.oldPassword, body.newPassword)
-
-		emitAll(result)
+		database.users.setPassword(ref, body.oldPassword, body.newPassword).bind()
 	}
 
 	route(api2.users.me.logIn, contextGenerator) {
-		val (ref, token) = database.users.logIn(body.email, body.password)
-			.onEachNotSuccess { emit(it) }
-			.firstResultOrNull()
-			?: return@route
+		val (ref, token) = database.users.logIn(body.email, body.password).bind()
 
 		call.response.cookies.append(
 			name = "session",
@@ -144,18 +125,14 @@ fun Routing.users(database: Database, contextGenerator: ContextGenerator<Context
 
 		val id = api2.users.id.idOf(ref.id)
 
-		emitAll(
-			ref.request()
-				.mapSuccess {
-					id to opensavvy.formulaide.api.User(
-						it.email,
-						it.name,
-						it.open,
-						it.departments.mapTo(HashSet()) { dept -> api2.departments.id.idOf(dept.id) },
-						it.administrator,
-						it.forceResetPassword,
-					)
-				}
+		val user = ref.request().first().bind()
+		id to opensavvy.formulaide.api.User(
+			user.email,
+			user.name,
+			user.open,
+			user.departments.mapTo(HashSet()) { dept -> api2.departments.id.idOf(dept.id) },
+			user.administrator,
+			user.forceResetPassword,
 		)
 	}
 
@@ -166,18 +143,18 @@ fun Routing.users(database: Database, contextGenerator: ContextGenerator<Context
 		val (id, token) = session.split(':', limit = 2)
 		val ref = User.Ref(id, database.users)
 
-		emitAll(database.users.logOut(ref, token))
+		database.users.logOut(ref, token).bind()
 	}
 
 }
 
-suspend inline fun ResponseStateBuilder<*, *, *, Context>.ensureEmployee(lazyMessage: () -> String): User.Ref {
+suspend inline fun ResponseStateBuilder<*, *, Context>.ensureEmployee(lazyMessage: () -> String): User.Ref {
 	val ref = context.user
 	ensureAuthenticated(ref != null, lazyMessage)
 	return ref
 }
 
-suspend inline fun ResponseStateBuilder<*, *, *, Context>.ensureAdministrator(lazyMessage: () -> String): User.Ref {
+suspend inline fun ResponseStateBuilder<*, *, Context>.ensureAdministrator(lazyMessage: () -> String): User.Ref {
 	val ref = ensureEmployee(lazyMessage)
 	ensureAuthorized(context.role >= User.Role.ADMINISTRATOR, lazyMessage)
 	return ref
@@ -198,13 +175,9 @@ fun context(database: Database) = ContextGenerator { call ->
 
 	val ref = User.Ref(id, database.users)
 
-	database.users.verifyToken(ref, token)
-		.firstResultOrNull()
-		?: return@ContextGenerator anonymous
+	database.users.verifyToken(ref, token).orNull() ?: return@ContextGenerator anonymous
 
-	val userData = ref.request()
-		.firstResultOrNull()
-		?: return@ContextGenerator anonymous
+	val userData = ref.request().firstValueOrNull() ?: return@ContextGenerator anonymous
 
 	Context(
 		user = ref,

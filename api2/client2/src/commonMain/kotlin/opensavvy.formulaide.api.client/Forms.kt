@@ -1,6 +1,5 @@
 package opensavvy.formulaide.api.client
 
-import kotlinx.coroutines.flow.emitAll
 import kotlinx.datetime.toInstant
 import opensavvy.backbone.Ref
 import opensavvy.backbone.RefCache
@@ -11,114 +10,96 @@ import opensavvy.formulaide.core.AbstractFormVersions
 import opensavvy.formulaide.core.AbstractForms
 import opensavvy.formulaide.core.Department
 import opensavvy.formulaide.core.Form
-import opensavvy.formulaide.state.bind
-import opensavvy.formulaide.state.mapSuccess
-import opensavvy.formulaide.state.onEachSuccess
 import opensavvy.spine.Parameters
 import opensavvy.spine.ktor.client.request
-import opensavvy.state.Slice.Companion.successful
-import opensavvy.state.State
-import opensavvy.state.ensureValid
-import opensavvy.state.flatMapSuccess
-import opensavvy.state.state
+import opensavvy.state.slice.Slice
+import opensavvy.state.slice.ensureValid
+import opensavvy.state.slice.slice
 import opensavvy.formulaide.api.Form as ApiForm
 
 class Forms(
 	private val client: Client,
 	override val cache: RefCache<Form>,
 ) : AbstractForms {
-	override fun list(includeClosed: Boolean, includePrivate: Boolean): State<List<Form.Ref>> = state {
+	override suspend fun list(includeClosed: Boolean, includePrivate: Boolean): Slice<List<Form.Ref>> = slice {
 		val params = ApiForm.GetParams().apply {
 			this.includeClosed = includeClosed
 			this.includePrivate = includePrivate
 		}
 
-		val result = client.http
+		client.http
 			.request(api2.forms.get, api2.forms.idOf(), Unit, params, client.context.value)
-			.flatMapSuccess { list ->
-				val result = list.map { Form.Ref(bind(api2.forms.id.idFrom(it, client.context.value)), this@Forms) }
-				emit(successful(result))
-			}
-
-		emitAll(result)
+			.bind()
+			.map { Form.Ref(api2.forms.id.idFrom(it, client.context.value).bind(), this@Forms) }
 	}
 
-	override fun create(name: String, public: Boolean, firstVersion: Form.Version): State<Form.Ref> = state {
+	override suspend fun create(name: String, public: Boolean, firstVersion: Form.Version): Slice<Form.Ref> = slice {
 		val body = ApiForm.New(
 			name,
 			public,
 			firstVersion.toApi()
 		)
 
-		val result = client.http
+		val (id, _) = client.http
 			.request(api2.forms.create, api2.forms.idOf(), body, Parameters.Empty, client.context.value)
-			.flatMapSuccess { (id, _) ->
-				val form = bind(api2.forms.id.idFrom(id, client.context.value))
-				emit(successful(Form.Ref(form, this@Forms)))
-			}
+			.bind()
 
-		emitAll(result)
+		val form = api2.forms.id.idFrom(id, client.context.value).bind()
+		Form.Ref(form, this@Forms)
 	}
 
-	override fun createVersion(form: Form.Ref, version: Form.Version): State<Form.Version.Ref> = state {
+	override suspend fun createVersion(form: Form.Ref, version: Form.Version): Slice<Form.Version.Ref> = slice {
 		val new = version.toApi()
 
-		val result = client.http
+		val (id, _) = client.http
 			.request(api2.forms.id.create, api2.forms.id.idOf(form.id), new, Parameters.Empty, client.context.value)
-			.flatMapSuccess { (id, _) ->
-				val (_, versionId) = bind(api2.forms.id.version.idFrom(id, client.context.value))
-				emit(
-					successful(
-						Form.Version.Ref(
-							form,
-							versionId.toInstant(),
-							client.formVersions,
-						)
-					)
-				)
-			}
-			.onEachSuccess { cache.expire(form) }
+			.bind()
 
-		emitAll(result)
+		val (_, versionId) = api2.forms.id.version.idFrom(id, client.context.value).bind()
+
+		cache.expire(form)
+
+		Form.Version.Ref(
+			form,
+			versionId.toInstant(),
+			client.formVersions,
+		)
 	}
 
-	override fun edit(form: Form.Ref, name: String?, public: Boolean?, open: Boolean?): State<Unit> = state {
+	override suspend fun edit(form: Form.Ref, name: String?, public: Boolean?, open: Boolean?): Slice<Unit> = slice {
 		val body = ApiForm.Edit(
 			name,
 			public,
 			open,
 		)
 
-		val result = client.http
+		client.http
 			.request(api2.forms.id.edit, api2.forms.id.idOf(form.id), body, Parameters.Empty, client.context.value)
-			.onEachSuccess { cache.expire(form) }
+			.bind()
 
-		emitAll(result)
+		cache.expire(form)
 	}
 
-	override fun directRequest(ref: Ref<Form>): State<Form> = state {
+	override suspend fun directRequest(ref: Ref<Form>): Slice<Form> = slice {
 		ensureValid(ref is Form.Ref) { "${this@Forms} n'accepte pas la référence $ref" }
 
-		val result = client.http
+		val form = client.http
 			.request(api2.forms.id.get, api2.forms.id.idOf(ref.id), Unit, Parameters.Empty, client.context.value)
-			.flatMapSuccess { form ->
-				val result = Form(
-					form.name,
-					form.public,
-					form.open,
-					form.versions.map {
-						val (_, versionId) = bind(api2.forms.id.version.idFrom(it, client.context.value))
-						Form.Version.Ref(
-							ref,
-							versionId.toInstant(),
-							client.formVersions,
-						)
-					}
-				)
-				emit(successful(result))
-			}
+			.bind()
 
-		emitAll(result)
+		Form(
+			form.name,
+			form.public,
+			form.open,
+			form.versions.map {
+				val (_, versionId) = api2.forms.id.version.idFrom(it, client.context.value).bind()
+				Form.Version.Ref(
+					ref,
+					versionId.toInstant(),
+					client.formVersions,
+				)
+			}
+		)
 	}
 
 }
@@ -127,37 +108,35 @@ class FormVersions(
 	private val client: Client,
 	override val cache: RefCache<Form.Version>,
 ) : AbstractFormVersions {
-	override fun directRequest(ref: Ref<Form.Version>): State<Form.Version> = state {
+	override suspend fun directRequest(ref: Ref<Form.Version>): Slice<Form.Version> = slice {
 		ensureValid(ref is Form.Version.Ref) { "${this@FormVersions} n'accepte pas la référence $ref" }
 
-		val result = client.http
+		val form = client.http
 			.request(
 				api2.forms.id.version.get,
 				api2.forms.id.version.idOf(ref.form.id, ref.version.toString()),
 				Unit,
 				Parameters.Empty,
 				client.context.value
-			)
-			.mapSuccess { form ->
-				Form.Version(
-					form.creationDate,
-					form.title,
-					form.field.toCore(client.templates, client.templateVersions),
-					form.steps.map {
-						Form.Step(
-							it.id,
-							Department.Ref(
-								bind(api2.departments.id.idFrom(it.department, client.context.value)),
-								client.departments
-							),
-							it.field?.toCore(client.templates, client.templateVersions)
-						)
-					})
+			).bind()
+
+
+		Form.Version(
+			form.creationDate,
+			form.title,
+			form.field.toCore(client.templates, client.templateVersions),
+			form.steps.map {
+				Form.Step(
+					it.id,
+					Department.Ref(
+						api2.departments.id.idFrom(it.department, client.context.value).bind(),
+						client.departments
+					),
+					it.field?.toCore(client.templates, client.templateVersions)
+				)
 			}
-
-		emitAll(result)
+		)
 	}
-
 }
 
 private fun Form.Version.toApi() = ApiForm.Version(
