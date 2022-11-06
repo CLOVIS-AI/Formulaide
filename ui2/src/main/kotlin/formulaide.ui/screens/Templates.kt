@@ -6,10 +6,7 @@ import formulaide.ui.navigation.Screen
 import formulaide.ui.navigation.client
 import formulaide.ui.navigation.currentScreen
 import formulaide.ui.theme.RailButton
-import formulaide.ui.utils.orReport
-import formulaide.ui.utils.rememberPossibleFailure
-import formulaide.ui.utils.rememberRef
-import formulaide.ui.utils.rememberSlice
+import formulaide.ui.utils.*
 import opensavvy.formulaide.core.Template
 import opensavvy.formulaide.core.User
 import opensavvy.state.slice.valueOrNull
@@ -74,18 +71,20 @@ private fun ShowTemplate(ref: Template.Ref) {
 		val failure = rememberPossibleFailure()
 
 		ButtonContainer {
-			TextButton(
-				{ currentScreen = TemplateNewVersion(ref) },
-				enabled = template != null
-			) {
-				Text("Nouvelle version")
-			}
+			if (client.role >= User.Role.ADMINISTRATOR) {
+				TextButton(
+					{ currentScreen = TemplateNewVersion(ref) },
+					enabled = template != null
+				) {
+					Text("Nouvelle version")
+				}
 
-			TextButton(
-				{ client.templates.edit(ref, open = !template!!.open).orReport(failure) },
-				enabled = template != null
-			) {
-				Text(if (template?.open != false) "Archiver" else "Désarchiver")
+				TextButton(
+					{ client.templates.edit(ref, open = !template!!.open).orReport(failure) },
+					enabled = template != null
+				) {
+					Text(if (template?.open != false) "Archiver" else "Désarchiver")
+				}
 			}
 		}
 
