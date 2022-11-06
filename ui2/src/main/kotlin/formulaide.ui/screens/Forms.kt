@@ -46,10 +46,7 @@ val FormList: Screen = Screen(
 				if (client.role >= User.Role.EMPLOYEE) {
 					ChipContainer {
 						FilterChip("Privés", showPrivate, onUpdate = { showPrivate = it })
-
-						if (client.role >= User.Role.ADMINISTRATOR) {
-							FilterChip("Archivés", showArchived, onUpdate = { showArchived = it })
-						}
+						FilterChip("Archivés", showArchived, onUpdate = { showArchived = it })
 					}
 				}
 
