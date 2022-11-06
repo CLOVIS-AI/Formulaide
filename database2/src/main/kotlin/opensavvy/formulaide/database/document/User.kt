@@ -32,17 +32,17 @@ import opensavvy.formulaide.core.User as CoreUser
 @Serializable
 class User(
 	@SerialName("_id") val id: String,
-	val email: String,
-	val name: String,
-	val open: Boolean,
-	val departments: Set<String>,
-	val administrator: Boolean,
-	val password: String,
-	val tokens: Set<String>,
+	val email: String = "Adresse email inconnue",
+	val name: String = "Nom manquant",
+	val open: Boolean = true,
+	val departments: Set<String> = emptySet(),
+	val administrator: Boolean = false,
+	val password: String = "<no stored password>",
+	val tokens: Set<String> = emptySet(),
 	/** If `true`, the current password must only be used once. */
-	val singleUsePassword: Boolean,
+	val singleUsePassword: Boolean = true,
 	/** If `true`, the current password has been used at least once. */
-	val usedPassword: Boolean,
+	val usedPassword: Boolean = false,
 )
 
 class Users(
@@ -81,6 +81,7 @@ class Users(
 
 		users.find(filter)
 			.batchSize(10)
+			.projection(User::id)
 			.toList()
 			.map { CoreUser.Ref(it.id, this@Users) }
 	}

@@ -16,8 +16,8 @@ import opensavvy.formulaide.core.Department as CoreDepartment
 @Serializable
 internal class Department(
 	@SerialName("_id") val id: String,
-	val name: String,
-	val open: Boolean,
+	val name: String = "Nom manquant",
+	val open: Boolean = true,
 )
 
 class Departments internal constructor(
@@ -35,6 +35,7 @@ class Departments internal constructor(
 
 		val result = departments.find(filter)
 			.batchSize(5)
+			.projection(Department::id)
 			.toList()
 			.map { CoreDepartment.Ref(it.id, this@Departments) }
 
