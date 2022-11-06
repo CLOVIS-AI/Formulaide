@@ -81,24 +81,26 @@ private fun ShowForm(ref: opensavvy.formulaide.core.Form.Ref) {
 		val failure = rememberPossibleFailure()
 
 		ButtonContainer {
-			TextButton(
-				{ currentScreen = FormNewVersion(ref) }
-			) {
-				Text("Nouvelle version")
-			}
+			if (client.role >= User.Role.ADMINISTRATOR) {
+				TextButton(
+					{ currentScreen = FormNewVersion(ref) }
+				) {
+					Text("Nouvelle version")
+				}
 
-			TextButton(
-				{ client.forms.edit(ref, public = !form!!.public).orReport(failure) },
-				enabled = form != null
-			) {
-				Text(if (form?.public != false) "Rendre privé" else "Rendre public")
-			}
+				TextButton(
+					{ client.forms.edit(ref, public = !form!!.public).orReport(failure) },
+					enabled = form != null
+				) {
+					Text(if (form?.public != false) "Rendre privé" else "Rendre public")
+				}
 
-			TextButton(
-				{ client.forms.edit(ref, open = !form!!.open).orReport(failure) },
-				enabled = form != null,
-			) {
-				Text(if (form?.open != false) "Archiver" else "Désarchiver")
+				TextButton(
+					{ client.forms.edit(ref, open = !form!!.open).orReport(failure) },
+					enabled = form != null,
+				) {
+					Text(if (form?.open != false) "Archiver" else "Désarchiver")
+				}
 			}
 		}
 
