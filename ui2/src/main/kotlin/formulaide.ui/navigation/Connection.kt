@@ -1,7 +1,6 @@
 package formulaide.ui.navigation
 
 import androidx.compose.runtime.*
-import androidx.compose.runtime.snapshots.Snapshot
 import formulaide.ui.screens.Home
 import formulaide.ui.theme.RailButton
 import kotlinx.browser.window
@@ -84,10 +83,7 @@ fun LogOutButton() {
 				if (client.context.value.role >= User.Role.EMPLOYEE)
 					client.users.logOut().valueOrNull
 
-				Snapshot.withMutableSnapshot {
-					client = Client(productionUrl)
-					currentScreen = Home
-				}
+				currentScreen = Home
 			}
 		}
 	)
