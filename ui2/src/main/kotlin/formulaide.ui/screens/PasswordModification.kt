@@ -7,6 +7,7 @@ import formulaide.ui.components.Page
 import formulaide.ui.components.PasswordField
 import formulaide.ui.navigation.Screen
 import formulaide.ui.navigation.client
+import formulaide.ui.navigation.currentScreen
 import formulaide.ui.utils.orReport
 import formulaide.ui.utils.rememberPossibleFailure
 import opensavvy.formulaide.core.User
@@ -41,6 +42,7 @@ fun PasswordModificationPage() {
 	if (newPassword == newPassword2 && newPassword.isNotBlank())
 		MainButton(onClick = {
 			client.users.setPassword(oldPassword, newPassword).orReport(failure)
+			currentScreen = Home
 		}) {
 			Text("Modifier mon mot de passe")
 		}
