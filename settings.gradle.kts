@@ -16,5 +16,6 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 include(
 	"core",
 
+	"fake",
 	"test",
 )
