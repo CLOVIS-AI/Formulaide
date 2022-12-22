@@ -12,25 +12,3 @@ plugins {
 }
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
-
-// Formulaide 1.0
-include(
-	"core",
-	"api",
-	"client",
-	"server",
-	"database",
-	"ui",
-)
-
-// Formulaide 2.0
-include(
-	"core2",
-	"api2",
-	"api2:common",
-	"api2:client2",
-	"api2:server2",
-	"server2",
-	"database2",
-	"ui2",
-)

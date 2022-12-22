@@ -3,9 +3,9 @@
     <ExternalSystemSettings>
       <option name="env">
         <map>
-          <entry key="formulaide_jwt_secret" value="the secret used by IDEA" />
           <entry key="formulaide_database" value="formulaide" />
           <entry key="formulaide_host" value="localhost" />
+          <entry key="formulaide_jwt_secret" value="the secret used by IDEA" />
           <entry key="formulaide_password" value="development-password" />
           <entry key="formulaide_port" value="27017" />
           <entry key="formulaide_username" value="root" />
@@ -20,10 +20,8 @@
       </option>
       <option name="taskNames">
         <list>
-          <option value="test" />
-          <option value="jsBrowserTest" />
-          <option value="browserTest" />
-          <option value="jvmTest" />
+          <option value="cleanAllTests" />
+          <option value="allTests" />
         </list>
       </option>
       <option name="vmOptions" value="" />

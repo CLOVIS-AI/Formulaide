@@ -11,13 +11,9 @@ variables:
   server_bin: "$CI_REGISTRY_IMAGE/server"
 
 include:
-  - template: Security/SAST.gitlab-ci.yml
-  - template: Security/Container-Scanning.gitlab-ci.yml
-  - template: Security/Dependency-Scanning.gitlab-ci.yml
-  - local: ".gitlab/ci/docker.gitlab-ci.yml"
-  - local: ".gitlab/ci/env.gitlab-ci.yml"
-  - local: ".gitlab/ci/gradle.gitlab-ci.yml"
-  - local: "helm/.gitlab-ci.yml"
+  - remote: https://gitlab.com/opensavvy/ci-templates/-/raw/main/docker.gitlab-ci.yml
+  - remote: https://gitlab.com/opensavvy/ci-templates/-/raw/main/gradle.gitlab-ci.yml
+  - remote: https://gitlab.com/opensavvy/ci-templates/-/raw/main/version.gitlab-ci.yml
 
 workflow:
   rules:
@@ -26,330 +22,31 @@ workflow:
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
     - if: $CI_COMMIT_TAG
 
-# *** Phantom Jobs *** #
-
-.with-database:
-  services:
-    - mongo:latest
-  variables:
-    MONGO_INITDB_ROOT_USERNAME: "root"
-    MONGO_INITDB_ROOT_PASSWORD: "development-password"
-    formulaide_host: "mongo"
-    formulaide_port: 27017
-    formulaide_database: "formulaide"
-    formulaide_username: "root"
-    formulaide_password: "development-password"
-  retry: 2
-
-# *** Docker *** #
-
-docker-js-chrome:
-  extends: .docker-build
-  stage: docker
-  variables:
-    image: $js_chrome
-    dockerfile: client/build.dockerfile
-    docker_context: client
-
-# *** Build *** #
-
 dokka:
   image: $jdk_image
   stage: build
   extends: [ .gradle ]
   needs: [ ]
   script:
-    # ui:assemble is needed because of https://github.com/Kotlin/dokka/issues/1455
-    - "./gradlew ui:mainClasses ui2:mainClasses dokkaHtmlMultiModule"
+    - "./gradlew dokkaHtmlMultiModule"
   artifacts:
     paths:
       - build/dokka/htmlMultiModule/
     expose_as: 'Documentation'
   interruptible: true
 
-latex:
-  image: clovisai/latex:latest
-  stage: build
-  needs: [ ]
-  variables:
-    GIT_SUBMODULE_STRATEGY: recursive
-  before_script:
-    - export TERM=xterm
-    - mkdir -p public/docs
-  script:
-    - cd docs
-    - ln -s latex-templates/clovisai.sty
-    - ln -s latex-templates/clovisai-constructs.sty
-    - ./latex-templates/build PDF user-guide.tex
-    - mv *.pdf ../public/docs/
-  artifacts:
-    paths:
-      - public/docs/
-  interruptible: true
-
-server-bin:
-  image: $jdk_image
-  extends: [ .gradle ]
-  stage: build
-  needs: [ ]
-  script:
-    - echo -e "Formulaide $CI_COMMIT_REF_NAME par $CI_PROJECT_NAMESPACE\nCommit $CI_COMMIT_SHA" >> ui/src/main/resources/version.txt
-    - "./gradlew server:assembleDist"
-  artifacts:
-    paths:
-      - server/build/distributions
-  interruptible: true
-
-# *** Docker Binaries *** #
-
-server-bin-docker:
-  extends: [ .docker-build ]
-  stage: docker-bin
-  dependencies: [ server-bin ]
-  needs: [ server-bin ]
-  variables:
-    image: $server_bin
-    dockerfile: server/Dockerfile
-    docker_context: server
-  interruptible: true
-
-# *** Test *** #
-
-client-js-test:
-  image: $js_chrome:$build_version
-  stage: test
-  extends: [ .gradle, .with-database ]
-  needs: [ docker-js-chrome, server-bin ]
-  dependencies: [ server-bin ]
-  before_script:
-    - mv server/build/distributions/server*.tar server.tar
-    - tar -xf server.tar
-  script:
-    - "formulaide_allow_init=true formulaide_allow_unsafe_cookie=true ./server-*/bin/server --init &"
-    - sleep 5
-    - "./gradlew :client:jsBrowserTest"
-  artifacts:
-    reports:
-      junit: client/build/test-results/jsBrowserTest/**/TEST-*.xml
-  interruptible: true
-
-client-jvm-test:
-  image: $jdk_image
-  stage: test
-  extends: [ .gradle, .with-database ]
-  needs: [ server-bin ]
-  dependencies: [ server-bin ]
-  before_script:
-    - mv server/build/distributions/server*.tar server.tar
-    - tar -xf server.tar
-  script:
-    - "formulaide_allow_init=true formulaide_allow_unsafe_cookie=true ./server-*/bin/server --init &"
-    - sleep 5
-    - "./gradlew :client:jvmTest"
-  artifacts:
-    reports:
-      junit: client/build/test-results/jvmTest/**/TEST-*.xml
-  interruptible: true
-
-client2-js-test:
-  image: $js_chrome:$build_version
-  stage: test
-  extends: [ .gradle, .with-database ]
-  needs: [ docker-js-chrome, server-bin ]
-  dependencies: [ server-bin ]
-  before_script:
-    - mv server/build/distributions/server*.tar server.tar
-    - tar -xf server.tar
-  script:
-    - "formulaide_allow_init=true formulaide_allow_unsafe_cookie=true ./server-*/bin/server --init &"
-    - sleep 5
-    - "./gradlew :api2:client2:jsBrowserTest"
-  artifacts:
-    reports:
-      junit: api2/client2/build/test-results/jsBrowserTest/**/TEST-*.xml
-  interruptible: true
-
-client2-jvm-test:
-  image: $jdk_image
-  stage: test
-  extends: [ .gradle, .with-database ]
-  needs: [ server-bin ]
-  dependencies: [ server-bin ]
-  before_script:
-    - mv server/build/distributions/server*.tar server.tar
-    - tar -xf server.tar
-  script:
-    - "formulaide_allow_init=true formulaide_allow_unsafe_cookie=true ./server-*/bin/server --init &"
-    - sleep 5
-    - "./gradlew :api2:client2:jvmTest"
-  artifacts:
-    reports:
-      junit: api2/client2/build/test-results/jvmTest/**/TEST-*.xml
-  interruptible: true
-
-ui-test:
-  image: $js_chrome:$build_version
-  stage: test
-  extends: [ .gradle ]
-  needs: [ docker-js-chrome ]
-  script:
-    - "./gradlew :ui:browserTest"
-  artifacts:
-    reports:
-      junit: ui/build/test-results/browserTest/**/TEST-*.xml
-  interruptible: true
-
-api-js-test:
-  image: $js_chrome:$build_version
-  stage: test
-  extends: [ .gradle ]
-  needs: [ docker-js-chrome ]
-  script:
-    - "./gradlew :api:jsBrowserTest"
-  artifacts:
-    reports:
-      junit: api/build/test-results/browserTest/**/TEST-*.xml
-  interruptible: true
-
-api-jvm-test:
-  image: $jdk_image
-  stage: test
-  extends: [ .gradle ]
-  needs: [ ]
-  script:
-    - "./gradlew :api:jvmTest"
-  artifacts:
-    reports:
-      junit: api/build/test-results/test/**/TEST-*.xml
-  interruptible: true
-
-core-js-test:
-  image: $js_chrome:$build_version
-  stage: test
-  extends: [ .gradle ]
-  needs: [ docker-js-chrome ]
-  script:
-    - "./gradlew :core:jsBrowserTest"
-  artifacts:
-    reports:
-      junit: core/build/test-results/browserTest/**/TEST-*.xml
-  interruptible: true
-
-core-jvm-test:
-  image: $jdk_image
-  stage: test
-  extends: [ .gradle ]
-  needs: [ ]
-  script:
-    - "./gradlew :core:jvmTest"
-  artifacts:
-    reports:
-      junit: core/build/test-results/test/**/TEST-*.xml
-  interruptible: true
-
-database-test:
-  image: $jdk_image
-  stage: test
-  extends: [ .gradle, .with-database ]
-  needs: [ ]
-  script:
-    - "./gradlew :database:test :database:printCoverage"
-  artifacts:
-    reports:
-      junit: database/build/test-results/test/**/TEST-*.xml
-  coverage: '/^Coverage:\s(\d+\.\d+%)/'
-  interruptible: true
-
-database2-test:
-  image: $jdk_image
-  stage: test
-  extends: [ .gradle, .with-database ]
-  needs: [ ]
-  script:
-    - "./gradlew :database2:test :database2:printCoverage"
-  artifacts:
-    reports:
-      junit: database2/build/test-results/test/**/TEST-*.xml
-  coverage: '/^Coverage:\s(\d+\.\d+%)/'
-  interruptible: true
-
-server-test:
-  image: $jdk_image
-  stage: test
-  extends: [ .gradle, .with-database ]
-  needs: [ ]
-  script:
-    - "./gradlew :server:test :server:printCoverage"
-  artifacts:
-    reports:
-      junit: server/build/test-results/test/**/TEST-*.xml
-  coverage: '/^Coverage:\s(\d+\.\d+%)/'
-  interruptible: true
-
-container_scanning:
-  needs: [ server-bin-docker ]
-  stage: test
-  variables:
-    DOCKER_IMAGE: $server_bin:$build_version
-    CS_DEFAULT_BRANCH_IMAGE: $server_bin:latest
-  interruptible: true
-
-qodana:
-  stage: test
-  image:
-    name: jetbrains/qodana
-    entrypoint: [ '' ]
-  needs: [ ]
-  script:
-    - /opt/idea/bin/entrypoint --results-dir=$CI_PROJECT_DIR/qodana --save-report --report-dir=$CI_PROJECT_DIR/qodana/report
-  artifacts:
-    paths:
-      - qodana/
-    expose_as: 'Qodana report'
-  allow_failure: true
-  interruptible: true
-
-# *** Deploy *** #
-
-docker-js-chrome-latest:
-  extends: .docker-rename-latest
-  needs: [ docker-js-chrome ]
-  variables:
-    image: $js_chrome
-  interruptible: true
-
-server-bin-docker-latest:
-  extends: .docker-rename-latest
-  needs: [ server-bin-docker ]
-  variables:
-    image: $server_bin
-  interruptible: false
-  resource_group: server-docker-latest
-
-server-bin-docker-tag:
-  extends: .docker-rename-tag
-  needs: [ server-bin-docker ]
-  variables:
-    image: $server_bin
-  interruptible: false
-  resource_group: server-docker-tag
-
 pages:
   image: alpine:latest
   stage: deploy
-  dependencies: [ dokka, server-bin, qodana, latex ]
-  needs: [ dokka, server-bin, qodana, latex ]
+  dependencies: [ dokka ]
+  needs: [ dokka ]
   script:
-    - mkdir -p public/documentation public/bin public/qodana
+    - mkdir -p public/documentation
     - mv build/dokka/htmlMultiModule/* public/documentation/
-    - mv server/build/distributions/server*.tar public/bin/server.tar
-    - mv server/build/distributions/server*.zip public/bin/server.zip
-    - mv qodana/ public/qodana || true  # qodana is not stable currently, fail silently if it didn't work
   artifacts:
     paths:
       - public
   rules:
-    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
     - if: $CI_COMMIT_TAG
   interruptible: false
 
