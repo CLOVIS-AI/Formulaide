@@ -25,13 +25,15 @@ workflow:
 dokka:
   image: $jdk_image
   stage: build
-  extends: [ .gradle ]
+  extends: [ .os.gradle ]
   needs: [ ]
   script:
     - "./gradlew dokkaHtmlMultiModule"
+    - mkdir -p docs
+    - mv build/dokka/htmlMultiModule/* docs
   artifacts:
     paths:
-      - build/dokka/htmlMultiModule/
+      - docs
     expose_as: 'Documentation'
   interruptible: true
 
@@ -42,7 +44,7 @@ pages:
   needs: [ dokka ]
   script:
     - mkdir -p public/documentation
-    - mv build/dokka/htmlMultiModule/* public/documentation/
+    - mv docs/* public/documentation/
   artifacts:
     paths:
       - public

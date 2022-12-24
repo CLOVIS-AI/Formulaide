@@ -1,3 +1,5 @@
+import java.net.URL
+
 plugins {
 	// Declare Kotlin plugins for subprojects, without applying them
 	kotlin("multiplatform") apply false
@@ -19,9 +21,22 @@ subprojects {
 }
 
 allprojects {
+	plugins.apply("org.jetbrains.dokka")
+
 	repositories {
 		mavenCentral()
 		maven("https://gitlab.com/api/v4/projects/37325377/packages/maven")
+	}
+
+	tasks.withType<org.jetbrains.dokka.gradle.DokkaTaskPartial>().configureEach {
+		dokkaSourceSets.configureEach {
+			externalDocumentationLink {
+				url.set(URL("https://kotlinlang.org/api/kotlinx.coroutines/"))
+			}
+			externalDocumentationLink {
+				url.set(URL("https://opensavvy.gitlab.io/pedestal/documentation/"))
+			}
+		}
 	}
 }
 
