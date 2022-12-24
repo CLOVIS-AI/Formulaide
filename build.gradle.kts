@@ -13,7 +13,7 @@ plugins {
 	id("org.jetbrains.kotlinx.kover")
 }
 
-group = "fr.ville-arcachon"
+group = "opensavvy"
 version = calculateVersion()
 
 subprojects {
