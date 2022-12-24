@@ -35,6 +35,7 @@ kotlin {
 				api(Kotlin.test.junit)
 
 				implementation("org.jetbrains.kotlin:kotlin-reflect:_")
+				implementation("ch.qos.logback:logback-classic:_")
 			}
 		}
 
