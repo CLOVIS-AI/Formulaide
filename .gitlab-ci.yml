@@ -37,6 +37,29 @@ dokka:
     expose_as: 'Documentation'
   interruptible: true
 
+test-jvm:
+  image: $jdk_image
+  stage: test
+  extends: [ .os.gradle ]
+  needs: [ ]
+
+  script:
+    - "./gradlew jvmTest koverMergedVerify koverMergedReport"
+    - mkdir -p kover
+    - mv build/reports/kover/merged/html/* kover
+
+    - values=$(<build/reports/kover/merged/xml/report.xml tail -7 | head -5 | grep 'INSTRUCTION' | cut -d ' ' -f 3,4 | sed 's/missed="//;s/" covered="/ /;s/"\/>//')
+    - missed=$(<<<$values cut -d ' ' -f 1)
+    - covered=$(<<<$values cut -d ' ' -f 2)
+    - echo "Coverage $(($covered * 100 / ($covered + $missed)))%"
+  coverage: '/Coverage \d+%/'
+
+  artifacts:
+    paths:
+      - kover
+    expose_as: 'Coverage JVM'
+  interruptible: true
+
 pages:
   image: alpine:latest
   stage: deploy

@@ -10,6 +10,7 @@ plugins {
 	id("com.palantir.git-version")
 
 	id("org.jetbrains.dokka")
+	id("org.jetbrains.kotlinx.kover")
 }
 
 group = "fr.ville-arcachon"
@@ -22,6 +23,7 @@ subprojects {
 
 allprojects {
 	plugins.apply("org.jetbrains.dokka")
+	plugins.apply("org.jetbrains.kotlinx.kover")
 
 	repositories {
 		mavenCentral()
@@ -39,6 +41,8 @@ allprojects {
 		}
 	}
 }
+
+koverMerged.enable()
 
 fun calculateVersion(): String {
 	val versionDetails: groovy.lang.Closure<com.palantir.gradle.gitversion.VersionDetails> by extra
