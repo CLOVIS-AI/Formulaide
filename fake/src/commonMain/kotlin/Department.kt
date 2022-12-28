@@ -11,16 +11,12 @@ import opensavvy.formulaide.core.Auth.Companion.ensureEmployee
 import opensavvy.formulaide.core.Department
 import opensavvy.formulaide.core.User
 import opensavvy.formulaide.fake.utils.newId
-import opensavvy.logger.Logger.Companion.trace
-import opensavvy.logger.loggerFor
 import opensavvy.state.slice.Slice
 import opensavvy.state.slice.ensureFound
 import opensavvy.state.slice.ensureValid
 import opensavvy.state.slice.slice
 
 class FakeDepartments : Department.Service {
-
-	private val log = loggerFor(this)
 
 	private val lock = Semaphore(1)
 	private val data = HashMap<String, Department>()
@@ -30,8 +26,6 @@ class FakeDepartments : Department.Service {
 	private fun toRef(id: String) = Department.Ref(id, this)
 
 	override suspend fun list(includeClosed: Boolean): Slice<List<Department.Ref>> = slice {
-		log.trace { "includeClosed($includeClosed)" }
-
 		if (includeClosed)
 			ensureAdministrator()
 		else
@@ -46,8 +40,6 @@ class FakeDepartments : Department.Service {
 	}
 
 	override suspend fun create(name: String): Slice<Department.Ref> = slice {
-		log.trace { "create($name)" }
-
 		ensureAdministrator()
 
 		val id = newId()
@@ -58,8 +50,6 @@ class FakeDepartments : Department.Service {
 	}
 
 	override suspend fun edit(department: Department.Ref, open: Boolean?): Slice<Unit> = slice {
-		log.trace { "edit($department)" }
-
 		ensureAdministrator()
 
 		val id = department.id
@@ -70,8 +60,6 @@ class FakeDepartments : Department.Service {
 	}
 
 	override suspend fun directRequest(ref: Ref<Department>): Slice<Department> = slice {
-		log.trace { "directRequest($ref)" }
-
 		ensureEmployee()
 
 		ensureValid(ref is Department.Ref) { "Invalid ref $ref" }
