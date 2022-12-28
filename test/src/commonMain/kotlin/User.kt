@@ -95,19 +95,19 @@ abstract class UserTestCases : TestCase<User.Service> {
 		val administrator = assertSuccess(users.create(adminEmail, "Me", administrator = true)).first
 
 		assertSuccess(employee.now()) {
-			assertEquals(employeeEmail, email)
-			assertEquals("Me", name)
-			assertEquals(false, this.administrator)
-			assertEquals(true, active)
-			assertEquals(true, singleUsePassword)
+			assertEquals(employeeEmail, it.email)
+			assertEquals("Me", it.name)
+			assertEquals(false, it.administrator)
+			assertEquals(true, it.active)
+			assertEquals(true, it.singleUsePassword)
 		}
 
 		assertSuccess(administrator.now()) {
-			assertEquals(adminEmail, email)
-			assertEquals("Me", name)
-			assertEquals(true, this.administrator)
-			assertEquals(true, active)
-			assertEquals(true, singleUsePassword)
+			assertEquals(adminEmail, it.email)
+			assertEquals("Me", it.name)
+			assertEquals(true, it.administrator)
+			assertEquals(true, it.active)
+			assertEquals(true, it.singleUsePassword)
 		}
 	}
 
@@ -130,13 +130,13 @@ abstract class UserTestCases : TestCase<User.Service> {
 
 		assertSuccess(employee.join(department)) {
 			assertSuccess(employee.now()) {
-				assertEquals(setOf(department), this.departments)
+				assertEquals(setOf(department), it.departments)
 			}
 		}
 
 		assertSuccess(employee.leave(department)) {
 			assertSuccess(employee.now()) {
-				assertEquals(emptySet(), this.departments)
+				assertEquals(emptySet(), it.departments)
 			}
 		}
 	}
@@ -149,13 +149,13 @@ abstract class UserTestCases : TestCase<User.Service> {
 
 		assertSuccess(employee.disable()) {
 			assertSuccess(employee.now()) {
-				assertEquals(false, active)
+				assertEquals(false, it.active)
 			}
 		}
 
 		assertSuccess(employee.enable()) {
 			assertSuccess(employee.now()) {
-				assertEquals(true, active)
+				assertEquals(true, it.active)
 			}
 		}
 	}
@@ -179,13 +179,13 @@ abstract class UserTestCases : TestCase<User.Service> {
 
 		assertSuccess(employee.promote()) {
 			assertSuccess(employee.now()) {
-				assertEquals(true, administrator)
+				assertEquals(true, it.administrator)
 			}
 		}
 
 		assertSuccess(employee.demote()) {
 			assertSuccess(employee.now()) {
-				assertEquals(false, administrator)
+				assertEquals(false, it.administrator)
 			}
 		}
 	}
@@ -208,15 +208,13 @@ abstract class UserTestCases : TestCase<User.Service> {
 		val (employee, singleUsePassword) = testEmployee(users)
 
 		assertSuccess(employee.now()) {
-			assertTrue(this.singleUsePassword)
+			assertTrue(it.singleUsePassword)
 		}
 
 		val email = employee.now().orThrow().email
 
 		// First usage of the single-use password
-		assertSuccess(users.logIn(email, singleUsePassword)) {
-			val (ref, token) = this
-
+		assertSuccess(users.logIn(email, singleUsePassword)) { (ref, token) ->
 			assertEquals(employee, ref)
 			assertSuccess(users.verifyToken(employee, token))
 		}
@@ -231,12 +229,10 @@ abstract class UserTestCases : TestCase<User.Service> {
 		}
 
 		assertSuccess(employee.now()) {
-			assertFalse(this.singleUsePassword)
+			assertFalse(it.singleUsePassword)
 		}
 
-		assertSuccess(users.logIn(email, password)) {
-			val (ref, token) = this
-
+		assertSuccess(users.logIn(email, password)) { (ref, token) ->
 			assertEquals(employee, ref)
 			assertSuccess(users.verifyToken(employee, token))
 		}
@@ -251,8 +247,8 @@ abstract class UserTestCases : TestCase<User.Service> {
 		assertUnauthorized(employee.setPassword(password.value, Password("a strong password")))
 
 		assertSuccess(employee.now()) {
-			assertTrue(singleUsePassword)
-			assertTrue(active)
+			assertTrue(it.singleUsePassword)
+			assertTrue(it.active)
 		}
 	}
 
@@ -267,14 +263,14 @@ abstract class UserTestCases : TestCase<User.Service> {
 			assertSuccess(employee.setPassword(singleUse.value, password))
 		}
 		assertSuccess(employee.now()) {
-			assertFalse(singleUsePassword)
-			assertTrue(active)
+			assertFalse(it.singleUsePassword)
+			assertTrue(it.active)
 		}
 
 		val newPassword = assertSuccess(employee.resetPassword())
 		assertSuccess(employee.now()) {
-			assertTrue(singleUsePassword)
-			assertTrue(active)
+			assertTrue(it.singleUsePassword)
+			assertTrue(it.active)
 		}
 
 		val email = employee.now().orThrow().email
@@ -282,8 +278,8 @@ abstract class UserTestCases : TestCase<User.Service> {
 		assertUnauthenticated(users.logIn(email, password))
 		assertSuccess(users.logIn(email, newPassword))
 		assertSuccess(employee.now()) {
-			assertTrue(singleUsePassword)
-			assertTrue(active)
+			assertTrue(it.singleUsePassword)
+			assertTrue(it.active)
 		}
 	}
 
@@ -312,13 +308,13 @@ abstract class UserTestCases : TestCase<User.Service> {
 			// Disabling a token which was already invalid does nothing
 			assertSuccess(employee.logOut(Token("this is definitely not the correct token")))
 			assertSuccess(employee.now()) {
-				assertTrue(active)
+				assertTrue(it.active)
 			}
 
 			// Disabling the token does not block the user
 			assertSuccess(employee.logOut(token))
 			assertSuccess(employee.now()) {
-				assertTrue(active)
+				assertTrue(it.active)
 			}
 
 			// We just logged out, the token should not be valid anymore

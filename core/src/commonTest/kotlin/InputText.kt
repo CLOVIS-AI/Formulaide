@@ -21,7 +21,7 @@ class InputText {
 		assertEquals(5u, text.effectiveMaxLength)
 
 		assertSuccess(text.parse("hello")) {
-			assertEquals("hello", this)
+			assertEquals("hello", it)
 		}
 
 		assertInvalid(text.parse("too long"))
@@ -37,7 +37,7 @@ class InputText {
 		assertEquals(5, int.effectiveMax)
 
 		assertSuccess(int.parse("1")) {
-			assertEquals(1, this)
+			assertEquals(1, it)
 		}
 
 		assertInvalid(int.parse("-6"))
@@ -57,11 +57,11 @@ class InputText {
 		val bool = Input.Toggle
 
 		assertSuccess(bool.parse("true")) {
-			assertEquals(true, this)
+			assertEquals(true, it)
 		}
 
 		assertSuccess(bool.parse("false")) {
-			assertEquals(false, this)
+			assertEquals(false, it)
 		}
 
 		assertInvalid(bool.parse("other"))
@@ -74,7 +74,7 @@ class InputText {
 		val email = Input.Email
 
 		assertSuccess(email.parse("my-email@gmail.com")) {
-			assertEquals(Email("my-email@gmail.com"), this)
+			assertEquals(Email("my-email@gmail.com"), it)
 		}
 
 		assertInvalid(email.parse("something"))
@@ -86,7 +86,7 @@ class InputText {
 		val phone = Input.Phone
 
 		assertSuccess(phone.parse("+332345678")) {
-			assertEquals("+332345678", this)
+			assertEquals("+332345678", it)
 		}
 
 		assertInvalid(phone.parse("thing"))
