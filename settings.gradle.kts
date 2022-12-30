@@ -16,6 +16,8 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 include(
 	"core",
 
+	"remote-common",
+
 	"fake",
 	"test",
 )
