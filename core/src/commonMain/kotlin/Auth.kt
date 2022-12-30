@@ -27,7 +27,7 @@ import kotlin.coroutines.CoroutineContext
  *
  * To access the authentication information in your code, the accessor [currentAuth] is provided.
  */
-class Auth(
+data class Auth(
 	/**
 	 * The role of the current user.
 	 *
