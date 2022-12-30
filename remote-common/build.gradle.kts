@@ -4,6 +4,7 @@ import java.net.URL
 
 plugins {
 	kotlin("multiplatform")
+	kotlin("plugin.serialization")
 }
 
 kotlin {
@@ -24,6 +25,8 @@ kotlin {
 				api(projects.core)
 
 				api("opensavvy:spine:_")
+				api(KotlinX.serialization.core)
+				api(KotlinX.serialization.json)
 			}
 		}
 
