@@ -15,7 +15,12 @@ inline fun <T> spy(
 	block: () -> T,
 ): T {
 	val (result, duration) = measureTimedValue {
-		block()
+		try {
+			block()
+		} catch (e: Throwable) {
+			log.trace { "$functionName(${arguments.joinToString(separator = ", ")})  #[FAILED]#>  $e" }
+			throw e
+		}
 	}
 
 	log.trace(
