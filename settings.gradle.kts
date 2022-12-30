@@ -18,6 +18,7 @@ include(
 
 	"remote-common",
 	"remote-client",
+	"remote-server",
 
 	"fake",
 	"test",
