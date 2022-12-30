@@ -6,8 +6,7 @@ stages:
   - deploy      # Final container generation
 
 variables:
-  jdk_image: "openjdk:11"
-  js_chrome: "$CI_REGISTRY_IMAGE/js-chrome"
+  jdk_image: "openjdk:17"
   server_bin: "$CI_REGISTRY_IMAGE/server"
 
 include:
@@ -22,17 +21,83 @@ workflow:
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
     - if: $CI_COMMIT_TAG
 
+# Build the necessary images
+
+chromium:build:
+  extends: [ .os.docker.build ]
+  needs: [ ]
+  stage: docker
+
+  variables:
+    dockerfile: .gitlab/chromium.dockerfile
+    context: .gitlab
+    image: chromium
+
+  interruptible: true
+
+chromium:publish:
+  extends: [ .os.docker.rename ]
+  stage: deploy
+
+  variables:
+    image: chromium
+
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+
+  interruptible: true
+
+# Documentation
+
 dokka:
   image: $jdk_image
   stage: build
-  extends: [ .gradle ]
+  extends: [ .os.gradle ]
   needs: [ ]
   script:
     - "./gradlew dokkaHtmlMultiModule"
+    - mkdir -p docs
+    - mv build/dokka/htmlMultiModule/* docs
   artifacts:
     paths:
-      - build/dokka/htmlMultiModule/
+      - docs
     expose_as: 'Documentation'
+  interruptible: true
+
+# Tests
+
+test-jvm:
+  image: $jdk_image
+  stage: test
+  extends: [ .os.gradle ]
+  needs: [ ]
+
+  script:
+    - "./gradlew jvmTest koverMergedVerify koverMergedReport"
+    - mkdir -p kover
+    - mv build/reports/kover/merged/html/* kover
+
+    - values=$(<build/reports/kover/merged/xml/report.xml tail -7 | head -5 | grep 'INSTRUCTION' | cut -d ' ' -f 3,4 | sed 's/missed="//;s/" covered="/ /;s/"\/>//')
+    - missed=$(<<<$values cut -d ' ' -f 1)
+    - covered=$(<<<$values cut -d ' ' -f 2)
+    - echo "Coverage $(($covered * 100 / ($covered + $missed)))%"
+  coverage: '/Coverage \d+%/'
+
+  artifacts:
+    paths:
+      - kover
+    expose_as: 'Coverage JVM'
+  interruptible: true
+
+test-js:
+  image: $CI_REGISTRY_IMAGE/chromium:build-$CI_PIPELINE_IID
+  stage: test
+  extends: [ .os.gradle ]
+  needs: [ chromium:build ]
+
+  script:
+    - "./gradlew jsBrowserTest"
+
   interruptible: true
 
 pages:
@@ -42,7 +107,7 @@ pages:
   needs: [ dokka ]
   script:
     - mkdir -p public/documentation
-    - mv build/dokka/htmlMultiModule/* public/documentation/
+    - mv docs/* public/documentation/
   artifacts:
     paths:
       - public
