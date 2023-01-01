@@ -29,7 +29,7 @@ inline fun <T> spy(
 			is Either.Left<*> -> result.value
 			else -> result
 		}
-	) { "$functionName(${arguments.joinToString(separator = ", ")})  #[${duration.toString(DurationUnit.MICROSECONDS)}]#> " }
+	) { "$functionName(${arguments.joinToString(separator = ", ")})  #[${duration.toString(DurationUnit.MILLISECONDS)}]#> " }
 
 	return result
 }
