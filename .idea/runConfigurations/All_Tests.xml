@@ -21,7 +21,9 @@
       <option name="taskNames">
         <list>
           <option value="cleanAllTests" />
+          <option value="remote-server:cleanTest" />
           <option value="allTests" />
+          <option value="remote-server:test" />
         </list>
       </option>
       <option name="vmOptions" value="-ea" />

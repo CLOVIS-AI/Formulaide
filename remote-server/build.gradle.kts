@@ -8,8 +8,16 @@ plugins {
 
 dependencies {
 	implementation(projects.remoteCommon)
+	implementation("opensavvy:spine-ktor-server:_")
+	implementation(Ktor.server.contentNegotiation)
+	implementation(Ktor.plugins.serialization.kotlinx.json)
+
+	implementation("opensavvy:logger:_")
 
 	testImplementation(projects.test)
+	testImplementation(projects.remoteClient)
+	testImplementation(projects.fake)
+	testImplementation(Ktor.server.testHost)
 }
 
 tasks.withType<org.jetbrains.dokka.gradle.DokkaTaskPartial>().configureEach {
