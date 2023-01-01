@@ -52,15 +52,27 @@ data class Auth(
 
 	companion object {
 
+		val Anonymous = Auth(role = User.Role.Anonymous, user = null)
+
 		//region Accessors
 
 		/**
 		 * Accesses the authentication information for the current scope.
 		 *
+		 * If no authentication information is available, returns `null`.
+		 */
+		suspend fun currentAuthOrNull(): Auth? =
+			currentCoroutineContext()[Key]
+
+		/**
+		 * Accesses the authentication information for the current scope.
+		 *
+		 * If no authentication information is available, returns [Anonymous].
+		 *
 		 * @see Auth
 		 */
-		suspend fun currentAuth(): Auth? =
-			currentCoroutineContext()[Key]
+		suspend fun currentAuth(): Auth =
+			currentAuthOrNull() ?: Anonymous
 
 		/**
 		 * Accesses the current user.
@@ -69,7 +81,7 @@ data class Auth(
 		 * @see user
 		 */
 		suspend fun currentUser(): User.Ref? =
-			currentAuth()?.user
+			currentAuth().user
 
 		/**
 		 * Accesses the role of the current user.
@@ -80,7 +92,7 @@ data class Auth(
 		 * @see role
 		 */
 		suspend fun currentRole(): User.Role =
-			currentAuth()?.role ?: User.Role.Anonymous
+			currentAuth().role
 
 		//endregion
 
