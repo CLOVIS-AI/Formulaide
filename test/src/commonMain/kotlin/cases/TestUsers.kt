@@ -29,7 +29,7 @@ object TestUsers : User.Service {
 
 	val administratorAuth = Auth(
 		User.Role.Administrator,
-		User.Ref("fake:0", this),
+		User.Ref("fake-0", this),
 	)
 
 	//endregion
@@ -46,7 +46,7 @@ object TestUsers : User.Service {
 
 	val employeeAuth = Auth(
 		User.Role.Employee,
-		User.Ref("fake:1", this),
+		User.Ref("fake-1", this),
 	)
 
 	//endregion
