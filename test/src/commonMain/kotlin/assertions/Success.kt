@@ -23,18 +23,25 @@ inline fun <T> assertSuccess(actual: Slice<T>, assertions: T.() -> Unit = {}): T
 }
 
 @OptIn(ExperimentalContracts::class)
-fun <T> assertFails(actual: Slice<T>): Failure {
+fun <T> assertFails(actual: Slice<T>, message: String? = null): Failure {
 	contract {
 		returns() implies (actual is Either.Left<Failure>)
 	}
 
-	assertIs<Either.Left<Failure>>(actual, (actual as? Either.Right)?.value?.toString())
+	val fullMessage = buildString {
+		append(actual)
+
+		if (message != null)
+			append(". $message")
+	}
+
+	assertIs<Either.Left<Failure>>(actual, fullMessage)
 
 	return actual.value
 }
 
 private fun <T> assertFailureKind(actual: Slice<T>, kind: Failure.Kind) {
-	assertFails(actual)
+	assertFails(actual, "Expected $kind")
 	assertEquals(kind, actual.value.kind, "Result: $actual")
 }
 
