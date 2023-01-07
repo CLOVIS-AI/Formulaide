@@ -13,10 +13,12 @@ class SpyDepartments(private val upstream: Department.Service) : Department.Serv
 	override suspend fun list(includeClosed: Boolean): Slice<List<Department.Ref>> = spy(
 		log, "list", includeClosed
 	) { upstream.list(includeClosed) }
+		.map { it.map { it.copy(backbone = this) } }
 
 	override suspend fun create(name: String): Slice<Department.Ref> = spy(
 		log, "create", name,
 	) { upstream.create(name) }
+		.map { it.copy(backbone = this) }
 
 	override suspend fun edit(department: Department.Ref, open: Boolean?): Slice<Unit> = spy(
 		log, "edit", department, open,
