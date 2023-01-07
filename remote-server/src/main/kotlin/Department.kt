@@ -9,7 +9,7 @@ import opensavvy.formulaide.remote.dto.DepartmentDto.Companion.toDto
 import opensavvy.formulaide.server.utils.authenticated
 import opensavvy.spine.Identified
 import opensavvy.spine.ktor.server.route
-import opensavvy.state.firstValue
+import opensavvy.state.progressive.firstValue
 
 fun Routing.departments(departments: Department.Service) = authenticate(optional = true) {
 	route(api.departments.get, contextGenerator) {

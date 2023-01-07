@@ -12,9 +12,9 @@ import opensavvy.formulaide.remote.dto.DepartmentDto
 import opensavvy.formulaide.remote.dto.DepartmentDto.Companion.toCore
 import opensavvy.spine.Parameters
 import opensavvy.spine.ktor.client.request
-import opensavvy.state.slice.Slice
-import opensavvy.state.slice.ensureValid
-import opensavvy.state.slice.slice
+import opensavvy.state.outcome.Outcome
+import opensavvy.state.outcome.ensureValid
+import opensavvy.state.outcome.out
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration.Companion.minutes
 
@@ -27,7 +27,7 @@ class Departments(
 		.cachedInMemory(cacheContext)
 		.expireAfter(30.minutes, cacheContext)
 
-	override suspend fun list(includeClosed: Boolean): Slice<List<Department.Ref>> = slice {
+	override suspend fun list(includeClosed: Boolean): Outcome<List<Department.Ref>> = out {
 		client.http.request(
 			api.departments.get,
 			api.departments.idOf(),
@@ -38,7 +38,7 @@ class Departments(
 			.map { api.departments.id.refOf(it, this@Departments).bind() }
 	}
 
-	override suspend fun create(name: String): Slice<Department.Ref> = slice {
+	override suspend fun create(name: String): Outcome<Department.Ref> = out {
 		client.http.request(
 			api.departments.create,
 			api.departments.idOf(),
@@ -52,7 +52,7 @@ class Departments(
 			.bind()
 	}
 
-	override suspend fun edit(department: Department.Ref, open: Boolean?): Slice<Unit> = slice {
+	override suspend fun edit(department: Department.Ref, open: Boolean?): Outcome<Unit> = out {
 		client.http.request(
 			api.departments.id.edit,
 			api.departments.id.idOf(department.id),
@@ -64,7 +64,7 @@ class Departments(
 		department.expire()
 	}
 
-	override suspend fun directRequest(ref: Ref<Department>): Slice<Department> = slice {
+	override suspend fun directRequest(ref: Ref<Department>): Outcome<Department> = out {
 		ensureValid(ref is Department.Ref) { "Expected Department.Ref, found $ref" }
 
 		client.http.request(

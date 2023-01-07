@@ -3,12 +3,13 @@ package opensavvy.formulaide.core
 import arrow.core.continuations.EffectScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.withContext
+import opensavvy.cache.PassThroughContext
 import opensavvy.formulaide.core.Auth.Companion.currentAuth
 import opensavvy.formulaide.core.Auth.Companion.currentRole
 import opensavvy.formulaide.core.Auth.Companion.currentUser
 import opensavvy.state.Failure
-import opensavvy.state.slice.ensureAuthenticated
-import opensavvy.state.slice.ensureAuthorized
+import opensavvy.state.outcome.ensureAuthenticated
+import opensavvy.state.outcome.ensureAuthorized
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 
@@ -41,7 +42,7 @@ data class Auth(
 	 * @see currentUser
 	 */
 	val user: User.Ref?,
-) : AbstractCoroutineContextElement(Key) {
+) : AbstractCoroutineContextElement(Key), PassThroughContext {
 
 	init {
 		if (role >= User.Role.Employee)

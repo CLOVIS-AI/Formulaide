@@ -3,6 +3,7 @@ package opensavvy.formulaide.test
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
+import opensavvy.backbone.Ref.Companion.now
 import opensavvy.formulaide.core.Auth
 import opensavvy.formulaide.core.User
 import opensavvy.formulaide.core.data.Email.Companion.asEmail
@@ -13,7 +14,7 @@ import opensavvy.formulaide.test.assertions.*
 import opensavvy.formulaide.test.cases.TestCase
 import opensavvy.formulaide.test.cases.TestUsers.administratorAuth
 import opensavvy.formulaide.test.cases.TestUsers.employeeAuth
-import opensavvy.state.slice.orThrow
+import opensavvy.state.outcome.orThrow
 import kotlin.js.JsName
 import kotlin.random.Random
 import kotlin.random.nextUInt

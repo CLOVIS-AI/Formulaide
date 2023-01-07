@@ -7,8 +7,8 @@ import opensavvy.formulaide.remote.dto.DepartmentDto
 import opensavvy.spine.Id
 import opensavvy.spine.Parameters
 import opensavvy.spine.Service
-import opensavvy.state.slice.Slice
-import opensavvy.state.slice.slice
+import opensavvy.state.outcome.Outcome
+import opensavvy.state.outcome.out
 
 val api = Api2()
 
@@ -76,7 +76,7 @@ class Api2 : Service("v2") {
 
 			val edit = edit<DepartmentDto.Edit, Parameters.Empty>()
 
-			suspend fun refOf(id: Id, departments: Department.Service): Slice<Department.Ref> = slice {
+			suspend fun refOf(id: Id, departments: Department.Service): Outcome<Department.Ref> = out {
 				validateId(id, Unit)
 				Department.Ref(id.resource.segments.last().segment, departments)
 			}
