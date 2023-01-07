@@ -6,9 +6,8 @@ import kotlinx.coroutines.debug.junit4.CoroutinesTimeout
 import opensavvy.formulaide.core.Department
 import opensavvy.formulaide.fake.FakeDepartments
 import opensavvy.formulaide.fake.spies.SpyDepartments.Companion.spied
-import opensavvy.formulaide.remote.client.Client
-import opensavvy.formulaide.remote.client.Client.Companion.configureClient
 import opensavvy.formulaide.remote.client.Departments
+import opensavvy.formulaide.remote.server.utils.TestClient
 import opensavvy.formulaide.remote.server.utils.configureTestAuthentication
 import opensavvy.formulaide.remote.server.utils.configureTestLogging
 import opensavvy.formulaide.server.configureServer
@@ -49,14 +48,9 @@ class DepartmentTest : DepartmentTestCases() {
 	override suspend fun new(
 		foreground: CoroutineScope,
 		background: CoroutineScope,
-	): Department.Service {
-		val client = application.createClient {
-			configureClient()
-			configureTestAuthentication()
-			configureTestLogging()
-		}.let { Client(it) }
-
-		return Departments(client, background.coroutineContext).spied()
-	}
+	): Department.Service = Departments(
+		TestClient(application.client),
+		background.coroutineContext,
+	).spied()
 
 }

@@ -1,8 +1,7 @@
 package opensavvy.formulaide.remote.server.utils
 
-import io.ktor.client.*
-import io.ktor.client.plugins.auth.*
-import io.ktor.client.plugins.auth.providers.*
+import io.ktor.client.plugins.api.*
+import io.ktor.client.request.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import opensavvy.formulaide.core.Auth.Companion.currentAuth
@@ -33,17 +32,18 @@ fun Application.configureTestAuthentication() {
 }
 
 // Client config
-fun HttpClientConfig<*>.configureTestAuthentication() {
-	install(Auth) {
-		bearer {
-			loadTokens {
-				when (val auth = currentAuth()) {
-					TestUsers.employeeAuth -> BearerTokens(auth.user!!.id, "none")
-					TestUsers.administratorAuth -> BearerTokens(auth.user!!.id, "none")
-					opensavvy.formulaide.core.Auth.Anonymous -> BearerTokens("guest", "none")
-					else -> error("Cannot create a token for user $auth, this client is configured with the test authentication")
-				}
-			}
+/**
+ * Unsafe implementation which takes the
+ */
+internal val LocalAuth = createClientPlugin(name = "LocalAuth") {
+	onRequest { request, _ ->
+		val token = when (val auth = currentAuth()) {
+			TestUsers.employeeAuth -> auth.user!!.id
+			TestUsers.administratorAuth -> auth.user!!.id
+			opensavvy.formulaide.core.Auth.Anonymous -> "guest"
+			else -> error("Cannot create a token for user $auth, this client is configured with the test authentication")
 		}
+
+		request.header("Authorization", "Bearer $token")
 	}
 }
