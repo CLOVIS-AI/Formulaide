@@ -24,6 +24,7 @@ dependencies {
 	testImplementation(Ktor.client.auth)
 	testImplementation(Ktor.client.logging)
 	testImplementation(Ktor.client.contentNegotiation)
+	testImplementation("ch.qos.logback:logback-classic:_")
 }
 
 tasks.withType<org.jetbrains.dokka.gradle.DokkaTaskPartial>().configureEach {
