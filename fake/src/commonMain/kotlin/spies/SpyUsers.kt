@@ -24,6 +24,7 @@ class SpyUsers(private val upstream: User.Service) : User.Service {
 	): Outcome<Pair<User.Ref, Password>> = spy(
 		log, "create", email, fullName, administrator,
 	) { upstream.create(email, fullName, administrator) }
+		.map { (user, password) -> user.copy(backbone = this) to password }
 
 	override suspend fun join(user: User.Ref, department: Department.Ref): Outcome<Unit> = spy(
 		log, "join", user, department,
@@ -52,6 +53,7 @@ class SpyUsers(private val upstream: User.Service) : User.Service {
 	override suspend fun logIn(email: Email, password: Password): Outcome<Pair<User.Ref, Token>> = spy(
 		log, "logIn", email, password,
 	) { upstream.logIn(email, password) }
+		.map { (user, token) -> user.copy(backbone = this) to token }
 
 	override suspend fun logOut(user: User.Ref, token: Token): Outcome<Unit> = spy(
 		log, "logOut", user, token,
