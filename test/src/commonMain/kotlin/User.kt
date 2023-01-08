@@ -130,7 +130,7 @@ abstract class UserTestCases : TestCase<User.Service> {
 
 		assertSuccess(employee.join(department)) {
 			assertSuccess(employee.now()) {
-				assertEquals(setOf(department), it.departments)
+				assertEquals(setOf(department.id), it.departments.mapTo(HashSet()) { it.id })
 			}
 		}
 
