@@ -8,41 +8,22 @@ import opensavvy.formulaide.fake.FakeDepartments
 import opensavvy.formulaide.fake.spies.SpyDepartments.Companion.spied
 import opensavvy.formulaide.remote.client.Departments
 import opensavvy.formulaide.remote.server.utils.TestClient
-import opensavvy.formulaide.remote.server.utils.configureTestAuthentication
-import opensavvy.formulaide.remote.server.utils.configureTestLogging
-import opensavvy.formulaide.server.configureServer
+import opensavvy.formulaide.remote.server.utils.TestServer
 import opensavvy.formulaide.server.departments
 import opensavvy.formulaide.test.DepartmentTestCases
 import org.junit.Rule
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
 
-class DepartmentTest : DepartmentTestCases() {
+class DepartmentTest : DepartmentTestCases(), TestServer {
 
 	@get:Rule
 	val timeout = CoroutinesTimeout.seconds(15)
 
-	private lateinit var application: TestApplication
+	override lateinit var application: TestApplication
 
-	@BeforeTest
-	fun start() {
-		application = TestApplication {
-			application {
-				configureServer()
-				configureTestAuthentication()
-				configureTestLogging()
-			}
-
-			routing {
-				departments(FakeDepartments().spied())
-			}
+	override fun TestApplicationBuilder.configureTestServer() {
+		routing {
+			departments(FakeDepartments().spied())
 		}
-		application.start()
-	}
-
-	@AfterTest
-	fun stop() {
-		application.stop()
 	}
 
 	override suspend fun new(
