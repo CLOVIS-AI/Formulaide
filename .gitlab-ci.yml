@@ -91,6 +91,12 @@ test-jvm:
     paths:
       - kover
     expose_as: 'Coverage JVM'
+
+  environment:
+    name: review/coverage-$CI_COMMIT_REF_SLUG
+    url: https://$CI_PROJECT_NAMESPACE.$CI_PAGES_DOMAIN/-/$CI_PROJECT_NAME/-/jobs/$CI_JOB_ID/artifacts/kover/index.html
+    deployment_tier: development
+
   interruptible: true
 
 test-js:
