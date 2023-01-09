@@ -10,9 +10,9 @@ import opensavvy.formulaide.core.data.Email
 import opensavvy.formulaide.core.data.Email.Companion.asEmail
 import opensavvy.formulaide.core.data.Password
 import opensavvy.formulaide.core.data.Token
-import opensavvy.state.slice.Slice
-import opensavvy.state.slice.ensureValid
-import opensavvy.state.slice.slice
+import opensavvy.state.outcome.Outcome
+import opensavvy.state.outcome.ensureValid
+import opensavvy.state.outcome.out
 
 object TestUsers : User.Service {
 
@@ -29,7 +29,7 @@ object TestUsers : User.Service {
 
 	val administratorAuth = Auth(
 		User.Role.Administrator,
-		User.Ref("fake:0", this),
+		User.Ref("fake-0", this),
 	)
 
 	//endregion
@@ -46,12 +46,12 @@ object TestUsers : User.Service {
 
 	val employeeAuth = Auth(
 		User.Role.Employee,
-		User.Ref("fake:1", this),
+		User.Ref("fake-1", this),
 	)
 
 	//endregion
 
-	override suspend fun list(includeClosed: Boolean): Slice<List<User.Ref>> = slice {
+	override suspend fun list(includeClosed: Boolean): Outcome<List<User.Ref>> = out {
 		listOfNotNull(administratorAuth.user, employeeAuth.user)
 	}
 
@@ -59,7 +59,7 @@ object TestUsers : User.Service {
 		email: Email,
 		fullName: String,
 		administrator: Boolean,
-	): Slice<Pair<User.Ref, Password>> {
+	): Outcome<Pair<User.Ref, Password>> {
 		error(
 			"""
 			TestUsers does not allow creating new users. Called with:
@@ -70,7 +70,7 @@ object TestUsers : User.Service {
 		)
 	}
 
-	override suspend fun join(user: User.Ref, department: Department.Ref): Slice<Unit> {
+	override suspend fun join(user: User.Ref, department: Department.Ref): Outcome<Unit> {
 		error(
 			"""
 			TestUsers does not allow joining a department. Called with:
@@ -80,7 +80,7 @@ object TestUsers : User.Service {
 		)
 	}
 
-	override suspend fun leave(user: User.Ref, department: Department.Ref): Slice<Unit> {
+	override suspend fun leave(user: User.Ref, department: Department.Ref): Outcome<Unit> {
 		error(
 			"""
 			TestUsers does not allow leaving a department. Called with:
@@ -90,7 +90,7 @@ object TestUsers : User.Service {
 		)
 	}
 
-	override suspend fun edit(user: User.Ref, active: Boolean?, administrator: Boolean?): Slice<Unit> {
+	override suspend fun edit(user: User.Ref, active: Boolean?, administrator: Boolean?): Outcome<Unit> {
 		error(
 			"""
 			TestUsers does not allow edition. Called with:
@@ -101,7 +101,7 @@ object TestUsers : User.Service {
 		)
 	}
 
-	override suspend fun resetPassword(user: User.Ref): Slice<Password> {
+	override suspend fun resetPassword(user: User.Ref): Outcome<Password> {
 		error(
 			"""
 			TestUsers does not allow resetting a password. Called with:
@@ -110,7 +110,7 @@ object TestUsers : User.Service {
 		)
 	}
 
-	override suspend fun setPassword(user: User.Ref, oldPassword: String, newPassword: Password): Slice<Unit> {
+	override suspend fun setPassword(user: User.Ref, oldPassword: String, newPassword: Password): Outcome<Unit> {
 		error(
 			"""
 			TestUsers does not allow setting a password. Called with:
@@ -121,7 +121,7 @@ object TestUsers : User.Service {
 		)
 	}
 
-	override suspend fun verifyToken(user: User.Ref, token: Token): Slice<Unit> {
+	override suspend fun verifyToken(user: User.Ref, token: Token): Outcome<Unit> {
 		error(
 			"""
 			TestUsers does not allow verifying tokens. Called with:
@@ -131,7 +131,7 @@ object TestUsers : User.Service {
 		)
 	}
 
-	override suspend fun logIn(email: Email, password: Password): Slice<Pair<User.Ref, Token>> {
+	override suspend fun logIn(email: Email, password: Password): Outcome<Pair<User.Ref, Token>> {
 		error(
 			"""
 			TestUsers does not allow setting a password. Called with:
@@ -141,7 +141,7 @@ object TestUsers : User.Service {
 		)
 	}
 
-	override suspend fun logOut(user: User.Ref, token: Token): Slice<Unit> {
+	override suspend fun logOut(user: User.Ref, token: Token): Outcome<Unit> {
 		error(
 			"""
 			TestUsers does not allow logging out. Called with:
@@ -153,7 +153,7 @@ object TestUsers : User.Service {
 
 	override val cache: RefCache<User> = defaultRefCache()
 
-	override suspend fun directRequest(ref: Ref<User>): Slice<User> = slice {
+	override suspend fun directRequest(ref: Ref<User>): Outcome<User> = out {
 		ensureValid(ref is User.Ref) { "Invalid ref: $ref" }
 
 		when (ref.id) {

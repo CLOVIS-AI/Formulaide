@@ -3,12 +3,13 @@ package opensavvy.formulaide.core
 import arrow.core.continuations.EffectScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.withContext
+import opensavvy.cache.PassThroughContext
 import opensavvy.formulaide.core.Auth.Companion.currentAuth
 import opensavvy.formulaide.core.Auth.Companion.currentRole
 import opensavvy.formulaide.core.Auth.Companion.currentUser
 import opensavvy.state.Failure
-import opensavvy.state.slice.ensureAuthenticated
-import opensavvy.state.slice.ensureAuthorized
+import opensavvy.state.outcome.ensureAuthenticated
+import opensavvy.state.outcome.ensureAuthorized
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 
@@ -27,7 +28,7 @@ import kotlin.coroutines.CoroutineContext
  *
  * To access the authentication information in your code, the accessor [currentAuth] is provided.
  */
-class Auth(
+data class Auth(
 	/**
 	 * The role of the current user.
 	 *
@@ -41,7 +42,7 @@ class Auth(
 	 * @see currentUser
 	 */
 	val user: User.Ref?,
-) : AbstractCoroutineContextElement(Key) {
+) : AbstractCoroutineContextElement(Key), PassThroughContext {
 
 	init {
 		if (role >= User.Role.Employee)
@@ -52,15 +53,27 @@ class Auth(
 
 	companion object {
 
+		val Anonymous = Auth(role = User.Role.Anonymous, user = null)
+
 		//region Accessors
 
 		/**
 		 * Accesses the authentication information for the current scope.
 		 *
+		 * If no authentication information is available, returns `null`.
+		 */
+		suspend fun currentAuthOrNull(): Auth? =
+			currentCoroutineContext()[Key]
+
+		/**
+		 * Accesses the authentication information for the current scope.
+		 *
+		 * If no authentication information is available, returns [Anonymous].
+		 *
 		 * @see Auth
 		 */
-		suspend fun currentAuth(): Auth? =
-			currentCoroutineContext()[Key]
+		suspend fun currentAuth(): Auth =
+			currentAuthOrNull() ?: Anonymous
 
 		/**
 		 * Accesses the current user.
@@ -69,7 +82,7 @@ class Auth(
 		 * @see user
 		 */
 		suspend fun currentUser(): User.Ref? =
-			currentAuth()?.user
+			currentAuth().user
 
 		/**
 		 * Accesses the role of the current user.
@@ -80,7 +93,7 @@ class Auth(
 		 * @see role
 		 */
 		suspend fun currentRole(): User.Role =
-			currentAuth()?.role ?: User.Role.Anonymous
+			currentAuth().role
 
 		//endregion
 

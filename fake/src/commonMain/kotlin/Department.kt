@@ -11,10 +11,10 @@ import opensavvy.formulaide.core.Auth.Companion.ensureEmployee
 import opensavvy.formulaide.core.Department
 import opensavvy.formulaide.core.User
 import opensavvy.formulaide.fake.utils.newId
-import opensavvy.state.slice.Slice
-import opensavvy.state.slice.ensureFound
-import opensavvy.state.slice.ensureValid
-import opensavvy.state.slice.slice
+import opensavvy.state.outcome.Outcome
+import opensavvy.state.outcome.ensureFound
+import opensavvy.state.outcome.ensureValid
+import opensavvy.state.outcome.out
 
 class FakeDepartments : Department.Service {
 
@@ -25,7 +25,7 @@ class FakeDepartments : Department.Service {
 
 	private fun toRef(id: String) = Department.Ref(id, this)
 
-	override suspend fun list(includeClosed: Boolean): Slice<List<Department.Ref>> = slice {
+	override suspend fun list(includeClosed: Boolean): Outcome<List<Department.Ref>> = out {
 		if (includeClosed)
 			ensureAdministrator()
 		else
@@ -39,7 +39,7 @@ class FakeDepartments : Department.Service {
 		}
 	}
 
-	override suspend fun create(name: String): Slice<Department.Ref> = slice {
+	override suspend fun create(name: String): Outcome<Department.Ref> = out {
 		ensureAdministrator()
 
 		val id = newId()
@@ -49,7 +49,7 @@ class FakeDepartments : Department.Service {
 		toRef(id)
 	}
 
-	override suspend fun edit(department: Department.Ref, open: Boolean?): Slice<Unit> = slice {
+	override suspend fun edit(department: Department.Ref, open: Boolean?): Outcome<Unit> = out {
 		ensureAdministrator()
 
 		val id = department.id
@@ -59,7 +59,7 @@ class FakeDepartments : Department.Service {
 		}
 	}
 
-	override suspend fun directRequest(ref: Ref<Department>): Slice<Department> = slice {
+	override suspend fun directRequest(ref: Ref<Department>): Outcome<Department> = out {
 		ensureEmployee()
 
 		ensureValid(ref is Department.Ref) { "Invalid ref $ref" }

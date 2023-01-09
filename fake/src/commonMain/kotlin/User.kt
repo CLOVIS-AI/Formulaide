@@ -15,7 +15,7 @@ import opensavvy.formulaide.core.data.Email
 import opensavvy.formulaide.core.data.Password
 import opensavvy.formulaide.core.data.Token
 import opensavvy.formulaide.fake.utils.newId
-import opensavvy.state.slice.*
+import opensavvy.state.outcome.*
 import kotlin.random.Random
 import kotlin.random.nextUInt
 
@@ -32,7 +32,7 @@ class FakeUsers : User.Service {
 
 	private fun toRef(id: String) = User.Ref(id, this)
 
-	override suspend fun list(includeClosed: Boolean): Slice<List<User.Ref>> = slice {
+	override suspend fun list(includeClosed: Boolean): Outcome<List<User.Ref>> = out {
 		ensureAdministrator()
 
 		lock.withPermit {
@@ -47,7 +47,7 @@ class FakeUsers : User.Service {
 		email: Email,
 		fullName: String,
 		administrator: Boolean,
-	): Slice<Pair<User.Ref, Password>> = slice {
+	): Outcome<Pair<User.Ref, Password>> = out {
 		ensureAdministrator()
 
 		lock.withPermit {
@@ -74,7 +74,7 @@ class FakeUsers : User.Service {
 		toRef(id) to singleUsePassword
 	}
 
-	override suspend fun join(user: User.Ref, department: Department.Ref): Slice<Unit> = slice {
+	override suspend fun join(user: User.Ref, department: Department.Ref): Outcome<Unit> = out {
 		ensureAdministrator()
 
 		lock.withPermit {
@@ -84,7 +84,7 @@ class FakeUsers : User.Service {
 		}
 	}
 
-	override suspend fun leave(user: User.Ref, department: Department.Ref): Slice<Unit> = slice {
+	override suspend fun leave(user: User.Ref, department: Department.Ref): Outcome<Unit> = out {
 		ensureAdministrator()
 
 		lock.withPermit {
@@ -94,7 +94,7 @@ class FakeUsers : User.Service {
 		}
 	}
 
-	override suspend fun edit(user: User.Ref, active: Boolean?, administrator: Boolean?): Slice<Unit> = slice {
+	override suspend fun edit(user: User.Ref, active: Boolean?, administrator: Boolean?): Outcome<Unit> = out {
 		ensureAdministrator()
 
 		if (user == currentUser()) {
@@ -112,7 +112,7 @@ class FakeUsers : User.Service {
 		}
 	}
 
-	override suspend fun resetPassword(user: User.Ref): Slice<Password> = slice {
+	override suspend fun resetPassword(user: User.Ref): Outcome<Password> = out {
 		ensureAdministrator()
 
 		val newPassword = Password("some-new-password-${Random.nextUInt()}")
@@ -131,7 +131,7 @@ class FakeUsers : User.Service {
 		newPassword
 	}
 
-	override suspend fun setPassword(user: User.Ref, oldPassword: String, newPassword: Password): Slice<Unit> = slice {
+	override suspend fun setPassword(user: User.Ref, oldPassword: String, newPassword: Password): Outcome<Unit> = out {
 		ensureEmployee()
 		ensureAuthorized(user == currentUser()) { "Setting the password of another user is forbidden" }
 
@@ -149,7 +149,7 @@ class FakeUsers : User.Service {
 		}
 	}
 
-	override suspend fun verifyToken(user: User.Ref, token: Token): Slice<Unit> = slice {
+	override suspend fun verifyToken(user: User.Ref, token: Token): Outcome<Unit> = out {
 		lock.withPermit {
 			val theirs = tokens[user.id]
 			ensureFound(theirs != null) { "User $user doesn't exist" }
@@ -157,7 +157,7 @@ class FakeUsers : User.Service {
 		}
 	}
 
-	override suspend fun logIn(email: Email, password: Password): Slice<Pair<User.Ref, Token>> = slice {
+	override suspend fun logIn(email: Email, password: Password): Outcome<Pair<User.Ref, Token>> = out {
 		lock.withPermit {
 			val (id, user) = users.asSequence().first { it.value.email == email }
 			ensureFound(user.active) { "Could not find user $email" }
@@ -175,7 +175,7 @@ class FakeUsers : User.Service {
 		}
 	}
 
-	override suspend fun logOut(user: User.Ref, token: Token): Slice<Unit> = slice {
+	override suspend fun logOut(user: User.Ref, token: Token): Outcome<Unit> = out {
 		ensureAuthenticated(currentUser() == user) { "Cannot log out another user" }
 
 		lock.withPermit {
@@ -183,7 +183,7 @@ class FakeUsers : User.Service {
 		}
 	}
 
-	override suspend fun directRequest(ref: Ref<User>): Slice<User> = slice {
+	override suspend fun directRequest(ref: Ref<User>): Outcome<User> = out {
 		ensureEmployee()
 		ensureValid(ref is User.Ref) { "Wrong ref: $ref" }
 

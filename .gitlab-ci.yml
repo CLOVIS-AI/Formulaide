@@ -73,7 +73,7 @@ test-jvm:
   needs: [ ]
 
   script:
-    - "./gradlew jvmTest koverMergedVerify koverMergedReport"
+    - "./gradlew jvmTest remote-server:test koverMergedVerify koverMergedReport"
     - mkdir -p kover
     - mv build/reports/kover/merged/html/* kover
 

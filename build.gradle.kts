@@ -8,6 +8,7 @@ plugins {
 	kotlin("plugin.serialization") apply false
 
 	id("com.palantir.git-version")
+	id("com.adarshr.test-logger") version "3.2.0"
 
 	id("org.jetbrains.dokka")
 	id("org.jetbrains.kotlinx.kover")
@@ -38,6 +39,14 @@ allprojects {
 			externalDocumentationLink {
 				url.set(URL("https://opensavvy.gitlab.io/pedestal/documentation/"))
 			}
+		}
+	}
+
+	if (System.getenv("CI") != null) {
+		plugins.apply("com.adarshr.test-logger")
+
+		testlogger {
+			theme = com.adarshr.gradle.testlogger.theme.ThemeType.MOCHA_PARALLEL
 		}
 	}
 }

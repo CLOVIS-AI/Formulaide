@@ -4,14 +4,14 @@ package opensavvy.formulaide.test.assertions
 
 import arrow.core.Either
 import opensavvy.state.Failure
-import opensavvy.state.slice.Slice
+import opensavvy.state.outcome.Outcome
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
 @OptIn(ExperimentalContracts::class)
-inline fun <T> assertSuccess(actual: Slice<T>, assertions: T.() -> Unit = {}): T {
+inline fun <T> assertSuccess(actual: Outcome<T>, assertions: T.() -> Unit = {}): T {
 	contract {
 		returns() implies (actual is Either.Right<T>)
 	}
@@ -23,22 +23,29 @@ inline fun <T> assertSuccess(actual: Slice<T>, assertions: T.() -> Unit = {}): T
 }
 
 @OptIn(ExperimentalContracts::class)
-fun <T> assertFails(actual: Slice<T>): Failure {
+fun <T> assertFails(actual: Outcome<T>, message: String? = null): Failure {
 	contract {
 		returns() implies (actual is Either.Left<Failure>)
 	}
 
-	assertIs<Either.Left<Failure>>(actual, (actual as? Either.Right)?.value?.toString())
+	val fullMessage = buildString {
+		append(actual)
+
+		if (message != null)
+			append(". $message")
+	}
+
+	assertIs<Either.Left<Failure>>(actual, fullMessage)
 
 	return actual.value
 }
 
-private fun <T> assertFailureKind(actual: Slice<T>, kind: Failure.Kind) {
-	assertFails(actual)
+private fun <T> assertFailureKind(actual: Outcome<T>, kind: Failure.Kind) {
+	assertFails(actual, "Expected $kind")
 	assertEquals(kind, actual.value.kind, "Result: $actual")
 }
 
-fun <T> assertInvalid(actual: Slice<T>) = assertFailureKind(actual, Failure.Kind.Invalid)
-fun <T> assertUnauthenticated(actual: Slice<T>) = assertFailureKind(actual, Failure.Kind.Unauthenticated)
-fun <T> assertUnauthorized(actual: Slice<T>) = assertFailureKind(actual, Failure.Kind.Unauthorized)
-fun <T> assertNotFound(actual: Slice<T>) = assertFailureKind(actual, Failure.Kind.NotFound)
+fun <T> assertInvalid(actual: Outcome<T>) = assertFailureKind(actual, Failure.Kind.Invalid)
+fun <T> assertUnauthenticated(actual: Outcome<T>) = assertFailureKind(actual, Failure.Kind.Unauthenticated)
+fun <T> assertUnauthorized(actual: Outcome<T>) = assertFailureKind(actual, Failure.Kind.Unauthorized)
+fun <T> assertNotFound(actual: Outcome<T>) = assertFailureKind(actual, Failure.Kind.NotFound)

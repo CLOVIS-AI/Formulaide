@@ -4,7 +4,7 @@ import opensavvy.backbone.Backbone
 import opensavvy.formulaide.core.data.Email
 import opensavvy.formulaide.core.data.Password
 import opensavvy.formulaide.core.data.Token
-import opensavvy.state.slice.Slice
+import opensavvy.state.outcome.Outcome
 import kotlin.jvm.JvmName
 
 /**
@@ -165,7 +165,7 @@ data class User(
 		 *
 		 * Requires administrator authentication.
 		 */
-		suspend fun list(includeClosed: Boolean = false): Slice<List<Ref>>
+		suspend fun list(includeClosed: Boolean = false): Outcome<List<Ref>>
 
 		/**
 		 * Creates a new user.
@@ -178,7 +178,7 @@ data class User(
 			email: Email,
 			fullName: String,
 			administrator: Boolean = false,
-		): Slice<Pair<Ref, Password>>
+		): Outcome<Pair<Ref, Password>>
 
 		/**
 		 * Adds [department] to the list of departments [user] is a part of.
@@ -188,7 +188,7 @@ data class User(
 		suspend fun join(
 			user: Ref,
 			department: Department.Ref,
-		): Slice<Unit>
+		): Outcome<Unit>
 
 		/**
 		 * Removes [department] from the list of departments [user] is a part of.
@@ -198,7 +198,7 @@ data class User(
 		suspend fun leave(
 			user: Ref,
 			department: Department.Ref,
-		): Slice<Unit>
+		): Outcome<Unit>
 
 		/**
 		 * Edits [user].
@@ -209,7 +209,7 @@ data class User(
 			user: Ref,
 			active: Boolean? = null,
 			administrator: Boolean? = null,
-		): Slice<Unit>
+		): Outcome<Unit>
 
 		//region Account management
 
@@ -224,7 +224,7 @@ data class User(
 		 */
 		suspend fun resetPassword(
 			user: Ref,
-		): Slice<Password>
+		): Outcome<Password>
 
 		/**
 		 * Sets [user]'s password.
@@ -235,7 +235,7 @@ data class User(
 			user: Ref,
 			oldPassword: String,
 			newPassword: Password,
-		): Slice<Unit>
+		): Outcome<Unit>
 
 		//endregion
 		//region Authentication
@@ -246,7 +246,7 @@ data class User(
 		suspend fun verifyToken(
 			user: Ref,
 			token: Token,
-		): Slice<Unit>
+		): Outcome<Unit>
 
 		/**
 		 * Checks that [email] and [password] match an existing user.
@@ -256,7 +256,7 @@ data class User(
 		suspend fun logIn(
 			email: Email,
 			password: Password,
-		): Slice<Pair<Ref, Token>>
+		): Outcome<Pair<Ref, Token>>
 
 		/**
 		 * Invalidates [token] for [user].
@@ -264,7 +264,7 @@ data class User(
 		suspend fun logOut(
 			user: Ref,
 			token: Token,
-		): Slice<Unit>
+		): Outcome<Unit>
 
 		//endregion
 	}

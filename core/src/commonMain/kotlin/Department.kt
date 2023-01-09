@@ -1,7 +1,7 @@
 package opensavvy.formulaide.core
 
 import opensavvy.backbone.Backbone
-import opensavvy.state.slice.Slice
+import opensavvy.state.outcome.Outcome
 
 /**
  * A department of the organisation, for example "Human resources" or "IT support".
@@ -53,14 +53,14 @@ data class Department(
 		 * If [includeClosed] is `true`, requires administrator authentication.
 		 * Otherwise, closed departments are not returned.
 		 */
-		suspend fun list(includeClosed: Boolean = false): Slice<List<Ref>>
+		suspend fun list(includeClosed: Boolean = false): Outcome<List<Ref>>
 
 		/**
 		 * Creates a new department named [name].
 		 *
 		 * Requires administrator authentication.
 		 */
-		suspend fun create(name: String): Slice<Ref>
+		suspend fun create(name: String): Outcome<Ref>
 
 		/**
 		 * Edits the [department].
@@ -72,6 +72,6 @@ data class Department(
 		suspend fun edit(
 			department: Ref,
 			open: Boolean? = null,
-		): Slice<Unit>
+		): Outcome<Unit>
 	}
 }
