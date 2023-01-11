@@ -28,14 +28,11 @@ import kotlin.test.*
 internal suspend fun testCityTemplate(templates: Template.Service) = withContext(administratorAuth) {
 	templates.create(
 		"Cities",
-		Template.Version(
-			Instant.DISTANT_PAST, // if this is implemented correctly, the service should overwrite this anyway
-			"First version",
-			group(
-				"City",
-				0 to input("Name", Input.Text(maxLength = 50u)),
-				1 to input("Postal code", Input.Text(maxLength = 5u)),
-			)
+		"First version",
+		group(
+			"City",
+			0 to input("Name", Input.Text(maxLength = 50u)),
+			1 to input("Postal code", Input.Text(maxLength = 5u)),
 		)
 	).orThrow()
 }
@@ -43,15 +40,12 @@ internal suspend fun testCityTemplate(templates: Template.Service) = withContext
 internal suspend fun testIdentityTemplate(templates: Template.Service) = withContext(administratorAuth) {
 	templates.create(
 		"Identities",
-		Template.Version(
-			Instant.DISTANT_PAST,
-			"First version",
-			group(
-				"Identity",
-				0 to arity("First name(s)", 1u..10u, input("First name", Input.Text(maxLength = 30u))),
-				1 to input("Last name", Input.Text(maxLength = 30u)),
-				// In the future, add the city here
-			)
+		"First version",
+		group(
+			"Identity",
+			0 to arity("First name(s)", 1u..10u, input("First name", Input.Text(maxLength = 30u))),
+			1 to input("Last name", Input.Text(maxLength = 30u)),
+			// In the future, add the city here
 		)
 	).orThrow()
 }

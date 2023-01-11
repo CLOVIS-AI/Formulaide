@@ -114,6 +114,17 @@ data class Template(
 		suspend fun create(name: String, firstVersion: Version): Outcome<Ref>
 
 		/**
+		 * Creates a new template.
+		 *
+		 * Only administrators can create templates.
+		 */
+		suspend fun create(
+			name: String,
+			initialVersionTitle: String,
+			field: Field,
+		) = create(name, Version(Instant.DISTANT_PAST, initialVersionTitle, field))
+
+		/**
 		 * Creates a new version of a given template.
 		 *
 		 * Only administrators can create new versions.
