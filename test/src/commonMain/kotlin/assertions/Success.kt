@@ -11,7 +11,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
 @OptIn(ExperimentalContracts::class)
-inline fun <T> assertSuccess(actual: Outcome<T>, assertions: T.() -> Unit = {}): T {
+inline fun <T> assertSuccess(actual: Outcome<T>, assertions: (T) -> Unit = {}): T {
 	contract {
 		returns() implies (actual is Either.Right<T>)
 	}

@@ -1,6 +1,9 @@
 package opensavvy.formulaide.core.data
 
-data class Email(
+import kotlin.jvm.JvmInline
+
+@JvmInline
+value class Email(
 	val value: String,
 ) {
 
