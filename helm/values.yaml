@@ -8,13 +8,6 @@ config:
   # to be sent at this address:
   report_email: "formulaide@opensavvy.dev"  # this is the OpenSavvy Formulaide Service Desk on GitLab
 
-  # The target of the help link in the homepage
-  help_page: "https://opensavvy.gitlab.io/formulaide/docs/user-guide.pdf"
-
-  # When generating a PDF summary of the treatment of a record, these images will be displayed for customization.
-  pdf_first_image: "null"
-  pdf_second_image: "null"
-
   # The domain name on which you will deploy Formulaide.
   host: "formulaide.opensavvy.dev"
 
@@ -24,15 +17,6 @@ config:
 
   # Number of replicas of the Formulaide backend.
   replicas: 2
-
-security:
-  # JWT secret.
-  # This secret is the most important part of Formulaide security.
-  # Any attacker with this secret can log in as any user, including administrator accounts.
-  # Editing this secret will force-log-out all users.
-  # You will never need to type or remember this secret, so it can be as complicated as you want.
-  # DO NOT USE THE DEFAULT SECRET IN PRODUCTION.
-  jwt_secret: "this secret is very bad, replace it by a better one!"
 
 mongodb:
   architecture: "standalone"

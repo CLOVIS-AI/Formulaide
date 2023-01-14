@@ -4,6 +4,9 @@ import opensavvy.formulaide.core.Department
 import opensavvy.formulaide.core.User
 import opensavvy.formulaide.remote.Api2.DepartmentsEndpoint
 import opensavvy.formulaide.remote.Api2.DepartmentsEndpoint.DepartmentEndpoint
+import opensavvy.formulaide.remote.Api2.UsersEndpoint
+import opensavvy.formulaide.remote.Api2.UsersEndpoint.UserEndpoint
+import opensavvy.formulaide.remote.Api2.UsersEndpoint.UserEndpoint.*
 import opensavvy.formulaide.remote.dto.DepartmentDto
 import opensavvy.formulaide.remote.dto.UserDto
 import opensavvy.spine.Id
@@ -22,6 +25,7 @@ val api = Api2()
  * ### Resources
  *
  * - [Departments][DepartmentsEndpoint]
+ * - [Users][UsersEndpoint]
  */
 class Api2 : Service("v2") {
 
@@ -95,26 +99,150 @@ class Api2 : Service("v2") {
 	//endregion
 	//region
 
+	/**
+	 * The user management endpoint: `v2/users`.
+	 *
+	 * ### Get
+	 *
+	 * Lists existing users.
+	 *
+	 * - Query parameters: [UserDto.GetParams]
+	 * - Response: list of identifiers of the various users
+	 *
+	 * Authorization: administrator
+	 *
+	 * ### POST
+	 *
+	 * Creates a new user.
+	 *
+	 * - Body: [UserDto.New]
+	 * - Response: identifier of the created user and a single-use password
+	 *
+	 * Authorization: administrator
+	 *
+	 * ### POST /token
+	 *
+	 * Request a new token using a username and a password.
+	 *
+	 * - Body: [UserDto.LogIn]
+	 * - Response: identifier of the user and a token
+	 *
+	 * Authorization: guest
+	 *
+	 * ### Sub-resources
+	 *
+	 * - Manage a specific user: [UserEndpoint]
+	 */
 	inner class UsersEndpoint : StaticResource<List<Id>, UserDto.GetParams, Unit>("users") {
 
 		val create = create<UserDto.New, String, Parameters.Empty>()
 
 		val logIn = create<UserDto.LogIn, String, Parameters.Empty>(Route / "token")
 
+		/**
+		 * The individual user management endpoint: `v2/users/{id}`.
+		 *
+		 * ### Get
+		 *
+		 * Accesses detailed information about the specified user.
+		 *
+		 * - Response: [UserDto]
+		 *
+		 * Authorization: employee
+		 *
+		 * ### Patch
+		 *
+		 * Edits information about the specified user.
+		 *
+		 * - Body: [UserDto.Edit]
+		 *
+		 * Authorization: administrator
+		 *
+		 * ### Sub-resources
+		 *
+		 * - Department management: [DepartmentEndpoint]
+		 * - Password management: [PasswordEndpoint]
+		 * - Token management: [TokenEndpoint]
+		 */
 		inner class UserEndpoint : DynamicResource<UserDto, Unit>("user") {
 
 			val edit = edit<UserDto.Edit, Parameters.Empty>()
 
+			/**
+			 * The user department management endpoint: `v2/users/{id}/departments`.
+			 *
+			 * ### Get
+			 *
+			 * Get the departments this user is a part of.
+			 *
+			 * - Response: list of department identifiers
+			 *
+			 * Authorization: administrator
+			 *
+			 * ### Put
+			 *
+			 * Adds this user to a department.
+			 *
+			 * - Body: identifier of the department
+			 *
+			 * Authorization: administrator
+			 *
+			 * ### Delete
+			 *
+			 * Removes this user from a department.
+			 *
+			 * - Body: identifier of the department
+			 *
+			 * Authorization: administrator
+			 */
 			inner class DepartmentEndpoint : StaticResource<Set<Id>, Parameters.Empty, Unit>("departments") {
 				val add = action<Id, Unit, Parameters.Empty>(Route.Root)
 				val remove = delete<Id>(Route.Root)
 			}
 
+			/**
+			 * The password management endpoint: `v2/users/{id}/password`.
+			 *
+			 * ### Put
+			 *
+			 * Resets the user's password.
+			 *
+			 * - Response: single-use password
+			 *
+			 * Authorization: administrator
+			 *
+			 * ### Post
+			 *
+			 * Replaces the user's password.
+			 *
+			 * - Body: [UserDto.SetPassword]
+			 *
+			 * Authorization: employee
+			 */
 			inner class PasswordEndpoint : StaticResource<Unit, Parameters.Empty, Unit>("password") {
 				val reset = action<Unit, String, Parameters.Empty>(Route.Root)
 				val set = create<UserDto.SetPassword, Unit, Parameters.Empty>()
 			}
 
+			/**
+			 * The token management endpoint: `v2/users/{id}/token`.
+			 *
+			 * ### Post
+			 *
+			 * Verifies whether a token is a valid for this user.
+			 *
+			 * - Body: the token
+			 *
+			 * Authorization: guest
+			 *
+			 * ### Delete
+			 *
+			 * Logs out the user (destroys their token).
+			 *
+			 * - Body: the token
+			 *
+			 * Authorization: employee
+			 */
 			inner class TokenEndpoint : StaticResource<Unit, Parameters.Empty, Unit>("token") {
 				val verify = action<String, Unit, Parameters.Empty>(Route.Root)
 				val logOut = delete<String>()

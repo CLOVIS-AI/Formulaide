@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectStartupSharedConfiguration">
     <configurations>
+      <configuration id="Gradle.Continuous compilation" name="Continuous compilation" />
       <configuration id="Docker.Start Docker Compose" name="Start Docker Compose" />
     </configurations>
   </component>

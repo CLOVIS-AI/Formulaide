@@ -13,25 +13,11 @@ services:
         published: 8002
         protocol: tcp
 
-  mongo-express:
-    image: "mongo-express:0.32.0"
-    ports:
-      - "8081:8081"
-    depends_on: [ mongo ]
-    networks: [ database ]
-    environment:
-      ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
-      ME_CONFIG_MONGODB_SERVER: mongo
-      ME_CONFIG_MONGODB_ADMINUSERNAME: "root"
-      ME_CONFIG_MONGODB_ADMINPASSWORD: "development-password"
-
   proxy:
     command: "caddy reverse-proxy --from api.localhost --to 172.17.0.1:8000"
     ports:
       - "8443:443"
 
 networks:
-  database:
-    name: database_dev
   internal-proxy:
     name: internal_proxy_dev
