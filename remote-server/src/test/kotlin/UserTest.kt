@@ -22,9 +22,13 @@ class UserTest : UserTestCases(), TestServer {
 
 	override lateinit var application: TestApplication
 
+	override var userService: User.Service? = null
+
 	override fun TestApplicationBuilder.configureTestServer() {
+		userService = FakeUsers().spied()
+
 		routing {
-			users(FakeUsers().spied(), FakeDepartments().spied())
+			users(userService!!, FakeDepartments().spied())
 		}
 	}
 
