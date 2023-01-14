@@ -3,9 +3,11 @@ package opensavvy.formulaide.backend
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import io.ktor.server.plugins.callloging.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import opensavvy.formulaide.server.configureServer
+import org.slf4j.event.Level
 
 fun main() {
 	embeddedServer(
@@ -17,6 +19,10 @@ fun main() {
 
 fun Application.formulaide() {
 	configureServer()
+
+	install(CallLogging) {
+		level = Level.INFO
+	}
 
 	if (developmentMode) {
 		log.error("DEVELOPMENT MODE IS ENABLED. THIS IS NOT SAFE FOR PRODUCTION.")
