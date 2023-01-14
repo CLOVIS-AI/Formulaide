@@ -20,4 +20,5 @@ dependencies {
 
 application {
 	mainClass.set("opensavvy.formulaide.backend.BackendKt")
+	applicationDefaultJvmArgs = listOf("-Dio.ktor.development=true")
 }
