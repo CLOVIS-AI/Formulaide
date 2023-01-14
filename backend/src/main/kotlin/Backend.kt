@@ -11,9 +11,12 @@ import opensavvy.backbone.Ref.Companion.now
 import opensavvy.formulaide.core.Auth
 import opensavvy.formulaide.core.User
 import opensavvy.formulaide.core.User.Role.Companion.role
+import opensavvy.formulaide.fake.FakeDepartments
 import opensavvy.formulaide.fake.FakeUsers
 import opensavvy.formulaide.server.AuthPrincipal
 import opensavvy.formulaide.server.configureServer
+import opensavvy.formulaide.server.departments
+import opensavvy.formulaide.server.users
 import opensavvy.state.outcome.out
 import org.slf4j.event.Level
 
@@ -26,6 +29,7 @@ fun main() {
 }
 
 fun Application.formulaide() {
+	val departments = FakeDepartments()
 	val users = FakeUsers()
 
 	configureServer()
@@ -55,5 +59,8 @@ fun Application.formulaide() {
 		get("ping") {
 			call.respondText("Pong")
 		}
+
+		departments(departments)
+		users(users, departments)
 	}
 }
