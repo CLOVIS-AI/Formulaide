@@ -161,7 +161,7 @@ class FakeUsers : User.Service {
 		lock.withPermit {
 			val (id, user) = users.asSequence().first { it.value.email == email }
 			ensureFound(user.active) { "Could not find user $email" }
-			ensureAuthenticated(passwords[id] == password) { "Invalid password" }
+			ensureAuthenticated(passwords[id] == password) { "Incorrect password" }
 			ensureAuthenticated(id !in blocked) { "The single-use password has already been used." }
 
 			val token = Token("very-strong-token-${Random.nextUInt()}")
