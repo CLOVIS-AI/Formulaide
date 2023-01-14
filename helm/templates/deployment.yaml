@@ -18,7 +18,7 @@ spec:
         - name: formulaide-server
           image: "{{ .Values.config.image }}:{{ .Values.config.version }}"
           ports:
-            - containerPort: 8000
+            - containerPort: 9000
           env:
             - name: formulaide_host
               valueFrom:
@@ -49,24 +49,4 @@ spec:
               valueFrom:
                 secretKeyRef:
                   key: report_email
-                  name: {{ .Release.Name }}-formulaide-secret
-            - name: formulaide_help_url
-              valueFrom:
-                secretKeyRef:
-                  key: help_url
-                  name: {{ .Release.Name }}-formulaide-secret
-            - name: formulaide_pdf_image_left_url
-              valueFrom:
-                secretKeyRef:
-                  key: pdf_left
-                  name: {{ .Release.Name }}-formulaide-secret
-            - name: formulaide_pdf_image_right_url
-              valueFrom:
-                secretKeyRef:
-                  key: pdf_right
-                  name: {{ .Release.Name }}-formulaide-secret
-            - name: formulaide_jwt_secret
-              valueFrom:
-                secretKeyRef:
-                  key: jwt_secret
                   name: {{ .Release.Name }}-formulaide-secret

@@ -6,6 +6,6 @@ spec:
   ports:
     - port: 8000
       name: formulaide-http
-      targetPort: 8000
+      targetPort: 9000
   selector:
     app: {{ .Release.Name }}-ktor
