@@ -1,12 +1,20 @@
 package opensavvy.formulaide.backend
 
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.callloging.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import opensavvy.backbone.Ref.Companion.now
+import opensavvy.formulaide.core.Auth
+import opensavvy.formulaide.core.User
+import opensavvy.formulaide.core.User.Role.Companion.role
+import opensavvy.formulaide.fake.FakeUsers
+import opensavvy.formulaide.server.AuthPrincipal
 import opensavvy.formulaide.server.configureServer
+import opensavvy.state.outcome.out
 import org.slf4j.event.Level
 
 fun main() {
@@ -18,10 +26,25 @@ fun main() {
 }
 
 fun Application.formulaide() {
+	val users = FakeUsers()
+
 	configureServer()
 
 	install(CallLogging) {
 		level = Level.INFO
+	}
+
+	install(Authentication) {
+		bearer {
+			authenticate { bearer ->
+				out {
+					val user = User.Ref(bearer.token, users)
+					val role = user.now().bind().role
+					AuthPrincipal(Auth(role, user))
+				}.tapLeft { application.log.warn("Could not authenticate user '$bearer': $it") }
+					.orNull()
+			}
+		}
 	}
 
 	if (developmentMode) {

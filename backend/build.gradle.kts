@@ -5,11 +5,13 @@ plugins {
 
 dependencies {
 	implementation(projects.core)
+	implementation(projects.fake)
 	implementation(projects.remoteServer)
 
 	implementation(Ktor.server)
 	implementation(Ktor.server.netty)
 	implementation(Ktor.server.callLogging)
+	implementation(Ktor.server.auth)
 	implementation(Ktor.plugins.serialization)
 
 	implementation(KotlinX.serialization.core)
