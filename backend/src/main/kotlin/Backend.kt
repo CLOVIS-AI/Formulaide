@@ -29,8 +29,8 @@ fun Application.formulaide() {
 	}
 
 	routing {
-		get {
-			call.respondText("Hello world!")
+		get("ping") {
+			call.respondText("Pong")
 		}
 	}
 }
