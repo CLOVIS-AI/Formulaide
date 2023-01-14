@@ -2,9 +2,9 @@ version: "3.6"
 
 services:
   mongo:
-    image: "mongo:4.4.10"
+    image: "mongo:6.0.3"
     volumes:
-      - data:/data/db
+      - data2:/data/db
     networks: [ database ]
     environment:
       MONGO_INITDB_ROOT_USERNAME: "root"
@@ -22,9 +22,6 @@ services:
       formulaide_username: "root"
       formulaide_password: "development-password"
       formulaide_report_email: "formulaide@opensavvy.dev"
-      # Images affichées dans les récépissés en PDF
-      formulaide_pdf_image_left_url: ""
-      formulaide_pdf_image_right_url: ""
 
   proxy:
     image: "caddy:2.6.2-alpine"
@@ -35,8 +32,8 @@ services:
       - caddy_config:/config
 
 volumes:
-  data:
-    name: data
+  data2:
+    name: data2
   caddy_data:
     name: caddy_data
   caddy_config:
