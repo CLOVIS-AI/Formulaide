@@ -1,30 +1,43 @@
-variables:
-  helm_image_name: "$CI_REGISTRY_IMAGE/helm"
-  helm_image: "$helm_image_name:$build_version"
+# Helm helper docker image
 
-.helm:image:
-  variables:
-    image: "$CI_REGISTRY_IMAGE/helm"
-    docker_context: .gitlab
-    dockerfile: .gitlab/helm.dockerfile
-
-helm:docker-build:
-  extends: [ .docker-build, .helm:image ]
+helm:docker:build:
+  extends: [ .os.docker.build ]
+  needs: [ ]
   stage: docker
 
-helm:docker-push:
-  extends: [ .docker-rename-latest, .helm:image ]
+  variables:
+    dockerfile: .gitlab/helm.dockerfile
+    context: .gitlab
+    image: helm
+
+  interruptible: true
+
+helm:docker:publish:
+  extends: [ .os.docker.rename ]
+  needs: [ helm:docker:build ]
   stage: deploy
 
+  variables:
+    image: helm
+
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+
+  interruptible: true
+
+# Package creation
+
 helm:package:
-  image: $helm_image
+  image: $CI_REGISTRY_IMAGE/helm:build-$CI_PIPELINE_IID
   stage: build
-  needs: [ environment, helm:docker-build ]
+  needs: [ os.version, helm:docker:build ]
+
   script:
     - cd helm
     - helm dependency update
     - helm lint
-    - helm package --version $CURRENT_VERSION --app-version $CURRENT_VERSION .
+    - helm package --version $project_version --app-version $project_version .
+
   artifacts:
     when: always
     paths:
@@ -34,12 +47,22 @@ helm:package:
 helm:publish:
   image: $CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX/curlimages/curl:latest
   stage: deploy
-  needs: [ helm:package, environment ]
-  dependencies: [ helm:package, environment ]
+  needs:
+    - job: helm:package
+      artifacts: true
+    - job: os.version
+      artifacts: true
+
   script:
-    - source .env || true
+    - source version.env || true
     - mv helm/formulaide-*.tgz .
-    - curl --request POST --user gitlab-ci-token:$CI_JOB_TOKEN --form "chart=@formulaide-$CURRENT_VERSION.tgz" "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/helm/api/$channel/charts"
+    - >
+      curl 
+      --request POST 
+      --user gitlab-ci-token:$CI_JOB_TOKEN 
+      --form "chart=@formulaide-$project_version.tgz" 
+      "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/helm/api/$channel/charts"
+
   rules:
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       variables:
@@ -49,17 +72,20 @@ helm:publish:
         channel: stable
   interruptible: false
 
+# Deployment
+
 .k8s:
-  image: $helm_image
+  image: $CI_REGISTRY_IMAGE/helm:build-$CI_PIPELINE_IID
   stage: deploy
-  dependencies: [ helm:package, environment ]
+  dependencies: [ helm:package, os.version ]
+
   script:
-    - source .env || true
+    - source version.env || true
     - kubectl config use-context opensavvy/config:opensavvy-agent
     - >
       helm upgrade --install
       $release
-      helm/formulaide-$CURRENT_VERSION.tgz
+      helm/formulaide-$project_version.tgz
       --set config.host=$host
       --set config.replicas=$replicas
       --set config.version=build-$CI_PIPELINE_IID
@@ -67,23 +93,27 @@ helm:publish:
       --namespace=$namespace
       --wait
       --atomic
+
   retry: 1
   interruptible: false
 
 helm:review:
   extends: [ .k8s ]
-  needs: [ helm:package, environment, server-bin-docker, helm:docker-build ]
+  needs: [ helm:package, os.version, backend:container ]
+
   variables:
     release: merge-request-$CI_MERGE_REQUEST_IID
     namespace: formulaide-review
     host: $CI_MERGE_REQUEST_IID.$FORMULAIDE_DEPLOYMENT_URL
     replicas: 1
+
   environment:
     name: review/$CI_MERGE_REQUEST_IID
     url: https://$host
     deployment_tier: development
     on_stop: helm:review-stop
     auto_stop_in: 2 weeks
+
   rules:
     - if: $FORMULAIDE_DEPLOYMENT_URL == null
       when: never
@@ -92,18 +122,21 @@ helm:review:
 
 helm:review-stop:
   extends: [ .k8s ]
-  needs: [ helm:package, environment, server-bin-docker, helm:docker-build ]
+  needs: [ helm:package, os.version, backend:container ]
   variables:
     GIT_STRATEGY: none
+
   script:
-    - source .env || true
+    - source version.env || true
     - kubectl config use-context opensavvy/config:opensavvy-agent
     - helm uninstall merge-request-$CI_MERGE_REQUEST_IID --namespace=formulaide-review
+
   environment:
     name: review/$CI_MERGE_REQUEST_IID
     url: $CI_MERGE_REQUEST_IID.$FORMULAIDE_DEPLOYMENT_URL
     deployment_tier: development
     action: stop
+
   rules:
     - if: $FORMULAIDE_DEPLOYMENT_URL == null
       when: never
@@ -115,17 +148,20 @@ helm:review-stop:
 
 helm:production:
   extends: [ .k8s ]
-  needs: [ server-bin-docker-latest, helm:package, environment ]
-  dependencies: [ helm:package, environment ]
+  needs: [ backend:container:publish, helm:package, os.version ]
+  dependencies: [ helm:package, os.version ]
   stage: deploy
+
   variables:
     release: production
     namespace: formulaide
     host: $FORMULAIDE_DEPLOYMENT_URL
     replicas: 2
+
   environment:
     name: production
     url: https://$host
+
   rules:
     - if: $FORMULAIDE_DEPLOYMENT_URL == null
       when: never

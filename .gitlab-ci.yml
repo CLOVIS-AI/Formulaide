@@ -13,6 +13,7 @@ include:
   - remote: https://gitlab.com/opensavvy/ci-templates/-/raw/main/docker.gitlab-ci.yml
   - remote: https://gitlab.com/opensavvy/ci-templates/-/raw/main/gradle.gitlab-ci.yml
   - remote: https://gitlab.com/opensavvy/ci-templates/-/raw/main/version.gitlab-ci.yml
+  - local: helm/.gitlab-ci.yml
 
 workflow:
   rules:
