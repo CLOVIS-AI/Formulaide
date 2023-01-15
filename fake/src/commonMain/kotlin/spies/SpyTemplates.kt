@@ -10,6 +10,8 @@ class SpyTemplates(private val upstream: Template.Service) : Template.Service {
 
 	private val log = loggerFor(upstream)
 
+	override val versions: Template.Version.Service = SpyVersion(upstream.versions)
+
 	override suspend fun list(includeClosed: Boolean): Outcome<List<Template.Ref>> = spy(
 		log, "list", includeClosed,
 	) { upstream.list(includeClosed) }
