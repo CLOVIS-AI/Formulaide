@@ -15,6 +15,7 @@ import opensavvy.formulaide.core.data.Email
 import opensavvy.formulaide.core.data.Password
 import opensavvy.formulaide.core.data.Token
 import opensavvy.formulaide.fake.utils.newId
+import opensavvy.state.Failure
 import opensavvy.state.outcome.*
 import kotlin.random.Random
 import kotlin.random.nextUInt
@@ -159,10 +160,12 @@ class FakeUsers : User.Service {
 
 	override suspend fun logIn(email: Email, password: Password): Outcome<Pair<User.Ref, Token>> = out {
 		lock.withPermit {
-			val (id, user) = users.asSequence().first { it.value.email == email }
-			ensureFound(user.active) { "Could not find user $email" }
-			ensureAuthenticated(passwords[id] == password) { "Incorrect password" }
-			ensureAuthenticated(id !in blocked) { "The single-use password has already been used." }
+			val (id, user) = users.asSequence()
+				.firstOrNull { it.value.email == email }
+				?: shift(Failure(Failure.Kind.Unauthenticated, "Invalid credentials"))
+			ensureAuthenticated(user.active) { "Invalid credentials" }
+			ensureAuthenticated(passwords[id] == password) { "Invalid credentials" }
+			ensureAuthenticated(id !in blocked) { "Invalid credentials" }
 
 			val token = Token("very-strong-token-${Random.nextUInt()}")
 			tokens.getOrPut(id) { ArrayList() }
