@@ -1,6 +1,8 @@
 package opensavvy.formulaide.remote
 
+import kotlinx.datetime.Instant
 import opensavvy.formulaide.core.Department
+import opensavvy.formulaide.core.Template
 import opensavvy.formulaide.core.User
 import opensavvy.formulaide.remote.Api2.*
 import opensavvy.formulaide.remote.Api2.DepartmentsEndpoint.DepartmentEndpoint
@@ -339,6 +341,11 @@ class Api2 : Service("v2") {
 
 			val edit = edit<SchemaDto.Edit, Parameters.Empty>()
 
+			suspend fun refOf(id: Id, templates: Template.Service): Outcome<Template.Ref> = out {
+				validateId(id, Unit)
+				Template.Ref(id.resource.segments[1].segment, templates)
+			}
+
 			/**
 			 * The template version management endpoint: `v2/templates/{id}/{version}`.
 			 *
@@ -350,7 +357,21 @@ class Api2 : Service("v2") {
 			 *
 			 * Authorization: employee
 			 */
-			inner class TemplateVersionEndpoint : DynamicResource<SchemaDto.Version, Unit>("version")
+			inner class TemplateVersionEndpoint : DynamicResource<SchemaDto.Version, Unit>("version") {
+
+				suspend fun refOf(
+					id: Id,
+					templates: Template.Service,
+				): Outcome<Template.Version.Ref> = out {
+					validateId(id, Unit)
+					Template.Version.Ref(
+						this@TemplateEndpoint.refOf(Id(id.service, Route(id.resource.segments.dropLast(1))), templates)
+							.bind(),
+						Instant.parse(id.resource.segments.last().segment),
+						templates.versions,
+					)
+				}
+			}
 
 			val version = TemplateVersionEndpoint()
 		}
