@@ -12,6 +12,7 @@ dependencies {
 	implementation(Ktor.server.netty)
 	implementation(Ktor.server.callLogging)
 	implementation(Ktor.server.auth)
+	implementation(Ktor.server.hsts)
 	implementation(Ktor.plugins.serialization)
 
 	implementation(KotlinX.serialization.core)
