@@ -2,6 +2,7 @@ package opensavvy.formulaide.remote
 
 import kotlinx.datetime.Instant
 import opensavvy.formulaide.core.Department
+import opensavvy.formulaide.core.Form
 import opensavvy.formulaide.core.Template
 import opensavvy.formulaide.core.User
 import opensavvy.formulaide.remote.Api2.*
@@ -455,6 +456,11 @@ class Api2 : Service("v2") {
 
 			val edit = edit<SchemaDto.Edit, Parameters.Empty>()
 
+			suspend fun refOf(id: Id, forms: Form.Service): Outcome<Form.Ref> = out {
+				validateId(id, Unit)
+				Form.Ref(id.resource.segments[1].segment, forms)
+			}
+
 			/**
 			 * The form version management endpoint: `v2/forms/{id}/{version}`.
 			 *
@@ -468,7 +474,21 @@ class Api2 : Service("v2") {
 			 * - If this form is public: guest
 			 * - If this form is private: employee
 			 */
-			inner class FormVersionEndpoint : DynamicResource<SchemaDto.Version, Unit>("version")
+			inner class FormVersionEndpoint : DynamicResource<SchemaDto.Version, Unit>("version") {
+
+				suspend fun refOf(
+					id: Id,
+					forms: Form.Service,
+				): Outcome<Form.Version.Ref> = out {
+					validateId(id, Unit)
+					Form.Version.Ref(
+						this@FormEndpoint.refOf(Id(id.service, Route(id.resource.segments.dropLast(1))), forms)
+							.bind(),
+						Instant.parse(id.resource.segments.last().segment),
+						forms.versions,
+					)
+				}
+			}
 
 			val version = FormVersionEndpoint()
 		}
