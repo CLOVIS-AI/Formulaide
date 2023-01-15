@@ -13,6 +13,7 @@ import opensavvy.formulaide.core.Auth
 import opensavvy.formulaide.core.User
 import opensavvy.formulaide.core.User.Role.Companion.role
 import opensavvy.formulaide.fake.FakeDepartments
+import opensavvy.formulaide.fake.FakeForms
 import opensavvy.formulaide.fake.FakeTemplates
 import opensavvy.formulaide.fake.FakeUsers
 import opensavvy.formulaide.server.*
@@ -33,6 +34,7 @@ fun Application.formulaide() {
 	val departments = FakeDepartments()
 	val users = FakeUsers()
 	val templates = FakeTemplates(clock)
+	val forms = FakeForms(clock)
 
 	configureServer()
 
@@ -65,5 +67,6 @@ fun Application.formulaide() {
 		departments(departments)
 		users(users, departments)
 		templates(templates)
+		forms(departments, templates, forms)
 	}
 }
