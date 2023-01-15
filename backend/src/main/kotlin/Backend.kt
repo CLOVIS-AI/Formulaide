@@ -5,6 +5,7 @@ import io.ktor.server.auth.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.callloging.*
+import io.ktor.server.plugins.hsts.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.datetime.Clock
@@ -55,7 +56,11 @@ fun Application.formulaide() {
 		}
 	}
 
-	if (developmentMode) {
+	if (!developmentMode) {
+		install(HSTS) {
+			includeSubDomains = true
+		}
+	} else {
 		log.error("DEVELOPMENT MODE IS ENABLED. THIS IS NOT SAFE FOR PRODUCTION.")
 	}
 
