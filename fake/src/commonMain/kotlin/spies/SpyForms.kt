@@ -9,6 +9,10 @@ import opensavvy.state.outcome.Outcome
 class SpyForms(private val upstream: Form.Service) : Form.Service {
 
 	private val log = loggerFor(upstream)
+
+	override val versions: Form.Version.Service
+		get() = SpyVersion(upstream.versions)
+
 	override suspend fun list(includeClosed: Boolean): Outcome<List<Form.Ref>> = spy(
 		log, "list", includeClosed,
 	) { upstream.list(includeClosed) }
