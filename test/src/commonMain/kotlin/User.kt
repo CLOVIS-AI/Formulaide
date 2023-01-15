@@ -6,6 +6,7 @@ import kotlinx.coroutines.withContext
 import opensavvy.backbone.Ref.Companion.now
 import opensavvy.formulaide.core.Auth
 import opensavvy.formulaide.core.User
+import opensavvy.formulaide.core.data.Email
 import opensavvy.formulaide.core.data.Email.Companion.asEmail
 import opensavvy.formulaide.core.data.Password
 import opensavvy.formulaide.core.data.Token
@@ -292,7 +293,8 @@ abstract class UserTestCases : TestCase<User.Service> {
 		assertSuccess(employee.disable())
 		val email = employee.now().orThrow().email
 
-		assertNotFound(users.logIn(email, singleUse))
+		// do not return NotFound! -> it would help an attacker enumerate users
+		assertUnauthenticated(users.logIn(email, singleUse))
 	}
 
 	@Test
@@ -381,6 +383,16 @@ abstract class UserTestCases : TestCase<User.Service> {
 		}
 		assertUnauthenticated(employee.verifyToken(token1))
 		assertUnauthenticated(employee.verifyToken(token2))
+	}
+
+	@Test
+	@JsName("logInFalseUser")
+	fun `cannot log in as a user that doesn't exist`() = runTest {
+		val users = new()
+
+		// No user was created, this user cannot exist
+		//   do not return a NotFound! it would help an attacker enumerate accounts
+		assertUnauthenticated(users.logIn(Email("this-email-does-not-exist@google.com"), Password("whatever")))
 	}
 
 }
