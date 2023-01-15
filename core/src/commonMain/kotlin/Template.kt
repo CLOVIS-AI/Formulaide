@@ -99,6 +99,8 @@ data class Template(
 
 	interface Service : Backbone<Template> {
 
+		val versions: Version.Service
+
 		/**
 		 * Lists all templates.
 		 *

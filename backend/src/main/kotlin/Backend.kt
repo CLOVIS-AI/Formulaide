@@ -7,16 +7,15 @@ import io.ktor.server.netty.*
 import io.ktor.server.plugins.callloging.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.datetime.Clock
 import opensavvy.backbone.Ref.Companion.now
 import opensavvy.formulaide.core.Auth
 import opensavvy.formulaide.core.User
 import opensavvy.formulaide.core.User.Role.Companion.role
 import opensavvy.formulaide.fake.FakeDepartments
+import opensavvy.formulaide.fake.FakeTemplates
 import opensavvy.formulaide.fake.FakeUsers
-import opensavvy.formulaide.server.AuthPrincipal
-import opensavvy.formulaide.server.configureServer
-import opensavvy.formulaide.server.departments
-import opensavvy.formulaide.server.users
+import opensavvy.formulaide.server.*
 import opensavvy.state.outcome.out
 import org.slf4j.event.Level
 
@@ -29,8 +28,11 @@ fun main() {
 }
 
 fun Application.formulaide() {
+	val clock = Clock.System
+
 	val departments = FakeDepartments()
 	val users = FakeUsers()
+	val templates = FakeTemplates(clock)
 
 	configureServer()
 
@@ -62,5 +64,6 @@ fun Application.formulaide() {
 
 		departments(departments)
 		users(users, departments)
+		templates(templates)
 	}
 }

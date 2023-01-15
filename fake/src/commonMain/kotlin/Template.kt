@@ -22,7 +22,10 @@ class FakeTemplates(
 
 	private val lock = Semaphore(1)
 	private val templates = HashMap<String, Template>()
-	private val versions = FakeVersions()
+	private val _versions = FakeVersions()
+
+	override val versions: Template.Version.Service
+		get() = _versions
 
 	override val cache: RefCache<Template> = defaultRefCache()
 
@@ -47,11 +50,11 @@ class FakeTemplates(
 		val id = newId()
 
 		lock.withPermit {
-			versions.versions[id to now] = firstVersion.copy(creationDate = now)
+			_versions.versions[id to now] = firstVersion.copy(creationDate = now)
 
 			templates[id] = Template(
 				name,
-				listOf(versions.toRef(id, now)),
+				listOf(_versions.toRef(id, now)),
 				open = true,
 			)
 		}
@@ -67,13 +70,13 @@ class FakeTemplates(
 			ensureAdministrator()
 
 			val now = clock.now()
-			val ref = versions.toRef(template.id, now)
+			val ref = _versions.toRef(template.id, now)
 
 			lock.withPermit {
 				val value = templates[template.id]
 				ensureFound(value != null) { "Couldn't find template $template" }
 
-				versions.versions[template.id to now] = version.copy(creationDate = now)
+				_versions.versions[template.id to now] = version.copy(creationDate = now)
 				templates[template.id] = value.copy(versions = value.versions + ref)
 			}
 

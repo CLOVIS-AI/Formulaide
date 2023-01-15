@@ -1,13 +1,19 @@
 package opensavvy.formulaide.remote
 
+import kotlinx.datetime.Instant
 import opensavvy.formulaide.core.Department
+import opensavvy.formulaide.core.Template
 import opensavvy.formulaide.core.User
-import opensavvy.formulaide.remote.Api2.DepartmentsEndpoint
+import opensavvy.formulaide.remote.Api2.*
 import opensavvy.formulaide.remote.Api2.DepartmentsEndpoint.DepartmentEndpoint
-import opensavvy.formulaide.remote.Api2.UsersEndpoint
+import opensavvy.formulaide.remote.Api2.FormsEndpoint.FormEndpoint
+import opensavvy.formulaide.remote.Api2.FormsEndpoint.FormEndpoint.FormVersionEndpoint
+import opensavvy.formulaide.remote.Api2.TemplatesEndpoint.TemplateEndpoint
+import opensavvy.formulaide.remote.Api2.TemplatesEndpoint.TemplateEndpoint.TemplateVersionEndpoint
 import opensavvy.formulaide.remote.Api2.UsersEndpoint.UserEndpoint
 import opensavvy.formulaide.remote.Api2.UsersEndpoint.UserEndpoint.*
 import opensavvy.formulaide.remote.dto.DepartmentDto
+import opensavvy.formulaide.remote.dto.SchemaDto
 import opensavvy.formulaide.remote.dto.UserDto
 import opensavvy.spine.Id
 import opensavvy.spine.Parameters
@@ -26,6 +32,8 @@ val api = Api2()
  *
  * - [Departments][DepartmentsEndpoint]
  * - [Users][UsersEndpoint]
+ * - [Templates][TemplatesEndpoint]
+ * - [Forms][FormsEndpoint]
  */
 class Api2 : Service("v2") {
 
@@ -262,6 +270,213 @@ class Api2 : Service("v2") {
 	}
 
 	val users = UsersEndpoint()
+
+	//endregion
+	//region Templates
+
+	/**
+	 * The template management endpoint: `v2/templates`.
+	 *
+	 * ### Get
+	 *
+	 * List existing templates.
+	 *
+	 * - Parameters: [SchemaDto.GetParams]
+	 * - Response: list of identifiers
+	 *
+	 * Authorization: employee
+	 *
+	 * ### Post
+	 *
+	 * Creates a new template.
+	 *
+	 * - Body: [SchemaDto.New]
+	 * - Response: identifier of the created template
+	 *
+	 * Authorization: administrator
+	 *
+	 * ### Sub-resources
+	 *
+	 * - Individual template: [TemplateEndpoint]
+	 */
+	inner class TemplatesEndpoint : StaticResource<List<Id>, SchemaDto.GetParams, Unit>("templates") {
+
+		val create = create<SchemaDto.New, Unit, Parameters.Empty>()
+
+		/**
+		 * The template management endpoint: `v2/templates/{id}`.
+		 *
+		 * ### Get
+		 *
+		 * Access detailed information of a template.
+		 *
+		 * - Response: [SchemaDto]
+		 *
+		 * Authorization: employee
+		 *
+		 * ### Post
+		 *
+		 * Creates a new version of this template.
+		 *
+		 * - Body: [SchemaDto.Version]
+		 * - Response: identifier of the created version
+		 *
+		 * Authorization: administrator
+		 *
+		 * ### Patch
+		 *
+		 * Edits this template.
+		 *
+		 * - Body: [SchemaDto.Edit]
+		 *
+		 * Authorization: administrator
+		 *
+		 * ### Sub-resources
+		 *
+		 * - Template versions: [TemplateVersionEndpoint]
+		 */
+		inner class TemplateEndpoint : DynamicResource<SchemaDto, Unit>("template") {
+
+			val create = create<SchemaDto.Version, Unit, Parameters.Empty>()
+
+			val edit = edit<SchemaDto.Edit, Parameters.Empty>()
+
+			suspend fun refOf(id: Id, templates: Template.Service): Outcome<Template.Ref> = out {
+				validateId(id, Unit)
+				Template.Ref(id.resource.segments[1].segment, templates)
+			}
+
+			/**
+			 * The template version management endpoint: `v2/templates/{id}/{version}`.
+			 *
+			 * ### Get
+			 *
+			 * Access detailed information about this version.
+			 *
+			 * - Response: [SchemaDto.Version]
+			 *
+			 * Authorization: employee
+			 */
+			inner class TemplateVersionEndpoint : DynamicResource<SchemaDto.Version, Unit>("version") {
+
+				suspend fun refOf(
+					id: Id,
+					templates: Template.Service,
+				): Outcome<Template.Version.Ref> = out {
+					validateId(id, Unit)
+					Template.Version.Ref(
+						this@TemplateEndpoint.refOf(Id(id.service, Route(id.resource.segments.dropLast(1))), templates)
+							.bind(),
+						Instant.parse(id.resource.segments.last().segment),
+						templates.versions,
+					)
+				}
+			}
+
+			val version = TemplateVersionEndpoint()
+		}
+
+		val id = TemplateEndpoint()
+	}
+
+	val templates = TemplatesEndpoint()
+
+	//endregion
+	//region Templates
+
+	/**
+	 * The form management endpoint: `v2/forms`.
+	 *
+	 * ### Get
+	 *
+	 * List existing forms.
+	 *
+	 * - Parameters: [SchemaDto.GetParams]
+	 * - Response: list of identifiers
+	 *
+	 * Authorization:
+	 * - Guests will only see public forms
+	 * - Employees will see all forms
+	 *
+	 * ### Post
+	 *
+	 * Creates a new form.
+	 *
+	 * - Body: [SchemaDto.New]
+	 * - Response: identifier of the created form
+	 *
+	 * Authorization: administrator
+	 *
+	 * ### Sub-resources
+	 *
+	 * - Individual form: [FormEndpoint]
+	 */
+	inner class FormsEndpoint : StaticResource<List<Id>, SchemaDto.GetParams, Unit>("forms") {
+
+		val create = create<SchemaDto.New, Unit, Parameters.Empty>()
+
+		/**
+		 * The form management endpoint: `v2/forms/{id}`.
+		 *
+		 * ### Get
+		 *
+		 * Access detailed information of a form.
+		 *
+		 * - Response: [SchemaDto]
+		 *
+		 * Authorization:
+		 * - If this form is public: guest
+		 * - If this form is private: employee
+		 *
+		 * ### Post
+		 *
+		 * Creates a new version of this form.
+		 *
+		 * - Body: [SchemaDto.Version]
+		 * - Response: identifier of the created version
+		 *
+		 * Authorization: administrator
+		 *
+		 * ### Patch
+		 *
+		 * Edits this template.
+		 *
+		 * - Body: [SchemaDto.Edit]
+		 *
+		 * Authorization: administrator
+		 *
+		 * ### Sub-resources
+		 *
+		 * - Form versions: [FormVersionEndpoint]
+		 */
+		inner class FormEndpoint : DynamicResource<SchemaDto, Unit>("form") {
+
+			val create = create<SchemaDto.Version, Unit, Parameters.Empty>()
+
+			val edit = edit<SchemaDto.Edit, Parameters.Empty>()
+
+			/**
+			 * The form version management endpoint: `v2/forms/{id}/{version}`.
+			 *
+			 * ### Get
+			 *
+			 * Access detailed information about this version.
+			 *
+			 * - Response: [SchemaDto.Version]
+			 *
+			 * Authorization:
+			 * - If this form is public: guest
+			 * - If this form is private: employee
+			 */
+			inner class FormVersionEndpoint : DynamicResource<SchemaDto.Version, Unit>("version")
+
+			val version = FormVersionEndpoint()
+		}
+
+		val id = FormEndpoint()
+	}
+
+	val forms = FormsEndpoint()
 
 	//endregion
 
