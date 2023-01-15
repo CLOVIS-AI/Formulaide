@@ -255,6 +255,8 @@ data class Form(
 
 	interface Service : Backbone<Form> {
 
+		val versions: Version.Service
+
 		/**
 		 * Lists all forms.
 		 *

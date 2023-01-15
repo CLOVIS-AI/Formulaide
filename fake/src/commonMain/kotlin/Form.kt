@@ -24,7 +24,10 @@ class FakeForms(
 
 	private val lock = Semaphore(1)
 	private val forms = HashMap<String, Form>()
-	private val versions = FakeVersions()
+	private val _versions = FakeVersions()
+
+	override val versions: Form.Version.Service
+		get() = _versions
 
 	private fun toRef(id: String) = Form.Ref(id, this)
 
@@ -51,11 +54,11 @@ class FakeForms(
 		val id = newId()
 
 		lock.withPermit {
-			versions.versions[id to now] = firstVersion.copy(creationDate = now)
+			_versions.versions[id to now] = firstVersion.copy(creationDate = now)
 
 			forms[id] = Form(
 				name,
-				listOf(versions.toRef(id, now)),
+				listOf(_versions.toRef(id, now)),
 				open = true,
 				public = false,
 			)
@@ -68,13 +71,13 @@ class FakeForms(
 		ensureAdministrator()
 
 		val now = clock.now()
-		val ref = versions.toRef(form.id, now)
+		val ref = _versions.toRef(form.id, now)
 
 		lock.withPermit {
 			val value = forms[form.id]
 			ensureFound(value != null) { "Couldn't find form $form" }
 
-			versions.versions[form.id to now] = version.copy(creationDate = now)
+			_versions.versions[form.id to now] = version.copy(creationDate = now)
 			forms[form.id] = value.copy(versions = value.versions + ref)
 		}
 

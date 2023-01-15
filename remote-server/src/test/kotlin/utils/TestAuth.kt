@@ -24,7 +24,7 @@ fun Application.configureTestAuthentication(additionalUsers: User.Service? = nul
 				when (id) {
 					TestUsers.employeeAuth.user!!.id -> AuthPrincipal(TestUsers.employeeAuth)
 					TestUsers.administratorAuth.user!!.id -> AuthPrincipal(TestUsers.administratorAuth)
-					"guest" -> null
+					"guest" -> AuthPrincipal(Anonymous)
 					else -> {
 						if (additionalUsers != null) {
 							AuthPrincipal(Auth(User.Role.valueOf(role), User.Ref(id, additionalUsers)))
