@@ -1,36 +1,28 @@
 package opensavvy.formulaide.remote.server.utils
 
 import io.ktor.server.testing.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import opensavvy.formulaide.core.User
 import opensavvy.formulaide.server.configureServer
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
 
-interface TestServer {
-
-	var application: TestApplication
-
-	fun TestApplicationBuilder.configureTestServer()
-
-	val userService: User.Service? get() = null
-
-	@BeforeTest
-	fun startTestServer() {
-		application = TestApplication {
-			application {
-				configureServer()
-				configureTestAuthentication(userService)
-				configureTestLogging()
-			}
-
-			configureTestServer()
+fun CoroutineScope.createTestServer(
+	users: User.Service? = null,
+	configure: TestApplicationBuilder.() -> Unit,
+): TestApplication {
+	val application = TestApplication {
+		application {
+			configureServer()
+			configureTestAuthentication(users)
+			configureTestLogging()
 		}
-		application.start()
+
+		configure()
 	}
 
-	@AfterTest
-	fun stopTestServer() {
-		application.stop()
-	}
+	(coroutineContext[Job] ?: error("Couldn't find a job instance in this scope"))
+		.invokeOnCompletion { application.stop() }
 
+	return application
+		.apply { start() }
 }
