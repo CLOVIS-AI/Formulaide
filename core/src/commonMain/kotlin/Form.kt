@@ -164,6 +164,17 @@ data class Form(
 
 		val stepsSorted by lazy(LazyThreadSafetyMode.PUBLICATION) { steps.sortedBy { it.id } }
 
+		/**
+		 * Finds the field instance corresponding to [step].
+		 *
+		 * - If [step] is `null`, returns [Version.field]
+		 * - Otherwise, returns [Step.field] for the field with ID [step].
+		 */
+		fun findFieldForStep(step: Int?) =
+			if (step != null) steps.first { it.id == step }.field
+				?: error("L'étape $step de cette version n'a pas de champ : $this")
+			else field
+
 		data class Ref(
 			val form: Form.Ref,
 			val version: Instant,
