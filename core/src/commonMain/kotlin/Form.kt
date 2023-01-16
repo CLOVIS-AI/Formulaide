@@ -121,7 +121,7 @@ data class Form(
 			createVersion(Version(Instant.Companion.DISTANT_PAST, title, field, step.asList()))
 
 		// This is a compiler trick to make the vararg mandatory
-		@Suppress("DeprecatedCallableAddReplaceWith")
+		@Suppress("DeprecatedCallableAddReplaceWith", "UNUSED_PARAMETER")
 		@Deprecated("It is not allowed to create a form with no review steps.", level = DeprecationLevel.ERROR)
 		fun createVersion(title: String, field: Field): Outcome<Version.Ref> =
 			throw NotImplementedError("It is not allowed to create a form with no review steps.")
