@@ -45,6 +45,26 @@ sealed class Field {
 	 */
 	abstract val importedFrom: Template.Version.Ref?
 
+	/**
+	 * Finds a field recursively by its [id].
+	 *
+	 * Returns `null` if the field couldn't be found.
+	 *
+	 * @see Field.Id
+	 */
+	operator fun get(id: Id): Field? =
+		if (id.isRoot) this
+		else indexedFields[id.head]?.get(id.tail)
+
+	/**
+	 * Finds a field recursively by its [id].
+	 *
+	 * Returns `null` if the field couldn't be found.
+	 *
+	 * @see Field.Id
+	 */
+	operator fun get(vararg id: Int) = get(Id(*id))
+
 	protected fun verify() {
 		require(label.isNotBlank()) { "Le libellé d'un champ ne peut pas être vide : '$label'" }
 	}
@@ -152,16 +172,94 @@ sealed class Field {
 	//endregion
 	//region Specific
 
-	data class Id(val parts: List<Int>) {
+	/**
+	 * Identifier for a specific [Field] in a given field hierarchy.
+	 *
+	 * Children fields of specific fields are identified by an integer (see [indexedFields]).
+	 * The [Id] class represents the result of walking down the hierarchy to find the field we are mentioning.
+	 *
+	 * For example, in this field hierarchy:
+	 * ```
+	 * identity
+	 *   1. first name
+	 *   2. last name(s)
+	 *     1. last name
+	 *     2. last name
+	 * ```
+	 * we can identify each field using its ID:
+	 * - `""`: identity,
+	 * - `"1"`: first name
+	 * - `"2"`: last name(s)
+	 * - `"2:1"`: last name
+	 * - `"2:2"`: last name
+	 *
+	 * Identifiers are used to find a field deeply (see [Field.get]).
+	 */
+	data class Id(private val parts: List<Int>) {
+
+		constructor(vararg id: Int) : this(id.asList())
 
 		operator fun plus(other: Id) = Id(parts + other.parts)
 
 		operator fun plus(other: Int) = Id(parts + other)
 
-		override fun toString() = "Field.Id(${parts.joinToString(separator = ":")})"
+		/**
+		 * `true` if this identifier refers to the field hierarchy [root].
+		 */
+		val isRoot: Boolean
+			get() = parts.isEmpty()
+
+		/**
+		 * The first element of this [Id].
+		 *
+		 * `null` if this identifier is the [root][isRoot].
+		 */
+		val headOrNull: Int?
+			get() = parts.firstOrNull()
+
+		/**
+		 * The first element of this [Id].
+		 *
+		 * Throws [NoSuchElementException] if this identifier is the [root][isRoot].
+		 */
+		val head: Int
+			get() = parts.first()
+
+		/**
+		 * All elements of this [Id] except the [headOrNull].
+		 *
+		 * The tail is useful to transpose an identifier for a field to an identifier in one of its children.
+		 * For example, if we have the following fields:
+		 * ```
+		 * identity
+		 *   1. address
+		 *     2. city
+		 *       3. name
+		 * ```
+		 * From the field 'identity', we can refer to 'name' using `"1:2:3"`.
+		 * The tail of `"1:2:3"` is `"2:3"`, which is the way to refer to 'name' from the field 'address', the direct
+		 * child of 'identity'.
+		 *
+		 * The tail of the [root] is itself.
+		 */
+		val tail: Id
+			get() =
+				if (parts.isEmpty()) this
+				else Id(parts.subList(1, parts.size))
+
+		override fun toString() = parts.joinToString(separator = ":")
 
 		companion object {
 			val root = Id(emptyList())
+
+			/**
+			 * Parses [id] into a value of the [Id] class.
+			 *
+			 * This function accepts the same format as [Id.toString] generates.
+			 */
+			fun fromString(id: String) =
+				if (id.isEmpty()) root
+				else Id(id.split(':').map { it.toInt() })
 		}
 	}
 
