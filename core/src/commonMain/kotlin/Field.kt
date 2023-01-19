@@ -1,5 +1,7 @@
 package opensavvy.formulaide.core
 
+private const val INDENT = "    "
+
 /**
  * A field in a form or template.
  *
@@ -69,6 +71,8 @@ sealed class Field {
 		require(label.isNotBlank()) { "Le libellé d'un champ ne peut pas être vide : '$label'" }
 	}
 
+	protected abstract fun StringBuilder.toString(indent: String)
+
 	//region Types
 
 	/**
@@ -91,7 +95,11 @@ sealed class Field {
 			verify()
 		}
 
-		override fun toString() = "Label($label)"
+		override fun StringBuilder.toString(indent: String) {
+			append(label)
+		}
+
+		override fun toString() = buildString { toString("") }
 	}
 
 	/**
@@ -111,7 +119,12 @@ sealed class Field {
 			verify()
 		}
 
-		override fun toString() = "Input($label, $input)"
+		override fun StringBuilder.toString(indent: String) {
+			append(label)
+			append(", $input")
+		}
+
+		override fun toString() = buildString { toString("") }
 	}
 
 	/**
@@ -127,7 +140,21 @@ sealed class Field {
 			verify()
 		}
 
-		override fun toString() = "Choice($label, $indexedFields)"
+		override fun StringBuilder.toString(indent: String) {
+			append(label)
+			append(" (choix)")
+
+			val subIndent = indent + INDENT
+
+			for ((id, option) in indexedFields) {
+				appendLine()
+				append(indent)
+				append("$id.".padEnd(INDENT.length))
+				with(option) { toString(subIndent) }
+			}
+		}
+
+		override fun toString() = buildString { toString("") }
 	}
 
 	/**
@@ -143,7 +170,21 @@ sealed class Field {
 			verify()
 		}
 
-		override fun toString() = "Group($label, $indexedFields)"
+		override fun StringBuilder.toString(indent: String) {
+			append(label)
+			append(" (groupe)")
+
+			val subIndent = indent + INDENT
+
+			for ((id, option) in indexedFields) {
+				appendLine()
+				append(indent)
+				append("$id.".padEnd(INDENT.length))
+				with(option) { toString(subIndent) }
+			}
+		}
+
+		override fun toString() = buildString { toString("") }
 	}
 
 	/**
@@ -166,7 +207,16 @@ sealed class Field {
 		override val indexedFields: Map<Int, Field>
 			get() = List(allowed.last.toInt()) { it to child }.toMap()
 
-		override fun toString() = "Arity($label, allowed=$allowed, $child)"
+		override fun StringBuilder.toString(indent: String) {
+			append(label)
+			appendLine(" (de ${allowed.first} à ${allowed.last})")
+
+			append(indent)
+			append(INDENT)
+			with(child) { toString(indent + INDENT) }
+		}
+
+		override fun toString() = buildString { toString("") }
 	}
 
 	//endregion
