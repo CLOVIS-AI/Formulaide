@@ -23,6 +23,8 @@ sealed class Input {
 			ensureValid(value.length <= effectiveMaxLength.toInt()) { "Le texte saisi fait plus de $effectiveMaxLength caractères : ${value.length}" }
 			value
 		}
+
+		override fun toString() = "Texte (longueur maximale : $effectiveMaxLength)"
 	}
 
 	data class Integer(
@@ -45,6 +47,8 @@ sealed class Input {
 
 			long
 		}
+
+		override fun toString() = "Nombre (de $effectiveMin à $effectiveMax)"
 	}
 
 	object Toggle : Input() {
@@ -54,12 +58,16 @@ sealed class Input {
 
 			bool
 		}
+
+		override fun toString() = "Coche"
 	}
 
 	object Email : Input() {
 		override suspend fun parse(value: String) = out {
 			DataEmail(value)
 		}
+
+		override fun toString() = "Adresse électronique"
 	}
 
 	object Phone : Input() {
@@ -72,18 +80,24 @@ sealed class Input {
 
 			value
 		}
+
+		override fun toString() = "Numéro de téléphone"
 	}
 
 	object Date : Input() {
 		override suspend fun parse(value: String) = out {
 			LocalDate.parse(value)
 		}
+
+		override fun toString() = "Date"
 	}
 
 	object Time : Input() {
 		override suspend fun parse(value: String) = out {
 			LocalTime.parse(value)
 		}
+
+		override fun toString() = "Heure"
 	}
 
 }
