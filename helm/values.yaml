@@ -14,6 +14,8 @@ config:
   # Formulaide image
   image: "registry.gitlab.com/opensavvy/formulaide/server"
   version: "latest"
+  # Do not use 'latest' in production!
+  # https://gitlab.com/opensavvy/formulaide/-/releases
 
   # Number of replicas of the Formulaide backend.
   replicas: 2
