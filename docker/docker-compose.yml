@@ -11,7 +11,9 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: "development-password"
 
   server:
-    image: "registry.gitlab.com/opensavvy/formulaide/server:latest"  # Replace by a specific version. Do not use 'latest' in production!
+    # Replace by a specific version. Do not use 'latest' in production!
+    # https://gitlab.com/opensavvy/formulaide/-/releases
+    image: "registry.gitlab.com/opensavvy/formulaide/server:latest"
     depends_on: [ mongo ]
     networks: [ database, internal-proxy ]
     environment:
