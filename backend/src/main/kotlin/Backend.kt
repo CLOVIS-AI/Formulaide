@@ -1,7 +1,6 @@
 package opensavvy.formulaide.backend
 
 import io.ktor.server.application.*
-import io.ktor.server.auth.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.callloging.*
@@ -9,16 +8,13 @@ import io.ktor.server.plugins.hsts.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.datetime.Clock
-import opensavvy.backbone.Ref.Companion.now
-import opensavvy.formulaide.core.Auth
-import opensavvy.formulaide.core.User
-import opensavvy.formulaide.core.User.Role.Companion.role
+import opensavvy.formulaide.core.Auth.Companion.currentRole
+import opensavvy.formulaide.core.Auth.Companion.currentUser
 import opensavvy.formulaide.fake.FakeDepartments
 import opensavvy.formulaide.fake.FakeForms
 import opensavvy.formulaide.fake.FakeTemplates
 import opensavvy.formulaide.fake.FakeUsers
 import opensavvy.formulaide.remote.server.*
-import opensavvy.state.outcome.out
 import org.slf4j.event.Level
 
 fun main() {
@@ -43,17 +39,8 @@ fun Application.formulaide() {
 		level = Level.INFO
 	}
 
-	install(Authentication) {
-		bearer {
-			authenticate { bearer ->
-				out {
-					val user = User.Ref(bearer.token, users)
-					val role = user.now().bind().role
-					AuthPrincipal(Auth(role, user))
-				}.tapLeft { application.log.warn("Could not authenticate user '$bearer': $it") }
-					.orNull()
-			}
-		}
+	install(TokenAuthentication) {
+		this.users = users
 	}
 
 	if (!developmentMode) {
@@ -66,7 +53,7 @@ fun Application.formulaide() {
 
 	routing {
 		get("ping") {
-			call.respondText("Pong")
+			call.respondText("Hi! You are ${currentUser()} (role: ${currentRole()})")
 		}
 
 		departments(departments)
