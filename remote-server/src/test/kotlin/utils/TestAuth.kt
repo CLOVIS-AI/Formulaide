@@ -5,7 +5,7 @@ import io.ktor.client.request.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import opensavvy.formulaide.core.Auth
-import opensavvy.formulaide.core.Auth.Companion.Anonymous
+import opensavvy.formulaide.core.Auth.Companion.Guest
 import opensavvy.formulaide.core.Auth.Companion.currentAuth
 import opensavvy.formulaide.core.User
 import opensavvy.formulaide.server.AuthPrincipal
@@ -24,7 +24,7 @@ fun Application.configureTestAuthentication(additionalUsers: User.Service? = nul
 				when (id) {
 					TestUsers.employeeAuth.user!!.id -> AuthPrincipal(TestUsers.employeeAuth)
 					TestUsers.administratorAuth.user!!.id -> AuthPrincipal(TestUsers.administratorAuth)
-					"guest" -> AuthPrincipal(Anonymous)
+					"guest" -> AuthPrincipal(Guest)
 					else -> {
 						if (additionalUsers != null) {
 							AuthPrincipal(Auth(User.Role.valueOf(role), User.Ref(id, additionalUsers)))
@@ -45,7 +45,7 @@ fun Application.configureTestAuthentication(additionalUsers: User.Service? = nul
 internal val LocalAuth = createClientPlugin(name = "LocalAuth") {
 	onRequest { request, _ ->
 		val token = when (val auth = currentAuth()) {
-			Anonymous -> "guest_${User.Role.Anonymous.name}"
+			Guest -> "guest_${User.Role.Guest.name}"
 			else -> "${auth.user!!.id}_${auth.role.name}"
 		}
 
