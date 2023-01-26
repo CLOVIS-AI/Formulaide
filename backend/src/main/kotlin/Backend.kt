@@ -7,6 +7,9 @@ import io.ktor.server.plugins.callloging.*
 import io.ktor.server.plugins.hsts.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import opensavvy.formulaide.core.Auth.Companion.currentRole
 import opensavvy.formulaide.core.Auth.Companion.currentUser
@@ -50,6 +53,9 @@ fun Application.formulaide() {
 	} else {
 		log.error("DEVELOPMENT MODE IS ENABLED. THIS IS NOT SAFE FOR PRODUCTION.")
 	}
+
+	@OptIn(DelicateCoroutinesApi::class) // These requests are fire-and-forget and will not last long
+	GlobalScope.launch { createDefaultUsers(users) }
 
 	routing {
 		get("ping") {

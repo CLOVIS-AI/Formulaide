@@ -8,6 +8,8 @@ dependencies {
 	implementation(projects.fake)
 	implementation(projects.remoteServer)
 
+	implementation("opensavvy:logger:_")
+
 	implementation(Ktor.server)
 	implementation(Ktor.server.netty)
 	implementation(Ktor.server.callLogging)
