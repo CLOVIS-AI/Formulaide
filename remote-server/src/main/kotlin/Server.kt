@@ -1,4 +1,4 @@
-package opensavvy.formulaide.server
+package opensavvy.formulaide.remote.server
 
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*

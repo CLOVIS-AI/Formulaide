@@ -11,7 +11,6 @@ import opensavvy.formulaide.fake.spies.SpyTemplates.Companion.spied
 import opensavvy.formulaide.remote.client.Forms
 import opensavvy.formulaide.remote.server.utils.TestClient
 import opensavvy.formulaide.remote.server.utils.createTestServer
-import opensavvy.formulaide.server.forms
 import opensavvy.formulaide.test.FormTestCases
 import opensavvy.formulaide.test.utils.TestClock.Companion.testClock
 

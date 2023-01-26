@@ -8,7 +8,6 @@ import opensavvy.formulaide.fake.spies.SpyDepartments.Companion.spied
 import opensavvy.formulaide.remote.client.Departments
 import opensavvy.formulaide.remote.server.utils.TestClient
 import opensavvy.formulaide.remote.server.utils.createTestServer
-import opensavvy.formulaide.server.departments
 import opensavvy.formulaide.test.DepartmentTestCases
 import org.junit.Rule
 

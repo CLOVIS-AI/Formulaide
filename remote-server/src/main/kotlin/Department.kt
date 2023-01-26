@@ -1,4 +1,4 @@
-package opensavvy.formulaide.server
+package opensavvy.formulaide.remote.server
 
 import io.ktor.server.auth.*
 import io.ktor.server.routing.*
@@ -6,7 +6,7 @@ import opensavvy.backbone.Ref.Companion.request
 import opensavvy.formulaide.core.Department
 import opensavvy.formulaide.remote.api
 import opensavvy.formulaide.remote.dto.DepartmentDto.Companion.toDto
-import opensavvy.formulaide.server.utils.authenticated
+import opensavvy.formulaide.remote.server.utils.authenticated
 import opensavvy.spine.Identified
 import opensavvy.spine.ktor.server.route
 import opensavvy.state.progressive.firstValue

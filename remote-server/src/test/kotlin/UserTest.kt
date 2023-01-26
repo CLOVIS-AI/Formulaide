@@ -10,7 +10,6 @@ import opensavvy.formulaide.fake.spies.SpyUsers.Companion.spied
 import opensavvy.formulaide.remote.client.Users
 import opensavvy.formulaide.remote.server.utils.TestClient
 import opensavvy.formulaide.remote.server.utils.createTestServer
-import opensavvy.formulaide.server.users
 import opensavvy.formulaide.test.UserTestCases
 import org.junit.Rule
 

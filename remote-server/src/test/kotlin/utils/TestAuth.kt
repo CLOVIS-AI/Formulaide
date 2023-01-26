@@ -8,7 +8,7 @@ import opensavvy.formulaide.core.Auth
 import opensavvy.formulaide.core.Auth.Companion.Anonymous
 import opensavvy.formulaide.core.Auth.Companion.currentAuth
 import opensavvy.formulaide.core.User
-import opensavvy.formulaide.server.AuthPrincipal
+import opensavvy.formulaide.remote.server.AuthPrincipal
 import opensavvy.formulaide.test.cases.TestUsers
 
 // Server config

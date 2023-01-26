@@ -4,7 +4,7 @@ import io.ktor.server.testing.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import opensavvy.formulaide.core.User
-import opensavvy.formulaide.server.configureServer
+import opensavvy.formulaide.remote.server.configureServer
 
 fun CoroutineScope.createTestServer(
 	users: User.Service? = null,
