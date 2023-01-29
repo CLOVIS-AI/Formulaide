@@ -11,6 +11,9 @@ FROM alpine:latest
 RUN apk add --no-cache openjdk17-jre-headless
 COPY --from=builder /home/server/extracted /opt/formulaide
 
+HEALTHCHECK --start-period=60s --interval=10s --timeout=3s \
+	CMD wget http://localhost:9000/ping
+
 WORKDIR /opt/formulaide
 EXPOSE 9000
 ENTRYPOINT [ "/opt/formulaide/bin/backend" ]
