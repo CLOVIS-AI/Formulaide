@@ -1,6 +1,7 @@
 package opensavvy.formulaide.core
 
 import arrow.core.continuations.EffectScope
+import opensavvy.backbone.Backbone
 import opensavvy.backbone.Ref.Companion.request
 import opensavvy.formulaide.core.Submission.Parsed
 import opensavvy.formulaide.core.utils.mapSuccess
@@ -19,6 +20,8 @@ private typealias MutableParsedData = MutableMap<Field.Id, Any>
  * It stores which [form] and [step][formStep] it relates to, as well as the answers in a flat [data structure][data].
  *
  * The [data] can be [parsed] into the [Parsed] class.
+ *
+ * Submissions are created as part of a [Record].
  */
 data class Submission(
 	/**
@@ -307,4 +310,11 @@ data class Submission(
 			}
 		}
 	}
+
+	data class Ref(
+		val id: String,
+		override val backbone: Service,
+	) : opensavvy.backbone.Ref<Submission>
+
+	interface Service : Backbone<Submission>
 }
