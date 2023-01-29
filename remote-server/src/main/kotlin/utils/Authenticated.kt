@@ -8,7 +8,7 @@ import opensavvy.formulaide.server.AuthPrincipal
 import opensavvy.spine.ktor.server.ResponseStateBuilder
 
 suspend fun <R> ResponseStateBuilder<*, *, *>.authenticated(block: suspend () -> R): R {
-	val auth = call.principal<AuthPrincipal>()?.auth ?: Auth.Anonymous
+	val auth = call.principal<AuthPrincipal>()?.auth ?: Auth.Guest
 
 	return withContext(
 		auth + CoroutineName("${auth.user?.id}(${auth.role})")

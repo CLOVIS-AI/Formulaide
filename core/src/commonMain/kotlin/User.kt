@@ -55,7 +55,7 @@ data class User(
 ) {
 
 	enum class Role {
-		Anonymous,
+		Guest,
 		Employee,
 		Administrator,
 		;
@@ -69,7 +69,7 @@ data class User(
 				}
 
 			@get:JvmName("getRoleNullable")
-			val User?.role get() = this?.role ?: Anonymous
+			val User?.role get() = this?.role ?: Guest
 		}
 	}
 

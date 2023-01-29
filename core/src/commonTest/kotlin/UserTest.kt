@@ -9,7 +9,7 @@ class UserTest {
 	@Test
 	@JsName("rolePrecedence")
 	fun `role precedence`() {
-		assertTrue(User.Role.Anonymous < User.Role.Employee)
+		assertTrue(User.Role.Guest < User.Role.Employee)
 		assertTrue(User.Role.Employee < User.Role.Administrator)
 	}
 

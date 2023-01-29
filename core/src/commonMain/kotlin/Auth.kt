@@ -53,7 +53,7 @@ data class Auth(
 
 	companion object {
 
-		val Anonymous = Auth(role = User.Role.Anonymous, user = null)
+		val Guest = Auth(role = User.Role.Guest, user = null)
 
 		//region Accessors
 
@@ -68,12 +68,12 @@ data class Auth(
 		/**
 		 * Accesses the authentication information for the current scope.
 		 *
-		 * If no authentication information is available, returns [Anonymous].
+		 * If no authentication information is available, returns [Guest].
 		 *
 		 * @see Auth
 		 */
 		suspend fun currentAuth(): Auth =
-			currentAuthOrNull() ?: Anonymous
+			currentAuthOrNull() ?: Guest
 
 		/**
 		 * Accesses the current user.
@@ -87,7 +87,7 @@ data class Auth(
 		/**
 		 * Accesses the role of the current user.
 		 *
-		 * If the current session is not authenticated, [User.Role.Anonymous] is returned.
+		 * If the current session is not authenticated, [User.Role.Guest] is returned.
 		 *
 		 * @see Auth
 		 * @see role
