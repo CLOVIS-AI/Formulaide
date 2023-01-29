@@ -17,7 +17,7 @@ import opensavvy.formulaide.fake.FakeDepartments
 import opensavvy.formulaide.fake.FakeForms
 import opensavvy.formulaide.fake.FakeTemplates
 import opensavvy.formulaide.fake.FakeUsers
-import opensavvy.formulaide.server.*
+import opensavvy.formulaide.remote.server.*
 import opensavvy.state.outcome.out
 import org.slf4j.event.Level
 

@@ -1,4 +1,4 @@
-package opensavvy.formulaide.server
+package opensavvy.formulaide.remote.server
 
 import io.ktor.server.auth.*
 import io.ktor.server.routing.*
@@ -10,7 +10,7 @@ import opensavvy.formulaide.core.data.Password
 import opensavvy.formulaide.core.data.Token
 import opensavvy.formulaide.remote.api
 import opensavvy.formulaide.remote.dto.UserDto
-import opensavvy.formulaide.server.utils.authenticated
+import opensavvy.formulaide.remote.server.utils.authenticated
 import opensavvy.spine.Identified
 import opensavvy.spine.ktor.server.route
 
