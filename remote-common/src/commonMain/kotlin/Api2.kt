@@ -106,7 +106,7 @@ class Api2 : Service("v2") {
 	val departments = DepartmentsEndpoint()
 
 	//endregion
-	//region
+	//region Users
 
 	/**
 	 * The user management endpoint: `v2/users`.
@@ -383,7 +383,7 @@ class Api2 : Service("v2") {
 	val templates = TemplatesEndpoint()
 
 	//endregion
-	//region Templates
+	//region Forms
 
 	/**
 	 * The form management endpoint: `v2/forms`.
