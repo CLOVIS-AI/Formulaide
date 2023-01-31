@@ -1,21 +1,18 @@
 package opensavvy.formulaide.remote
 
 import kotlinx.datetime.Instant
-import opensavvy.formulaide.core.Department
-import opensavvy.formulaide.core.Form
-import opensavvy.formulaide.core.Template
-import opensavvy.formulaide.core.User
+import opensavvy.formulaide.core.*
 import opensavvy.formulaide.remote.Api2.*
 import opensavvy.formulaide.remote.Api2.DepartmentsEndpoint.DepartmentEndpoint
 import opensavvy.formulaide.remote.Api2.FormsEndpoint.FormEndpoint
 import opensavvy.formulaide.remote.Api2.FormsEndpoint.FormEndpoint.FormVersionEndpoint
+import opensavvy.formulaide.remote.Api2.RecordsEndpoint.RecordEndpoint
+import opensavvy.formulaide.remote.Api2.SubmissionsEndpoint.SubmissionEndpoint
 import opensavvy.formulaide.remote.Api2.TemplatesEndpoint.TemplateEndpoint
 import opensavvy.formulaide.remote.Api2.TemplatesEndpoint.TemplateEndpoint.TemplateVersionEndpoint
 import opensavvy.formulaide.remote.Api2.UsersEndpoint.UserEndpoint
 import opensavvy.formulaide.remote.Api2.UsersEndpoint.UserEndpoint.*
-import opensavvy.formulaide.remote.dto.DepartmentDto
-import opensavvy.formulaide.remote.dto.SchemaDto
-import opensavvy.formulaide.remote.dto.UserDto
+import opensavvy.formulaide.remote.dto.*
 import opensavvy.spine.Id
 import opensavvy.spine.Parameters
 import opensavvy.spine.Route
@@ -35,6 +32,8 @@ val api = Api2()
  * - [Users][UsersEndpoint]
  * - [Templates][TemplatesEndpoint]
  * - [Forms][FormsEndpoint]
+ * - [Submissions][SubmissionsEndpoint]
+ * - [Records][RecordsEndpoint]
  */
 class Api2 : Service("v2") {
 
@@ -497,6 +496,109 @@ class Api2 : Service("v2") {
 	}
 
 	val forms = FormsEndpoint()
+
+	//endregion
+	//region Submissions and records
+
+	/**
+	 * The submissions management endpoint: `v2/submissions`.
+	 *
+	 * Submissions are managed through the [records][RecordsEndpoint] endpoint.
+	 *
+	 * ### Sub-resources
+	 *
+	 * - Access a specific submission: [SubmissionEndpoint]
+	 */
+	inner class SubmissionsEndpoint : StaticResource<Nothing, Parameters.Empty, Unit>("submissions") {
+
+		/**
+		 * The submission endpoint: `v2/submissions/{id}`.
+		 *
+		 * ### Get
+		 *
+		 * Accesses a specific submission.
+		 * - Response: [SubmissionDto]
+		 *
+		 * Authorization: employee
+		 */
+		inner class SubmissionEndpoint : DynamicResource<SubmissionDto, Unit>("submission") {
+
+			suspend fun refOf(id: Id, submissions: Submission.Service): Outcome<Submission.Ref> = out {
+				validateId(id, Unit)
+				Submission.Ref(id.resource.segments.last().segment, submissions)
+			}
+		}
+
+		val id = SubmissionEndpoint()
+	}
+
+	/**
+	 * The records management endpoint: `v2/records`.
+	 *
+	 * ### Put
+	 *
+	 * Searches for submissions.
+	 * - Body: list of [RecordDto.Criterion]
+	 * - Response: list of identifiers of found records
+	 *
+	 * Authorization: employee
+	 *
+	 * ### Create
+	 *
+	 * Creates a new submission to a form.
+	 * - Body: [SubmissionDto]
+	 * - Response: identifier of the created record and [SubmissionDto]
+	 *
+	 * You should ensure that the returned submission is identical to the one you sent.
+	 * If they are different, it means some provided fields were not recognized.
+	 *
+	 * Authorization:
+	 * - guest if the form is public,
+	 * - employee if the form is private.
+	 *
+	 * ### Sub-resources
+	 *
+	 * - Access individual records: [RecordEndpoint]
+	 */
+	inner class RecordsEndpoint : StaticResource<Nothing, Parameters.Empty, Unit>("records") {
+
+		val search = action<List<RecordDto.Criterion>, List<Id>, Parameters.Empty>(Route.Root)
+
+		val create = create<SubmissionDto, SubmissionDto, Parameters.Empty>()
+
+		/**
+		 * The record management endpoint: `v2/records`.
+		 *
+		 * ### Get
+		 *
+		 * Accesses detailed information about this record.
+		 * - Response: [RecordDto]
+		 *
+		 * Authorization: employee
+		 *
+		 * ### Put /advance
+		 *
+		 * Advances this record to another state.
+		 * - Body: [RecordDto.Diff]
+		 *
+		 * Authorization: employee
+		 */
+		inner class RecordEndpoint : DynamicResource<RecordDto, Unit>("record") {
+
+			suspend fun refOf(id: Id, records: Record.Service): Outcome<Record.Ref> = out {
+				validateId(id, Unit)
+				Record.Ref(id.resource.segments.last().segment, records)
+			}
+
+			val advance = action<RecordDto.Diff, Unit, Parameters.Empty>(Route / "advance")
+
+		}
+
+		val id = RecordEndpoint()
+	}
+
+	val submissions = SubmissionsEndpoint()
+	val records = RecordsEndpoint()
 
 	//endregion
 
