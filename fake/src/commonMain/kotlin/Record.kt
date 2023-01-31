@@ -22,7 +22,8 @@ class FakeRecords(
 	private val lock = Semaphore(1)
 	private val data = HashMap<String, Record>()
 
-	private val submissions = FakeSubmissions()
+	private val _submissions = FakeSubmissions()
+	val submissions: Submission.Service = _submissions
 
 	private fun toRef(id: String) = Record.Ref(id, this)
 
@@ -35,10 +36,10 @@ class FakeRecords(
 	override suspend fun create(submission: Submission): Outcome<Record.Ref> = out {
 		val id = newId()
 
-		val submissionRef = submissions.lock.withPermit {
+		val submissionRef = _submissions.lock.withPermit {
 			val subId = newId()
-			submissions.data[subId] = submission
-			submissions.toRef(subId)
+			_submissions.data[subId] = submission
+			_submissions.toRef(subId)
 		}
 
 		val now = clock.now()
