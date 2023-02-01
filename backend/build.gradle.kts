@@ -8,6 +8,8 @@ dependencies {
 	implementation(projects.fake)
 	implementation(projects.remoteServer)
 
+	implementation("opensavvy:logger:_")
+
 	implementation(Ktor.server)
 	implementation(Ktor.server.netty)
 	implementation(Ktor.server.callLogging)
@@ -22,5 +24,7 @@ dependencies {
 
 application {
 	mainClass.set("opensavvy.formulaide.backend.BackendKt")
-	applicationDefaultJvmArgs = listOf("-Dio.ktor.development=true")
+
+	if (project.hasProperty("developmentMode"))
+		applicationDefaultJvmArgs = listOf("-Dio.ktor.development=true")
 }
