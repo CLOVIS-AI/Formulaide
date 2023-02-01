@@ -10,7 +10,6 @@ dependencies {
 	implementation(projects.remoteCommon)
 	implementation("opensavvy:spine-ktor-server:_")
 
-	implementation(Ktor.server.auth)
 	implementation(Ktor.server.callLogging)
 	implementation(Ktor.server.contentNegotiation)
 	implementation(Ktor.plugins.serialization.kotlinx.json)
@@ -21,7 +20,6 @@ dependencies {
 	testImplementation(projects.remoteClient)
 	testImplementation(projects.fake)
 	testImplementation(Ktor.server.testHost)
-	testImplementation(Ktor.client.auth)
 	testImplementation(Ktor.client.logging)
 	testImplementation(Ktor.client.contentNegotiation)
 	testImplementation("ch.qos.logback:logback-classic:_")

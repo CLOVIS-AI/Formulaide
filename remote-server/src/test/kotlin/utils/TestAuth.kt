@@ -3,37 +3,47 @@ package opensavvy.formulaide.remote.server.utils
 import io.ktor.client.plugins.api.*
 import io.ktor.client.request.*
 import io.ktor.server.application.*
-import io.ktor.server.auth.*
+import kotlinx.coroutines.withContext
 import opensavvy.formulaide.core.Auth
 import opensavvy.formulaide.core.Auth.Companion.Guest
 import opensavvy.formulaide.core.Auth.Companion.currentAuth
 import opensavvy.formulaide.core.User
-import opensavvy.formulaide.remote.server.AuthPrincipal
 import opensavvy.formulaide.test.cases.TestUsers
 
 // Server config
 fun Application.configureTestAuthentication(additionalUsers: User.Service? = null) {
 	log.error("THIS SERVER IS CONFIGURED USING THE TEST AUTHENTICATION. THIS IS NOT SAFE FOR PRODUCTION. IF YOU SEE THIS MESSAGE IN YOUR LOGS, CHECK YOUR CONFIGURATION IMMEDIATELY.")
 
-	install(Authentication) {
-		bearer {
-			realm = "Formulaide 2.0"
+	intercept(ApplicationCallPipeline.Setup) {
+		// Authorization: Bearer <username>_<role>
 
-			authenticate { credentials ->
-				val (id, role) = credentials.token.split('_')
-				when (id) {
-					TestUsers.employeeAuth.user!!.id -> AuthPrincipal(TestUsers.employeeAuth)
-					TestUsers.administratorAuth.user!!.id -> AuthPrincipal(TestUsers.administratorAuth)
-					"guest" -> AuthPrincipal(Guest)
-					else -> {
-						if (additionalUsers != null) {
-							AuthPrincipal(Auth(User.Role.valueOf(role), User.Ref(id, additionalUsers)))
-						} else {
-							error("The user '${credentials.token}' is not one of the test users. The server is currently configured to only authenticate test users.")
-						}
-					}
+		val bearer = context.request.headers["Authorization"]
+			?.split(" ", limit = 2)
+			?.get(1)
+			?.split("_", limit = 2)
+
+		if (bearer == null) {
+			application.log.trace("No authorization header")
+			proceed()
+			return@intercept
+		}
+
+		val (id, role) = bearer
+		val auth = when (id) {
+			TestUsers.employeeAuth.user!!.id -> TestUsers.employeeAuth
+			TestUsers.administratorAuth.user!!.id -> TestUsers.administratorAuth
+			"guest" -> Guest
+			else -> {
+				if (additionalUsers != null) {
+					Auth(User.Role.valueOf(role), User.Ref(id, additionalUsers))
+				} else {
+					error("The user '${id}' is not one of the test users. The server is currently configured to only authenticate test users.")
 				}
 			}
+		}
+
+		withContext(auth) {
+			proceed()
 		}
 	}
 }
