@@ -13,10 +13,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import opensavvy.formulaide.core.Auth.Companion.currentRole
 import opensavvy.formulaide.core.Auth.Companion.currentUser
-import opensavvy.formulaide.fake.FakeDepartments
-import opensavvy.formulaide.fake.FakeForms
-import opensavvy.formulaide.fake.FakeTemplates
-import opensavvy.formulaide.fake.FakeUsers
+import opensavvy.formulaide.fake.*
 import opensavvy.formulaide.remote.server.*
 import org.slf4j.event.Level
 
@@ -35,6 +32,7 @@ fun Application.formulaide() {
 	val users = FakeUsers()
 	val templates = FakeTemplates(clock)
 	val forms = FakeForms(clock)
+	val records = FakeRecords(clock)
 
 	configureServer()
 
@@ -66,5 +64,6 @@ fun Application.formulaide() {
 		users(users, departments)
 		templates(templates)
 		forms(departments, templates, forms)
+		records(users, forms, records.submissions, records)
 	}
 }
