@@ -22,8 +22,10 @@
         <list>
           <option value="cleanAllTests" />
           <option value="remote-server:cleanTest" />
+          <option value="mongo:cleanTest" />
           <option value="allTests" />
           <option value="remote-server:test" />
+          <option value="mongo:test" />
         </list>
       </option>
       <option name="vmOptions" value="-ea" />

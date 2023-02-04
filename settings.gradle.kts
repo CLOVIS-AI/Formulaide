@@ -21,6 +21,8 @@ include(
 	"remote-client",
 	"remote-server",
 
+	"mongo",
+
 	"fake",
 	"test",
 )
