@@ -5,7 +5,7 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
 fun testDatabase() = Database(
-	hostname = "localhost",
+	hostname = if (System.getenv("CI") == null) "localhost" else "mongo",
 	port = "27017",
 	username = "root",
 	password = "development-password",

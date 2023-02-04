@@ -125,8 +125,15 @@ test-jvm:
   extends: [ .os.gradle ]
   needs: [ ]
 
+  services:
+    - mongo:latest
+
+  variables:
+    MONGO_INITDB_ROOT_USERNAME: "root"
+    MONGO_INITDB_ROOT_PASSWORD: "development-password"
+
   script:
-    - "./gradlew jvmTest backend:test remote-server:test koverMergedVerify koverMergedReport"
+    - "./gradlew jvmTest backend:test mongo:test remote-server:test koverMergedVerify koverMergedReport"
     - mkdir -p kover
     - mv build/reports/kover/merged/html/* kover
 
