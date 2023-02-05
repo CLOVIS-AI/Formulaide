@@ -40,7 +40,16 @@ class InputTest {
 			assertEquals(1, it)
 		}
 
+		assertSuccess(int.parse("-5")) {
+			assertEquals(-5, it)
+		}
+
+		assertSuccess(int.parse("5")) {
+			assertEquals(5, it)
+		}
+
 		assertInvalid(int.parse("-6"))
+		assertInvalid(int.parse("6"))
 		assertInvalid(int.parse("95"))
 	}
 
