@@ -9,8 +9,8 @@ services:
 
   server:
     ports:
-      - target: 8000
-        published: 8002
+      - target: 9000
+        published: 9002
         protocol: tcp
 
   proxy:
