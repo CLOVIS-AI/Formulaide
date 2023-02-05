@@ -46,6 +46,8 @@ class FakeTemplates(
 	override suspend fun create(name: String, firstVersion: Template.Version): Outcome<Template.Ref> = out {
 		ensureAdministrator()
 
+		firstVersion.field.validate().bind()
+
 		val now = clock.now()
 		val id = newId()
 
@@ -65,23 +67,24 @@ class FakeTemplates(
 	override suspend fun createVersion(
 		template: Template.Ref,
 		version: Template.Version,
-	): Outcome<Template.Version.Ref> =
-		out {
-			ensureAdministrator()
+	): Outcome<Template.Version.Ref> = out {
+		ensureAdministrator()
 
-			val now = clock.now()
-			val ref = _versions.toRef(template.id, now)
+		version.field.validate().bind()
 
-			lock.withPermit {
-				val value = templates[template.id]
-				ensureFound(value != null) { "Couldn't find template $template" }
+		val now = clock.now()
+		val ref = _versions.toRef(template.id, now)
 
-				_versions.versions[template.id to now] = version.copy(creationDate = now)
-				templates[template.id] = value.copy(versions = value.versions + ref)
-			}
+		lock.withPermit {
+			val value = templates[template.id]
+			ensureFound(value != null) { "Couldn't find template $template" }
 
-			ref
+			_versions.versions[template.id to now] = version.copy(creationDate = now)
+			templates[template.id] = value.copy(versions = value.versions + ref)
 		}
+
+		ref
+	}
 
 	override suspend fun edit(template: Template.Ref, name: String?, open: Boolean?): Outcome<Unit> = out {
 		ensureAdministrator()

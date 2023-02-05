@@ -10,16 +10,16 @@ import opensavvy.formulaide.core.*
 import opensavvy.formulaide.core.Field.Companion.group
 import opensavvy.formulaide.core.Field.Companion.input
 import opensavvy.formulaide.core.Field.Companion.label
+import opensavvy.formulaide.core.Field.Companion.labelFrom
 import opensavvy.formulaide.fake.FakeDepartments
+import opensavvy.formulaide.fake.FakeTemplates
 import opensavvy.formulaide.fake.spies.SpyDepartments.Companion.spied
-import opensavvy.formulaide.test.assertions.assertNotContains
-import opensavvy.formulaide.test.assertions.assertSuccess
-import opensavvy.formulaide.test.assertions.assertUnauthenticated
-import opensavvy.formulaide.test.assertions.assertUnauthorized
+import opensavvy.formulaide.test.assertions.*
 import opensavvy.formulaide.test.cases.TestCase
 import opensavvy.formulaide.test.cases.TestUsers.administratorAuth
 import opensavvy.formulaide.test.cases.TestUsers.employeeAuth
 import opensavvy.formulaide.test.utils.TestClock.Companion.currentInstant
+import opensavvy.formulaide.test.utils.TestClock.Companion.testClock
 import opensavvy.state.outcome.orThrow
 import kotlin.js.JsName
 import kotlin.test.*
@@ -336,6 +336,49 @@ abstract class FormTestCases : TestCase<Form.Service> {
 				assertContains(it.versions, versionRef, "The version we just created should be one of the two versions")
 			}
 		}
+	}
+
+	@Test
+	@JsName("createFormInvalidTemplate")
+	fun `cannot create a form with an invalid field import`() = runTest(administratorAuth) {
+		val forms = new()
+		val templates = FakeTemplates(testClock())
+		val dept = testDepartment(FakeDepartments())
+
+		val cities = testCityTemplate(templates).now()
+			.map { it.versions.first() }
+			.orThrow()
+
+		assertFails(
+			forms.create(
+				"Test",
+				"Initial version",
+				labelFrom(cities, "This field does not match the imported template at all"),
+				Form.Step(0, "Validation", dept, null),
+			)
+		)
+	}
+
+	@Test
+	@JsName("createFormVersionInvalidTemplate")
+	fun `cannot create a form version with an invalid field import`() = runTest(administratorAuth) {
+		val forms = new()
+		val templates = FakeTemplates(testClock())
+		val dept = testDepartment(FakeDepartments())
+
+		val cities = testCityTemplate(templates).now()
+			.map { it.versions.first() }
+			.orThrow()
+
+		val idea = testIdeaForm(forms, dept, dept)
+
+		assertFails(
+			idea.createVersion(
+				"New version",
+				labelFrom(cities, "This field does not match the imported template at all"),
+				Form.Step(0, "Validation", dept, null)
+			)
+		)
 	}
 
 	@Test

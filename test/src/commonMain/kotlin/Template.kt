@@ -12,6 +12,7 @@ import opensavvy.formulaide.core.Field.Companion.arity
 import opensavvy.formulaide.core.Field.Companion.group
 import opensavvy.formulaide.core.Field.Companion.input
 import opensavvy.formulaide.core.Field.Companion.label
+import opensavvy.formulaide.core.Field.Companion.labelFrom
 import opensavvy.formulaide.core.Input
 import opensavvy.formulaide.core.Template
 import opensavvy.formulaide.test.assertions.*
@@ -276,6 +277,45 @@ abstract class TemplateTestCases : TestCase<Template.Service> {
 				assertContains(it.versions, versionRef, "The version we just created should be one of the two versions")
 			}
 		}
+	}
+
+	@Test
+	@JsName("createTemplateInvalidTemplate")
+	fun `cannot create a template with an invalid field import`() = runTest(administratorAuth) {
+		val templates = new()
+
+		val cities = testCityTemplate(templates).now()
+			.map { it.versions.first() }
+			.orThrow()
+
+		assertInvalid(
+			templates.create(
+				"Test",
+				"Initial version",
+				labelFrom(cities, "This field does not match the imported template at all")
+			)
+		)
+	}
+
+	@Test
+	@JsName("createTemplateVersionInvalidTemplate")
+	fun `cannot create a template version with an invalid field import`() = runTest(administratorAuth) {
+		val templates = new()
+
+		val cities = testCityTemplate(templates)
+		val firstVersion = cities.now()
+			.map { it.versions.first() }
+			.orThrow()
+
+		assertInvalid(
+			cities.createVersion(
+				Template.Version(
+					currentInstant(),
+					"Second version",
+					labelFrom(firstVersion, "This field does not match the imported template at all")
+				)
+			)
+		)
 	}
 
 	@Test
