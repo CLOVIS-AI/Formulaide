@@ -46,7 +46,7 @@ allprojects {
 		plugins.apply("com.adarshr.test-logger")
 
 		testlogger {
-			theme = com.adarshr.gradle.testlogger.theme.ThemeType.MOCHA_PARALLEL
+			theme = com.adarshr.gradle.testlogger.theme.ThemeType.MOCHA
 		}
 	}
 }
