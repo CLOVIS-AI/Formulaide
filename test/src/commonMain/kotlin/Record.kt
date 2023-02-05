@@ -58,7 +58,7 @@ abstract class RecordTestCases : TestCase<Record.Service> {
 					assertEquals(null, initial.step)
 					assertEquals(null, initial.reason)
 					assertSuccess(initial.submission!!.now()) { submission ->
-						val parsed = submission.parse().orThrow()
+						val parsed = submission.copy(form = form.copy(backbone = forms.versions)).parse().orThrow()
 
 						assertEquals(true, parsed[Field.Id.root])
 					}

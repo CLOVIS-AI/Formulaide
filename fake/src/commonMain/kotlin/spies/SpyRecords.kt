@@ -29,4 +29,9 @@ class SpyRecords(private val upstream: Record.Service) : Record.Service {
 	override suspend fun directRequest(ref: Ref<Record>): Outcome<Record> = spy(
 		log, "directRequest", ref,
 	) { upstream.directRequest(ref) }
+
+	companion object {
+
+		fun Record.Service.spied() = SpyRecords(this)
+	}
 }

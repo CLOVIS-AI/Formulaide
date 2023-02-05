@@ -33,6 +33,7 @@ kotlin {
 		val commonTest by getting {
 			dependencies {
 				implementation(projects.test)
+				implementation(projects.fake)
 			}
 		}
 	}
