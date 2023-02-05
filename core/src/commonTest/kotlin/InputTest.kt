@@ -11,7 +11,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class InputText {
+class InputTest {
 
 	@Test
 	@JsName("textMaxSize")
