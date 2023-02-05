@@ -8,6 +8,7 @@ services:
       - ./database:/root/dump
 
   server:
+    pull_policy: always
     ports:
       - target: 9000
         published: 9002
