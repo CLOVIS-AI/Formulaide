@@ -38,6 +38,11 @@ sealed class Input {
 			require(effectiveMin < effectiveMax) { "La valeur minimale ($effectiveMin) doit être inférieure à la valeur maximale ($effectiveMax)" }
 		}
 
+		constructor(range: IntRange) : this(range.first.toLong(), range.last.toLong())
+		constructor(range: LongRange) : this(range.first, range.last)
+
+		val effectiveRange get() = effectiveMin..effectiveMax
+
 		override suspend fun parse(value: String) = out {
 			val long = value.toLongOrNull()
 			ensureValid(long != null) { "'$value' n'est pas un nombre valide" }

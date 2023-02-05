@@ -92,4 +92,23 @@ class InputTest {
 		assertInvalid(phone.parse("thing"))
 		assertInvalid(phone.parse("123456789123456789123456789"))
 	}
+
+	@Test
+	@JsName("intRangeConstructor")
+	fun `int range constructor`() {
+		assertEquals(Input.Integer(min = 0, max = 5), Input.Integer(0..5))
+	}
+
+	@Test
+	@JsName("longRangeConstructor")
+	fun `long range constructor`() {
+		assertEquals(Input.Integer(min = 0, max = 5), Input.Integer(0L..5L))
+	}
+
+	@Test
+	@JsName("longRangeAccessor")
+	fun `long range accessor`() {
+		assertEquals(0L..5L, Input.Integer(0L..5L).effectiveRange)
+	}
+
 }
