@@ -9,8 +9,8 @@ services:
 
   server:
     ports:
-      - target: 8000
-        published: 8001
+      - target: 9000
+        published: 9001
         protocol: tcp
     deploy:
       replicas: 1
