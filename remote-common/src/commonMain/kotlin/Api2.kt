@@ -567,7 +567,7 @@ class Api2 : Service("v2") {
 		val create = create<SubmissionDto, SubmissionDto, Parameters.Empty>()
 
 		/**
-		 * The record management endpoint: `v2/records`.
+		 * The record management endpoint: `v2/records/{id}`.
 		 *
 		 * ### Get
 		 *
