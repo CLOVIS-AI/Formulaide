@@ -14,6 +14,8 @@ sealed class Input {
 
 	abstract suspend fun parse(value: String): Outcome<Any>
 
+	abstract suspend fun validateCompatibleWith(source: Input): Outcome<Unit>
+
 	data class Text(
 		val maxLength: UInt? = null,
 	) : Input() {
@@ -22,6 +24,12 @@ sealed class Input {
 		override suspend fun parse(value: String) = out {
 			ensureValid(value.length <= effectiveMaxLength.toInt()) { "Le texte saisi fait plus de $effectiveMaxLength caractères : ${value.length}" }
 			value
+		}
+
+		override suspend fun validateCompatibleWith(source: Input): Outcome<Unit> = out {
+			ensureValid(source is Text) { "Impossible d'importer un texte à partir d'un ${source::class} (${this@Text} -> $source)" }
+
+			ensureValid(effectiveMaxLength <= source.effectiveMaxLength) { "Un texte importé ne peut pas autoriser une longueur ($effectiveMaxLength) plus élevée que celle de sa source (${source.effectiveMaxLength})" }
 		}
 
 		override fun toString() = "Texte (longueur maximale : $effectiveMaxLength)"
@@ -38,6 +46,11 @@ sealed class Input {
 			require(effectiveMin < effectiveMax) { "La valeur minimale ($effectiveMin) doit être inférieure à la valeur maximale ($effectiveMax)" }
 		}
 
+		constructor(range: IntRange) : this(range.first.toLong(), range.last.toLong())
+		constructor(range: LongRange) : this(range.first, range.last)
+
+		val effectiveRange get() = effectiveMin..effectiveMax
+
 		override suspend fun parse(value: String) = out {
 			val long = value.toLongOrNull()
 			ensureValid(long != null) { "'$value' n'est pas un nombre valide" }
@@ -46,6 +59,13 @@ sealed class Input {
 			ensureValid(long <= effectiveMax) { "$value est supérieur à la valeur maximale autorisée, $effectiveMax" }
 
 			long
+		}
+
+		override suspend fun validateCompatibleWith(source: Input): Outcome<Unit> = out {
+			ensureValid(source is Integer) { "Impossible d'importer un texte à partir d'un ${source::class} (${this@Integer} -> $source)" }
+
+			ensureValid(effectiveMin >= source.effectiveMin) { "Un nombre importé ne peut pas autoriser une valeur minimale ($effectiveMin) plus petite que celle de sa source (${source.effectiveMin})" }
+			ensureValid(effectiveMax <= source.effectiveMax) { "Un nombre importé ne peut pas autoriser une valeur maximale ($effectiveMax) plus grande que celle de sa source (${source.effectiveMax})" }
 		}
 
 		override fun toString() = "Nombre (de $effectiveMin à $effectiveMax)"
@@ -59,12 +79,20 @@ sealed class Input {
 			bool
 		}
 
+		override suspend fun validateCompatibleWith(source: Input): Outcome<Unit> = out {
+			ensureValid(source is Toggle) { "Impossible d'importer un booléen à partir d'un ${source::class} (${this@Toggle} -> $source)" }
+		}
+
 		override fun toString() = "Coche"
 	}
 
 	object Email : Input() {
 		override suspend fun parse(value: String) = out {
 			DataEmail(value)
+		}
+
+		override suspend fun validateCompatibleWith(source: Input): Outcome<Unit> = out {
+			ensureValid(source is Email) { "Impossible d'importer une adresse email à partir d'un ${source::class} (${this@Email} -> $source)" }
 		}
 
 		override fun toString() = "Adresse électronique"
@@ -81,6 +109,10 @@ sealed class Input {
 			value
 		}
 
+		override suspend fun validateCompatibleWith(source: Input): Outcome<Unit> = out {
+			ensureValid(source is Phone) { "Impossible d'importer un numéro de téléphone à partir d'un ${source::class} (${this@Phone} -> $source)" }
+		}
+
 		override fun toString() = "Numéro de téléphone"
 	}
 
@@ -89,12 +121,20 @@ sealed class Input {
 			LocalDate.parse(value)
 		}
 
+		override suspend fun validateCompatibleWith(source: Input): Outcome<Unit> = out {
+			ensureValid(source is Date) { "Impossible d'importer une date à partir d'un ${source::class} (${this@Date} -> $source)" }
+		}
+
 		override fun toString() = "Date"
 	}
 
 	object Time : Input() {
 		override suspend fun parse(value: String) = out {
 			LocalTime.parse(value)
+		}
+
+		override suspend fun validateCompatibleWith(source: Input): Outcome<Unit> = out {
+			ensureValid(source is Time) { "Impossible d'importer une heure à partir d'un ${source::class} (${this@Time} -> $source)" }
 		}
 
 		override fun toString() = "Heure"

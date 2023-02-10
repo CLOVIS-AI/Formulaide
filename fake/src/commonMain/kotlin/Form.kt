@@ -50,6 +50,8 @@ class FakeForms(
 	override suspend fun create(name: String, firstVersion: Form.Version): Outcome<Form.Ref> = out {
 		ensureAdministrator()
 
+		firstVersion.fields.forEach { it.validate().bind() }
+
 		val now = clock.now()
 		val id = newId()
 
@@ -69,6 +71,8 @@ class FakeForms(
 
 	override suspend fun createVersion(form: Form.Ref, version: Form.Version): Outcome<Form.Version.Ref> = out {
 		ensureAdministrator()
+
+		version.fields.forEach { it.validate().bind() }
 
 		val now = clock.now()
 		val ref = _versions.toRef(form.id, now)

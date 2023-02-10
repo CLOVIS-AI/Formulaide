@@ -1,5 +1,12 @@
 package opensavvy.formulaide.core
 
+import opensavvy.backbone.Ref.Companion.now
+import opensavvy.formulaide.core.Field.*
+import opensavvy.formulaide.core.Field.Input
+import opensavvy.state.outcome.Outcome
+import opensavvy.state.outcome.ensureValid
+import opensavvy.state.outcome.out
+
 private const val INDENT = "    "
 
 /**
@@ -67,8 +74,26 @@ sealed class Field {
 	 */
 	operator fun get(vararg id: Int) = get(Id(*id))
 
-	protected fun verify() {
+	protected fun validateSync() {
 		require(label.isNotBlank()) { "Le libellé d'un champ ne peut pas être vide : '$label'" }
+	}
+
+	protected abstract suspend fun validateCompatibleWith(source: Field): Outcome<Unit>
+
+	/**
+	 * Checks the validity of this field.
+	 */
+	suspend fun validate(): Outcome<Unit> = out {
+		validateSync()
+
+		importedFrom?.let { templateVersionRef ->
+			val version = templateVersionRef.now().bind()
+			val source = version.field
+
+			validateCompatibleWith(source).bind()
+		}
+
+		fields.forEach { it.validate().bind() }
 	}
 
 	protected abstract fun StringBuilder.toString(indent: String)
@@ -92,7 +117,11 @@ sealed class Field {
 			get() = emptyMap()
 
 		init {
-			verify()
+			validateSync()
+		}
+
+		override suspend fun validateCompatibleWith(source: Field): Outcome<Unit> = out {
+			ensureValid(source is Label) { "Impossible d'importer un label à partir d'un ${source::class} (${this@Label} -> $source)" }
 		}
 
 		override fun StringBuilder.toString(indent: String) {
@@ -116,7 +145,13 @@ sealed class Field {
 			get() = emptyMap()
 
 		init {
-			verify()
+			validateSync()
+		}
+
+		override suspend fun validateCompatibleWith(source: Field): Outcome<Unit> = out {
+			ensureValid(source is Input) { "Impossible d'importer une saisie à partir d'un ${source::class} (${this@Input} -> $source)" }
+
+			input.validateCompatibleWith(source.input).bind()
 		}
 
 		override fun StringBuilder.toString(indent: String) {
@@ -137,7 +172,20 @@ sealed class Field {
 	) : Field() {
 
 		init {
-			verify()
+			validateSync()
+		}
+
+		override suspend fun validateCompatibleWith(source: Field): Outcome<Unit> = out {
+			ensureValid(source is Choice) { "Impossible d'importer un choix à partir d'un ${source::class} (${this@Choice} -> $source)" }
+
+			// Each option of the imported field MUST exist in the source field
+			// However, the imported field is allowed to remove options from the source
+			for ((id, child) in indexedFields) {
+				val sourceChild = source.indexedFields[id]
+				ensureValid(sourceChild != null) { "Le champ importé ${this@Choice} ne peut pas ajouter une option à sa source, il n'est donc pas possible d'ajouter ${child.label} ($id)" }
+
+				child.validateCompatibleWith(sourceChild).bind()
+			}
 		}
 
 		override fun StringBuilder.toString(indent: String) {
@@ -167,7 +215,24 @@ sealed class Field {
 	) : Field() {
 
 		init {
-			verify()
+			validateSync()
+		}
+
+		override suspend fun validateCompatibleWith(source: Field): Outcome<Unit> = out {
+			ensureValid(source is Group) { "Impossible d'importer un groupe à partir d'un ${source::class} (${this@Group} -> $source)" }
+
+			// The subfields should exactly match with the source
+			for ((id, child) in indexedFields) {
+				val sourceChild = source.indexedFields[id]
+				ensureValid(sourceChild != null) { "Le champ importé ${this@Group} ne peut pas ajouter une réponse à sa source, il n'est donc pas possible d'ajouter ${child.label} ($id)" }
+
+				child.validateCompatibleWith(sourceChild).bind()
+			}
+
+			for ((id, sourceChild) in source.indexedFields) {
+				val child = indexedFields[id]
+				ensureValid(child != null) { "Le champ importé ${this@Group} ne peut pas supprimer une réponse de sa source, la réponse ${sourceChild.label} ($id) est manquante" }
+			}
 		}
 
 		override fun StringBuilder.toString(indent: String) {
@@ -198,7 +263,7 @@ sealed class Field {
 	) : Field() {
 
 		init {
-			verify()
+			validateSync()
 
 			// Answering the same field more than 100 times is probably a mistake
 			require(allowed.last < 100u) { "il n'est pas possible de répondre à un même champ plus de 100 fois, vous avez demandé ${allowed.last}" }
@@ -206,6 +271,15 @@ sealed class Field {
 
 		override val indexedFields: Map<Int, Field>
 			get() = List(allowed.last.toInt()) { it to child }.toMap()
+
+		override suspend fun validateCompatibleWith(source: Field): Outcome<Unit> = out {
+			ensureValid(source is Arity) { "Impossible d'importer un label à partir d'un ${source::class} (${this@Arity} -> $source)" }
+
+			ensureValid(allowed.first >= source.allowed.first) { "Le champ importé ${this@Arity} ne peut pas autoriser moins de réponses (minimum ${allowed.first}) que sa source (minimum ${source.allowed.first}), champ ${source.label}" }
+			ensureValid(allowed.last <= source.allowed.last) { "Le champ importé ${this@Arity} ne peut pas autoriser plus de réponses (maximum ${allowed.last}) que sa source (maximum ${source.allowed.last}), champ ${source.label}" }
+
+			child.validateCompatibleWith(source.child).bind()
+		}
 
 		override fun StringBuilder.toString(indent: String) {
 			append(label)
@@ -325,6 +399,14 @@ sealed class Field {
 			importedFrom = null,
 		)
 
+		fun labelFrom(
+			template: Template.Version.Ref,
+			label: String,
+		) = Label(
+			label,
+			importedFrom = template,
+		)
+
 		fun input(
 			label: String,
 			input: opensavvy.formulaide.core.Input,
@@ -332,6 +414,16 @@ sealed class Field {
 			label,
 			input,
 			importedFrom = null,
+		)
+
+		fun inputFrom(
+			template: Template.Version.Ref,
+			label: String,
+			input: opensavvy.formulaide.core.Input,
+		) = Input(
+			label,
+			input,
+			template,
 		)
 
 		fun choice(
@@ -343,6 +435,16 @@ sealed class Field {
 			importedFrom = null,
 		)
 
+		fun choiceFrom(
+			template: Template.Version.Ref,
+			label: String,
+			vararg fields: Pair<Int, Field>,
+		) = Choice(
+			label,
+			mapOf(*fields),
+			template,
+		)
+
 		fun group(
 			label: String,
 			vararg fields: Pair<Int, Field>,
@@ -350,6 +452,16 @@ sealed class Field {
 			label,
 			mapOf(*fields),
 			importedFrom = null,
+		)
+
+		fun groupFrom(
+			template: Template.Version.Ref,
+			label: String,
+			vararg fields: Pair<Int, Field>,
+		) = Group(
+			label,
+			mapOf(*fields),
+			template,
 		)
 
 		fun arity(
@@ -361,6 +473,18 @@ sealed class Field {
 			field,
 			range,
 			importedFrom = null,
+		)
+
+		fun arityFrom(
+			template: Template.Version.Ref,
+			label: String,
+			range: UIntRange,
+			field: Field,
+		) = Arity(
+			label,
+			field,
+			range,
+			template,
 		)
 
 		//endregion

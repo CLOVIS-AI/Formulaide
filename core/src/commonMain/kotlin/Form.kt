@@ -165,6 +165,18 @@ data class Form(
 		val stepsSorted by lazy(LazyThreadSafetyMode.PUBLICATION) { steps.sortedBy { it.id } }
 
 		/**
+		 * Finds all the fields in this version.
+		 */
+		val fields
+			get() = sequence {
+				yield(field)
+
+				for (step in steps)
+					if (step.field != null)
+						yield(step.field)
+			}
+
+		/**
 		 * Finds the field instance corresponding to [step].
 		 *
 		 * - If [step] is `null`, returns [Version.field]
