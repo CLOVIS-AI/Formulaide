@@ -27,6 +27,8 @@ kotlin {
 
 				api(KotlinX.coroutines.test)
 				api(KotlinX.coroutines.debug)
+
+				api(Testing.Kotest.assertions.core)
 			}
 		}
 
