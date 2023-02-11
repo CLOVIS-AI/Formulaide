@@ -10,7 +10,7 @@ import org.junit.jupiter.api.TestFactory
 import java.util.stream.Stream
 import kotlin.coroutines.CoroutineContext
 
-actual abstract class Executor actual constructor(private val name: String) {
+actual abstract class Executor {
 
 	actual abstract fun Suite.register()
 
@@ -19,7 +19,7 @@ actual abstract class Executor actual constructor(private val name: String) {
 	fun `dynamic tests`(): Stream<out DynamicNode> {
 		val suite = JvmSuite().apply { register() }
 
-		return Stream.of(DynamicContainer.dynamicContainer(name, suite.nodes))
+		return suite.nodes.stream()
 	}
 
 }

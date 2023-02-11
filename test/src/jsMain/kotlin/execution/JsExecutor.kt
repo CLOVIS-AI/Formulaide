@@ -11,14 +11,12 @@ import kotlin.test.assertTrue
 @JsNonModule
 private external val kTest: dynamic
 
-actual abstract class Executor actual constructor(name: String) {
+actual abstract class Executor {
 
 	init {
 		kTest.kotlin.test.suite(this::class.simpleName, false) {
-			kTest.kotlin.test.suite(name, false) {
-				@Suppress("LeakingThis") // it's on purpose!
-				JsSuite.register()
-			}
+			@Suppress("LeakingThis") // it's on purpose!
+			JsSuite.register()
 		}
 	}
 

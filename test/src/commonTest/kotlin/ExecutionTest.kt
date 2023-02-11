@@ -8,7 +8,7 @@ import kotlin.test.assertTrue
 
 @Suppress("unused")
 @OptIn(ExperimentalCoroutinesApi::class)
-class ExecutionTest : Executor("Test execution") {
+class ExecutionTest : Executor() {
 
 	override fun Suite.register() {
 		suite("test suite") {
