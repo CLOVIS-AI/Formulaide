@@ -1,5 +1,7 @@
 package opensavvy.formulaide.test
 
+import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldNotContain
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.advanceTimeBy
@@ -64,8 +66,8 @@ abstract class TemplateTestCases : TestCase<Template.Service> {
 	fun `guests cannot list templates`() = runTest {
 		val templates = new()
 
-		assertUnauthenticated(templates.list())
-		assertUnauthenticated(templates.list(includeClosed = true))
+		shouldNotBeAuthenticated(templates.list())
+		shouldNotBeAuthenticated(templates.list(includeClosed = true))
 	}
 
 	@Test
@@ -73,7 +75,7 @@ abstract class TemplateTestCases : TestCase<Template.Service> {
 	fun `guests cannot create templates`() = runTest {
 		val templates = new()
 
-		assertUnauthenticated(
+		shouldNotBeAuthenticated(
 			templates.create(
 				"A new template",
 				Template.Version(Clock.System.now(), "First version", label("field"))
@@ -88,7 +90,7 @@ abstract class TemplateTestCases : TestCase<Template.Service> {
 
 		val template = testCityTemplate(templates)
 
-		assertUnauthenticated(
+		shouldNotBeAuthenticated(
 			template.createVersion(
 				Template.Version(
 					Clock.System.now(),
@@ -106,9 +108,9 @@ abstract class TemplateTestCases : TestCase<Template.Service> {
 
 		val template = testCityTemplate(templates)
 
-		assertUnauthenticated(template.rename("New name"))
-		assertUnauthenticated(template.open())
-		assertUnauthenticated(template.close())
+		shouldNotBeAuthenticated(template.rename("New name"))
+		shouldNotBeAuthenticated(template.open())
+		shouldNotBeAuthenticated(template.close())
 	}
 
 	@Test
@@ -118,7 +120,7 @@ abstract class TemplateTestCases : TestCase<Template.Service> {
 
 		val template = testCityTemplate(templates)
 
-		assertUnauthenticated(template.now())
+		shouldNotBeAuthenticated(template.now())
 	}
 
 	//endregion
@@ -133,13 +135,13 @@ abstract class TemplateTestCases : TestCase<Template.Service> {
 		val second = testIdentityTemplate(templates)
 			.also { withContext(administratorAuth) { it.close().orThrow() } }
 
-		assertSuccess(templates.list(includeClosed = false)) {
-			assertContains(it, first)
-			assertNotContains(it, second)
+		templates.list(includeClosed = false) shouldSucceedAnd {
+			it shouldContain first
+			it shouldNotContain second
 		}
-		assertSuccess(templates.list(includeClosed = true)) {
-			assertContains(it, first)
-			assertContains(it, second)
+		templates.list(includeClosed = true) shouldSucceedAnd {
+			it shouldContain first
+			it shouldContain second
 		}
 	}
 
@@ -148,7 +150,7 @@ abstract class TemplateTestCases : TestCase<Template.Service> {
 	fun `employees cannot create templates`() = runTest(employeeAuth) {
 		val templates = new()
 
-		assertUnauthorized(
+		shouldNotBeAuthorized(
 			templates.create(
 				"A new template",
 				Template.Version(Clock.System.now(), "First version", label("field"))
@@ -163,7 +165,7 @@ abstract class TemplateTestCases : TestCase<Template.Service> {
 
 		val template = testCityTemplate(templates)
 
-		assertUnauthorized(
+		shouldNotBeAuthorized(
 			template.createVersion(
 				Template.Version(
 					Clock.System.now(),
@@ -181,9 +183,9 @@ abstract class TemplateTestCases : TestCase<Template.Service> {
 
 		val template = testCityTemplate(templates)
 
-		assertUnauthorized(template.rename("New name"))
-		assertUnauthorized(template.open())
-		assertUnauthorized(template.close())
+		shouldNotBeAuthorized(template.rename("New name"))
+		shouldNotBeAuthorized(template.open())
+		shouldNotBeAuthorized(template.close())
 	}
 
 	@Test
@@ -193,7 +195,7 @@ abstract class TemplateTestCases : TestCase<Template.Service> {
 
 		val template = testCityTemplate(templates)
 
-		assertSuccess(template.now())
+		shouldSucceed(template.now())
 	}
 
 	//endregion
@@ -206,22 +208,20 @@ abstract class TemplateTestCases : TestCase<Template.Service> {
 		val testStart = currentInstant()
 		advanceTimeBy(10)
 
-		assertSuccess(
-			templates.create(
-				"An example template",
-				Template.Version(
-					Instant.DISTANT_PAST,
-					"First version",
-					label("The field"),
-				)
+		templates.create(
+			"An example template",
+			Template.Version(
+				Instant.DISTANT_PAST,
+				"First version",
+				label("The field"),
 			)
-		) { ref ->
-			assertSuccess(ref.now()) {
+		).shouldSucceedAnd { ref ->
+			ref.now().shouldSucceedAnd {
 				assertEquals("An example template", it.name)
 				assertTrue(it.open)
 				assertEquals(1, it.versions.size)
 
-				assertSuccess(it.versions.first().now()) { version ->
+				it.versions.first().now().shouldSucceedAnd { version ->
 					assertEquals("First version", version.title)
 					assertTrue(
 						testStart < version.creationDate,
@@ -249,16 +249,14 @@ abstract class TemplateTestCases : TestCase<Template.Service> {
 
 		delay(10)
 
-		assertSuccess(
-			cities.createVersion(
-				Template.Version(
-					Instant.DISTANT_PAST,
-					"Second version",
-					label("Other field")
-				)
+		cities.createVersion(
+			Template.Version(
+				Instant.DISTANT_PAST,
+				"Second version",
+				label("Other field")
 			)
-		) { versionRef ->
-			assertSuccess(versionRef.now()) { version ->
+		).shouldSucceedAnd { versionRef ->
+			versionRef.now().shouldSucceedAnd { version ->
 				assertEquals("Second version", version.title)
 				assertTrue(
 					testStart < version.creationDate,
@@ -272,7 +270,7 @@ abstract class TemplateTestCases : TestCase<Template.Service> {
 				assertEquals(label("Other field"), version.field)
 			}
 
-			assertSuccess(cities.now()) {
+			cities.now().shouldSucceedAnd {
 				assertEquals(2, it.versions.size, "Expected two versions, found ${it.versions}")
 				assertContains(it.versions, versionRef, "The version we just created should be one of the two versions")
 			}
@@ -288,7 +286,7 @@ abstract class TemplateTestCases : TestCase<Template.Service> {
 			.map { it.versions.first() }
 			.orThrow()
 
-		assertInvalid(
+		shouldBeInvalid(
 			templates.create(
 				"Test",
 				"Initial version",
@@ -307,7 +305,7 @@ abstract class TemplateTestCases : TestCase<Template.Service> {
 			.map { it.versions.first() }
 			.orThrow()
 
-		assertInvalid(
+		shouldBeInvalid(
 			cities.createVersion(
 				Template.Version(
 					currentInstant(),
@@ -325,15 +323,15 @@ abstract class TemplateTestCases : TestCase<Template.Service> {
 
 		val cities = testCityTemplate(templates)
 
-		assertSuccess(cities.close())
-		assertSuccess(cities.now()) { assertFalse(it.open) }
-		assertSuccess(templates.list(includeClosed = false)) { assertNotContains(it, cities) }
-		assertSuccess(templates.list(includeClosed = true)) { assertContains(it, cities) }
+		shouldSucceed(cities.close())
+		cities.now().shouldSucceedAnd { assertFalse(it.open) }
+		templates.list(includeClosed = false).shouldSucceedAnd { it shouldNotContain cities }
+		templates.list(includeClosed = true).shouldSucceedAnd { it shouldContain cities }
 
-		assertSuccess(cities.open())
-		assertSuccess(cities.now()) { assertTrue(it.open) }
-		assertSuccess(templates.list(includeClosed = false)) { assertContains(it, cities) }
-		assertSuccess(templates.list(includeClosed = true)) { assertContains(it, cities) }
+		shouldSucceed(cities.open())
+		cities.now().shouldSucceedAnd { assertTrue(it.open) }
+		templates.list(includeClosed = false).shouldSucceedAnd { it shouldContain cities }
+		templates.list(includeClosed = true).shouldSucceedAnd { it shouldContain cities }
 	}
 
 	@Test
@@ -343,8 +341,8 @@ abstract class TemplateTestCases : TestCase<Template.Service> {
 
 		val cities = testCityTemplate(templates)
 
-		assertSuccess(cities.rename("Alternative cities"))
-		assertSuccess(cities.now()) {
+		shouldSucceed(cities.rename("Alternative cities"))
+		cities.now().shouldSucceedAnd {
 			assertEquals("Alternative cities", it.name)
 		}
 	}

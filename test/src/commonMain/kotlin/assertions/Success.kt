@@ -3,49 +3,93 @@
 package opensavvy.formulaide.test.assertions
 
 import arrow.core.Either
+import arrow.core.continuations.EffectScope
+import arrow.core.continuations.either
+import io.kotest.assertions.withClue
+import io.kotest.matchers.shouldBe
 import opensavvy.state.Failure
 import opensavvy.state.outcome.Outcome
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
-import kotlin.test.assertEquals
-import kotlin.test.assertIs
+import kotlin.js.JsName
+import kotlin.jvm.JvmName
 
 @OptIn(ExperimentalContracts::class)
-inline fun <T> assertSuccess(actual: Outcome<T>, assertions: (T) -> Unit = {}): T {
+fun <T> shouldSucceed(outcome: Outcome<T>): T {
 	contract {
-		returns() implies (actual is Either.Right<T>)
+		returns() implies (outcome is Either.Right<T>)
 	}
 
-	assertIs<Either.Right<T>>(actual, (actual as? Either.Left)?.value?.toString())
-	assertions(actual.value)
+	withClue({ "Expected a successful result, but failed with ${(outcome as Either.Left).value}" }) {
+		outcome::class shouldBe Either.Right::class
+	}
 
-	return actual.value
+	outcome as Either.Right // tested by the previous test case
+
+	return outcome.value
+}
+
+@JvmName("shouldSucceedWithReceiver")
+@JsName("shouldSucceedWithReceiver")
+@OptIn(ExperimentalContracts::class)
+fun <T> Outcome<T>.shouldSucceed(): T {
+	contract {
+		returns() implies (this@shouldSucceed is Either.Right<T>)
+	}
+
+	return shouldSucceed(this)
 }
 
 @OptIn(ExperimentalContracts::class)
-fun <T> assertFails(actual: Outcome<T>, message: String? = null): Failure {
+inline infix fun <T> Outcome<T>.shouldSucceedAnd(assertions: (T) -> Unit): T {
 	contract {
-		returns() implies (actual is Either.Left<Failure>)
+		returns() implies (this@shouldSucceedAnd is Either.Right<T>)
 	}
 
-	val fullMessage = buildString {
-		append(actual)
+	val value = shouldSucceed(this)
 
-		if (message != null)
-			append(". $message")
+	withClue({ value }) {
+		assertions(value)
 	}
 
-	assertIs<Either.Left<Failure>>(actual, fullMessage)
-
-	return actual.value
+	return value
 }
 
-private fun <T> assertFailureKind(actual: Outcome<T>, kind: Failure.Kind) {
-	assertFails(actual, "Expected $kind")
-	assertEquals(kind, actual.value.kind, "Result: $actual")
+@OptIn(ExperimentalContracts::class)
+fun <T> Outcome<T>.shouldFail(): Failure {
+	contract {
+		returns() implies (this@shouldFail is Either.Left<Failure>)
+	}
+
+	this::class shouldBe Either.Left::class
+
+	this as Either.Left
+
+	return value
 }
 
-fun <T> assertInvalid(actual: Outcome<T>) = assertFailureKind(actual, Failure.Kind.Invalid)
-fun <T> assertUnauthenticated(actual: Outcome<T>) = assertFailureKind(actual, Failure.Kind.Unauthenticated)
-fun <T> assertUnauthorized(actual: Outcome<T>) = assertFailureKind(actual, Failure.Kind.Unauthorized)
-fun <T> assertNotFound(actual: Outcome<T>) = assertFailureKind(actual, Failure.Kind.NotFound)
+infix fun <T> Outcome<T>.shouldFailWith(kind: Failure.Kind) {
+	withClue({ "Result: $this" }) {
+		withClue({ "Expected to fail with $kind" }) {
+			shouldFail()
+			kind shouldBe value.kind
+		}
+	}
+}
+
+fun <T> shouldBeInvalid(outcome: Outcome<T>) = outcome shouldFailWith Failure.Kind.Invalid
+fun <T> shouldNotBeAuthenticated(outcome: Outcome<T>) = outcome shouldFailWith Failure.Kind.Unauthenticated
+fun <T> shouldNotBeAuthorized(outcome: Outcome<T>) = outcome shouldFailWith Failure.Kind.Unauthorized
+fun <T> shouldNotBeFound(outcome: Outcome<T>) = outcome shouldFailWith Failure.Kind.NotFound
+
+suspend fun <T> shouldBeInvalid(block: suspend EffectScope<Failure>.() -> T) =
+	either { block() } shouldFailWith Failure.Kind.Invalid
+
+suspend fun <T> shouldNotBeAuthenticated(block: suspend EffectScope<Failure>.() -> T) =
+	shouldNotBeAuthenticated(either { block() })
+
+suspend fun <T> shouldNotBeAuthorized(block: suspend EffectScope<Failure>.() -> T) =
+	shouldNotBeAuthorized(either { block() })
+
+suspend fun <T> shouldNotBeFound(block: suspend EffectScope<Failure>.() -> T) =
+	shouldNotBeFound(either { block() })

@@ -9,7 +9,7 @@ import opensavvy.formulaide.core.Record
 import opensavvy.formulaide.core.Submission
 import opensavvy.formulaide.fake.FakeDepartments
 import opensavvy.formulaide.fake.FakeForms
-import opensavvy.formulaide.test.assertions.assertSuccess
+import opensavvy.formulaide.test.assertions.shouldSucceedAnd
 import opensavvy.formulaide.test.cases.TestCase
 import opensavvy.formulaide.test.cases.TestUsers.employeeAuth
 import opensavvy.formulaide.test.utils.TestClock.Companion.testClock
@@ -39,32 +39,30 @@ abstract class RecordTestCases : TestCase<Record.Service> {
 				.first()
 		}
 
-		assertSuccess(
-			records.create(
-				Submission(
-					form = form,
-					formStep = null,
-					data = mapOf(
-						Field.Id.root to "true",
-					)
+		records.create(
+			Submission(
+				form = form,
+				formStep = null,
+				data = mapOf(
+					Field.Id.root to "true",
 				)
 			)
-		) { ref ->
+		).shouldSucceedAnd { ref ->
 			withContext(employeeAuth) {
-				assertSuccess(ref.now()) {
+				ref.now().shouldSucceedAnd {
 					val initial = it.historySorted.first()
 
 					assertEquals(null, initial.author)
 					assertEquals(null, initial.step)
 					assertEquals(null, initial.reason)
-					assertSuccess(initial.submission!!.now()) { submission ->
+					initial.submission!!.now().shouldSucceedAnd { submission ->
 						val parsed = submission.copy(form = form.copy(backbone = forms.versions)).parse().orThrow()
 
 						assertEquals(true, parsed[Field.Id.root])
 					}
 				}
 
-				assertSuccess(records.search(emptyList())) {
+				records.search(emptyList()).shouldSucceedAnd {
 					assertContains(it, ref)
 				}
 			}

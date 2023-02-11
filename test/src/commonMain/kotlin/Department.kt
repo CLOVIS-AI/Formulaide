@@ -1,5 +1,7 @@
 package opensavvy.formulaide.test
 
+import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldNotContain
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
@@ -12,7 +14,6 @@ import opensavvy.formulaide.test.cases.TestUsers.employeeAuth
 import opensavvy.state.outcome.orThrow
 import kotlin.js.JsName
 import kotlin.test.Test
-import kotlin.test.assertContains
 import kotlin.test.assertEquals
 
 //region Test data
@@ -42,7 +43,7 @@ abstract class DepartmentTestCases : TestCase<Department.Service> {
 	fun `employees cannot create departments`() = runTest(employeeAuth) {
 		val departments = new()
 
-		assertUnauthorized(departments.create("A new department"))
+		shouldNotBeAuthorized(departments.create("A new department"))
 	}
 
 	@Test
@@ -50,8 +51,8 @@ abstract class DepartmentTestCases : TestCase<Department.Service> {
 	fun `administrators can create departments`() = runTest(administratorAuth) {
 		val departments = new()
 
-		val ref = assertSuccess(departments.create("A new department"))
-		val department = assertSuccess(ref.now())
+		val ref = shouldSucceed(departments.create("A new department"))
+		val department = shouldSucceed(ref.now())
 
 		assertEquals("A new department", department.name)
 		assertEquals(true, department.open)
@@ -64,14 +65,14 @@ abstract class DepartmentTestCases : TestCase<Department.Service> {
 		val open = testOpenDepartment(departments)
 		val closed = testClosedDepartment(departments)
 
-		val results = assertSuccess(departments.list(includeClosed = false))
-		assertContains(results, open)
-		assertNotContains(results, closed)
+		val results = shouldSucceed(departments.list(includeClosed = false))
+		results shouldContain open
+		results shouldNotContain closed
 
-		assertUnauthorized(departments.list(includeClosed = true))
+		shouldNotBeAuthorized(departments.list(includeClosed = true))
 
-		assertSuccess(open.now())
-		assertNotFound(closed.now())
+		shouldSucceed(open.now())
+		shouldNotBeFound(closed.now())
 	}
 
 	@Test
@@ -81,10 +82,10 @@ abstract class DepartmentTestCases : TestCase<Department.Service> {
 		val open = testOpenDepartment(departments)
 		val closed = testClosedDepartment(departments)
 
-		assertUnauthenticated(departments.list(includeClosed = false))
-		assertUnauthenticated(departments.list(includeClosed = true))
-		assertUnauthenticated(open.now())
-		assertUnauthenticated(closed.now())
+		shouldNotBeAuthenticated(departments.list(includeClosed = false))
+		shouldNotBeAuthenticated(departments.list(includeClosed = true))
+		shouldNotBeAuthenticated(open.now())
+		shouldNotBeAuthenticated(closed.now())
 	}
 
 	@Test
@@ -94,16 +95,16 @@ abstract class DepartmentTestCases : TestCase<Department.Service> {
 		val open = testOpenDepartment(departments)
 		val closed = testClosedDepartment(departments)
 
-		val resultsOpen = assertSuccess(departments.list(includeClosed = false))
-		assertContains(resultsOpen, open)
-		assertNotContains(resultsOpen, closed)
+		val resultsOpen = shouldSucceed(departments.list(includeClosed = false))
+		resultsOpen shouldContain open
+		resultsOpen shouldNotContain closed
 
-		val resultsAll = assertSuccess(departments.list(includeClosed = true))
-		assertContains(resultsAll, open)
-		assertContains(resultsOpen, open)
+		val resultsAll = shouldSucceed(departments.list(includeClosed = true))
+		resultsAll shouldContain open
+		resultsAll shouldContain closed
 
-		assertSuccess(open.now())
-		assertSuccess(closed.now())
+		shouldSucceed(open.now())
+		shouldSucceed(closed.now())
 	}
 
 	@Test
@@ -112,13 +113,13 @@ abstract class DepartmentTestCases : TestCase<Department.Service> {
 		val departments = new()
 		val dept = testDepartment(departments)
 
-		assertUnauthorized(dept.close())
-		assertSuccess(dept.now()).apply {
+		shouldNotBeAuthorized(dept.close())
+		shouldSucceed(dept.now()).apply {
 			assertEquals(true, open)
 		}
 
-		assertUnauthorized(dept.open())
-		assertSuccess(dept.now()).apply {
+		shouldNotBeAuthorized(dept.open())
+		shouldSucceed(dept.now()).apply {
 			assertEquals(true, open)
 		}
 	}
@@ -129,13 +130,13 @@ abstract class DepartmentTestCases : TestCase<Department.Service> {
 		val departments = new()
 		val dept = testDepartment(departments)
 
-		assertSuccess(dept.close())
-		assertSuccess(dept.now()).apply {
+		shouldSucceed(dept.close())
+		shouldSucceed(dept.now()).apply {
 			assertEquals(false, open)
 		}
 
-		assertSuccess(dept.open())
-		assertSuccess(dept.now()).apply {
+		shouldSucceed(dept.open())
+		shouldSucceed(dept.now()).apply {
 			assertEquals(true, open)
 		}
 	}

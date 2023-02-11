@@ -1,5 +1,7 @@
 package opensavvy.formulaide.test
 
+import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldNotContain
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
@@ -99,9 +101,9 @@ abstract class FormTestCases : TestCase<Form.Service> {
 		val private = testSimpleForm(forms, dept)
 		val public = testIdeaForm(forms, dept, dept)
 
-		assertSuccess(forms.list()) {
-			assertContains(it, public)
-			assertNotContains(it, private)
+		forms.list().shouldSucceedAnd {
+			it shouldContain public
+			it shouldNotContain private
 		}
 	}
 
@@ -110,7 +112,7 @@ abstract class FormTestCases : TestCase<Form.Service> {
 	fun `guests cannot list closed forms`() = runTest {
 		val forms = new()
 
-		assertUnauthenticated(forms.list(includeClosed = true))
+		shouldNotBeAuthenticated(forms.list(includeClosed = true))
 	}
 
 	@Test
@@ -122,7 +124,7 @@ abstract class FormTestCases : TestCase<Form.Service> {
 		val private = testSimpleForm(forms, dept)
 		val public = testIdeaForm(forms, dept, dept)
 
-		assertSuccess(forms.list()) {
+		forms.list().shouldSucceedAnd {
 			assertContains(it, public)
 			assertContains(it, private)
 		}
@@ -139,7 +141,7 @@ abstract class FormTestCases : TestCase<Form.Service> {
 		val public = testIdeaForm(forms, dept, dept)
 			.also { withContext(administratorAuth) { it.close().orThrow() } }
 
-		assertSuccess(forms.list(includeClosed = true)) {
+		forms.list(includeClosed = true).shouldSucceedAnd {
 			assertContains(it, private)
 			assertContains(it, public)
 		}
@@ -152,7 +154,7 @@ abstract class FormTestCases : TestCase<Form.Service> {
 
 		val dept = testDepartment(FakeDepartments().spied())
 
-		assertUnauthenticated(
+		shouldNotBeAuthenticated(
 			forms.create(
 				"A new form",
 				"Initial version",
@@ -169,7 +171,7 @@ abstract class FormTestCases : TestCase<Form.Service> {
 
 		val dept = testDepartment(FakeDepartments().spied())
 
-		assertUnauthorized(
+		shouldNotBeAuthorized(
 			forms.create(
 				"A new form",
 				"Initial version",
@@ -187,7 +189,7 @@ abstract class FormTestCases : TestCase<Form.Service> {
 		val dept = testDepartment(FakeDepartments().spied())
 		val form = testSimpleForm(forms, dept)
 
-		assertUnauthenticated(
+		shouldNotBeAuthenticated(
 			form.createVersion(
 				"Title",
 				label("Field"),
@@ -209,7 +211,7 @@ abstract class FormTestCases : TestCase<Form.Service> {
 		val dept = testDepartment(FakeDepartments().spied())
 		val form = testSimpleForm(forms, dept)
 
-		assertUnauthorized(
+		shouldNotBeAuthorized(
 			form.createVersion(
 				"Title",
 				label("Field"),
@@ -231,11 +233,11 @@ abstract class FormTestCases : TestCase<Form.Service> {
 		val dept = testDepartment(FakeDepartments().spied())
 		val form = testSimpleForm(forms, dept)
 
-		assertUnauthenticated(form.rename("New name"))
-		assertUnauthenticated(form.open())
-		assertUnauthenticated(form.close())
-		assertUnauthenticated(form.publicize())
-		assertUnauthenticated(form.privatize())
+		shouldNotBeAuthenticated(form.rename("New name"))
+		shouldNotBeAuthenticated(form.open())
+		shouldNotBeAuthenticated(form.close())
+		shouldNotBeAuthenticated(form.publicize())
+		shouldNotBeAuthenticated(form.privatize())
 	}
 
 	@Test
@@ -246,11 +248,11 @@ abstract class FormTestCases : TestCase<Form.Service> {
 		val dept = testDepartment(FakeDepartments().spied())
 		val form = testSimpleForm(forms, dept)
 
-		assertUnauthorized(form.rename("New name"))
-		assertUnauthorized(form.open())
-		assertUnauthorized(form.close())
-		assertUnauthorized(form.publicize())
-		assertUnauthorized(form.privatize())
+		shouldNotBeAuthorized(form.rename("New name"))
+		shouldNotBeAuthorized(form.open())
+		shouldNotBeAuthorized(form.close())
+		shouldNotBeAuthorized(form.publicize())
+		shouldNotBeAuthorized(form.privatize())
 	}
 
 	//endregion
@@ -264,25 +266,23 @@ abstract class FormTestCases : TestCase<Form.Service> {
 		val testStart = currentInstant()
 		advanceTimeBy(10)
 
-		assertSuccess(
-			forms.create(
-				"An example form",
-				"First version",
-				label("The field"),
-				Form.Step(
-					0,
-					"Validation",
-					dept,
-					null,
-				)
+		forms.create(
+			"An example form",
+			"First version",
+			label("The field"),
+			Form.Step(
+				0,
+				"Validation",
+				dept,
+				null,
 			)
-		) { ref ->
-			assertSuccess(ref.now()) {
+		).shouldSucceedAnd { ref ->
+			ref.now().shouldSucceedAnd {
 				assertEquals("An example form", it.name)
 				assertTrue(it.open)
 				assertFalse(it.public)
 
-				assertSuccess(it.versions.first().now()) { version ->
+				it.versions.first().now().shouldSucceedAnd { version ->
 					assertEquals("First version", version.title)
 					assertTrue(
 						testStart < version.creationDate,
@@ -310,14 +310,12 @@ abstract class FormTestCases : TestCase<Form.Service> {
 		val idea = testIdeaForm(forms, dept, dept)
 		advanceTimeBy(10)
 
-		assertSuccess(
-			idea.createVersion(
-				"Second version",
-				label("Other field"),
-				Form.Step(0, "Validation", dept, null)
-			)
-		) { versionRef ->
-			assertSuccess(versionRef.now()) { version ->
+		idea.createVersion(
+			"Second version",
+			label("Other field"),
+			Form.Step(0, "Validation", dept, null)
+		).shouldSucceedAnd { versionRef ->
+			versionRef.now().shouldSucceedAnd { version ->
 				assertEquals("Second version", version.title)
 				assertTrue(
 					testStart < version.creationDate,
@@ -331,7 +329,7 @@ abstract class FormTestCases : TestCase<Form.Service> {
 				assertEquals(label("Other field"), version.field)
 			}
 
-			assertSuccess(idea.now()) {
+			idea.now().shouldSucceedAnd {
 				assertEquals(2, it.versions.size, "Expected two versions, found ${it.versions}")
 				assertContains(it.versions, versionRef, "The version we just created should be one of the two versions")
 			}
@@ -349,14 +347,12 @@ abstract class FormTestCases : TestCase<Form.Service> {
 			.map { it.versions.first() }
 			.orThrow()
 
-		assertFails(
-			forms.create(
-				"Test",
-				"Initial version",
-				labelFrom(cities, "This field does not match the imported template at all"),
-				Form.Step(0, "Validation", dept, null),
-			)
-		)
+		forms.create(
+			"Test",
+			"Initial version",
+			labelFrom(cities, "This field does not match the imported template at all"),
+			Form.Step(0, "Validation", dept, null),
+		).shouldFail()
 	}
 
 	@Test
@@ -372,13 +368,11 @@ abstract class FormTestCases : TestCase<Form.Service> {
 
 		val idea = testIdeaForm(forms, dept, dept)
 
-		assertFails(
-			idea.createVersion(
-				"New version",
-				labelFrom(cities, "This field does not match the imported template at all"),
-				Form.Step(0, "Validation", dept, null)
-			)
-		)
+		idea.createVersion(
+			"New version",
+			labelFrom(cities, "This field does not match the imported template at all"),
+			Form.Step(0, "Validation", dept, null)
+		).shouldFail()
 	}
 
 	@Test
@@ -389,15 +383,15 @@ abstract class FormTestCases : TestCase<Form.Service> {
 
 		val idea = testIdeaForm(forms, dept, dept)
 
-		assertSuccess(idea.close())
-		assertSuccess(idea.now()) { assertFalse(it.open) }
-		assertSuccess(forms.list(includeClosed = false)) { assertNotContains(it, idea) }
-		assertSuccess(forms.list(includeClosed = true)) { assertContains(it, idea) }
+		shouldSucceed(idea.close())
+		idea.now().shouldSucceedAnd { assertFalse(it.open) }
+		forms.list(includeClosed = false).shouldSucceedAnd { it shouldNotContain idea }
+		forms.list(includeClosed = true).shouldSucceedAnd { it shouldContain idea }
 
-		assertSuccess(idea.open())
-		assertSuccess(idea.now()) { assertTrue(it.open) }
-		assertSuccess(forms.list(includeClosed = false)) { assertContains(it, idea) }
-		assertSuccess(forms.list(includeClosed = true)) { assertContains(it, idea) }
+		shouldSucceed(idea.open())
+		idea.now().shouldSucceedAnd { assertTrue(it.open) }
+		forms.list(includeClosed = false).shouldSucceedAnd { it shouldContain idea }
+		forms.list(includeClosed = true).shouldSucceedAnd { it shouldContain idea }
 	}
 
 	@Test
@@ -408,13 +402,13 @@ abstract class FormTestCases : TestCase<Form.Service> {
 
 		val idea = testIdeaForm(forms, dept, dept)
 
-		assertSuccess(idea.privatize())
-		assertSuccess(idea.now()) { assertFalse(it.public) }
-		assertSuccess(forms.list()) { assertContains(it, idea) }
+		shouldSucceed(idea.privatize())
+		idea.now().shouldSucceedAnd { assertFalse(it.public) }
+		forms.list().shouldSucceedAnd { assertContains(it, idea) }
 
-		assertSuccess(idea.publicize())
-		assertSuccess(idea.now()) { assertTrue(it.public) }
-		assertSuccess(forms.list()) { assertContains(it, idea) }
+		shouldSucceed(idea.publicize())
+		idea.now().shouldSucceedAnd { assertTrue(it.public) }
+		forms.list().shouldSucceedAnd { assertContains(it, idea) }
 	}
 
 	@Test
@@ -425,8 +419,8 @@ abstract class FormTestCases : TestCase<Form.Service> {
 
 		val idea = testIdeaForm(forms, dept, dept)
 
-		assertSuccess(idea.rename("Alternative ideas"))
-		assertSuccess(idea.now()) {
+		shouldSucceed(idea.rename("Alternative ideas"))
+		idea.now().shouldSucceedAnd {
 			assertEquals("Alternative ideas", it.name)
 		}
 	}

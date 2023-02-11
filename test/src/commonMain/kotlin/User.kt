@@ -52,27 +52,27 @@ abstract class UserTestCases : TestCase<User.Service> {
 		val users = new()
 		val department = testDepartment(FakeDepartments())
 
-		assertUnauthenticated(users.list(includeClosed = false))
-		assertUnauthenticated(users.list(includeClosed = true))
+		shouldNotBeAuthenticated(users.list(includeClosed = false))
+		shouldNotBeAuthenticated(users.list(includeClosed = true))
 
-		assertUnauthenticated(users.create("my-email@gmail.com".asEmail(), "Me", administrator = true))
-		assertUnauthenticated(users.create("my-email@gmail.com".asEmail(), "Me", administrator = false))
+		shouldNotBeAuthenticated(users.create("my-email@gmail.com".asEmail(), "Me", administrator = true))
+		shouldNotBeAuthenticated(users.create("my-email@gmail.com".asEmail(), "Me", administrator = false))
 
-		assertUnauthenticated(testEmployee(users).first.now())
+		shouldNotBeAuthenticated(testEmployee(users).first.now())
 
 		for (target in listOf(testEmployee(users).first, testAdministrator(users).first)) {
-			assertUnauthenticated(target.join(department))
-			assertUnauthenticated(target.leave(department))
+			shouldNotBeAuthenticated(target.join(department))
+			shouldNotBeAuthenticated(target.leave(department))
 
-			assertUnauthenticated(target.enable())
-			assertUnauthenticated(target.disable())
-			assertUnauthenticated(target.promote())
-			assertUnauthenticated(target.demote())
+			shouldNotBeAuthenticated(target.enable())
+			shouldNotBeAuthenticated(target.disable())
+			shouldNotBeAuthenticated(target.promote())
+			shouldNotBeAuthenticated(target.demote())
 
-			assertUnauthenticated(target.resetPassword())
-			assertUnauthenticated(target.setPassword("old password", Password("new password")))
+			shouldNotBeAuthenticated(target.resetPassword())
+			shouldNotBeAuthenticated(target.setPassword("old password", Password("new password")))
 
-			assertUnauthenticated(target.logOut(Token("a token")))
+			shouldNotBeAuthenticated(target.logOut(Token("a token")))
 		}
 	}
 
@@ -81,7 +81,7 @@ abstract class UserTestCases : TestCase<User.Service> {
 	fun `employees cannot create users`() = runTest(employeeAuth) {
 		val users = new()
 
-		assertUnauthorized(users.create("my-email@gmail.com".asEmail(), "Me"))
+		shouldNotBeAuthorized(users.create("my-email@gmail.com".asEmail(), "Me"))
 	}
 
 	@Test
@@ -92,10 +92,10 @@ abstract class UserTestCases : TestCase<User.Service> {
 		val employeeEmail = "employee-${generateId()}@gmail.com".asEmail()
 		val adminEmail = "admin-${generateId()}@gmail.com".asEmail()
 
-		val employee = assertSuccess(users.create(employeeEmail, "Me", administrator = false)).first
-		val administrator = assertSuccess(users.create(adminEmail, "Me", administrator = true)).first
+		val employee = shouldSucceed(users.create(employeeEmail, "Me", administrator = false)).first
+		val administrator = shouldSucceed(users.create(adminEmail, "Me", administrator = true)).first
 
-		assertSuccess(employee.now()) {
+		employee.now().shouldSucceedAnd {
 			assertEquals(employeeEmail, it.email)
 			assertEquals("Me", it.name)
 			assertEquals(false, it.administrator)
@@ -103,7 +103,7 @@ abstract class UserTestCases : TestCase<User.Service> {
 			assertEquals(true, it.singleUsePassword)
 		}
 
-		assertSuccess(administrator.now()) {
+		administrator.now().shouldSucceedAnd {
 			assertEquals(adminEmail, it.email)
 			assertEquals("Me", it.name)
 			assertEquals(true, it.administrator)
@@ -118,8 +118,8 @@ abstract class UserTestCases : TestCase<User.Service> {
 		val users = new()
 		val email = "my-email-${generateId()}@gmail.com".asEmail()
 
-		assertSuccess(users.create(email, "First version"))
-		assertInvalid(users.create(email, "Second version"))
+		shouldSucceed(users.create(email, "First version"))
+		shouldBeInvalid(users.create(email, "Second version"))
 	}
 
 	@Test
@@ -129,14 +129,14 @@ abstract class UserTestCases : TestCase<User.Service> {
 		val employee = testEmployee(users).first
 		val department = testDepartment(FakeDepartments())
 
-		assertSuccess(employee.join(department)) {
-			assertSuccess(employee.now()) {
+		employee.join(department).shouldSucceedAnd {
+			employee.now().shouldSucceedAnd {
 				assertEquals(setOf(department.id), it.departments.mapTo(HashSet()) { it.id })
 			}
 		}
 
-		assertSuccess(employee.leave(department)) {
-			assertSuccess(employee.now()) {
+		employee.leave(department).shouldSucceedAnd {
+			employee.now().shouldSucceedAnd {
 				assertEquals(emptySet(), it.departments)
 			}
 		}
@@ -148,14 +148,14 @@ abstract class UserTestCases : TestCase<User.Service> {
 		val users = new()
 		val employee = testEmployee(users).first
 
-		assertSuccess(employee.disable()) {
-			assertSuccess(employee.now()) {
+		employee.disable().shouldSucceedAnd {
+			employee.now().shouldSucceedAnd {
 				assertEquals(false, it.active)
 			}
 		}
 
-		assertSuccess(employee.enable()) {
-			assertSuccess(employee.now()) {
+		employee.enable().shouldSucceedAnd {
+			employee.now().shouldSucceedAnd {
 				assertEquals(true, it.active)
 			}
 		}
@@ -168,7 +168,7 @@ abstract class UserTestCases : TestCase<User.Service> {
 		val me = testAdministrator(users).first
 
 		withContext(Auth(User.Role.Administrator, me)) {
-			assertInvalid(me.disable())
+			shouldBeInvalid(me.disable())
 		}
 	}
 
@@ -178,14 +178,14 @@ abstract class UserTestCases : TestCase<User.Service> {
 		val users = new()
 		val employee = testEmployee(users).first
 
-		assertSuccess(employee.promote()) {
-			assertSuccess(employee.now()) {
+		employee.promote().shouldSucceedAnd {
+			employee.now().shouldSucceedAnd {
 				assertEquals(true, it.administrator)
 			}
 		}
 
-		assertSuccess(employee.demote()) {
-			assertSuccess(employee.now()) {
+		employee.demote().shouldSucceedAnd {
+			employee.now().shouldSucceedAnd {
 				assertEquals(false, it.administrator)
 			}
 		}
@@ -198,7 +198,7 @@ abstract class UserTestCases : TestCase<User.Service> {
 		val me = testAdministrator(users).first
 
 		withContext(Auth(User.Role.Administrator, me)) {
-			assertInvalid(me.demote())
+			shouldBeInvalid(me.demote())
 		}
 	}
 
@@ -208,34 +208,34 @@ abstract class UserTestCases : TestCase<User.Service> {
 		val users = new()
 		val (employee, singleUsePassword) = testEmployee(users)
 
-		assertSuccess(employee.now()) {
+		employee.now().shouldSucceedAnd {
 			assertTrue(it.singleUsePassword)
 		}
 
 		val email = employee.now().orThrow().email
 
 		// First usage of the single-use password
-		assertSuccess(users.logIn(email, singleUsePassword)) { (ref, token) ->
+		users.logIn(email, singleUsePassword).shouldSucceedAnd { (ref, token) ->
 			assertEquals(employee, ref)
-			assertSuccess(users.verifyToken(employee, token))
+			shouldSucceed(users.verifyToken(employee, token))
 		}
 
 		// Second usage is blocked
-		assertUnauthenticated(users.logIn(email, singleUsePassword))
+		shouldNotBeAuthenticated(users.logIn(email, singleUsePassword))
 
 		// Set a new password to make the account multi-use again
 		val password = Password("an-amazing-password")
 		withContext(Auth(User.Role.Employee, employee)) {
-			assertSuccess(employee.setPassword(singleUsePassword.value, password))
+			shouldSucceed(employee.setPassword(singleUsePassword.value, password))
 		}
 
-		assertSuccess(employee.now()) {
+		employee.now().shouldSucceedAnd {
 			assertFalse(it.singleUsePassword)
 		}
 
-		assertSuccess(users.logIn(email, password)) { (ref, token) ->
+		users.logIn(email, password).shouldSucceedAnd { (ref, token) ->
 			assertEquals(employee, ref)
-			assertSuccess(users.verifyToken(employee, token))
+			shouldSucceed(users.verifyToken(employee, token))
 		}
 	}
 
@@ -245,9 +245,9 @@ abstract class UserTestCases : TestCase<User.Service> {
 		val users = new()
 		val (employee, password) = testEmployee(users)
 
-		assertUnauthorized(employee.setPassword(password.value, Password("a strong password")))
+		shouldNotBeAuthorized(employee.setPassword(password.value, Password("a strong password")))
 
-		assertSuccess(employee.now()) {
+		employee.now().shouldSucceedAnd {
 			assertTrue(it.singleUsePassword)
 			assertTrue(it.active)
 		}
@@ -261,24 +261,24 @@ abstract class UserTestCases : TestCase<User.Service> {
 		val password = Password("new password")
 
 		withContext(Auth(User.Role.Employee, employee)) {
-			assertSuccess(employee.setPassword(singleUse.value, password))
+			shouldSucceed(employee.setPassword(singleUse.value, password))
 		}
-		assertSuccess(employee.now()) {
+		employee.now().shouldSucceedAnd {
 			assertFalse(it.singleUsePassword)
 			assertTrue(it.active)
 		}
 
-		val newPassword = assertSuccess(employee.resetPassword())
-		assertSuccess(employee.now()) {
+		val newPassword = shouldSucceed(employee.resetPassword())
+		employee.now().shouldSucceedAnd {
 			assertTrue(it.singleUsePassword)
 			assertTrue(it.active)
 		}
 
 		val email = employee.now().orThrow().email
 
-		assertUnauthenticated(users.logIn(email, password))
-		assertSuccess(users.logIn(email, newPassword))
-		assertSuccess(employee.now()) {
+		shouldNotBeAuthenticated(users.logIn(email, password))
+		shouldSucceed(users.logIn(email, newPassword))
+		employee.now().shouldSucceedAnd {
 			assertTrue(it.singleUsePassword)
 			assertTrue(it.active)
 		}
@@ -290,11 +290,11 @@ abstract class UserTestCases : TestCase<User.Service> {
 		val users = new()
 		val (employee, singleUse) = testEmployee(users)
 
-		assertSuccess(employee.disable())
+		shouldSucceed(employee.disable())
 		val email = employee.now().orThrow().email
 
 		// do not return NotFound! -> it would help an attacker enumerate users
-		assertUnauthenticated(users.logIn(email, singleUse))
+		shouldNotBeAuthenticated(users.logIn(email, singleUse))
 	}
 
 	@Test
@@ -304,27 +304,27 @@ abstract class UserTestCases : TestCase<User.Service> {
 		val (employee, password) = testEmployee(users)
 
 		val token = users.logIn(employee.now().orThrow().email, password).orThrow().second
-		assertSuccess(employee.verifyToken(token))
+		shouldSucceed(employee.verifyToken(token))
 
 		withContext(Auth(User.Role.Employee, employee)) {
 			// Disabling a token which was already invalid does nothing
-			assertSuccess(employee.logOut(Token("this is definitely not the correct token")))
-			assertSuccess(employee.now()) {
+			shouldSucceed(employee.logOut(Token("this is definitely not the correct token")))
+			employee.now().shouldSucceedAnd {
 				assertTrue(it.active)
 			}
 
 			// Disabling the token does not block the user
-			assertSuccess(employee.logOut(token))
-			assertSuccess(employee.now()) {
+			shouldSucceed(employee.logOut(token))
+			employee.now().shouldSucceedAnd {
 				assertTrue(it.active)
 			}
 
 			// We just logged out, the token should not be valid anymore
-			assertUnauthenticated(employee.verifyToken(token))
+			shouldNotBeAuthenticated(employee.verifyToken(token))
 		}
 
 		// We already logged in once, we cannot log in a single time with this password
-		assertUnauthenticated(users.logIn(employee.now().orThrow().email, password))
+		shouldNotBeAuthenticated(users.logIn(employee.now().orThrow().email, password))
 	}
 
 	@Test
@@ -336,7 +336,7 @@ abstract class UserTestCases : TestCase<User.Service> {
 		val token = users.logIn(employee.now().orThrow().email, password).orThrow().second
 
 		// I'm not 'employee', so I shouldn't be able to log them out, even with the correct token
-		assertUnauthenticated(employee.logOut(token))
+		shouldNotBeAuthenticated(employee.logOut(token))
 	}
 
 	@Test
@@ -356,9 +356,9 @@ abstract class UserTestCases : TestCase<User.Service> {
 		val token2 = users.logIn(email, password).orThrow().second
 		//endregion
 
-		assertSuccess(employee.resetPassword())
-		assertUnauthenticated(employee.verifyToken(token1))
-		assertUnauthenticated(employee.verifyToken(token2))
+		shouldSucceed(employee.resetPassword())
+		shouldNotBeAuthenticated(employee.verifyToken(token1))
+		shouldNotBeAuthenticated(employee.verifyToken(token2))
 	}
 
 	@Test
@@ -379,10 +379,10 @@ abstract class UserTestCases : TestCase<User.Service> {
 		//endregion
 
 		withContext(Auth(User.Role.Employee, employee)) {
-			assertSuccess(employee.setPassword(password.value, Password("Some new password :)")))
+			shouldSucceed(employee.setPassword(password.value, Password("Some new password :)")))
 		}
-		assertUnauthenticated(employee.verifyToken(token1))
-		assertUnauthenticated(employee.verifyToken(token2))
+		shouldNotBeAuthenticated(employee.verifyToken(token1))
+		shouldNotBeAuthenticated(employee.verifyToken(token2))
 	}
 
 	@Test
@@ -392,7 +392,7 @@ abstract class UserTestCases : TestCase<User.Service> {
 
 		// No user was created, this user cannot exist
 		//   do not return a NotFound! it would help an attacker enumerate accounts
-		assertUnauthenticated(users.logIn(Email("this-email-does-not-exist@google.com"), Password("whatever")))
+		shouldNotBeAuthenticated(users.logIn(Email("this-email-does-not-exist@google.com"), Password("whatever")))
 	}
 
 }
