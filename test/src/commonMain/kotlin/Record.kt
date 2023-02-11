@@ -32,7 +32,7 @@ abstract class RecordTestCases : TestCase<Record.Service> {
 		val departments = FakeDepartments()
 
 		val form = withContext(employeeAuth) {
-			testSimpleForm(forms, testDepartment(departments))
+			testSimpleForm(forms, createDepartment(departments))
 				.now()
 				.orThrow()
 				.versionsSorted

@@ -97,7 +97,7 @@ abstract class FormTestCases : TestCase<Form.Service> {
 	fun `guests can list public forms`() = runTest {
 		val forms = new()
 
-		val dept = testDepartment(FakeDepartments().spied())
+		val dept = createDepartment(FakeDepartments().spied())
 		val private = testSimpleForm(forms, dept)
 		val public = testIdeaForm(forms, dept, dept)
 
@@ -120,7 +120,7 @@ abstract class FormTestCases : TestCase<Form.Service> {
 	fun `employees can list open forms`() = runTest(employeeAuth) {
 		val forms = new()
 
-		val dept = testDepartment(FakeDepartments().spied())
+		val dept = createDepartment(FakeDepartments().spied())
 		val private = testSimpleForm(forms, dept)
 		val public = testIdeaForm(forms, dept, dept)
 
@@ -135,7 +135,7 @@ abstract class FormTestCases : TestCase<Form.Service> {
 	fun `employees can list closed forms`() = runTest(employeeAuth) {
 		val forms = new()
 
-		val dept = testDepartment(FakeDepartments().spied())
+		val dept = createDepartment(FakeDepartments().spied())
 		val private = testSimpleForm(forms, dept)
 			.also { withContext(administratorAuth) { it.close().orThrow() } }
 		val public = testIdeaForm(forms, dept, dept)
@@ -152,7 +152,7 @@ abstract class FormTestCases : TestCase<Form.Service> {
 	fun `guests cannot create forms`() = runTest {
 		val forms = new()
 
-		val dept = testDepartment(FakeDepartments().spied())
+		val dept = createDepartment(FakeDepartments().spied())
 
 		shouldNotBeAuthenticated(
 			forms.create(
@@ -169,7 +169,7 @@ abstract class FormTestCases : TestCase<Form.Service> {
 	fun `employees cannot create forms`() = runTest(employeeAuth) {
 		val forms = new()
 
-		val dept = testDepartment(FakeDepartments().spied())
+		val dept = createDepartment(FakeDepartments().spied())
 
 		shouldNotBeAuthorized(
 			forms.create(
@@ -186,7 +186,7 @@ abstract class FormTestCases : TestCase<Form.Service> {
 	fun `guests cannot create new versions`() = runTest {
 		val forms = new()
 
-		val dept = testDepartment(FakeDepartments().spied())
+		val dept = createDepartment(FakeDepartments().spied())
 		val form = testSimpleForm(forms, dept)
 
 		shouldNotBeAuthenticated(
@@ -208,7 +208,7 @@ abstract class FormTestCases : TestCase<Form.Service> {
 	fun `employees cannot create new versions`() = runTest(employeeAuth) {
 		val forms = new()
 
-		val dept = testDepartment(FakeDepartments().spied())
+		val dept = createDepartment(FakeDepartments().spied())
 		val form = testSimpleForm(forms, dept)
 
 		shouldNotBeAuthorized(
@@ -230,7 +230,7 @@ abstract class FormTestCases : TestCase<Form.Service> {
 	fun `guests cannot edit forms`() = runTest {
 		val forms = new()
 
-		val dept = testDepartment(FakeDepartments().spied())
+		val dept = createDepartment(FakeDepartments().spied())
 		val form = testSimpleForm(forms, dept)
 
 		shouldNotBeAuthenticated(form.rename("New name"))
@@ -245,7 +245,7 @@ abstract class FormTestCases : TestCase<Form.Service> {
 	fun `employees cannot edit forms`() = runTest(employeeAuth) {
 		val forms = new()
 
-		val dept = testDepartment(FakeDepartments().spied())
+		val dept = createDepartment(FakeDepartments().spied())
 		val form = testSimpleForm(forms, dept)
 
 		shouldNotBeAuthorized(form.rename("New name"))
@@ -262,7 +262,7 @@ abstract class FormTestCases : TestCase<Form.Service> {
 	@JsName("createForm")
 	fun `create form`() = runTest(administratorAuth) {
 		val forms = new()
-		val dept = testDepartment(FakeDepartments().spied())
+		val dept = createDepartment(FakeDepartments().spied())
 		val testStart = currentInstant()
 		advanceTimeBy(10)
 
@@ -303,7 +303,7 @@ abstract class FormTestCases : TestCase<Form.Service> {
 	@JsName("createFormVersion")
 	fun `create form version`() = runTest(administratorAuth) {
 		val forms = new()
-		val dept = testDepartment(FakeDepartments().spied())
+		val dept = createDepartment(FakeDepartments().spied())
 		val testStart = currentInstant()
 		advanceTimeBy(10)
 
@@ -341,7 +341,7 @@ abstract class FormTestCases : TestCase<Form.Service> {
 	fun `cannot create a form with an invalid field import`() = runTest(administratorAuth) {
 		val forms = new()
 		val templates = FakeTemplates(testClock())
-		val dept = testDepartment(FakeDepartments())
+		val dept = createDepartment(FakeDepartments())
 
 		val cities = testCityTemplate(templates).now()
 			.map { it.versions.first() }
@@ -360,7 +360,7 @@ abstract class FormTestCases : TestCase<Form.Service> {
 	fun `cannot create a form version with an invalid field import`() = runTest(administratorAuth) {
 		val forms = new()
 		val templates = FakeTemplates(testClock())
-		val dept = testDepartment(FakeDepartments())
+		val dept = createDepartment(FakeDepartments())
 
 		val cities = testCityTemplate(templates).now()
 			.map { it.versions.first() }
@@ -379,7 +379,7 @@ abstract class FormTestCases : TestCase<Form.Service> {
 	@JsName("closeForm")
 	fun `close form`() = runTest(administratorAuth) {
 		val forms = new()
-		val dept = testDepartment(FakeDepartments().spied())
+		val dept = createDepartment(FakeDepartments().spied())
 
 		val idea = testIdeaForm(forms, dept, dept)
 
@@ -398,7 +398,7 @@ abstract class FormTestCases : TestCase<Form.Service> {
 	@JsName("publishForm")
 	fun `publicize form`() = runTest(administratorAuth) {
 		val forms = new()
-		val dept = testDepartment(FakeDepartments().spied())
+		val dept = createDepartment(FakeDepartments().spied())
 
 		val idea = testIdeaForm(forms, dept, dept)
 
@@ -415,7 +415,7 @@ abstract class FormTestCases : TestCase<Form.Service> {
 	@JsName("renameForm")
 	fun `rename form`() = runTest(administratorAuth) {
 		val forms = new()
-		val dept = testDepartment(FakeDepartments().spied())
+		val dept = createDepartment(FakeDepartments().spied())
 
 		val idea = testIdeaForm(forms, dept, dept)
 

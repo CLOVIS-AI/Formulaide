@@ -50,7 +50,7 @@ abstract class UserTestCases : TestCase<User.Service> {
 	@JsName("guestsAccess")
 	fun `guests cannot access users`() = runTest {
 		val users = new()
-		val department = testDepartment(FakeDepartments())
+		val department = createDepartment(FakeDepartments())
 
 		shouldNotBeAuthenticated(users.list(includeClosed = false))
 		shouldNotBeAuthenticated(users.list(includeClosed = true))
@@ -127,7 +127,7 @@ abstract class UserTestCases : TestCase<User.Service> {
 	fun `department management`() = runTest(administratorAuth) {
 		val users = new()
 		val employee = testEmployee(users).first
-		val department = testDepartment(FakeDepartments())
+		val department = createDepartment(FakeDepartments())
 
 		employee.join(department).shouldSucceedAnd {
 			employee.now().shouldSucceedAnd {

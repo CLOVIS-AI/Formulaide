@@ -1,35 +1,31 @@
 package opensavvy.formulaide.remote.server
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.debug.junit4.CoroutinesTimeout
-import opensavvy.formulaide.core.Department
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import opensavvy.formulaide.fake.FakeDepartments
 import opensavvy.formulaide.fake.spies.SpyDepartments.Companion.spied
 import opensavvy.formulaide.remote.client.Departments
 import opensavvy.formulaide.remote.server.utils.TestClient
 import opensavvy.formulaide.remote.server.utils.createTestServer
-import opensavvy.formulaide.test.DepartmentTestCases
-import org.junit.Rule
+import opensavvy.formulaide.test.departmentTestSuite
+import opensavvy.formulaide.test.execution.Executor
+import opensavvy.formulaide.test.execution.Suite
 
-class DepartmentTest : DepartmentTestCases() {
+class RemoteDepartmentTest : Executor() {
 
-	@get:Rule
-	val timeout = CoroutinesTimeout.seconds(15)
-
-	override suspend fun new(
-		foreground: CoroutineScope,
-		background: CoroutineScope,
-	): Department.Service {
-		val application = background.createTestServer {
-			routing {
-				departments(FakeDepartments().spied())
+	@OptIn(ExperimentalCoroutinesApi::class)
+	override fun Suite.register() {
+		departmentTestSuite {
+			val application = backgroundScope.createTestServer {
+				routing {
+					departments(FakeDepartments().spied())
+				}
 			}
-		}
 
-		return Departments(
-			TestClient(application.client),
-			background.coroutineContext,
-		).spied()
+			Departments(
+				TestClient(application.client),
+				backgroundScope.coroutineContext,
+			).spied()
+		}
 	}
 
 }
