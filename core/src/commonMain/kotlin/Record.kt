@@ -107,6 +107,17 @@ data class Record(
 
 		suspend fun create(submission: Submission): Outcome<Ref>
 
+		suspend fun create(form: Form.Version.Ref, formStep: Int?, vararg data: Pair<String, String>) = create(
+			Submission(
+				form = form,
+				formStep = formStep,
+				data = data.associateBy(
+					keySelector = { Field.Id.fromString(it.first) },
+					valueTransform = { it.second },
+				),
+			)
+		)
+
 		suspend fun advance(record: Ref, diff: Diff): Outcome<Unit>
 
 	}
