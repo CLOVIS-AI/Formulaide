@@ -28,3 +28,7 @@ application {
 	if (project.hasProperty("developmentMode"))
 		applicationDefaultJvmArgs = listOf("-Dio.ktor.development=true")
 }
+
+tasks.named<Test>("test") {
+	useJUnitPlatform()
+}

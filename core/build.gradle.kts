@@ -46,3 +46,7 @@ tasks.withType<org.jetbrains.dokka.gradle.DokkaTaskPartial>().configureEach {
 		}
 	}
 }
+
+tasks.named<Test>("jvmTest") {
+	useJUnitPlatform()
+}

@@ -32,7 +32,7 @@ kotlin {
 
 		val jvmMain by getting {
 			dependencies {
-				api(Kotlin.test.junit)
+				api(Kotlin.test.junit5)
 
 				implementation("org.jetbrains.kotlin:kotlin-reflect:_")
 				implementation("ch.qos.logback:logback-classic:_")
@@ -45,4 +45,8 @@ kotlin {
 			}
 		}
 	}
+}
+
+tasks.named<Test>("jvmTest") {
+	useJUnitPlatform()
 }
