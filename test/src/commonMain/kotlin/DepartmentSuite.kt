@@ -5,7 +5,6 @@ import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.withContext
 import opensavvy.backbone.Ref.Companion.now
 import opensavvy.formulaide.core.Department
@@ -34,7 +33,6 @@ private suspend fun createClosedDepartment(departments: Department.Service) = wi
 
 //endregion
 
-@OptIn(ExperimentalCoroutinesApi::class)
 fun Suite.departmentTestSuite(
 	createDepartments: Factory<Department.Service>,
 ) {
@@ -44,7 +42,6 @@ fun Suite.departmentTestSuite(
 	edit(createDepartments)
 }
 
-@OptIn(ExperimentalCoroutinesApi::class)
 private fun Suite.list(
 	createDepartments: Factory<Department.Service>,
 ) = suite("List departments") {
@@ -102,7 +99,6 @@ private fun Suite.list(
 	}
 }
 
-@OptIn(ExperimentalCoroutinesApi::class)
 private fun Suite.request(
 	createDepartments: Factory<Department.Service>,
 ) = suite("Request a department") {
@@ -116,7 +112,6 @@ private fun Suite.request(
 	}
 }
 
-@OptIn(ExperimentalCoroutinesApi::class)
 private fun Suite.create(
 	createDepartments: Factory<Department.Service>,
 ) = suite("Create a department") {
@@ -145,7 +140,6 @@ private fun Suite.create(
 	}
 }
 
-@OptIn(ExperimentalCoroutinesApi::class)
 private fun Suite.edit(
 	createDepartments: Factory<Department.Service>,
 ) = suite("Edit a department") {

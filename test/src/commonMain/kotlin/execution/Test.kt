@@ -1,6 +1,5 @@
 package opensavvy.formulaide.test.execution
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
@@ -12,7 +11,6 @@ interface Suite {
 		block: Suite.() -> Unit,
 	)
 
-	@OptIn(ExperimentalCoroutinesApi::class)
 	fun test(
 		name: String,
 		context: CoroutineContext = EmptyCoroutineContext,

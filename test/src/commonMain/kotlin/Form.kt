@@ -2,7 +2,6 @@ package opensavvy.formulaide.test
 
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
@@ -87,7 +86,6 @@ internal suspend fun testIdeaForm(
 //endregion
 
 @Suppress("FunctionName")
-@OptIn(ExperimentalCoroutinesApi::class)
 abstract class FormTestCases : TestCase<Form.Service> {
 
 	//region Employee & guest access

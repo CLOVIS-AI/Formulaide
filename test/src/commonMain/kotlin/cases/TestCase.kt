@@ -1,7 +1,6 @@
 package opensavvy.formulaide.test.cases
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import opensavvy.backbone.Backbone
 
@@ -36,7 +35,6 @@ interface TestCase<Service : Backbone<*>> {
 	 *
 	 * The foreground scope is [TestScope], the background scope is [TestScope.backgroundScope].
 	 */
-	@OptIn(ExperimentalCoroutinesApi::class)
 	suspend fun TestScope.new() = new(
 		this,
 		backgroundScope,

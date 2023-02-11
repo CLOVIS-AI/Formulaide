@@ -1,6 +1,5 @@
 package opensavvy.formulaide.test
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import opensavvy.backbone.Ref.Companion.now
@@ -40,7 +39,6 @@ internal suspend fun testAdministrator(users: User.Service) = withContext(admini
 
 //endregion
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("FunctionName")
 abstract class UserTestCases : TestCase<User.Service> {
 

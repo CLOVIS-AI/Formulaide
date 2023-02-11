@@ -2,13 +2,11 @@ package opensavvy.formulaide.test
 
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import opensavvy.formulaide.test.execution.Executor
 import opensavvy.formulaide.test.execution.Suite
 
 @Suppress("unused")
-@OptIn(ExperimentalCoroutinesApi::class)
 class ExecutionTest : Executor() {
 
 	override fun Suite.register() {

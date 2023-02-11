@@ -1,6 +1,5 @@
 package opensavvy.formulaide.test.execution
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlin.coroutines.CoroutineContext
@@ -38,7 +37,6 @@ private object JsSuite : Suite {
 		}
 	}
 
-	@OptIn(ExperimentalCoroutinesApi::class)
 	override fun test(name: String, context: CoroutineContext, block: suspend TestScope.() -> Unit) {
 		println("Registering test '$name'")
 		kTest.kotlin.test.test(name, false) {

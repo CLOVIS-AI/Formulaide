@@ -9,12 +9,10 @@ import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
 import opensavvy.state.Failure
 import opensavvy.state.outcome.Outcome
-import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 import kotlin.js.JsName
 import kotlin.jvm.JvmName
 
-@OptIn(ExperimentalContracts::class)
 fun <T> shouldSucceed(outcome: Outcome<T>): T {
 	contract {
 		returns() implies (outcome is Either.Right<T>)
@@ -31,7 +29,6 @@ fun <T> shouldSucceed(outcome: Outcome<T>): T {
 
 @JvmName("shouldSucceedWithReceiver")
 @JsName("shouldSucceedWithReceiver")
-@OptIn(ExperimentalContracts::class)
 fun <T> Outcome<T>.shouldSucceed(): T {
 	contract {
 		returns() implies (this@shouldSucceed is Either.Right<T>)
@@ -40,7 +37,6 @@ fun <T> Outcome<T>.shouldSucceed(): T {
 	return shouldSucceed(this)
 }
 
-@OptIn(ExperimentalContracts::class)
 inline infix fun <T> Outcome<T>.shouldSucceedAnd(assertions: (T) -> Unit): T {
 	contract {
 		returns() implies (this@shouldSucceedAnd is Either.Right<T>)
@@ -55,7 +51,6 @@ inline infix fun <T> Outcome<T>.shouldSucceedAnd(assertions: (T) -> Unit): T {
 	return value
 }
 
-@OptIn(ExperimentalContracts::class)
 fun <T> Outcome<T>.shouldFail(): Failure {
 	contract {
 		returns() implies (this@shouldFail is Either.Left<Failure>)

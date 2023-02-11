@@ -17,6 +17,11 @@ kotlin {
 	}
 
 	sourceSets {
+		all {
+			languageSettings.optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
+			languageSettings.optIn("kotlin.contracts.ExperimentalContracts")
+		}
+
 		val commonMain by getting {
 			dependencies {
 				api(projects.core)

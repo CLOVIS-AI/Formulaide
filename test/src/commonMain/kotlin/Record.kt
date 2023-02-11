@@ -1,6 +1,5 @@
 package opensavvy.formulaide.test
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import opensavvy.backbone.Ref.Companion.now
@@ -20,7 +19,6 @@ import kotlin.test.assertContains
 import kotlin.test.assertEquals
 
 @Suppress("FunctionName")
-@OptIn(ExperimentalCoroutinesApi::class)
 abstract class RecordTestCases : TestCase<Record.Service> {
 
 	@Test
