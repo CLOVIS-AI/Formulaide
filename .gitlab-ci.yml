@@ -193,5 +193,7 @@ telegram:
     - git changelog --format telegram-html --incoming >changelog
     - announce-telegram changelog "$CHAT_IDS"
   rules:
+    - if: $CHAT_IDS == null || $BOT_TOKEN == null
+      when: never
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
   interruptible: false
