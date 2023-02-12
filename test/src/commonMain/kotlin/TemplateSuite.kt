@@ -17,11 +17,11 @@ import opensavvy.formulaide.core.Field.Companion.labelFrom
 import opensavvy.formulaide.core.Input
 import opensavvy.formulaide.core.Template
 import opensavvy.formulaide.test.assertions.*
-import opensavvy.formulaide.test.cases.TestUsers.administratorAuth
-import opensavvy.formulaide.test.cases.TestUsers.employeeAuth
 import opensavvy.formulaide.test.execution.Factory
 import opensavvy.formulaide.test.execution.Suite
 import opensavvy.formulaide.test.utils.TestClock.Companion.currentInstant
+import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
+import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
 import opensavvy.state.outcome.orThrow
 
 //region Test data

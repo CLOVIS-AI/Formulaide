@@ -14,8 +14,8 @@ import opensavvy.formulaide.fake.FakeForms
 import opensavvy.formulaide.test.assertions.shouldBeInvalid
 import opensavvy.formulaide.test.assertions.shouldSucceed
 import opensavvy.formulaide.test.assertions.shouldSucceedAnd
-import opensavvy.formulaide.test.cases.TestUsers.administratorAuth
 import opensavvy.formulaide.test.utils.TestClock.Companion.testClock
+import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
 import opensavvy.state.outcome.orThrow
 import kotlin.js.JsName
 import kotlin.test.Test

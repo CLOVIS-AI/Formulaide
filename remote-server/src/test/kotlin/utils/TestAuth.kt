@@ -8,7 +8,7 @@ import opensavvy.formulaide.core.Auth
 import opensavvy.formulaide.core.Auth.Companion.Guest
 import opensavvy.formulaide.core.Auth.Companion.currentAuth
 import opensavvy.formulaide.core.User
-import opensavvy.formulaide.test.cases.TestUsers
+import opensavvy.formulaide.test.utils.TestUsers
 
 // Server config
 fun Application.configureTestAuthentication(additionalUsers: User.Service? = null) {

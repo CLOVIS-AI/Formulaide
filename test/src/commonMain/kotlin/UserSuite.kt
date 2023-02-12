@@ -12,10 +12,10 @@ import opensavvy.formulaide.core.data.Email.Companion.asEmail
 import opensavvy.formulaide.core.data.Password
 import opensavvy.formulaide.core.data.Token
 import opensavvy.formulaide.test.assertions.*
-import opensavvy.formulaide.test.cases.TestUsers.administratorAuth
-import opensavvy.formulaide.test.cases.TestUsers.employeeAuth
 import opensavvy.formulaide.test.execution.Factory
 import opensavvy.formulaide.test.execution.Suite
+import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
+import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
 import opensavvy.formulaide.test.utils.executeAs
 import opensavvy.state.outcome.orThrow
 import kotlin.random.Random

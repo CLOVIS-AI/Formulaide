@@ -1,4 +1,4 @@
-package opensavvy.formulaide.test.cases
+package opensavvy.formulaide.test.utils
 
 import opensavvy.backbone.Ref
 import opensavvy.backbone.RefCache

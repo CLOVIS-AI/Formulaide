@@ -19,9 +19,9 @@ import opensavvy.formulaide.core.Input.*
 import opensavvy.formulaide.fake.FakeTemplates
 import opensavvy.formulaide.test.assertions.shouldBeInvalid
 import opensavvy.formulaide.test.assertions.shouldSucceed
-import opensavvy.formulaide.test.cases.TestUsers.administratorAuth
-import opensavvy.formulaide.test.cases.TestUsers.employeeAuth
 import opensavvy.formulaide.test.utils.TestClock.Companion.testClock
+import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
+import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
 import opensavvy.state.outcome.orThrow
 import opensavvy.state.outcome.out
 import kotlin.js.JsName

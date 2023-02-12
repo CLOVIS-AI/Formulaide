@@ -9,9 +9,9 @@ import opensavvy.backbone.Ref.Companion.now
 import opensavvy.formulaide.core.*
 import opensavvy.formulaide.test.assertions.shouldSucceed
 import opensavvy.formulaide.test.assertions.shouldSucceedAnd
-import opensavvy.formulaide.test.cases.TestUsers.employeeAuth
 import opensavvy.formulaide.test.execution.Factory
 import opensavvy.formulaide.test.execution.Suite
+import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
 import opensavvy.state.outcome.orThrow
 
 data class RecordTestData(
