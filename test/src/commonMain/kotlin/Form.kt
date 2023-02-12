@@ -341,7 +341,7 @@ abstract class FormTestCases : TestCase<Form.Service> {
 		val templates = FakeTemplates(testClock())
 		val dept = createDepartment(FakeDepartments())
 
-		val cities = testCityTemplate(templates).now()
+		val cities = createCityTemplate(templates).now()
 			.map { it.versions.first() }
 			.orThrow()
 
@@ -360,7 +360,7 @@ abstract class FormTestCases : TestCase<Form.Service> {
 		val templates = FakeTemplates(testClock())
 		val dept = createDepartment(FakeDepartments())
 
-		val cities = testCityTemplate(templates).now()
+		val cities = createCityTemplate(templates).now()
 			.map { it.versions.first() }
 			.orThrow()
 
