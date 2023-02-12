@@ -25,7 +25,6 @@ kotlin {
 		val commonMain by getting {
 			dependencies {
 				api(projects.core)
-				implementation(projects.fake)
 
 				api(Kotlin.test.common)
 				api(Kotlin.test.annotationsCommon)
