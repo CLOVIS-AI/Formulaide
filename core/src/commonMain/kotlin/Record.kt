@@ -105,6 +105,8 @@ data class Record(
 
 		suspend fun search(criteria: List<QueryCriterion>): Outcome<List<Ref>>
 
+		suspend fun search(vararg criteria: QueryCriterion) = search(criteria.asList())
+
 		suspend fun create(submission: Submission): Outcome<Ref>
 
 		suspend fun create(form: Form.Version.Ref, formStep: Int?, vararg data: Pair<String, String>) = create(
