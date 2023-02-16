@@ -108,7 +108,7 @@ helm:review:
     replicas: 1
 
   environment:
-    name: review/$CI_MERGE_REQUEST_IID
+    name: review/$CI_COMMIT_REF_SLUG/app
     url: https://$host
     deployment_tier: development
     on_stop: helm:review-stop
@@ -132,7 +132,7 @@ helm:review-stop:
     - helm uninstall merge-request-$CI_MERGE_REQUEST_IID --namespace=formulaide-review
 
   environment:
-    name: review/$CI_MERGE_REQUEST_IID
+    name: review/$CI_COMMIT_REF_SLUG/app
     url: $CI_MERGE_REQUEST_IID.$FORMULAIDE_DEPLOYMENT_URL
     deployment_tier: development
     action: stop

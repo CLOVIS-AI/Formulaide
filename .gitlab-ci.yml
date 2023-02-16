@@ -65,7 +65,7 @@ dokka:
       - docs
     expose_as: 'Documentation'
   environment:
-    name: review/documentation-$CI_COMMIT_REF_SLUG
+    name: review/$CI_COMMIT_REF_SLUG/documentation
     url: https://$CI_PROJECT_NAMESPACE.$CI_PAGES_DOMAIN/-/$CI_PROJECT_NAME/-/jobs/$CI_JOB_ID/artifacts/docs/index.html
     deployment_tier: development
   interruptible: true
@@ -153,7 +153,7 @@ test-jvm:
     expose_as: 'Coverage JVM'
 
   environment:
-    name: review/coverage-$CI_COMMIT_REF_SLUG
+    name: review/$CI_COMMIT_REF_SLUG/coverage
     url: https://$CI_PROJECT_NAMESPACE.$CI_PAGES_DOMAIN/-/$CI_PROJECT_NAME/-/jobs/$CI_JOB_ID/artifacts/kover/index.html
     deployment_tier: development
 
@@ -193,5 +193,7 @@ telegram:
     - git changelog --format telegram-html --incoming >changelog
     - announce-telegram changelog "$CHAT_IDS"
   rules:
+    - if: $CHAT_IDS == null || $BOT_TOKEN == null
+      when: never
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
   interruptible: false
