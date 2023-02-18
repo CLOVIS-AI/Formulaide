@@ -4,16 +4,17 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.datetime.Clock
 import opensavvy.backbone.Ref
+import opensavvy.backbone.Ref.Companion.now
 import opensavvy.backbone.RefCache
 import opensavvy.backbone.defaultRefCache
+import opensavvy.formulaide.core.Auth.Companion.currentRole
 import opensavvy.formulaide.core.Auth.Companion.currentUser
 import opensavvy.formulaide.core.Record
 import opensavvy.formulaide.core.Submission
+import opensavvy.formulaide.core.User
 import opensavvy.formulaide.fake.utils.newId
-import opensavvy.state.outcome.Outcome
-import opensavvy.state.outcome.ensureFound
-import opensavvy.state.outcome.ensureValid
-import opensavvy.state.outcome.out
+import opensavvy.state.Failure
+import opensavvy.state.outcome.*
 
 class FakeRecords(
 	private val clock: Clock,
@@ -34,6 +35,11 @@ class FakeRecords(
 	}
 
 	override suspend fun create(submission: Submission): Outcome<Record.Ref> = out {
+		if (currentRole() == User.Role.Guest && !submission.form.form.now().bind().public) {
+			@Suppress("IMPLICIT_NOTHING_TYPE_ARGUMENT_IN_RETURN_POSITION") // Will be fixed in Arrow 2.0
+			failed("Le formulaire demandé est introuvable", Failure.Kind.NotFound).bind()
+		}
+
 		val id = newId()
 
 		val submissionRef = _submissions.lock.withPermit {

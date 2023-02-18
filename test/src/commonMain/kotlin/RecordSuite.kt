@@ -7,10 +7,12 @@ import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.withContext
 import opensavvy.backbone.Ref.Companion.now
 import opensavvy.formulaide.core.*
+import opensavvy.formulaide.test.assertions.shouldNotBeFound
 import opensavvy.formulaide.test.assertions.shouldSucceed
 import opensavvy.formulaide.test.assertions.shouldSucceedAnd
 import opensavvy.formulaide.test.execution.Factory
 import opensavvy.formulaide.test.execution.Suite
+import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
 import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
 import opensavvy.state.outcome.orThrow
 
@@ -30,6 +32,52 @@ fun Suite.recordsTestSuite(
 private fun Suite.create(
 	create: Factory<RecordTestData>,
 ) = suite("Create a record") {
+	test("guests cannot create records to a private form") {
+		val data = create()
+
+		val records = data.records
+		val forms = data.forms
+		val departments = data.departments
+
+		val form = withContext(administratorAuth) {
+			createSimpleForm(forms, createDepartment(departments))
+				.also { it.privatize().orThrow() }
+				.now().orThrow()
+				.versionsSorted.first()
+		}
+
+		shouldNotBeFound(
+			records.create(
+				form,
+				null,
+				"" to "true",
+			)
+		)
+	}
+
+	test("employees can create records to a private form", employeeAuth) {
+		val data = create()
+
+		val records = data.records
+		val forms = data.forms
+		val departments = data.departments
+
+		val form = withContext(administratorAuth) {
+			createSimpleForm(forms, createDepartment(departments))
+				.also { it.privatize().orThrow() }
+				.now().orThrow()
+				.versionsSorted.first()
+		}
+
+		shouldSucceed(
+			records.create(
+				form,
+				null,
+				"" to "true",
+			)
+		)
+	}
+
 	test("create a record") {
 		val data = create()
 
@@ -39,6 +87,7 @@ private fun Suite.create(
 
 		val form = withContext(employeeAuth) {
 			createSimpleForm(forms, createDepartment(departments))
+				.also { withContext(administratorAuth) { it.publicize().orThrow() } }
 				.now().orThrow()
 				.versionsSorted.first()
 		}

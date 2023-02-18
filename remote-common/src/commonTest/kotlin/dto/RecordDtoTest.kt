@@ -38,6 +38,7 @@ class RecordDtoTest {
 			Field.label("unused"), // we will not check the validity of the submission, so the contents of the form are irrelevant
 			Form.Step(0, "First step", dept, null)
 		)
+			.tap { it.publicize().orThrow() }
 			.flatMap { it.now() }
 			.map { it.versionsSorted.first() }
 			.orThrow()
