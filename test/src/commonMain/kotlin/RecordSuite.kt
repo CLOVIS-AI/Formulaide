@@ -142,4 +142,26 @@ private fun Suite.create(
 			)
 		)
 	}
+
+	test("cannot create a record with an invalid submission") {
+		val data = create()
+
+		val records = data.records
+		val forms = data.forms
+		val departments = data.departments
+
+		val form = withContext(employeeAuth) {
+			createSimpleForm(forms, createDepartment(departments))
+				.also { withContext(administratorAuth) { it.publicize().orThrow() } }
+				.now().orThrow()
+				.versionsSorted.first()
+		}
+
+		shouldBeInvalid(
+			records.create(
+				form,
+				"" to "this is not a boolean",
+			)
+		)
+	}
 }

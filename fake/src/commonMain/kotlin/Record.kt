@@ -41,6 +41,7 @@ class FakeRecords(
 		}
 
 		ensureValid(submission.formStep == null) { "Il n'est pas possible de créer un dossier pour une autre étape que la saisie initiale, ${submission.formStep} a été demandé" }
+		submission.parse().bind()
 
 		val id = newId()
 
