@@ -109,10 +109,10 @@ data class Record(
 
 		suspend fun create(submission: Submission): Outcome<Ref>
 
-		suspend fun create(form: Form.Version.Ref, formStep: Int?, vararg data: Pair<String, String>) = create(
+		suspend fun create(form: Form.Version.Ref, vararg data: Pair<String, String>) = create(
 			Submission(
 				form = form,
-				formStep = formStep,
+				formStep = null,
 				data = data.associateBy(
 					keySelector = { Field.Id.fromString(it.first) },
 					valueTransform = { it.second },

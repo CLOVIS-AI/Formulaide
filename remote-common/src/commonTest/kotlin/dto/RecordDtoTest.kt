@@ -46,7 +46,7 @@ class RecordDtoTest {
 		val initialSubmission = records.create(
 			Submission(
 				form,
-				0,
+				null,
 				mapOf(
 					Field.Id(0, 1) to "Test 1",
 					Field.Id(1, 2, 3) to "Test 2",
@@ -59,7 +59,7 @@ class RecordDtoTest {
 		val editedSubmission = records.create(
 			Submission(
 				form,
-				0,
+				null,
 				mapOf(
 					Field.Id(0, 1) to "Test 1",
 					Field.Id(1, 2, 3) to "Test 3",

@@ -40,6 +40,8 @@ class FakeRecords(
 			failed("Le formulaire demandé est introuvable", Failure.Kind.NotFound).bind()
 		}
 
+		ensureValid(submission.formStep == null) { "Il n'est pas possible de créer un dossier pour une autre étape que la saisie initiale, ${submission.formStep} a été demandé" }
+
 		val id = newId()
 
 		val submissionRef = _submissions.lock.withPermit {

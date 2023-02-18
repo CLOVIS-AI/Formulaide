@@ -7,6 +7,7 @@ import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.withContext
 import opensavvy.backbone.Ref.Companion.now
 import opensavvy.formulaide.core.*
+import opensavvy.formulaide.test.assertions.shouldBeInvalid
 import opensavvy.formulaide.test.assertions.shouldNotBeFound
 import opensavvy.formulaide.test.assertions.shouldSucceed
 import opensavvy.formulaide.test.assertions.shouldSucceedAnd
@@ -49,7 +50,6 @@ private fun Suite.create(
 		shouldNotBeFound(
 			records.create(
 				form,
-				null,
 				"" to "true",
 			)
 		)
@@ -72,7 +72,6 @@ private fun Suite.create(
 		shouldSucceed(
 			records.create(
 				form,
-				null,
 				"" to "true",
 			)
 		)
@@ -94,7 +93,6 @@ private fun Suite.create(
 
 		val record = records.create(
 			form,
-			null,
 			"" to "true",
 		).shouldSucceed()
 
@@ -118,5 +116,30 @@ private fun Suite.create(
 				it shouldContain record
 			}
 		}
+	}
+
+	test("cannot create a record for another step than the initial one") {
+		val data = create()
+
+		val records = data.records
+		val forms = data.forms
+		val departments = data.departments
+
+		val form = withContext(employeeAuth) {
+			createSimpleForm(forms, createDepartment(departments))
+				.also { withContext(administratorAuth) { it.publicize().orThrow() } }
+				.now().orThrow()
+				.versionsSorted.first()
+		}
+
+		shouldBeInvalid(
+			records.create(
+				Submission(
+					form,
+					1,
+					mapOf(Field.Id.fromString("") to "true"),
+				)
+			)
+		)
 	}
 }
