@@ -5,7 +5,6 @@ import opensavvy.formulaide.fake.*
 import opensavvy.formulaide.fake.spies.SpyDepartments.Companion.spied
 import opensavvy.formulaide.fake.spies.SpyForms.Companion.spied
 import opensavvy.formulaide.fake.spies.SpyTemplates.Companion.spied
-import opensavvy.formulaide.fake.spies.SpyUsers.Companion.spied
 import opensavvy.formulaide.remote.client.Records
 import opensavvy.formulaide.remote.server.utils.TestClient
 import opensavvy.formulaide.remote.server.utils.createTestServer
@@ -21,7 +20,7 @@ class RemoteRecordTest : Executor() {
 	override fun Suite.register() {
 		recordsTestSuite {
 			val clock = testClock()
-			val users = FakeUsers().spied()
+			val users = FakeUsers()
 			val departments = FakeDepartments().spied()
 			val templates = FakeTemplates(clock).spied()
 			val forms = FakeForms(clock).spied()

@@ -579,7 +579,7 @@ class Api2 : Service("v2") {
 		 * ### Put /advance
 		 *
 		 * Advances this record to another state.
-		 * - Body: [RecordDto.Diff]
+		 * - Body: [RecordDto.Advance]
 		 *
 		 * Authorization: employee
 		 */
@@ -590,7 +590,7 @@ class Api2 : Service("v2") {
 				Record.Ref(id.resource.segments.last().segment, records)
 			}
 
-			val advance = action<RecordDto.Diff, Unit, Parameters.Empty>(Route / "advance")
+			val advance = action<RecordDto.Advance, Unit, Parameters.Empty>(Route / "advance")
 
 		}
 
