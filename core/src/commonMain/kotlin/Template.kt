@@ -76,6 +76,14 @@ data class Template(
 		 */
 		suspend fun createVersion(version: Version) = backbone.createVersion(this, version)
 
+		/**
+		 * Creates a new version of this template, named [title] with [field].
+		 *
+		 * @see Template.versions
+		 * @see Service.createVersion
+		 */
+		suspend fun createVersion(title: String, field: Field) = backbone.createVersion(this, title, field)
+
 		override fun toString() = "Modèle $id"
 	}
 
@@ -132,6 +140,14 @@ data class Template(
 		 * Only administrators can create new versions.
 		 */
 		suspend fun createVersion(template: Ref, version: Version): Outcome<Version.Ref>
+
+		/**
+		 * Creates a new version of a given template.
+		 *
+		 * Only administrators can create new versions.
+		 */
+		suspend fun createVersion(template: Ref, title: String, field: Field) =
+			createVersion(template, Version(Instant.DISTANT_PAST, title, field))
 
 		/**
 		 * Edits a template.

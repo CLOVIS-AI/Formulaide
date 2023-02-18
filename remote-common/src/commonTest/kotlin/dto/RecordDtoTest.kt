@@ -11,10 +11,10 @@ import opensavvy.formulaide.core.Submission
 import opensavvy.formulaide.fake.FakeDepartments
 import opensavvy.formulaide.fake.FakeForms
 import opensavvy.formulaide.fake.FakeRecords
-import opensavvy.formulaide.test.cases.TestUsers
-import opensavvy.formulaide.test.cases.TestUsers.administratorAuth
-import opensavvy.formulaide.test.cases.TestUsers.employeeAuth
 import opensavvy.formulaide.test.utils.TestClock.Companion.testClock
+import opensavvy.formulaide.test.utils.TestUsers
+import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
+import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
 import opensavvy.state.outcome.orThrow
 import kotlin.js.JsName
 import kotlin.test.Test

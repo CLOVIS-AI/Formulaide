@@ -3,8 +3,8 @@ package opensavvy.formulaide.core
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import opensavvy.formulaide.core.data.Email
-import opensavvy.formulaide.test.assertions.assertInvalid
-import opensavvy.formulaide.test.assertions.assertSuccess
+import opensavvy.formulaide.test.assertions.shouldBeInvalid
+import opensavvy.formulaide.test.assertions.shouldSucceedAnd
 import opensavvy.state.outcome.out
 import kotlin.js.JsName
 import kotlin.test.Test
@@ -20,12 +20,12 @@ class InputTest {
 
 		assertEquals(5u, text.effectiveMaxLength)
 
-		assertSuccess(text.parse("hello")) {
+		text.parse("hello").shouldSucceedAnd {
 			assertEquals("hello", it)
 		}
 
-		assertInvalid(text.parse("too long"))
-		assertInvalid(text.parse("123456"))
+		shouldBeInvalid(text.parse("too long"))
+		shouldBeInvalid(text.parse("123456"))
 	}
 
 	@Test
@@ -36,28 +36,28 @@ class InputTest {
 		assertEquals(-5, int.effectiveMin)
 		assertEquals(5, int.effectiveMax)
 
-		assertSuccess(int.parse("1")) {
+		int.parse("1").shouldSucceedAnd {
 			assertEquals(1, it)
 		}
 
-		assertSuccess(int.parse("-5")) {
+		int.parse("-5").shouldSucceedAnd {
 			assertEquals(-5, it)
 		}
 
-		assertSuccess(int.parse("5")) {
+		int.parse("5").shouldSucceedAnd {
 			assertEquals(5, it)
 		}
 
-		assertInvalid(int.parse("-6"))
-		assertInvalid(int.parse("6"))
-		assertInvalid(int.parse("95"))
+		shouldBeInvalid(int.parse("-6"))
+		shouldBeInvalid(int.parse("6"))
+		shouldBeInvalid(int.parse("95"))
 	}
 
 	@Test
 	@JsName("invalidIntegerRange")
 	fun `check invalid int range`() = runTest {
-		assertInvalid(out { Input.Integer(min = 6, max = 5) })
-		assertInvalid(out { Input.Integer(min = 5, max = 5) })
+		shouldBeInvalid(out { Input.Integer(min = 6, max = 5) })
+		shouldBeInvalid(out { Input.Integer(min = 5, max = 5) })
 	}
 
 	@Test
@@ -65,16 +65,16 @@ class InputTest {
 	fun `parse boolean`() = runTest {
 		val bool = Input.Toggle
 
-		assertSuccess(bool.parse("true")) {
+		bool.parse("true").shouldSucceedAnd {
 			assertEquals(true, it)
 		}
 
-		assertSuccess(bool.parse("false")) {
+		bool.parse("false").shouldSucceedAnd {
 			assertEquals(false, it)
 		}
 
-		assertInvalid(bool.parse("other"))
-		assertInvalid(bool.parse("something"))
+		shouldBeInvalid(bool.parse("other"))
+		shouldBeInvalid(bool.parse("something"))
 	}
 
 	@Test
@@ -82,11 +82,11 @@ class InputTest {
 	fun `parse email`() = runTest {
 		val email = Input.Email
 
-		assertSuccess(email.parse("my-email@gmail.com")) {
+		email.parse("my-email@gmail.com").shouldSucceedAnd {
 			assertEquals(Email("my-email@gmail.com"), it)
 		}
 
-		assertInvalid(email.parse("something"))
+		shouldBeInvalid(email.parse("something"))
 	}
 
 	@Test
@@ -94,12 +94,12 @@ class InputTest {
 	fun `parse phone number`() = runTest {
 		val phone = Input.Phone
 
-		assertSuccess(phone.parse("+332345678")) {
+		phone.parse("+332345678").shouldSucceedAnd {
 			assertEquals("+332345678", it)
 		}
 
-		assertInvalid(phone.parse("thing"))
-		assertInvalid(phone.parse("123456789123456789123456789"))
+		shouldBeInvalid(phone.parse("thing"))
+		shouldBeInvalid(phone.parse("123456789123456789123456789"))
 	}
 
 	@Test

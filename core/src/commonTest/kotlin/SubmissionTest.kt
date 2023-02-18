@@ -11,10 +11,11 @@ import opensavvy.formulaide.core.Field.Companion.input
 import opensavvy.formulaide.core.Field.Companion.label
 import opensavvy.formulaide.fake.FakeDepartments
 import opensavvy.formulaide.fake.FakeForms
-import opensavvy.formulaide.test.assertions.assertInvalid
-import opensavvy.formulaide.test.assertions.assertSuccess
-import opensavvy.formulaide.test.cases.TestUsers.administratorAuth
+import opensavvy.formulaide.test.assertions.shouldBeInvalid
+import opensavvy.formulaide.test.assertions.shouldSucceed
+import opensavvy.formulaide.test.assertions.shouldSucceedAnd
 import opensavvy.formulaide.test.utils.TestClock.Companion.testClock
+import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
 import opensavvy.state.outcome.orThrow
 import kotlin.js.JsName
 import kotlin.test.Test
@@ -58,7 +59,7 @@ class SubmissionTest {
 		)
 
 		println(submission)
-		assertSuccess(submission.parse())
+		shouldSucceed(submission.parse())
 	}
 
 	@Test
@@ -75,7 +76,7 @@ class SubmissionTest {
 		)
 
 		println(submission)
-		assertInvalid(submission.parse())
+		shouldBeInvalid(submission.parse())
 	}
 
 	@Test
@@ -94,7 +95,7 @@ class SubmissionTest {
 		)
 
 		println(submission)
-		assertSuccess(submission.parse()) {
+		submission.parse().shouldSucceedAnd {
 			assertEquals("answer", it[Field.Id.root])
 		}
 	}
@@ -115,7 +116,7 @@ class SubmissionTest {
 		)
 
 		println(submission)
-		assertSuccess(submission.parse()) {
+		submission.parse().shouldSucceedAnd {
 			assertEquals(6L, it[Field.Id.root])
 		}
 	}
@@ -142,7 +143,7 @@ class SubmissionTest {
 		)
 
 		println(submission)
-		assertSuccess(submission.parse()) {
+		submission.parse().shouldSucceedAnd {
 			assertEquals("Alfred", it[Field.Id(0)])
 			assertEquals("Pennyworth", it[Field.Id(1)])
 		}
@@ -168,7 +169,7 @@ class SubmissionTest {
 		)
 
 		println(submission)
-		assertInvalid(submission.parse())
+		shouldBeInvalid(submission.parse())
 	}
 
 	@Test
@@ -192,7 +193,7 @@ class SubmissionTest {
 		)
 
 		println(submission)
-		assertSuccess(submission.parse()) {
+		submission.parse().shouldSucceedAnd {
 			assertEquals(0, it[Field.Id.root])
 			assertEquals("I prefer the first option", it[Field.Id(0)])
 			assertEquals(null, it[Field.Id(1)])
@@ -220,7 +221,7 @@ class SubmissionTest {
 		)
 
 		println(submission)
-		assertSuccess(submission.parse()) {
+		submission.parse().shouldSucceedAnd {
 			assertEquals("First name", it[Field.Id(0)])
 			assertEquals("Second name", it[Field.Id(1)])
 		}
@@ -286,7 +287,7 @@ class SubmissionTest {
 		)
 
 		println(submission)
-		assertSuccess(submission.parse()) {
+		submission.parse().shouldSucceedAnd {
 			assertEquals(1, it[Field.Id(0)])
 		}
 	}

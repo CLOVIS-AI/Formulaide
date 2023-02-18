@@ -17,22 +17,28 @@ kotlin {
 	}
 
 	sourceSets {
+		all {
+			languageSettings.optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
+			languageSettings.optIn("kotlin.contracts.ExperimentalContracts")
+		}
+
 		val commonMain by getting {
 			dependencies {
 				api(projects.core)
-				implementation(projects.fake)
 
 				api(Kotlin.test.common)
 				api(Kotlin.test.annotationsCommon)
 
 				api(KotlinX.coroutines.test)
 				api(KotlinX.coroutines.debug)
+
+				api(Testing.Kotest.assertions.core)
 			}
 		}
 
 		val jvmMain by getting {
 			dependencies {
-				api(Kotlin.test.junit)
+				api(Kotlin.test.junit5)
 
 				implementation("org.jetbrains.kotlin:kotlin-reflect:_")
 				implementation("ch.qos.logback:logback-classic:_")
@@ -45,4 +51,8 @@ kotlin {
 			}
 		}
 	}
+}
+
+tasks.named<Test>("jvmTest") {
+	useJUnitPlatform()
 }

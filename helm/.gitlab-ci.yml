@@ -109,7 +109,7 @@ helm:review:
 
   environment:
     name: review/$CI_COMMIT_REF_SLUG/app
-    url: https://$host
+    url: https://$host/ping
     deployment_tier: development
     on_stop: helm:review-stop
     auto_stop_in: 2 weeks

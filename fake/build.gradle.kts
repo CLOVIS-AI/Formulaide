@@ -38,3 +38,7 @@ tasks.withType<org.jetbrains.dokka.gradle.DokkaTaskPartial>().configureEach {
 		includes.from("${project.projectDir}/README.md")
 	}
 }
+
+tasks.named<Test>("jvmTest") {
+	useJUnitPlatform()
+}

@@ -1,12 +1,10 @@
 package opensavvy.formulaide.test.utils
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlin.coroutines.coroutineContext
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class TestClock(private val scheduler: TestCoroutineScheduler) : Clock {
 	override fun now(): Instant = Instant.fromEpochMilliseconds(scheduler.currentTime)
 
