@@ -18,6 +18,7 @@ class FakeRecordTest : Executor() {
 				FakeTemplates(testClock()),
 				FakeForms(testClock()),
 				FakeRecords(testClock()),
+				FakeFiles(testClock()),
 			)
 		}
 	}

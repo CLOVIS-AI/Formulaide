@@ -42,7 +42,8 @@ class RemoteRecordTest : Executor() {
 					forms,
 					users,
 					backgroundScope.coroutineContext,
-				)
+				),
+				FakeFiles(testClock()),
 			)
 		}
 	}

@@ -177,13 +177,13 @@ data class Submission(
 	 *
 	 * The results of this function are cached, such that subsequent calls are free.
 	 */
-	suspend fun parse() = out {
+	suspend fun parse(files: File.Service) = out {
 		if (::parsed.isInitialized)
 			return@out parsed
 
 		val field = submittedForField().bind()
 		val parsedData = HashMap<Field.Id, Any>()
-			.also { parseAny(Field.Id.root, field, mandatory = true, it) }
+			.also { parseAny(Field.Id.root, field, mandatory = true, it, files) }
 
 		Parsed(this@Submission, parsedData)
 	}.tap { parsed = it }
@@ -193,12 +193,13 @@ data class Submission(
 		field: Field,
 		mandatory: Boolean,
 		parsedData: MutableParsedData,
+		files: File.Service,
 	) {
 		when (field) {
-			is Field.Arity -> parseArity(id, field, mandatory, parsedData)
-			is Field.Choice -> parseChoice(id, field, mandatory, parsedData)
-			is Field.Group -> parseGroup(id, field, mandatory, parsedData)
-			is Field.Input -> parseInput(id, field, mandatory, parsedData)
+			is Field.Arity -> parseArity(id, field, mandatory, parsedData, files)
+			is Field.Choice -> parseChoice(id, field, mandatory, parsedData, files)
+			is Field.Group -> parseGroup(id, field, mandatory, parsedData, files)
+			is Field.Input -> parseInput(id, field, mandatory, parsedData, files)
 			is Field.Label -> {} // There is nothing to do, labels cannot have values
 		}
 	}
@@ -208,13 +209,14 @@ data class Submission(
 		field: Field.Input,
 		mandatory: Boolean,
 		parsedData: MutableParsedData,
+		files: File.Service,
 	) {
 		val answer = data[id]
 
 		if (!mandatory && answer == null) return
 
 		ensureValid(answer != null) { "Le champ '${field.label}' ($id) est obligatoire" }
-		parsedData[id] = field.input.parse(answer).bind()
+		parsedData[id] = field.input.parse(answer, files).bind()
 	}
 
 	@Suppress("FoldInitializerAndIfToElvis") // makes it harder to read in this case
@@ -223,6 +225,7 @@ data class Submission(
 		field: Field.Choice,
 		mandatory: Boolean,
 		parsedData: MutableParsedData,
+		files: File.Service,
 	) {
 		val selectedAsString = data[id]
 
@@ -243,7 +246,7 @@ data class Submission(
 		ensureValid(selectedField != null) { "Le choix '${field.label}' ($id) ne possède aucune option numérotée $selected" }
 
 		parsedData[id] = selected
-		parseAny(id + selected, selectedField, mandatory = true, parsedData)
+		parseAny(id + selected, selectedField, mandatory = true, parsedData, files)
 	}
 
 	private suspend fun CanFail.parseGroup(
@@ -251,6 +254,7 @@ data class Submission(
 		field: Field.Group,
 		mandatory: Boolean,
 		parsedData: MutableParsedData,
+		files: File.Service,
 	) {
 		val present = data[id] != null
 
@@ -260,7 +264,7 @@ data class Submission(
 		ensureValid(present) { "Le groupe '${field.label}' ($id) est obligatoire, mais le témoin de présence n'a pas été rempli" }
 
 		for ((childId, child) in field.indexedFields) {
-			parseAny(id + childId, child, mandatory = true, parsedData)
+			parseAny(id + childId, child, mandatory = true, parsedData, files)
 		}
 	}
 
@@ -269,15 +273,16 @@ data class Submission(
 		field: Field.Arity,
 		mandatory: Boolean,
 		parsedData: MutableParsedData,
+		files: File.Service,
 	) {
 		// 1. check that all mandatory submissions are present
 		for (i in 0 until field.allowed.first.toInt()) {
-			parseAny(id + i, field.child, mandatory, parsedData)
+			parseAny(id + i, field.child, mandatory, parsedData, files)
 		}
 
 		// 2. check whether bonus submissions are present
 		for (i in field.allowed.first.toInt() until field.allowed.last.toInt()) {
-			parseAny(id + i, field.child, mandatory = false, parsedData)
+			parseAny(id + i, field.child, mandatory = false, parsedData, files)
 		}
 	}
 

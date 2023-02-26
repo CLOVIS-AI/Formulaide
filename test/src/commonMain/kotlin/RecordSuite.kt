@@ -29,6 +29,7 @@ data class RecordTestData(
 	val templates: Template.Service,
 	val forms: Form.Service,
 	val records: Record.Service,
+	val files: File.Service,
 )
 
 fun Suite.recordsTestSuite(
@@ -114,7 +115,7 @@ private fun Suite.create(
 
 					submission shouldNotBe null
 					submission!!.now() shouldSucceedAnd { submission ->
-						val parsed = submission.parse().shouldSucceed()
+						val parsed = submission.parse(data.files).shouldSucceed()
 
 						parsed[Field.Id.root] shouldBe true
 					}
