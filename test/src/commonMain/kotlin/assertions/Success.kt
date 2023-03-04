@@ -5,6 +5,7 @@ package opensavvy.formulaide.test.assertions
 import arrow.core.Either
 import arrow.core.continuations.EffectScope
 import arrow.core.continuations.either
+import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
 import opensavvy.state.Failure
@@ -49,6 +50,18 @@ inline infix fun <T> Outcome<T>.shouldSucceedAnd(assertions: (T) -> Unit): T {
 	}
 
 	return value
+}
+
+inline infix fun <T> Outcome<T>.shouldSucceedAndSoftly(assertions: (T) -> Unit): T {
+	contract {
+		returns() implies (this@shouldSucceedAndSoftly is Either.Right<T>)
+	}
+
+	return shouldSucceedAnd {
+		assertSoftly(it) {
+			assertions(it)
+		}
+	}
 }
 
 fun <T> Outcome<T>.shouldFail(): Failure {
