@@ -40,8 +40,12 @@ private object JsSuite : Suite {
 	override fun test(name: String, context: CoroutineContext, block: suspend TestScope.() -> Unit) {
 		println("Registering test '$name'")
 		kTest.kotlin.test.test(name, false) {
-			runTest(context) {
+			val test = Test(name)
+
+			runTest(context + test) {
 				this.block()
+
+				with(test) { executeFinalizers() }
 			}
 		}
 	}

@@ -34,8 +34,12 @@ private class JvmSuite : Suite {
 
 	override fun test(name: String, context: CoroutineContext, block: suspend TestScope.() -> Unit) {
 		nodes += DynamicTest.dynamicTest(name) {
-			runTest(context) {
+			val test = Test(name)
+
+			runTest(context + test) {
 				block()
+
+				with(test) { executeFinalizers() }
 			}
 		}
 	}
