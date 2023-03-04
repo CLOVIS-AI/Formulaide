@@ -10,12 +10,9 @@
       </option>
       <option name="taskNames">
         <list>
-          <option value="cleanAllTests" />
-          <option value="remote-server:cleanTest" />
-          <option value="mongo:cleanTest" />
           <option value="allTests" />
-          <option value="remote-server:test" />
-          <option value="mongo:test" />
+          <option value="remote-server:check" />
+          <option value="mongo:check" />
         </list>
       </option>
       <option name="vmOptions" value="-ea" />
@@ -23,6 +20,7 @@
     <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
     <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
     <DebugAllEnabled>false</DebugAllEnabled>
+    <ForceTestExec>false</ForceTestExec>
     <method v="2" />
   </configuration>
 </component>
