@@ -75,6 +75,7 @@ class FakeRecords(
 		}
 
 		toRef(id)
+			.also { linkFiles(it, submissionRef) }
 	}
 
 	private suspend fun createSubmission(
@@ -93,7 +94,28 @@ class FakeRecords(
 			val subId = newId()
 			_submissions.data[subId] = sub
 			_submissions.toRef(subId)
-		}
+		}.also { linkFiles(record, it) }
+	}
+
+	private suspend fun linkFiles(record: Record.Ref, submission: Submission.Ref) = out {
+		val sub = submission.now().bind()
+		val form = sub.form.now().bind()
+		val field = form.findFieldForStep(sub.formStep)
+
+		field.tree
+			.filter { (_, it) -> it is Field.Input && it.input is Input.Upload }
+			.map { (id, _) -> id to sub.data[id] }
+			.forEach { (id, value) ->
+				if (value == null) return@forEach
+
+				val file = File.Ref(value, files)
+
+				file.linkTo(
+					record,
+					submission,
+					id,
+				)
+			}
 	}
 
 	private suspend fun advance(

@@ -32,7 +32,8 @@ fun Application.formulaide() {
 	val users = FakeUsers()
 	val templates = FakeTemplates(clock)
 	val forms = FakeForms(clock)
-	val records = FakeRecords(clock)
+	val files = FakeFiles(clock)
+	val records = FakeRecords(clock, files)
 
 	configureServer()
 

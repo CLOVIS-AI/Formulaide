@@ -24,7 +24,7 @@ class RemoteRecordTest : Executor() {
 			val departments = FakeDepartments().spied()
 			val templates = FakeTemplates(clock).spied()
 			val forms = FakeForms(clock).spied()
-			val records = FakeRecords(clock)
+			val records = FakeRecords(clock, FakeFiles(clock))
 			val submissions = records.submissions
 
 			val application = backgroundScope.createTestServer {
