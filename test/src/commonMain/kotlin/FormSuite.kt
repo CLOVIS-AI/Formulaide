@@ -95,6 +95,7 @@ fun Suite.formTestSuite(
 	create: Factory<FormTestData>,
 ) {
 	list(create)
+	request(create)
 	create(create)
 	createVersion(create)
 	edit(create)
@@ -152,6 +153,54 @@ private fun Suite.list(
 			it shouldContain public
 			it shouldContain private
 		}
+	}
+}
+
+private fun Suite.request(
+	create: Factory<FormTestData>,
+) = suite("Access a form") {
+	test("guests cannot access private forms") {
+		val testData = create()
+		val forms = testData.forms
+		val dept = createDepartment(testData.departments)
+
+		val target = createIdeaForm(forms, dept, dept)
+			.also { withContext(administratorAuth) { it.privatize().orThrow() } }
+
+		shouldNotBeFound(target.now())
+	}
+
+	test("guests can access public forms") {
+		val testData = create()
+		val forms = testData.forms
+		val dept = createDepartment(testData.departments)
+
+		val target = createIdeaForm(forms, dept, dept)
+			.also { withContext(administratorAuth) { it.publicize().orThrow() } }
+
+		shouldSucceed(target.now())
+	}
+
+	test("employees can access private forms", employeeAuth) {
+		val testData = create()
+		val forms = testData.forms
+		val dept = createDepartment(testData.departments)
+
+		val target = createIdeaForm(forms, dept, dept)
+			.also { withContext(administratorAuth) { it.privatize().orThrow() } }
+
+		shouldSucceed(target.now())
+	}
+
+	test("employees can access public forms", employeeAuth) {
+		val testData = create()
+		val forms = testData.forms
+		val dept = createDepartment(testData.departments)
+
+		val target = createIdeaForm(forms, dept, dept)
+			.also { withContext(administratorAuth) { it.publicize().orThrow() } }
+
+		shouldSucceed(target.now())
 	}
 }
 

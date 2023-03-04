@@ -2,6 +2,7 @@ package opensavvy.formulaide.fake.spies
 
 import opensavvy.backbone.Ref
 import opensavvy.backbone.RefCache
+import opensavvy.formulaide.core.Field
 import opensavvy.formulaide.core.Record
 import opensavvy.formulaide.core.Submission
 import opensavvy.logger.loggerFor
@@ -19,9 +20,39 @@ class SpyRecords(private val upstream: Record.Service) : Record.Service {
 		log, "create", submission,
 	) { upstream.create(submission) }
 
-	override suspend fun advance(record: Record.Ref, diff: Record.Diff): Outcome<Unit> = spy(
-		log, "advance", record, diff,
-	) { upstream.advance(record, diff) }
+	override suspend fun editInitial(
+		record: Record.Ref,
+		reason: String,
+		submission: Map<Field.Id, String>,
+	): Outcome<Unit> = spy(log, "editInitial", record, reason, submission) {
+		upstream.editInitial(record, reason, submission)
+	}
+
+	override suspend fun editCurrent(
+		record: Record.Ref,
+		reason: String?,
+		submission: Map<Field.Id, String>,
+	): Outcome<Unit> = spy(log, "editCurrent", record, reason, submission) {
+		upstream.editCurrent(record, reason, submission)
+	}
+
+	override suspend fun accept(
+		record: Record.Ref,
+		reason: String?,
+		submission: Map<Field.Id, String>?,
+	): Outcome<Unit> = spy(log, "accept", record, reason, submission) {
+		upstream.accept(record, reason, submission)
+	}
+
+	override suspend fun refuse(record: Record.Ref, reason: String): Outcome<Unit> =
+		spy(log, "refuse", record, reason) {
+			upstream.refuse(record, reason)
+		}
+
+	override suspend fun moveBack(record: Record.Ref, toStep: Int, reason: String): Outcome<Unit> =
+		spy(log, "moveBack", record, toStep, reason) {
+			upstream.moveBack(record, toStep, reason)
+		}
 
 	override val cache: RefCache<Record>
 		get() = upstream.cache

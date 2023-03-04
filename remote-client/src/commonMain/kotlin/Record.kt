@@ -1,16 +1,13 @@
 package opensavvy.formulaide.remote.client
 
 import opensavvy.backbone.Ref
-import opensavvy.backbone.Ref.Companion.expire
 import opensavvy.backbone.RefCache
 import opensavvy.backbone.defaultRefCache
 import opensavvy.cache.ExpirationCache.Companion.expireAfter
 import opensavvy.cache.MemoryCache.Companion.cachedInMemory
-import opensavvy.formulaide.core.Form
-import opensavvy.formulaide.core.Record
-import opensavvy.formulaide.core.Submission
-import opensavvy.formulaide.core.User
+import opensavvy.formulaide.core.*
 import opensavvy.formulaide.remote.api
+import opensavvy.formulaide.remote.dto.RecordDto
 import opensavvy.formulaide.remote.dto.toCore
 import opensavvy.formulaide.remote.dto.toDto
 import opensavvy.logger.Logger.Companion.warn
@@ -69,17 +66,76 @@ class Records(
 		api.records.id.refOf(id, this@Records).bind()
 	}
 
-	override suspend fun advance(record: Record.Ref, diff: Record.Diff): Outcome<Unit> = out {
-		client.http.request(
-			api.records.id.advance,
-			api.records.id.idOf(record.id),
-			diff.toDto(),
-			Parameters.Empty,
-			Unit,
-		).bind()
+	override suspend fun editInitial(
+		record: Record.Ref,
+		reason: String,
+		submission: Map<Field.Id, String>,
+	): Outcome<Unit> = client.http.request(
+		api.records.id.advance,
+		api.records.id.idOf(record.id),
+		RecordDto.Advance(
+			type = RecordDto.Diff.Type.EditInitial,
+			reason = reason,
+			submission = submission.mapKeys { (it, _) -> it.toString() },
+		),
+		Parameters.Empty,
+		Unit,
+	)
 
-		record.expire()
-	}
+	override suspend fun accept(
+		record: Record.Ref,
+		reason: String?,
+		submission: Map<Field.Id, String>?,
+	): Outcome<Unit> = client.http.request(
+		api.records.id.advance,
+		api.records.id.idOf(record.id),
+		RecordDto.Advance(
+			type = RecordDto.Diff.Type.Accept,
+			reason = reason,
+			submission = submission?.mapKeys { (it, _) -> it.toString() },
+		),
+		Parameters.Empty,
+		Unit,
+	)
+
+	override suspend fun editCurrent(
+		record: Record.Ref,
+		reason: String?,
+		submission: Map<Field.Id, String>,
+	): Outcome<Unit> = client.http.request(
+		api.records.id.advance,
+		api.records.id.idOf(record.id),
+		RecordDto.Advance(
+			type = RecordDto.Diff.Type.EditCurrent,
+			reason = reason,
+			submission = submission.mapKeys { (it, _) -> it.toString() },
+		),
+		Parameters.Empty,
+		Unit,
+	)
+
+	override suspend fun refuse(record: Record.Ref, reason: String): Outcome<Unit> = client.http.request(
+		api.records.id.advance,
+		api.records.id.idOf(record.id),
+		RecordDto.Advance(
+			type = RecordDto.Diff.Type.Refuse,
+			reason = reason,
+		),
+		Parameters.Empty,
+		Unit,
+	)
+
+	override suspend fun moveBack(record: Record.Ref, toStep: Int, reason: String): Outcome<Unit> = client.http.request(
+		api.records.id.advance,
+		api.records.id.idOf(record.id),
+		RecordDto.Advance(
+			type = RecordDto.Diff.Type.MoveBack,
+			reason = reason,
+			toStep = toStep,
+		),
+		Parameters.Empty,
+		Unit,
+	)
 
 	override suspend fun directRequest(ref: Ref<Record>): Outcome<Record> = out {
 		ensureValid(ref is Record.Ref) { "Expected Record.Ref, found $ref" }

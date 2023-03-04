@@ -108,12 +108,12 @@ class FakeForms(
 	override val cache: RefCache<Form> = defaultRefCache()
 
 	override suspend fun directRequest(ref: Ref<Form>): Outcome<Form> = out {
-		ensureEmployee()
 		ensureValid(ref is Form.Ref) { "Invalid ref $ref" }
 
 		lock.withPermit {
 			val result = forms[ref.id]
 			ensureFound(result != null) { "Could not find form $ref" }
+			ensureFound(result.public || currentRole() >= User.Role.Employee) { "Could not find form $ref" }
 			result
 		}
 	}

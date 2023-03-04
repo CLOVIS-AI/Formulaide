@@ -317,4 +317,13 @@ data class Submission(
 	) : opensavvy.backbone.Ref<Submission>
 
 	interface Service : Backbone<Submission>
+
+	companion object {
+
+		fun Array<out Pair<String, String>>.toSubmissionData() = associateBy(
+			keySelector = { Field.Id.fromString(it.first) },
+			valueTransform = { it.second },
+		)
+
+	}
 }
