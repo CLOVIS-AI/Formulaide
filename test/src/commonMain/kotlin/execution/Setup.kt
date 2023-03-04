@@ -7,7 +7,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.reflect.KProperty
 
-class Setup<T : Any>(
+class Setup<out T : Any>(
 	val name: String,
 	private val finalize: suspend TestScope.(T) -> Unit = {},
 	private val block: suspend TestScope.() -> T,
