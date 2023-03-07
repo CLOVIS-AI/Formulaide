@@ -6,6 +6,7 @@ plugins {
 dependencies {
 	implementation(projects.core)
 	implementation(projects.fake)
+	implementation(projects.mongo)
 	implementation(projects.remoteServer)
 
 	implementation("opensavvy:logger:_")
