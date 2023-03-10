@@ -10,30 +10,34 @@ import opensavvy.formulaide.remote.server.utils.TestClient
 import opensavvy.formulaide.remote.server.utils.createTestServer
 import opensavvy.formulaide.test.execution.Executor
 import opensavvy.formulaide.test.execution.Suite
+import opensavvy.formulaide.test.execution.prepare
+import opensavvy.formulaide.test.execution.prepared
 import opensavvy.formulaide.test.usersTestSuite
 
 class RemoteUserTest : Executor() {
 
 	@OptIn(ExperimentalCoroutinesApi::class)
 	override fun Suite.register() {
-		usersTestSuite(
-			createDepartments = { FakeDepartments().spied() },
-			createUsers = {
-				val users = FakeUsers().spied()
+		val createDepartments by prepared { FakeDepartments().spied() }
 
-				val application = backgroundScope.createTestServer(users) {
-					routing {
-						users(users, FakeDepartments().spied())
-					}
+		val createUsers by prepared {
+			val users = FakeUsers().spied()
+			val departments = prepare(createDepartments)
+
+			val application = backgroundScope.createTestServer(users) {
+				routing {
+					users(users, departments)
 				}
+			}
 
-				Users(
-					TestClient(application.client),
-					backgroundScope.coroutineContext,
-					FakeDepartments().spied(),
-				)
-			},
-		)
+			Users(
+				TestClient(application.client),
+				backgroundScope.coroutineContext,
+				departments,
+			)
+		}
+
+		usersTestSuite(createDepartments, createUsers)
 	}
 
 }

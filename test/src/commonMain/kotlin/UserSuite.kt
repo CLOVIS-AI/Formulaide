@@ -12,8 +12,9 @@ import opensavvy.formulaide.core.data.Email.Companion.asEmail
 import opensavvy.formulaide.core.data.Password
 import opensavvy.formulaide.core.data.Token
 import opensavvy.formulaide.test.assertions.*
-import opensavvy.formulaide.test.execution.Factory
+import opensavvy.formulaide.test.execution.Setup
 import opensavvy.formulaide.test.execution.Suite
+import opensavvy.formulaide.test.execution.prepare
 import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
 import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
 import opensavvy.formulaide.test.utils.executeAs
@@ -38,8 +39,8 @@ internal suspend fun createAdministrator(users: User.Service) = withContext(admi
 //endregion
 
 fun Suite.usersTestSuite(
-	createDepartments: Factory<Department.Service>,
-	createUsers: Factory<User.Service>,
+	createDepartments: Setup<Department.Service>,
+	createUsers: Setup<User.Service>,
 ) {
 	suite("User management") {
 		list(createUsers)
@@ -58,10 +59,10 @@ fun Suite.usersTestSuite(
 private fun generateId() = Random.nextUInt()
 
 private fun Suite.list(
-	createUsers: Factory<User.Service>,
+	createUsers: Setup<User.Service>,
 ) = suite("List users") {
 	test("guests cannot list users") {
-		val users = createUsers()
+		val users = prepare(createUsers)
 
 		shouldNotBeAuthenticated(users.list(includeClosed = false))
 		shouldNotBeAuthenticated(users.list(includeClosed = true))
@@ -69,24 +70,24 @@ private fun Suite.list(
 }
 
 private fun Suite.create(
-	createUsers: Factory<User.Service>,
+	createUsers: Setup<User.Service>,
 ) = suite("Create users") {
 	test("guests cannot create users") {
-		val users = createUsers()
+		val users = prepare(createUsers)
 
 		shouldNotBeAuthenticated(users.create("my-email@gmail.com".asEmail(), "Me", administrator = true))
 		shouldNotBeAuthenticated(users.create("my-email@gmail.com".asEmail(), "Me", administrator = false))
 	}
 
 	test("employees cannot create users", employeeAuth) {
-		val users = createUsers()
+		val users = prepare(createUsers)
 
 		shouldNotBeAuthorized(users.create("my-email@gmail.com".asEmail(), "Me", administrator = true))
 		shouldNotBeAuthorized(users.create("my-email@gmail.com".asEmail(), "Me", administrator = false))
 	}
 
 	test("administrators can create employees", administratorAuth) {
-		val users = createUsers()
+		val users = prepare(createUsers)
 
 		val userEmail = "employee-${generateId()}@gmail.com".asEmail()
 
@@ -106,7 +107,7 @@ private fun Suite.create(
 	}
 
 	test("administrators can create administrators", administratorAuth) {
-		val users = createUsers()
+		val users = prepare(createUsers)
 
 		val userEmail = "employee-${generateId()}@gmail.com".asEmail()
 
@@ -126,7 +127,7 @@ private fun Suite.create(
 	}
 
 	test("two users cannot have the same email address", administratorAuth) {
-		val users = createUsers()
+		val users = prepare(createUsers)
 		val email = "my-email-${generateId()}@gmail.com".asEmail()
 
 		shouldSucceed(users.create(email, "First user"))
@@ -135,8 +136,8 @@ private fun Suite.create(
 }
 
 private fun Suite.joinLeave(
-	createDepartments: Factory<Department.Service>,
-	createUsers: Factory<User.Service>,
+	createDepartments: Setup<Department.Service>,
+	createUsers: Setup<User.Service>,
 ) = suite("Join or leave a department") {
 	suspend fun shouldHaveNoDepartments(userRef: User.Ref) {
 		withClue("The user doesn't have the rights to join or leave a department, so it should not have been modified") {
@@ -149,8 +150,8 @@ private fun Suite.joinLeave(
 	}
 
 	test("guests cannot make a user join or leave a department") {
-		val users = createUsers()
-		val department = createDepartment(createDepartments())
+		val users = prepare(createUsers)
+		val department = createDepartment(prepare(createDepartments))
 		val user = createEmployee(users).first
 
 		shouldNotBeAuthenticated(user.join(department))
@@ -161,8 +162,8 @@ private fun Suite.joinLeave(
 	}
 
 	test("employees cannot make a user join or leave a department", employeeAuth) {
-		val users = createUsers()
-		val department = createDepartment(createDepartments())
+		val users = prepare(createUsers)
+		val department = createDepartment(prepare(createDepartments))
 		val user = createEmployee(users).first
 
 		shouldNotBeAuthorized(user.join(department))
@@ -173,8 +174,8 @@ private fun Suite.joinLeave(
 	}
 
 	test("employees cannot join or leave a department", employeeAuth) {
-		val users = createUsers()
-		val department = createDepartment(createDepartments())
+		val users = prepare(createUsers)
+		val department = createDepartment(prepare(createDepartments))
 		val user = createEmployee(users).first
 
 		executeAs(user) {
@@ -187,8 +188,8 @@ private fun Suite.joinLeave(
 	}
 
 	test("administrators can make a user join or leave a department", administratorAuth) {
-		val users = createUsers()
-		val department = createDepartment(createDepartments())
+		val users = prepare(createUsers)
+		val department = createDepartment(prepare(createDepartments))
 		val user = createEmployee(users).first
 
 		shouldSucceed(user.join(department))
@@ -204,10 +205,10 @@ private fun Suite.joinLeave(
 }
 
 private fun Suite.edit(
-	createUsers: Factory<User.Service>,
+	createUsers: Setup<User.Service>,
 ) = suite("Edit a user") {
 	test("guests cannot edit a user") {
-		val users = createUsers()
+		val users = prepare(createUsers)
 		val target = createEmployee(users).first
 
 		shouldNotBeAuthenticated(target.enable())
@@ -217,7 +218,7 @@ private fun Suite.edit(
 	}
 
 	test("employees cannot edit a user", employeeAuth) {
-		val users = createUsers()
+		val users = prepare(createUsers)
 		val target = createEmployee(users).first
 
 		shouldNotBeAuthorized(target.enable())
@@ -227,7 +228,7 @@ private fun Suite.edit(
 	}
 
 	test("administrators can enable and disable users", administratorAuth) {
-		val users = createUsers()
+		val users = prepare(createUsers)
 		val employee = createEmployee(users).first
 
 		employee.disable().shouldSucceed()
@@ -242,7 +243,7 @@ private fun Suite.edit(
 	}
 
 	test("administrators cannot edit themselves", administratorAuth) {
-		val users = createUsers()
+		val users = prepare(createUsers)
 		val me = createAdministrator(users).first
 
 		executeAs(me) {
@@ -257,7 +258,7 @@ private fun Suite.edit(
 	}
 
 	test("administrators can promote and demote users", administratorAuth) {
-		val users = createUsers()
+		val users = prepare(createUsers)
 		val employee = createEmployee(users).first
 
 		employee.promote().shouldSucceed()
@@ -272,7 +273,7 @@ private fun Suite.edit(
 	}
 
 	test("administrators cannot demote themselves", administratorAuth) {
-		val users = createUsers()
+		val users = prepare(createUsers)
 		val me = createAdministrator(users).first
 
 		executeAs(me) {
@@ -288,17 +289,17 @@ private fun Suite.edit(
 }
 
 private fun Suite.request(
-	createUsers: Factory<User.Service>,
+	createUsers: Setup<User.Service>,
 ) = suite("Access a user") {
 	test("guests cannot access users") {
-		val users = createUsers()
+		val users = prepare(createUsers)
 		val target = createEmployee(users).first
 
 		shouldNotBeAuthenticated(target.now())
 	}
 
 	test("employees can access users", employeeAuth) {
-		val users = createUsers()
+		val users = prepare(createUsers)
 		val target = createEmployee(users).first
 
 		shouldSucceed(target.now())
@@ -306,10 +307,10 @@ private fun Suite.request(
 }
 
 private fun Suite.password(
-	createUsers: Factory<User.Service>,
+	createUsers: Setup<User.Service>,
 ) = suite("Password management") {
 	test("guests cannot edit passwords") {
-		val users = createUsers()
+		val users = prepare(createUsers)
 		val target = createEmployee(users).first
 
 		shouldNotBeAuthenticated(target.resetPassword())
@@ -317,7 +318,7 @@ private fun Suite.password(
 	}
 
 	test("the single-use password can only be used once", administratorAuth) {
-		val users = createUsers()
+		val users = prepare(createUsers)
 		val (employee, singleUsePassword) = createEmployee(users)
 
 		employee.now() shouldSucceedAnd {
@@ -339,7 +340,7 @@ private fun Suite.password(
 	}
 
 	test("setting a password unlocks an account with a used single-use password", administratorAuth) {
-		val users = createUsers()
+		val users = prepare(createUsers)
 		val (employee, singleUsePassword) = createEmployee(users)
 
 		val email = employee.now().orThrow().email
@@ -367,7 +368,7 @@ private fun Suite.password(
 	}
 
 	test("it is not possible to use a previous password", administratorAuth) {
-		val users = createUsers()
+		val users = prepare(createUsers)
 		val (employee, singleUsePassword) = createEmployee(users)
 
 		val email = employee.now().orThrow().email
@@ -402,7 +403,7 @@ private fun Suite.password(
 	}
 
 	test("cannot edit the password of another user", administratorAuth) {
-		val users = createUsers()
+		val users = prepare(createUsers)
 		val (employee, password) = createEmployee(users)
 
 		shouldNotBeAuthorized(employee.setPassword(password.value, Password("a strong password")))
@@ -416,7 +417,7 @@ private fun Suite.password(
 	}
 
 	test("administrators can reset a user's password", administratorAuth) {
-		val users = createUsers()
+		val users = prepare(createUsers)
 		val (employee, singleUsePassword) = createEmployee(users)
 		val password = Password("new password")
 
@@ -444,7 +445,7 @@ private fun Suite.password(
 	}
 
 	test("cannot log in as a disabled user", administratorAuth) {
-		val users = createUsers()
+		val users = prepare(createUsers)
 		val (employee, singleUsePassword) = createEmployee(users)
 
 		// Prepare the user
@@ -456,7 +457,7 @@ private fun Suite.password(
 	}
 
 	test("cannot log in as a user that doesn't exist") {
-		val users = createUsers()
+		val users = prepare(createUsers)
 
 		withClue("No user was created, this user does not exist") {
 			// Do not return NotFound! -> it would help an attacker enumerate accounts
@@ -466,17 +467,17 @@ private fun Suite.password(
 }
 
 private fun Suite.token(
-	createUsers: Factory<User.Service>,
+	createUsers: Setup<User.Service>,
 ) = suite("Access token management") {
 	test("guests cannot edit tokens") {
-		val users = createUsers()
+		val users = prepare(createUsers)
 		val target = createEmployee(users).first
 
 		shouldNotBeAuthenticated(target.logOut(Token("a token")))
 	}
 
 	test("logging out invalidates the token", administratorAuth) {
-		val users = createUsers()
+		val users = prepare(createUsers)
 		val (employee, password) = createEmployee(users)
 
 		val token = users.logIn(employee.now().orThrow().email, password).orThrow().second
@@ -496,7 +497,7 @@ private fun Suite.token(
 	}
 
 	test("logging out with an invalid token does nothing", administratorAuth) {
-		val users = createUsers()
+		val users = prepare(createUsers)
 		val (employee, _) = createEmployee(users)
 
 		executeAs(employee) {
@@ -509,7 +510,7 @@ private fun Suite.token(
 	}
 
 	test("cannot log out someone else", administratorAuth) {
-		val users = createUsers()
+		val users = prepare(createUsers)
 		val (employee, password) = createEmployee(users)
 
 		val token = users.logIn(employee.now().orThrow().email, password).orThrow().second
@@ -524,7 +525,7 @@ private fun Suite.token(
 	}
 
 	test("reset a password delogs the user", administratorAuth) {
-		val users = createUsers()
+		val users = prepare(createUsers)
 		val (employee, singleUsePassword) = createEmployee(users)
 
 		//region Setup: log in with two tokens
@@ -547,7 +548,7 @@ private fun Suite.token(
 	}
 
 	test("setting a password delogs the user", administratorAuth) {
-		val users = createUsers()
+		val users = prepare(createUsers)
 		val (employee, singleUsePassword) = createEmployee(users)
 
 		//region Setup: log in with two tokens
