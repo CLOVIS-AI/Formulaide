@@ -85,7 +85,7 @@ helm:publish:
     - >
       helm upgrade --install
       $release
-      helm/formulaide-$project_version.tgz
+      ./helm/formulaide-$project_version.tgz
       --set config.host=$host
       --set config.replicas=$replicas
       --set config.version=build-$CI_PIPELINE_IID
