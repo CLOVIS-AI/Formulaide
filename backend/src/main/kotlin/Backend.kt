@@ -7,13 +7,13 @@ import io.ktor.server.plugins.callloging.*
 import io.ktor.server.plugins.hsts.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.datetime.Clock
 import opensavvy.formulaide.core.Auth.Companion.currentRole
 import opensavvy.formulaide.core.Auth.Companion.currentUser
 import opensavvy.formulaide.fake.*
+import opensavvy.formulaide.mongo.Database
+import opensavvy.formulaide.mongo.DepartmentDb
 import opensavvy.formulaide.remote.server.*
 import org.slf4j.event.Level
 
@@ -28,7 +28,17 @@ fun main() {
 fun Application.formulaide() {
 	val clock = Clock.System
 
-	val departments = FakeDepartments()
+	val database = Database(
+		hostname = System.getenv("formulaide_host"),
+		port = System.getenv("formulaide_port"),
+		username = System.getenv("formulaide_username"),
+		password = System.getenv("formulaide_password"),
+		database = System.getenv("formulaide_database"),
+	)
+
+	val cacheScope = CoroutineScope(Job())
+
+	val departments = DepartmentDb(database, cacheScope.coroutineContext)
 	val users = FakeUsers()
 	val templates = FakeTemplates(clock)
 	val forms = FakeForms(clock)
