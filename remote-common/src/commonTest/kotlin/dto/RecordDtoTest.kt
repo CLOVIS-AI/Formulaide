@@ -9,6 +9,7 @@ import opensavvy.formulaide.core.Form
 import opensavvy.formulaide.core.Record
 import opensavvy.formulaide.core.Submission
 import opensavvy.formulaide.fake.FakeDepartments
+import opensavvy.formulaide.fake.FakeFiles
 import opensavvy.formulaide.fake.FakeForms
 import opensavvy.formulaide.fake.FakeRecords
 import opensavvy.formulaide.test.utils.TestClock.Companion.testClock
@@ -29,7 +30,7 @@ class RecordDtoTest {
 		val departments = FakeDepartments()
 		val clock = testClock()
 		val forms = FakeForms(clock)
-		val records = FakeRecords(clock)
+		val records = FakeRecords(clock, FakeFiles(clock))
 
 		val dept = departments.create("Test").orThrow()
 		val form = forms.create(

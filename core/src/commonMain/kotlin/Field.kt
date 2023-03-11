@@ -46,6 +46,20 @@ sealed class Field {
 			.asSequence()
 
 	/**
+	 * The entire field tree, including this field itself and all its children, recursively.
+	 */
+	val tree: Sequence<Pair<Id, Field>>
+		get() = sequence {
+			yield(Id.root to this@Field)
+
+			for ((id, child) in indexedFields) {
+				child.tree
+					.map { (subId, subField) -> (Id(id) + subId) to subField }
+					.also { yieldAll(it) }
+			}
+		}
+
+	/**
 	 * Origin of this field.
 	 *
 	 * If this field was imported from a [Template], this stores the version of that template.

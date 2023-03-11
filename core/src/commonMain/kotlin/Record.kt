@@ -32,6 +32,8 @@ data class Record(
 		require(history.count { it is Diff.Initial } == 1) { "Un dossier doit avoir exactement une saisie initiale : $this" }
 	}
 
+	val initialSubmission get() = history.first() as Diff.Initial // checked by the constructor
+
 	/**
 	 * The current state of a [Record] in a form's [automaton][Form.Step].
 	 */

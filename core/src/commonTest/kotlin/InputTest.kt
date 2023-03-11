@@ -3,8 +3,10 @@ package opensavvy.formulaide.core
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import opensavvy.formulaide.core.data.Email
+import opensavvy.formulaide.fake.FakeFiles
 import opensavvy.formulaide.test.assertions.shouldBeInvalid
 import opensavvy.formulaide.test.assertions.shouldSucceedAnd
+import opensavvy.formulaide.test.utils.TestClock.Companion.testClock
 import opensavvy.state.outcome.out
 import kotlin.js.JsName
 import kotlin.test.Test
@@ -16,41 +18,45 @@ class InputTest {
 	@Test
 	@JsName("textMaxSize")
 	fun `text max size`() = runTest {
+		val files = FakeFiles(testClock())
+
 		val text = Input.Text(maxLength = 5u)
 
 		assertEquals(5u, text.effectiveMaxLength)
 
-		text.parse("hello").shouldSucceedAnd {
+		text.parse("hello", files).shouldSucceedAnd {
 			assertEquals("hello", it)
 		}
 
-		shouldBeInvalid(text.parse("too long"))
-		shouldBeInvalid(text.parse("123456"))
+		shouldBeInvalid(text.parse("too long", files))
+		shouldBeInvalid(text.parse("123456", files))
 	}
 
 	@Test
 	@JsName("integer")
 	fun `parse integer`() = runTest {
+		val files = FakeFiles(testClock())
+
 		val int = Input.Integer(min = -5, max = 5)
 
 		assertEquals(-5, int.effectiveMin)
 		assertEquals(5, int.effectiveMax)
 
-		int.parse("1").shouldSucceedAnd {
+		int.parse("1", files).shouldSucceedAnd {
 			assertEquals(1, it)
 		}
 
-		int.parse("-5").shouldSucceedAnd {
+		int.parse("-5", files).shouldSucceedAnd {
 			assertEquals(-5, it)
 		}
 
-		int.parse("5").shouldSucceedAnd {
+		int.parse("5", files).shouldSucceedAnd {
 			assertEquals(5, it)
 		}
 
-		shouldBeInvalid(int.parse("-6"))
-		shouldBeInvalid(int.parse("6"))
-		shouldBeInvalid(int.parse("95"))
+		shouldBeInvalid(int.parse("-6", files))
+		shouldBeInvalid(int.parse("6", files))
+		shouldBeInvalid(int.parse("95", files))
 	}
 
 	@Test
@@ -63,43 +69,46 @@ class InputTest {
 	@Test
 	@JsName("toggle")
 	fun `parse boolean`() = runTest {
+		val files = FakeFiles(testClock())
 		val bool = Input.Toggle
 
-		bool.parse("true").shouldSucceedAnd {
+		bool.parse("true", files).shouldSucceedAnd {
 			assertEquals(true, it)
 		}
 
-		bool.parse("false").shouldSucceedAnd {
+		bool.parse("false", files).shouldSucceedAnd {
 			assertEquals(false, it)
 		}
 
-		shouldBeInvalid(bool.parse("other"))
-		shouldBeInvalid(bool.parse("something"))
+		shouldBeInvalid(bool.parse("other", files))
+		shouldBeInvalid(bool.parse("something", files))
 	}
 
 	@Test
 	@JsName("email")
 	fun `parse email`() = runTest {
+		val files = FakeFiles(testClock())
 		val email = Input.Email
 
-		email.parse("my-email@gmail.com").shouldSucceedAnd {
+		email.parse("my-email@gmail.com", files).shouldSucceedAnd {
 			assertEquals(Email("my-email@gmail.com"), it)
 		}
 
-		shouldBeInvalid(email.parse("something"))
+		shouldBeInvalid(email.parse("something", files))
 	}
 
 	@Test
 	@JsName("phone")
 	fun `parse phone number`() = runTest {
+		val files = FakeFiles(testClock())
 		val phone = Input.Phone
 
-		phone.parse("+332345678").shouldSucceedAnd {
+		phone.parse("+332345678", files).shouldSucceedAnd {
 			assertEquals("+332345678", it)
 		}
 
-		shouldBeInvalid(phone.parse("thing"))
-		shouldBeInvalid(phone.parse("123456789123456789123456789"))
+		shouldBeInvalid(phone.parse("thing", files))
+		shouldBeInvalid(phone.parse("123456789123456789123456789", files))
 	}
 
 	@Test

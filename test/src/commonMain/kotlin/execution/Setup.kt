@@ -2,9 +2,12 @@ package opensavvy.formulaide.test.execution
 
 import io.kotest.assertions.withClue
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.reflect.KProperty
 
-class Setup<T : Any>(
+class Setup<out T : Any>(
 	val name: String,
 	private val finalize: suspend TestScope.(T) -> Unit = {},
 	private val block: suspend TestScope.() -> T,
@@ -53,9 +56,14 @@ class SetupProvider<T : Any>(
 }
 
 fun <T : Any> prepared(
+	context: CoroutineContext = EmptyCoroutineContext,
 	finalize: suspend TestScope.(T) -> Unit = {},
 	block: suspend TestScope.() -> T,
-): SetupProvider<T> = SetupProvider(finalize, block)
+): SetupProvider<T> = SetupProvider(finalize) {
+	withContext(context) {
+		block()
+	}
+}
 
 suspend fun <T : Any> TestScope.prepare(setup: Setup<T>): T = with(setup) {
 	withClue("Preparing '${setup.name}'…") {

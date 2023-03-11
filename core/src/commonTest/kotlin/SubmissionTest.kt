@@ -10,6 +10,7 @@ import opensavvy.formulaide.core.Field.Companion.group
 import opensavvy.formulaide.core.Field.Companion.input
 import opensavvy.formulaide.core.Field.Companion.label
 import opensavvy.formulaide.fake.FakeDepartments
+import opensavvy.formulaide.fake.FakeFiles
 import opensavvy.formulaide.fake.FakeForms
 import opensavvy.formulaide.test.assertions.shouldBeInvalid
 import opensavvy.formulaide.test.assertions.shouldSucceed
@@ -48,6 +49,7 @@ class SubmissionTest {
 	@Test
 	@JsName("parseLabel")
 	fun `labels do not appear in submissions`() = runTest {
+		val files = FakeFiles(testClock())
 		val form = createTestForm(
 			label("Label"),
 		)
@@ -59,12 +61,13 @@ class SubmissionTest {
 		)
 
 		println(submission)
-		shouldSucceed(submission.parse())
+		shouldSucceed(submission.parse(files))
 	}
 
 	@Test
 	@JsName("parseInputMissing")
 	fun `inputs are mandatory`() = runTest {
+		val files = FakeFiles(testClock())
 		val form = createTestForm(
 			input("Input", Input.Text()),
 		)
@@ -76,12 +79,13 @@ class SubmissionTest {
 		)
 
 		println(submission)
-		shouldBeInvalid(submission.parse())
+		shouldBeInvalid(submission.parse(files))
 	}
 
 	@Test
 	@JsName("parseInputText")
 	fun `parse text`() = runTest {
+		val files = FakeFiles(testClock())
 		val form = createTestForm(
 			input("Input", Input.Text()),
 		)
@@ -95,7 +99,7 @@ class SubmissionTest {
 		)
 
 		println(submission)
-		submission.parse().shouldSucceedAnd {
+		submission.parse(files).shouldSucceedAnd {
 			assertEquals("answer", it[Field.Id.root])
 		}
 	}
@@ -103,6 +107,7 @@ class SubmissionTest {
 	@Test
 	@JsName("parseInputInt")
 	fun `parse int`() = runTest {
+		val files = FakeFiles(testClock())
 		val form = createTestForm(
 			input("Input", Input.Integer()),
 		)
@@ -116,7 +121,7 @@ class SubmissionTest {
 		)
 
 		println(submission)
-		submission.parse().shouldSucceedAnd {
+		submission.parse(files).shouldSucceedAnd {
 			assertEquals(6L, it[Field.Id.root])
 		}
 	}
@@ -124,6 +129,7 @@ class SubmissionTest {
 	@Test
 	@JsName("parseGroup")
 	fun `parse group`() = runTest {
+		val files = FakeFiles(testClock())
 		val form = createTestForm(
 			group(
 				"Group",
@@ -143,7 +149,7 @@ class SubmissionTest {
 		)
 
 		println(submission)
-		submission.parse().shouldSucceedAnd {
+		submission.parse(files).shouldSucceedAnd {
 			assertEquals("Alfred", it[Field.Id(0)])
 			assertEquals("Pennyworth", it[Field.Id(1)])
 		}
@@ -152,6 +158,7 @@ class SubmissionTest {
 	@Test
 	@JsName("parseIncompleteGroup")
 	fun `parse incomplete group`() = runTest {
+		val files = FakeFiles(testClock())
 		val form = createTestForm(
 			group(
 				"Group",
@@ -169,12 +176,13 @@ class SubmissionTest {
 		)
 
 		println(submission)
-		shouldBeInvalid(submission.parse())
+		shouldBeInvalid(submission.parse(files))
 	}
 
 	@Test
 	@JsName("parseChoice")
 	fun `parse choice`() = runTest {
+		val files = FakeFiles(testClock())
 		val form = createTestForm(
 			choice(
 				"Choice",
@@ -193,7 +201,7 @@ class SubmissionTest {
 		)
 
 		println(submission)
-		submission.parse().shouldSucceedAnd {
+		submission.parse(files).shouldSucceedAnd {
 			assertEquals(0, it[Field.Id.root])
 			assertEquals("I prefer the first option", it[Field.Id(0)])
 			assertEquals(null, it[Field.Id(1)])
@@ -203,6 +211,7 @@ class SubmissionTest {
 	@Test
 	@JsName("parseArity")
 	fun `parse arity`() = runTest {
+		val files = FakeFiles(testClock())
 		val form = createTestForm(
 			arity(
 				"Names",
@@ -221,7 +230,7 @@ class SubmissionTest {
 		)
 
 		println(submission)
-		submission.parse().shouldSucceedAnd {
+		submission.parse(files).shouldSucceedAnd {
 			assertEquals("First name", it[Field.Id(0)])
 			assertEquals("Second name", it[Field.Id(1)])
 		}
@@ -265,6 +274,7 @@ class SubmissionTest {
 	@Test
 	@JsName("complexValid")
 	fun `complex correct submission`() = runTest {
+		val files = FakeFiles(testClock())
 		val form = createTestForm(complexField)
 		println(form.versionsSorted.first().now().orThrow().field)
 
@@ -287,7 +297,7 @@ class SubmissionTest {
 		)
 
 		println(submission)
-		submission.parse().shouldSucceedAnd {
+		submission.parse(files).shouldSucceedAnd {
 			assertEquals(1, it[Field.Id(0)])
 		}
 	}

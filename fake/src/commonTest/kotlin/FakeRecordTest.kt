@@ -13,11 +13,14 @@ class FakeRecordTest : Executor() {
 	@OptIn(ExperimentalCoroutinesApi::class)
 	override fun Suite.register() {
 		recordsTestSuite {
+			val clock = testClock()
+
 			RecordTestData(
 				FakeDepartments().spied(),
-				FakeTemplates(testClock()),
-				FakeForms(testClock()),
-				FakeRecords(testClock()),
+				FakeTemplates(clock),
+				FakeForms(clock),
+				FakeRecords(clock, FakeFiles(clock)),
+				FakeFiles(clock),
 			)
 		}
 	}

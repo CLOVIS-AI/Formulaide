@@ -8,19 +8,17 @@ import opensavvy.backbone.Ref.Companion.expire
 import opensavvy.backbone.Ref.Companion.now
 import opensavvy.backbone.RefCache
 import opensavvy.backbone.defaultRefCache
+import opensavvy.formulaide.core.*
 import opensavvy.formulaide.core.Auth.Companion.currentRole
 import opensavvy.formulaide.core.Auth.Companion.currentUser
 import opensavvy.formulaide.core.Auth.Companion.ensureEmployee
-import opensavvy.formulaide.core.Field
-import opensavvy.formulaide.core.Record
-import opensavvy.formulaide.core.Submission
-import opensavvy.formulaide.core.User
 import opensavvy.formulaide.fake.utils.newId
 import opensavvy.state.Failure
 import opensavvy.state.outcome.*
 
 class FakeRecords(
 	private val clock: Clock,
+	private val files: File.Service,
 ) : Record.Service {
 
 	private val lock = Semaphore(1)
@@ -46,7 +44,7 @@ class FakeRecords(
 		}
 
 		ensureValid(submission.formStep == null) { "Il n'est pas possible de créer un dossier pour une autre étape que la saisie initiale, ${submission.formStep} a été demandé" }
-		submission.parse().bind()
+		submission.parse(files).bind()
 
 		val id = newId()
 
@@ -77,6 +75,7 @@ class FakeRecords(
 		}
 
 		toRef(id)
+			.also { linkFiles(it, submissionRef) }
 	}
 
 	private suspend fun createSubmission(
@@ -95,7 +94,28 @@ class FakeRecords(
 			val subId = newId()
 			_submissions.data[subId] = sub
 			_submissions.toRef(subId)
-		}
+		}.also { linkFiles(record, it) }
+	}
+
+	private suspend fun linkFiles(record: Record.Ref, submission: Submission.Ref) = out {
+		val sub = submission.now().bind()
+		val form = sub.form.now().bind()
+		val field = form.findFieldForStep(sub.formStep)
+
+		field.tree
+			.filter { (_, it) -> it is Field.Input && it.input is Input.Upload }
+			.map { (id, _) -> id to sub.data[id] }
+			.forEach { (id, value) ->
+				if (value == null) return@forEach
+
+				val file = File.Ref(value, files)
+
+				file.linkTo(
+					record,
+					submission,
+					id,
+				)
+			}
 	}
 
 	private suspend fun advance(
@@ -103,7 +123,7 @@ class FakeRecords(
 		diff: Record.Diff,
 	): Outcome<Unit> = out {
 		diff.submission?.also {
-			it.now().bind().parse()
+			it.now().bind().parse(files)
 		}
 
 		run {
