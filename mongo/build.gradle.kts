@@ -11,6 +11,8 @@ dependencies {
 	api(KotlinX.coroutines.core)
 	implementation("org.litote.kmongo:kmongo-coroutine-serialization:_")
 
+	implementation("at.favre.lib:bcrypt:_")
+
 	implementation("opensavvy:logger:_")
 
 	testImplementation(projects.test)
