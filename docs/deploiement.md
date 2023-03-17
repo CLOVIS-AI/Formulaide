@@ -53,18 +53,8 @@ Le serveur est configuré grâce à des variables d'environnement :
   - `formulaide_host` et `formulaide_port` : la machine et le port que le serveur doit utiliser pour se connecter à MongoDB (le nom de la machine peut être une adresse IP ou un nom DNS),
   - `formulaide_database` : le nom de la base de données utilisée par Formulaide (permet de partager une instance MongoDB entre Formulaide et d'autres outils). Si la base n'existe pas, elle sera créée automatiquement (conseillé : `formulaide`),
   - `formulaide_username` et `formulaide_password` : le compte utilisé par le serveur pour se connecter à MongoDB. Ce compte doit avoir tous les droits sur la base fournie précédemment (aucun droit sur les autres bases n'est nécessaire),
-- sécurité :
-  - `formulaide_jwt_secret` : le secret utilisé en interne pour identifier les utilisateurs.
-    Il est la base de la sécurité de Formulaide.
-    Un attaquant y aillant accès peut se connecter en temps que n'importe quel compte (même administrateur).
-    Vous n'aurez jamais besoin de le taper ni de vous en souvenir.
-    Choisissez du texte le plus compliqué possible (plusieurs phrases difficiles à deviner) et ne le transmettez jamais à quiconque.
-    Modifier ce secret déconnecte tous les utilisateurs de force (ils devront réécrire leur mot de passe).
 - personnalisation :
   - `formulaide_report_email` : l'adresse mail à laquelle les signalements de bugs réalisés par les employés sont envoyés (si manquant : signalement aux développeurs de Formulaide)
-  - `formulaide_help_url` : le lien vers lequel les utilisateurs sont redirigés lorsqu'ils appuient sur le bouton 'aide' sur la page d'accueil (si manquant : guide utilisateur)
-  - `formulaide_pdf_image_left_url` : image insérée en haut des récépissés (si manquant : pas d'image affichée)
-  - `formulaide_pdf_image_right_url` : image insérée en bas des récépissés (si manquant : pas d'image affichée)
 
 ## Docker Compose
 
@@ -171,9 +161,6 @@ Au minimum, il faut modifier le nom du serveur sur lequel vous déployez Formula
 ```yaml
 config:
   host: "formulaide.mon-site.fr"
-
-security:
-  jwt_secret: "il faut impérativement remplacer ceci par quelque chose de secret !"
 
 mongodb:
   auth:
