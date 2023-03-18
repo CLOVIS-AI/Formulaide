@@ -217,6 +217,7 @@ private fun Suite.createVersion(
 		advanceTimeBy(10)
 
 		val template = createCityTemplate(templates)
+		advanceTimeBy(10)
 
 		val versionRef = template.createVersion(
 			"Second version",
@@ -244,6 +245,8 @@ private fun Suite.createVersion(
 		val templates = createTemplates()
 
 		val cities = createCityTemplate(templates)
+		advanceTimeBy(10)
+
 		val firstVersion = cities.now()
 			.map { it.versions.first() }.orThrow()
 
