@@ -1,6 +1,7 @@
 package opensavvy.formulaide.remote.client
 
 import io.ktor.client.*
+import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.flow.Flow
@@ -17,6 +18,13 @@ interface Client {
 		fun HttpClientConfig<*>.configureClient() {
 			install(ContentNegotiation) {
 				json(ApiJson)
+			}
+
+			install(HttpRequestRetry) {
+				exponentialDelay()
+
+				retryOnServerErrors(maxRetries = 1)
+				retryOnException(maxRetries = 3)
 			}
 		}
 	}
