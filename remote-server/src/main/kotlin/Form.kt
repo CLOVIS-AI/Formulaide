@@ -21,7 +21,7 @@ fun Routing.forms(
 	route(api.forms.get, contextGenerator) {
 		forms.list(includeClosed = parameters.includeClosed)
 			.bind()
-			.map { api.templates.id.idOf(it.id) }
+			.map { api.forms.id.idOf(it.id) }
 	}
 
 	route(api.forms.create, contextGenerator) {
@@ -36,7 +36,7 @@ fun Routing.forms(
 				}
 			)
 		).bind()
-			.let { api.templates.id.idOf(it.id) }
+			.let { api.forms.id.idOf(it.id) }
 			.let { Identified(it, Unit) }
 	}
 
