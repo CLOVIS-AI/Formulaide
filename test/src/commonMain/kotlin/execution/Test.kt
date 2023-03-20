@@ -9,11 +9,13 @@ import kotlin.coroutines.EmptyCoroutineContext
 
 interface Suite {
 
+	@SuiteDsl
 	fun suite(
 		name: String,
 		block: Suite.() -> Unit,
 	)
 
+	@SuiteDsl
 	fun test(
 		name: String,
 		context: CoroutineContext = EmptyCoroutineContext,
