@@ -19,6 +19,13 @@ spec:
           image: "{{ .Values.config.image }}:{{ .Values.config.version }}"
           ports:
             - containerPort: 9000
+          livenessProbe:
+            httpGet:
+              port: 9000
+              path: /ping
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
           env:
             - name: formulaide_host
               valueFrom:
