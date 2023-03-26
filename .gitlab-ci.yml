@@ -6,7 +6,7 @@ stages:
   - deploy      # Final container generation
 
 variables:
-  jdk_image: "openjdk:17"
+  jdk_image: "openjdk:17-bullseye"
   server_bin: "$CI_REGISTRY_IMAGE/server"
 
 include:
