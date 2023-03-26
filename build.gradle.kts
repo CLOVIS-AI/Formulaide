@@ -14,7 +14,7 @@ plugins {
 	id("org.jetbrains.kotlinx.kover")
 }
 
-group = "opensavvy"
+group = "opensavvy.formulaide"
 version = calculateVersion()
 
 subprojects {
