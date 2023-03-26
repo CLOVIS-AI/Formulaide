@@ -57,11 +57,15 @@ inline infix fun <T> Outcome<T>.shouldSucceedAndSoftly(assertions: (T) -> Unit):
 		returns() implies (this@shouldSucceedAndSoftly is Either.Right<T>)
 	}
 
-	return shouldSucceedAnd {
-		assertSoftly(it) {
-			assertions(it)
+	val value = shouldSucceed(this)
+
+	withClue({ value }) {
+		assertSoftly {
+			assertions(value)
 		}
 	}
+
+	return value
 }
 
 fun <T> Outcome<T>.shouldFail(): Failure {
