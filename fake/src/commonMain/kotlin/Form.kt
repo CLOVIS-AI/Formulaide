@@ -5,6 +5,7 @@ import kotlinx.coroutines.sync.withPermit
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import opensavvy.backbone.Ref
+import opensavvy.backbone.Ref.Companion.expire
 import opensavvy.backbone.RefCache
 import opensavvy.backbone.defaultRefCache
 import opensavvy.formulaide.core.Auth.Companion.currentRole
@@ -85,6 +86,8 @@ class FakeForms(
 			forms[form.id] = value.copy(versions = value.versions + ref)
 		}
 
+		form.expire()
+
 		ref
 	}
 
@@ -103,6 +106,8 @@ class FakeForms(
 
 			forms[form.id] = new
 		}
+
+		form.expire()
 	}
 
 	override val cache: RefCache<Form> = defaultRefCache()
