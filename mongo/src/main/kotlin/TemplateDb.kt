@@ -93,6 +93,8 @@ class TemplateDb(
 
         val id = newId<TemplateDbDto>().toString()
 
+        firstVersion.field.validate().bind()
+
         collection.insertOne(
             TemplateDbDto(
                 id = id,
