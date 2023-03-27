@@ -5,6 +5,7 @@ import kotlinx.coroutines.sync.withPermit
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import opensavvy.backbone.Ref
+import opensavvy.backbone.Ref.Companion.expire
 import opensavvy.backbone.RefCache
 import opensavvy.backbone.defaultRefCache
 import opensavvy.formulaide.core.Auth.Companion.currentRole
@@ -85,6 +86,8 @@ class FakeForms(
 			forms[form.id] = value.copy(versions = value.versions + ref)
 		}
 
+		form.expire()
+
 		ref
 	}
 
@@ -103,6 +106,8 @@ class FakeForms(
 
 			forms[form.id] = new
 		}
+
+		form.expire()
 	}
 
 	override val cache: RefCache<Form> = defaultRefCache()
@@ -113,7 +118,7 @@ class FakeForms(
 		lock.withPermit {
 			val result = forms[ref.id]
 			ensureFound(result != null) { "Could not find form $ref" }
-			ensureFound(result.public || currentRole() >= User.Role.Employee) { "Could not find form $ref" }
+			ensureFound((result.public && result.open) || currentRole() >= User.Role.Employee) { "Could not find form $ref" }
 			result
 		}
 	}
