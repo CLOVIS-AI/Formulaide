@@ -25,6 +25,13 @@ private fun fakeAdmin(users: User.Service) = Auth(
 	)
 )
 
+/**
+ * This method impersonates an administrator to get a user. It should almost never be used!
+ */
+internal suspend fun getUserUnsafe(users: User.Service, user: User.Ref) = withContext(fakeAdmin(users)) {
+	user.now()
+}
+
 private suspend fun createUser(users: User.Service, name: String, isAdmin: Boolean, email: Email, password: Password) =
 	out {
 		val user = users.list(includeClosed = true).bind()
