@@ -8,18 +8,27 @@ import opensavvy.formulaide.remote.dto.InputDto.Companion.toCore
 import opensavvy.formulaide.remote.dto.InputDto.Companion.toDto
 import opensavvy.spine.Id
 
+/**
+ * DTO for [Field].
+ */
 @Serializable
 sealed class FieldDto {
 
 	abstract val label: String
 	abstract val importedFrom: Id?
 
+	/**
+	 * DTO for [Field.Label].
+	 */
 	@Serializable
 	class Label(
 		override val label: String,
 		override val importedFrom: Id? = null,
 	) : FieldDto()
 
+	/**
+	 * DTO for [Field.Input].
+	 */
 	@Serializable
 	class Input(
 		override val label: String,
@@ -27,6 +36,9 @@ sealed class FieldDto {
 		override val importedFrom: Id? = null,
 	) : FieldDto()
 
+	/**
+	 * DTO for [Field.Choice].
+	 */
 	@Serializable
 	class Choice(
 		override val label: String,
@@ -34,6 +46,9 @@ sealed class FieldDto {
 		override val importedFrom: Id? = null,
 	) : FieldDto()
 
+	/**
+	 * DTO for [Field.Group].
+	 */
 	@Serializable
 	class Group(
 		override val label: String,
@@ -41,6 +56,9 @@ sealed class FieldDto {
 		override val importedFrom: Id? = null,
 	) : FieldDto()
 
+	/**
+	 * DTO for [Field.Arity].
+	 */
 	@Serializable
 	class Arity(
 		override val label: String,

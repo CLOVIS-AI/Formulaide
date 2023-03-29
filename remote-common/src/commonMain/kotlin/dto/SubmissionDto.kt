@@ -8,6 +8,9 @@ import opensavvy.formulaide.remote.api
 import opensavvy.spine.Id
 import opensavvy.state.outcome.out
 
+/**
+ * DTO for [Submission].
+ */
 @Serializable
 class SubmissionDto(
 	val form: Id,

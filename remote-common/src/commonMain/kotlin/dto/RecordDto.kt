@@ -10,6 +10,9 @@ import opensavvy.formulaide.remote.api
 import opensavvy.spine.Id
 import opensavvy.state.outcome.out
 
+/**
+ * DTO for [Record].
+ */
 @Serializable
 class RecordDto(
 	val form: Id,
@@ -19,9 +22,15 @@ class RecordDto(
 	val history: List<Diff>,
 ) {
 
+	/**
+	 * DTO for [Record.QueryCriterion].
+	 */
 	@Serializable
 	sealed class Criterion
 
+	/**
+	 * DTO for [Record.Diff].
+	 */
 	@Serializable
 	class Diff(
 		val type: Type,
@@ -59,7 +68,7 @@ class RecordDto(
 	}
 
 	/**
-	 * The [status][Record.Status] of a record.
+	 * DTO for [Record.Status].
 	 */
 	@Serializable
 	sealed class Status {

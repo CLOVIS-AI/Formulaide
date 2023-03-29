@@ -22,6 +22,9 @@ class SchemaDto(
 	val versions: List<Id>,
 ) {
 
+	/**
+	 * DTO for [Template.Version] and [Form.Version].
+	 */
 	@Serializable
 	class Version(
 		val creationDate: Instant,
@@ -30,6 +33,9 @@ class SchemaDto(
 		val steps: List<Step>? = null,
 	)
 
+	/**
+	 * DTO for [Form.Step].
+	 */
 	@Serializable
 	class Step(
 		val id: Int,

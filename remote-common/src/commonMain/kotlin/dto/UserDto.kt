@@ -1,9 +1,13 @@
 package opensavvy.formulaide.remote.dto
 
 import kotlinx.serialization.Serializable
+import opensavvy.formulaide.core.User
 import opensavvy.spine.Id
 import opensavvy.spine.Parameters
 
+/**
+ * DTO for [User].
+ */
 @Serializable
 data class UserDto(
 	val email: String,
