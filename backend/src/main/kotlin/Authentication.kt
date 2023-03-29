@@ -3,7 +3,6 @@ package opensavvy.formulaide.backend
 import arrow.core.getOrHandle
 import io.ktor.server.application.*
 import kotlinx.coroutines.withContext
-import opensavvy.backbone.Ref.Companion.now
 import opensavvy.formulaide.core.Auth
 import opensavvy.formulaide.core.User
 import opensavvy.formulaide.core.User.Role.Companion.role
@@ -45,7 +44,7 @@ val TokenAuthentication = createApplicationPlugin(
 				return@intercept
 			}
 
-		val role = user.now()
+		val role = getUserUnsafe(users, user)
 			.getOrHandle {
 				application.log.warn("Could not find role for user $user, proceeding as guest; $it")
 				proceed()
