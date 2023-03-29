@@ -4,6 +4,9 @@ import kotlinx.serialization.Serializable
 import opensavvy.formulaide.core.Department
 import opensavvy.spine.Parameters
 
+/**
+ * DTO for [Department].
+ */
 @Serializable
 data class DepartmentDto(
 	val name: String,
