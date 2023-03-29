@@ -130,7 +130,7 @@ class SchemaDto(
 		)
 
 		private fun convertFormRef(ref: Form.Version.Ref): Id =
-			api.templates.id.version.idOf(ref.form.id, ref.version.toString())
+			api.forms.id.version.idOf(ref.form.id, ref.version.toString())
 
 		fun Form.Step.toDto() = Step(
 			id,

@@ -233,7 +233,10 @@ class FormDb(
 
         override suspend fun directRequest(ref: Ref<Form.Version>): Outcome<Form.Version> = out {
             ensureValid(ref is Form.Version.Ref) { "Référence invalide : $ref" }
-            ensureEmployee()
+
+            val form = ref.form.now().bind()
+            if (!form.open || !form.public)
+                ensureEmployee()
 
             val result = collection.findOne(
                 and(
