@@ -106,6 +106,13 @@ fun Suite.formTestSuite(
 				publicForm.now().shouldSucceed()
 			}
 
+			test("Guests can read form versions that are open and public") {
+				val publicForm = prepare(testPublicForm)
+					.now().map { it.versionsSorted.first() }.orThrow()
+
+				publicForm.now().shouldSucceed()
+			}
+
 			test("Private forms are not visible to guests") {
 				val forms = prepare(testForms)
 				val privateForm = prepare(testPrivateForm)
