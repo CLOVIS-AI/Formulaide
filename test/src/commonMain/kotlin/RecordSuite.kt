@@ -17,413 +17,718 @@ import opensavvy.formulaide.core.Field.Companion.group
 import opensavvy.formulaide.core.Field.Companion.input
 import opensavvy.formulaide.core.Field.Companion.label
 import opensavvy.formulaide.test.assertions.*
-import opensavvy.formulaide.test.execution.Factory
+import opensavvy.formulaide.test.execution.Setup
 import opensavvy.formulaide.test.execution.Suite
+import opensavvy.formulaide.test.execution.prepare
+import opensavvy.formulaide.test.execution.prepared
 import opensavvy.formulaide.test.utils.TestClock.Companion.currentInstant
 import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
 import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
 import opensavvy.state.outcome.orThrow
 
-data class RecordTestData(
-	val departments: Department.Service,
-	val templates: Template.Service,
-	val forms: Form.Service,
-	val records: Record.Service,
-	val files: File.Service,
-)
-
 fun Suite.recordsTestSuite(
-	create: Factory<RecordTestData>,
+	testDepartments: Setup<Department.Service>,
+	testForms: Setup<Form.Service>,
+	testRecords: Setup<Record.Service>,
+	testFiles: Setup<File.Service>,
 ) {
-	create(create)
-	search(create)
-}
+	val testDepartment by prepared {
+		val departments = prepare(testDepartments)
 
-private fun Suite.create(
-	create: Factory<RecordTestData>,
-) = suite("Create a record") {
-	test("guests cannot create records to a private form") {
-		val data = create()
+		createDepartment(departments)
+	}
 
-		val records = data.records
-		val forms = data.forms
-		val departments = data.departments
+	suite("Create a record") {
+		val testPrivateForm by prepared(administratorAuth) {
+			val forms = prepare(testForms)
+			val department = prepare(testDepartment)
 
-		val form = withContext(administratorAuth) {
-			createSimpleForm(forms, createDepartment(departments))
-				.also { it.privatize().orThrow() }
-				.now().orThrow()
-				.versionsSorted.first()
+			forms.create(
+				name = "Private form",
+				firstVersionTitle = "Initial version",
+				field = input("The illusion of choice", Input.Toggle),
+				Form.Step(0, "Review", department, null),
+			).tap { it.privatize().orThrow() }
+				.flatMap { it.now() }
+				.map { it.versionsSorted.first() }
+				.orThrow()
 		}
 
-		shouldNotBeFound(
+		test("Guests cannot create records to a private form") {
+			val form = prepare(testPrivateForm)
+			val records = prepare(testRecords)
+
+			shouldNotBeFound(
+				records.create(
+					form,
+					"" to "true",
+				)
+			)
+		}
+
+		test("Employees can create records to a private form", employeeAuth) {
+			val form = prepare(testPrivateForm)
+			val records = prepare(testRecords)
+
+			shouldSucceed(
+				records.create(
+					form,
+					"" to "true",
+				)
+			)
+		}
+
+		val testPublicForm by prepared(administratorAuth) {
+			val forms = prepare(testForms)
+			val department = prepare(testDepartment)
+
+			forms.create(
+				name = "Private form",
+				firstVersionTitle = "Initial version",
+				field = input("The illusion of choice", Input.Toggle),
+				Form.Step(0, "Review", department, null),
+			).tap { it.publicize().orThrow() }
+				.flatMap { it.now() }
+				.map { it.versionsSorted.first() }
+				.orThrow()
+		}
+
+		test("Guests can create records to a public form") {
+			val form = prepare(testPublicForm)
+			val records = prepare(testRecords)
+
 			records.create(
 				form,
 				"" to "true",
-			)
-		)
-	}
-
-	test("employees can create records to a private form", employeeAuth) {
-		val data = create()
-
-		val records = data.records
-		val forms = data.forms
-		val departments = data.departments
-
-		val form = withContext(administratorAuth) {
-			createSimpleForm(forms, createDepartment(departments))
-				.also { it.privatize().orThrow() }
-				.now().orThrow()
-				.versionsSorted.first()
+			).shouldSucceed()
 		}
 
-		shouldSucceed(
-			records.create(
-				form,
-				"" to "true",
-			)
-		)
-	}
+		suite("Created record validity") {
+			val testRecordRef by prepared {
+				val form = prepare(testPublicForm)
+				val records = prepare(testRecords)
 
-	test("create a record") {
-		val data = create()
+				records.create(
+					form,
+					"" to "true",
+				).orThrow()
+			}
 
-		val records = data.records
-		val forms = data.forms
-		val departments = data.departments
+			val testRecord by prepared {
+				val recordRef = prepare(testRecordRef)
 
-		val form = withContext(employeeAuth) {
-			createSimpleForm(forms, createDepartment(departments))
-				.also { withContext(administratorAuth) { it.publicize().orThrow() } }
-				.now().orThrow()
-				.versionsSorted.first()
-		}
+				withContext(employeeAuth) {
+					recordRef.now().orThrow()
+				}
+			}
 
-		val record = records.create(
-			form,
-			"" to "true",
-		).shouldSucceed()
+			val testRecordFirstDiff by prepared {
+				val record = prepare(testRecord)
 
-		withContext(employeeAuth) {
-			record.now() shouldSucceedAnd {
-				assertSoftly(it.historySorted.first()) {
-					author shouldBe null
-					source shouldBe Record.Status.Initial
-					target shouldBe Record.Status.Step(0)
-					reason shouldBe null
+				record.historySorted.first()
+			}
 
-					submission shouldNotBe null
-					submission!!.now() shouldSucceedAnd { submission ->
-						val parsed = submission.parse(data.files).shouldSucceed()
+			test("The author should be a guest") {
+				val record = prepare(testRecordFirstDiff)
+
+				record.author shouldBe null
+			}
+
+			test("The source should be the initial submission") {
+				val record = prepare(testRecordFirstDiff)
+
+				record.source shouldBe Record.Status.Initial
+			}
+
+			test("The target should be the first step") {
+				val record = prepare(testRecordFirstDiff)
+
+				record.target shouldBe Record.Status.Step(0)
+			}
+
+			test("The reason should not be known") {
+				val record = prepare(testRecordFirstDiff)
+
+				record.reason shouldBe null
+			}
+
+			test("The submission should be known") {
+				val record = prepare(testRecordFirstDiff)
+				val files = prepare(testFiles)
+
+				record.submission shouldNotBe null
+
+				withContext(employeeAuth) {
+					record.submission!!.now() shouldSucceedAnd {
+						val parsed = it.parse(files).shouldSucceed()
 
 						parsed[Field.Id.root] shouldBe true
 					}
 				}
 			}
 
-			records.search() shouldSucceedAnd {
-				it shouldContain record
+			test("Employees can search for the record", employeeAuth) {
+				val records = prepare(testRecords)
+				val record = prepare(testRecordRef)
+
+				records.search() shouldSucceedAnd {
+					it shouldContain record
+				}
 			}
 		}
-	}
 
-	test("cannot create a record for another step than the initial one") {
-		val data = create()
+		test("Cannot create a record for another step than the initial one") {
+			val form = prepare(testPublicForm)
+			val records = prepare(testRecords)
 
-		val records = data.records
-		val forms = data.forms
-		val departments = data.departments
-
-		val form = withContext(employeeAuth) {
-			createSimpleForm(forms, createDepartment(departments))
-				.also { withContext(administratorAuth) { it.publicize().orThrow() } }
-				.now().orThrow()
-				.versionsSorted.first()
-		}
-
-		shouldBeInvalid(
-			records.create(
-				Submission(
-					form,
-					1,
-					mapOf(Field.Id.fromString("") to "true"),
+			shouldBeInvalid(
+				records.create(
+					Submission(
+						form,
+						1, // not the correct step
+						mapOf(
+							Field.Id.root to "true",
+						)
+					)
 				)
 			)
-		)
-	}
-
-	test("cannot create a record with an invalid submission") {
-		val data = create()
-
-		val records = data.records
-		val forms = data.forms
-		val departments = data.departments
-
-		val form = withContext(employeeAuth) {
-			createSimpleForm(forms, createDepartment(departments))
-				.also { withContext(administratorAuth) { it.publicize().orThrow() } }
-				.now().orThrow()
-				.versionsSorted.first()
 		}
 
-		shouldBeInvalid(
-			records.create(
-				form,
-				"" to "this is not a boolean",
+		test("Cannot create a record with an invalid submission") {
+			val form = prepare(testPublicForm)
+			val records = prepare(testRecords)
+
+			shouldBeInvalid(
+				records.create(
+					form,
+					"" to "this is not a boolean",
+				)
 			)
-		)
+		}
 	}
-}
 
-private suspend fun RecordTestData.createWorkflowForm(): Form.Version.Ref = withContext(administratorAuth) {
-	val forms = forms
-	val departments = departments
+	val workflowForm by prepared(administratorAuth) {
+		val forms = prepare(testForms)
+		val departments = prepare(testDepartments)
 
-	val first = departments.create("First department").orThrow()
-	val second = departments.create("Second department").orThrow()
-	val third = departments.create("Third department").orThrow()
+		val first = departments.create("First department").orThrow()
+		val second = departments.create("Second department").orThrow()
+		val third = departments.create("Third department").orThrow()
 
-	forms.create(
-		"The workflow tester",
-		"First version",
-		group(
-			"Initial field",
-			0 to group(
-				"Identity",
-				0 to input("First name", Input.Text()),
-				1 to input("Last name", Input.Text()),
+		forms.create(
+			"The workflow tester",
+			"First version",
+			group(
+				"Initial field",
+				0 to group(
+					"Identity",
+					0 to input("First name", Input.Text()),
+					1 to input("Last name", Input.Text()),
+				),
+				1 to input("Idea", Input.Text()),
 			),
-			1 to input("Idea", Input.Text()),
-		),
-		Form.Step(
-			id = 0,
-			name = "Pre-filtering",
-			reviewer = first,
-			field = choice(
-				"Kind of request",
-				0 to label("Ecological"),
-				1 to label("Industrial"),
-				2 to label("Administrative"),
+			Form.Step(
+				id = 0,
+				name = "Pre-filtering",
+				reviewer = first,
+				field = choice(
+					"Kind of request",
+					0 to label("Ecological"),
+					1 to label("Industrial"),
+					2 to label("Administrative"),
+				)
+			),
+			Form.Step(
+				id = 1,
+				name = "Decide whether the request is worth it",
+				reviewer = second,
+				field = input("Request ID", Input.Text()),
+			),
+			Form.Step(
+				id = 2,
+				name = "Completed requests",
+				reviewer = third,
+				field = null,
 			)
-		),
-		Form.Step(
-			id = 1,
-			name = "Decide whether the request is worth it",
-			reviewer = second,
-			field = input("Request ID", Input.Text()),
-		),
-		Form.Step(
-			id = 2,
-			name = "Completed requests",
-			reviewer = third,
-			field = null,
-		)
-	).flatMap { it.now() }
-		.orThrow()
-		.versionsSorted.first()
-}
-
-private suspend fun RecordTestData.createTestRecord(
-	form: Form.Version.Ref,
-): Record.Ref {
-	return records.create(
-		form,
-		"" to "",
-		"0" to "",
-		"0:0" to "My first name",
-		"0:1" to "My last name",
-		"1" to "Plant more trees!",
-	).orThrow()
-}
-
-private fun Suite.search(
-	create: Factory<RecordTestData>,
-) = suite("Workflow") {
-	test("Guests cannot access records") {
-		val services = create()
-		val form = services.createWorkflowForm()
-		withContext(employeeAuth) { services.createTestRecord(form) }
-
-		shouldNotBeAuthenticated(services.records.search())
+		).flatMap { it.now() }
+			.orThrow()
+			.versionsSorted.first()
 	}
 
-	test("Accept a record", employeeAuth) {
-		val services = create()
-		val form = services.createWorkflowForm()
-		val record = services.createTestRecord(form)
+	val testRecord by prepared(employeeAuth) {
+		val records = prepare(testRecords)
+		val form = prepare(workflowForm)
 
-		val before = currentInstant()
-		advanceTimeBy(10)
+		records.create(
+			form,
+			"" to "",
+			"0" to "",
+			"0:0" to "My first name",
+			"0:1" to "My last name",
+			"1" to "Plant more trees!",
+		).orThrow()
+	}
 
-		services.records.accept(
-			record,
-			null,
-			"" to "1",
-		).shouldSucceed()
+	suite("Workflow") {
+		test("Guests cannot access records") {
+			val records = prepare(testRecords)
+			prepare(testRecord)
 
-		advanceTimeBy(10)
-		val after = currentInstant()
+			shouldNotBeAuthenticated(records.search())
+		}
 
-		record.now() shouldSucceedAnd {
-			it.historySorted shouldHaveSize 2
-			it.status shouldBe Record.Status.Step(1)
+		suite("Accept a record") {
+			val accept by prepared(employeeAuth) {
+				val record = prepare(testRecord)
+				val records = prepare(testRecords)
 
-			assertSoftly(it.historySorted[1]) {
-				this::class shouldBe Record.Diff.Accept::class
+				records.accept(
+					record,
+					null,
+					"" to "1",
+				).orThrow()
 
-				author!!.id shouldBe employeeAuth.user!!.id
-				at shouldBeGreaterThan before
-				at shouldBeLessThan after
-				reason shouldBe null
-				submission shouldNotBe null
-				source shouldBe Record.Status.Step(0)
-				target shouldBe Record.Status.Step(1)
+				record
+			}
+
+			test("Should succeed", employeeAuth) {
+				prepare(accept)
+			}
+
+			test("The status should be updated", employeeAuth) {
+				val record = prepare(accept)
+
+				record.now() shouldSucceedAnd {
+					it.status shouldBe Record.Status.Step(1)
+				}
+			}
+
+			test("The acceptance should be added to the history", employeeAuth) {
+				val record = prepare(accept)
+
+				record.now() shouldSucceedAndSoftly {
+					it.historySorted shouldHaveSize 2
+				}
+			}
+
+			val acceptDiff by prepared(employeeAuth) {
+				val record = prepare(accept)
+
+				record.now().orThrow()
+					.historySorted.last()
+			}
+
+			test("The acceptance's type should be an acceptance", employeeAuth) {
+				val diff = prepare(acceptDiff)
+
+				diff::class shouldBe Record.Diff.Accept::class
+			}
+
+			test("The acceptance's author should be correct", employeeAuth) {
+				val diff = prepare(acceptDiff)
+
+				diff.author?.id shouldBe employeeAuth.user!!.id
+			}
+
+			test("The acceptance's date should be correct", employeeAuth) {
+				val before = currentInstant()
+				advanceTimeBy(10)
+
+				val diff = prepare(acceptDiff)
+
+				advanceTimeBy(10)
+				val after = currentInstant()
+
+				assertSoftly {
+					diff.at shouldBeGreaterThan before
+					diff.at shouldBeLessThan after
+				}
+			}
+
+			test("The reason should be unknown", employeeAuth) {
+				val diff = prepare(acceptDiff)
+
+				diff.reason shouldBe null
+			}
+
+			test("The submission should be correct", employeeAuth) {
+				val diff = prepare(acceptDiff)
+
+				diff.submission shouldNotBe null
+			}
+
+			test("The previous and next steps should be correct", employeeAuth) {
+				val diff = prepare(acceptDiff)
+
+				assertSoftly {
+					diff.source shouldBe Record.Status.Step(0)
+					diff.target shouldBe Record.Status.Step(1)
+				}
 			}
 		}
-	}
 
-	test("Refuse a record", employeeAuth) {
-		val services = create()
-		val form = services.createWorkflowForm()
-		val record = services.createTestRecord(form)
+		suite("Refuse a record") {
+			val refuse by prepared(employeeAuth) {
+				val record = prepare(testRecord)
+				val records = prepare(testRecords)
 
-		val before = currentInstant()
-		advanceTimeBy(10)
+				records.refuse(
+					record,
+					"I don't like it",
+				).orThrow()
 
-		services.records.refuse(
-			record,
-			"I don't like it",
-		).shouldSucceed()
+				record
+			}
 
-		advanceTimeBy(10)
-		val after = currentInstant()
+			test("Should succeed", employeeAuth) {
+				prepare(refuse)
+			}
 
-		record.now() shouldSucceedAnd {
-			it.historySorted shouldHaveSize 2
-			it.status shouldBe Record.Status.Refused
+			test("The status should be updated", employeeAuth) {
+				val record = prepare(refuse)
 
-			assertSoftly(it.historySorted[1]) {
-				this::class shouldBe Record.Diff.Refuse::class
+				record.now() shouldSucceedAnd {
+					it.status shouldBe Record.Status.Refused
+				}
+			}
 
-				author!!.id shouldBe employeeAuth.user!!.id
-				at shouldBeGreaterThan before
-				at shouldBeLessThan after
-				reason shouldBe "I don't like it"
-				submission shouldBe null
-				source shouldBe Record.Status.Step(0)
-				target shouldBe Record.Status.Refused
+			test("The refusal should be added to the history", employeeAuth) {
+				val record = prepare(refuse)
+
+				record.now() shouldSucceedAndSoftly {
+					it.historySorted shouldHaveSize 2
+				}
+			}
+
+			val refuseDiff by prepared(employeeAuth) {
+				val record = prepare(refuse)
+
+				record.now().orThrow()
+					.historySorted.last()
+			}
+
+			test("The refusal's type should be correct", employeeAuth) {
+				val diff = prepare(refuseDiff)
+
+				diff::class shouldBe Record.Diff.Refuse::class
+			}
+
+			test("The refusal's author should be correct", employeeAuth) {
+				val diff = prepare(refuseDiff)
+
+				diff.author?.id shouldBe employeeAuth.user!!.id
+			}
+
+			test("The refusal's date should be correct", employeeAuth) {
+				val before = currentInstant()
+				advanceTimeBy(10)
+
+				val diff = prepare(refuseDiff)
+
+				advanceTimeBy(10)
+				val after = currentInstant()
+
+				assertSoftly {
+					diff.at shouldBeGreaterThan before
+					diff.at shouldBeLessThan after
+				}
+			}
+
+			test("The reason should be known", employeeAuth) {
+				val diff = prepare(refuseDiff)
+
+				diff.reason shouldBe "I don't like it"
+			}
+
+			test("There should be no submission", employeeAuth) {
+				val diff = prepare(refuseDiff)
+
+				diff.submission shouldBe null
+			}
+
+			test("The previous and next steps should be correct", employeeAuth) {
+				val diff = prepare(refuseDiff)
+
+				assertSoftly {
+					diff.source shouldBe Record.Status.Step(0)
+					diff.target shouldBe Record.Status.Refused
+				}
 			}
 		}
-	}
 
-	test("Save additional data", employeeAuth) {
-		val services = create()
-		val form = services.createWorkflowForm()
-		val record = services.createTestRecord(form)
+		suite("Save additional data") {
+			val editCurrent by prepared(employeeAuth) {
+				val record = prepare(testRecord)
+				val records = prepare(testRecords)
 
-		val before = currentInstant()
-		advanceTimeBy(10)
+				records.editCurrent(
+					record,
+					null,
+					"" to "0",
+				).orThrow()
 
-		services.records.editCurrent(
-			record,
-			null,
-			"" to "0",
-		).shouldSucceed()
+				record
+			}
 
-		advanceTimeBy(10)
-		val after = currentInstant()
+			test("Should succeed", employeeAuth) {
+				prepare(editCurrent)
+			}
 
-		record.now() shouldSucceedAnd {
-			it.historySorted shouldHaveSize 2
-			it.status shouldBe Record.Status.Step(0)
+			test("The status should be updated", employeeAuth) {
+				val record = prepare(editCurrent)
 
-			assertSoftly(it.historySorted[1]) {
-				this::class shouldBe Record.Diff.EditCurrent::class
+				record.now() shouldSucceedAnd {
+					it.status shouldBe Record.Status.Step(0)
+				}
+			}
 
-				author!!.id shouldBe employeeAuth.user!!.id
-				at shouldBeGreaterThan before
-				at shouldBeLessThan after
-				reason shouldBe null
-				submission shouldNotBe null
-				source shouldBe Record.Status.Step(0)
-				target shouldBe Record.Status.Step(0)
+			test("The edition should be added to the history", employeeAuth) {
+				val record = prepare(editCurrent)
+
+				record.now() shouldSucceedAndSoftly {
+					it.historySorted shouldHaveSize 2
+				}
+			}
+
+			val editCurrentDiff by prepared(employeeAuth) {
+				val record = prepare(editCurrent)
+
+				record.now().orThrow()
+					.historySorted.last()
+			}
+
+			test("The edition's type should be correct", employeeAuth) {
+				val diff = prepare(editCurrentDiff)
+
+				diff::class shouldBe Record.Diff.EditCurrent::class
+			}
+
+			test("The edition's author should be correct", employeeAuth) {
+				val diff = prepare(editCurrentDiff)
+
+				diff.author?.id shouldBe employeeAuth.user!!.id
+			}
+
+			test("The edition's date should be correct", employeeAuth) {
+				val before = currentInstant()
+				advanceTimeBy(10)
+
+				val diff = prepare(editCurrentDiff)
+
+				advanceTimeBy(10)
+				val after = currentInstant()
+
+				assertSoftly {
+					diff.at shouldBeGreaterThan before
+					diff.at shouldBeLessThan after
+				}
+			}
+
+			test("The reason should be unknown", employeeAuth) {
+				val diff = prepare(editCurrentDiff)
+
+				diff.reason shouldBe null
+			}
+
+			test("There should be a submission", employeeAuth) {
+				val diff = prepare(editCurrentDiff)
+
+				diff.submission shouldNotBe null
+			}
+
+			test("The previous and next steps should be correct", employeeAuth) {
+				val diff = prepare(editCurrentDiff)
+
+				assertSoftly {
+					diff.source shouldBe Record.Status.Step(0)
+					diff.target shouldBe Record.Status.Step(0)
+				}
 			}
 		}
-	}
 
-	test("Edit the initial submission", employeeAuth) {
-		val services = create()
-		val form = services.createWorkflowForm()
-		val record = services.createTestRecord(form)
+		suite("Edit the initial submission") {
+			val editInitial by prepared(employeeAuth) {
+				val record = prepare(testRecord)
+				val records = prepare(testRecords)
 
-		val before = currentInstant()
-		advanceTimeBy(10)
+				records.editInitial(
+					record,
+					"I didn't like it",
+					"" to "0",
+				).orThrow()
 
-		services.records.editInitial(
-			record,
-			"I didn't like it",
-			"" to "0",
-		).shouldSucceed()
+				record
+			}
 
-		advanceTimeBy(10)
-		val after = currentInstant()
+			test("Should succeed", employeeAuth) {
+				prepare(editInitial)
+			}
 
-		record.now() shouldSucceedAnd {
-			it.historySorted shouldHaveSize 2
-			it.status shouldBe Record.Status.Step(0)
+			test("The status should be updated", employeeAuth) {
+				val record = prepare(editInitial)
 
-			assertSoftly(it.historySorted[1]) {
-				this::class shouldBe Record.Diff.EditInitial::class
+				record.now() shouldSucceedAnd {
+					it.status shouldBe Record.Status.Step(0)
+				}
+			}
 
-				author!!.id shouldBe employeeAuth.user!!.id
-				at shouldBeGreaterThan before
-				at shouldBeLessThan after
-				reason shouldBe "I didn't like it"
-				submission shouldNotBe null
-				source shouldBe Record.Status.Step(0)
-				target shouldBe Record.Status.Step(0)
+			test("The edition should be added to the history", employeeAuth) {
+				val record = prepare(editInitial)
+
+				record.now() shouldSucceedAndSoftly {
+					it.historySorted shouldHaveSize 2
+				}
+			}
+
+			val editInitialDiff by prepared(employeeAuth) {
+				val record = prepare(editInitial)
+
+				record.now().orThrow()
+					.historySorted.last()
+			}
+
+			test("The edition's type should be correct", employeeAuth) {
+				val diff = prepare(editInitialDiff)
+
+				diff::class shouldBe Record.Diff.EditInitial::class
+			}
+
+			test("The edition's author should be correct", employeeAuth) {
+				val diff = prepare(editInitialDiff)
+
+				diff.author?.id shouldBe employeeAuth.user!!.id
+			}
+
+			test("The edition's date should be correct", employeeAuth) {
+				val before = currentInstant()
+				advanceTimeBy(10)
+
+				val diff = prepare(editInitialDiff)
+
+				advanceTimeBy(10)
+				val after = currentInstant()
+
+				assertSoftly {
+					diff.at shouldBeGreaterThan before
+					diff.at shouldBeLessThan after
+				}
+			}
+
+			test("The reason should be known", employeeAuth) {
+				val diff = prepare(editInitialDiff)
+
+				diff.reason shouldBe "I didn't like it"
+			}
+
+			test("There should be a submission", employeeAuth) {
+				val diff = prepare(editInitialDiff)
+
+				diff.submission shouldNotBe null
+			}
+
+			test("The previous and next steps should be correct", employeeAuth) {
+				val diff = prepare(editInitialDiff)
+
+				assertSoftly {
+					diff.source shouldBe Record.Status.Step(0)
+					diff.target shouldBe Record.Status.Step(0)
+				}
 			}
 		}
-	}
 
-	test("Move back a record", employeeAuth) {
-		val services = create()
-		val form = services.createWorkflowForm()
-		val record = services.createTestRecord(form)
+		suite("Move back") {
+			val moveBack by prepared(employeeAuth) {
+				val record = prepare(testRecord)
+				val records = prepare(testRecords)
 
-		val before = currentInstant()
-		advanceTimeBy(10)
+				records.accept(
+					record,
+					null,
+					"" to "0",
+				).orThrow()
 
-		services.records.accept(
-			record,
-			null,
-			"" to "0",
-		).shouldSucceed()
+				records.moveBack(
+					record,
+					0,
+					"I didn't like it",
+				).orThrow()
 
-		services.records.moveBack(
-			record,
-			0,
-			"I didn't like it",
-		).shouldSucceed()
+				record
+			}
 
-		advanceTimeBy(10)
-		val after = currentInstant()
+			test("Should succeed", employeeAuth) {
+				prepare(moveBack)
+			}
 
-		record.now() shouldSucceedAnd {
-			it.historySorted shouldHaveSize 3
-			it.status shouldBe Record.Status.Step(0)
+			test("The status should be updated", employeeAuth) {
+				val record = prepare(moveBack)
 
-			assertSoftly(it.historySorted[2]) {
-				this::class shouldBe Record.Diff.MoveBack::class
+				record.now() shouldSucceedAnd {
+					it.status shouldBe Record.Status.Step(0)
+				}
+			}
 
-				author!!.id shouldBe employeeAuth.user!!.id
-				at shouldBeGreaterThan before
-				at shouldBeLessThan after
-				reason shouldBe "I didn't like it"
-				submission shouldBe null
-				source shouldBe Record.Status.Step(1)
-				target shouldBe Record.Status.Step(0)
+			test("The acceptance & the move should be added to the history", employeeAuth) {
+				val record = prepare(moveBack)
+
+				record.now() shouldSucceedAndSoftly {
+					it.historySorted shouldHaveSize 3
+				}
+			}
+
+			val moveBackDiff by prepared(employeeAuth) {
+				val record = prepare(moveBack)
+
+				record.now().orThrow()
+					.historySorted.last()
+			}
+
+			test("The move's type should be correct", employeeAuth) {
+				val diff = prepare(moveBackDiff)
+
+				diff::class shouldBe Record.Diff.MoveBack::class
+			}
+
+			test("The move's author should be correct", employeeAuth) {
+				val diff = prepare(moveBackDiff)
+
+				diff.author?.id shouldBe employeeAuth.user!!.id
+			}
+
+			test("The move's date should be correct", employeeAuth) {
+				val before = currentInstant()
+				advanceTimeBy(10)
+
+				val diff = prepare(moveBackDiff)
+
+				advanceTimeBy(10)
+				val after = currentInstant()
+
+				assertSoftly {
+					diff.at shouldBeGreaterThan before
+					diff.at shouldBeLessThan after
+				}
+			}
+
+			test("The reason should be known", employeeAuth) {
+				val diff = prepare(moveBackDiff)
+
+				diff.reason shouldBe "I didn't like it"
+			}
+
+			test("There should not be a submission", employeeAuth) {
+				val diff = prepare(moveBackDiff)
+
+				diff.submission shouldBe null
+			}
+
+			test("The previous and next steps should be correct", employeeAuth) {
+				val diff = prepare(moveBackDiff)
+
+				assertSoftly {
+					diff.source shouldBe Record.Status.Step(1)
+					diff.target shouldBe Record.Status.Step(0)
+				}
 			}
 		}
 	}

@@ -32,27 +32,6 @@ import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
 import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
 import opensavvy.state.outcome.orThrow
 
-//region Test data
-
-internal suspend fun createSimpleForm(
-	forms: Form.Service,
-	reviewer: Department.Ref,
-) = withContext(administratorAuth) {
-	forms.create(
-		"Simple",
-		"First version",
-		input("The illusion of choice", Input.Toggle),
-		Form.Step(
-			0,
-			"Received",
-			reviewer,
-			null,
-		)
-	).orThrow()
-}
-
-//endregion
-
 fun Suite.formTestSuite(
 	testDepartments: Setup<Department.Service>,
 	testTemplates: Setup<Template.Service>,
