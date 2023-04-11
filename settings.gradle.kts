@@ -25,6 +25,7 @@ include(
 
 	"fake",
 	"test",
+	"test-structure",
 )
 
 buildCache {
