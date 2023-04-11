@@ -29,6 +29,8 @@ kotlin {
 
                 api("opensavvy:state:_")
 
+                api(KotlinX.datetime)
+
                 api(KotlinX.coroutines.test)
                 api(KotlinX.coroutines.debug)
 
