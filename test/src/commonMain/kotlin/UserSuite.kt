@@ -12,9 +12,9 @@ import opensavvy.formulaide.core.data.Email.Companion.asEmail
 import opensavvy.formulaide.core.data.Password
 import opensavvy.formulaide.core.data.Token
 import opensavvy.formulaide.test.assertions.*
-import opensavvy.formulaide.test.execution.Setup
-import opensavvy.formulaide.test.execution.Suite
-import opensavvy.formulaide.test.execution.prepare
+import opensavvy.formulaide.test.structure.Setup
+import opensavvy.formulaide.test.structure.Suite
+import opensavvy.formulaide.test.structure.prepare
 import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
 import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
 import opensavvy.formulaide.test.utils.executeAs

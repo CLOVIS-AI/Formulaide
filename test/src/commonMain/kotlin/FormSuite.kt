@@ -10,7 +10,6 @@ import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.withContext
 import opensavvy.backbone.Ref.Companion.now
 import opensavvy.formulaide.core.Department
@@ -23,11 +22,7 @@ import opensavvy.formulaide.core.Form
 import opensavvy.formulaide.core.Input
 import opensavvy.formulaide.core.Template
 import opensavvy.formulaide.test.assertions.*
-import opensavvy.formulaide.test.execution.Setup
-import opensavvy.formulaide.test.execution.Suite
-import opensavvy.formulaide.test.execution.prepare
-import opensavvy.formulaide.test.execution.prepared
-import opensavvy.formulaide.test.utils.TestClock.Companion.currentInstant
+import opensavvy.formulaide.test.structure.*
 import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
 import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
 import opensavvy.state.outcome.orThrow
@@ -247,13 +242,13 @@ fun Suite.formTestSuite(
 				"The version ignores the user-provided timestamp and replaces it with the current one",
 				administratorAuth
 			) {
-				val testStart = currentInstant()
+				val testStart = currentInstant
 				advanceTimeBy(10)
 
 				val form = prepare(createSimpleForm)
 
 				advanceTimeBy(10)
-				val testEnd = currentInstant()
+				val testEnd = currentInstant
 
 				form.now()
 					.flatMap { it.versions.first().now() }
@@ -362,13 +357,13 @@ fun Suite.formTestSuite(
 			}
 
 			test("The creation date is correct", administratorAuth) {
-				val testStart = currentInstant()
+				val testStart = currentInstant
 				advanceTimeBy(10)
 
 				val version = prepare(newVersion).orThrow()
 
 				advanceTimeBy(10)
-				val testEnd = currentInstant()
+				val testEnd = currentInstant
 
 				version.now() shouldSucceedAndSoftly {
 					it.creationDate shouldBeGreaterThan testStart

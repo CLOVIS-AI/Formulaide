@@ -1,13 +1,11 @@
 package opensavvy.formulaide.mongo
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import opensavvy.formulaide.test.departmentTestSuite
-import opensavvy.formulaide.test.execution.Executor
-import opensavvy.formulaide.test.execution.Suite
+import opensavvy.formulaide.test.structure.Suite
+import opensavvy.formulaide.test.structure.TestExecutor
 
-class DepartmentDbTest : Executor() {
+class DepartmentDbTest : TestExecutor() {
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     override fun Suite.register() {
         departmentTestSuite {
             val database = testDatabase()

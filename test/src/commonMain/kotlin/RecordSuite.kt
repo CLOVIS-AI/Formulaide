@@ -8,7 +8,6 @@ import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.withContext
 import opensavvy.backbone.Ref.Companion.now
 import opensavvy.formulaide.core.*
@@ -17,11 +16,7 @@ import opensavvy.formulaide.core.Field.Companion.group
 import opensavvy.formulaide.core.Field.Companion.input
 import opensavvy.formulaide.core.Field.Companion.label
 import opensavvy.formulaide.test.assertions.*
-import opensavvy.formulaide.test.execution.Setup
-import opensavvy.formulaide.test.execution.Suite
-import opensavvy.formulaide.test.execution.prepare
-import opensavvy.formulaide.test.execution.prepared
-import opensavvy.formulaide.test.utils.TestClock.Companion.currentInstant
+import opensavvy.formulaide.test.structure.*
 import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
 import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
 import opensavvy.state.outcome.orThrow
@@ -331,13 +326,13 @@ fun Suite.recordsTestSuite(
 			}
 
 			test("The acceptance's date should be correct", employeeAuth) {
-				val before = currentInstant()
+				val before = currentInstant
 				advanceTimeBy(10)
 
 				val diff = prepare(acceptDiff)
 
 				advanceTimeBy(10)
-				val after = currentInstant()
+				val after = currentInstant
 
 				assertSoftly {
 					diff.at shouldBeGreaterThan before
@@ -420,13 +415,13 @@ fun Suite.recordsTestSuite(
 			}
 
 			test("The refusal's date should be correct", employeeAuth) {
-				val before = currentInstant()
+				val before = currentInstant
 				advanceTimeBy(10)
 
 				val diff = prepare(refuseDiff)
 
 				advanceTimeBy(10)
-				val after = currentInstant()
+				val after = currentInstant
 
 				assertSoftly {
 					diff.at shouldBeGreaterThan before
@@ -510,13 +505,13 @@ fun Suite.recordsTestSuite(
 			}
 
 			test("The edition's date should be correct", employeeAuth) {
-				val before = currentInstant()
+				val before = currentInstant
 				advanceTimeBy(10)
 
 				val diff = prepare(editCurrentDiff)
 
 				advanceTimeBy(10)
-				val after = currentInstant()
+				val after = currentInstant
 
 				assertSoftly {
 					diff.at shouldBeGreaterThan before
@@ -600,13 +595,13 @@ fun Suite.recordsTestSuite(
 			}
 
 			test("The edition's date should be correct", employeeAuth) {
-				val before = currentInstant()
+				val before = currentInstant
 				advanceTimeBy(10)
 
 				val diff = prepare(editInitialDiff)
 
 				advanceTimeBy(10)
-				val after = currentInstant()
+				val after = currentInstant
 
 				assertSoftly {
 					diff.at shouldBeGreaterThan before
@@ -696,13 +691,13 @@ fun Suite.recordsTestSuite(
 			}
 
 			test("The move's date should be correct", employeeAuth) {
-				val before = currentInstant()
+				val before = currentInstant
 				advanceTimeBy(10)
 
 				val diff = prepare(moveBackDiff)
 
 				advanceTimeBy(10)
-				val after = currentInstant()
+				val after = currentInstant
 
 				assertSoftly {
 					diff.at shouldBeGreaterThan before

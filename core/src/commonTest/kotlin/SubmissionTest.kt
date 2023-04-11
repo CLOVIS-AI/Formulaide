@@ -1,6 +1,7 @@
 package opensavvy.formulaide.core
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import opensavvy.backbone.Ref.Companion.now
@@ -15,7 +16,7 @@ import opensavvy.formulaide.fake.FakeForms
 import opensavvy.formulaide.test.assertions.shouldBeInvalid
 import opensavvy.formulaide.test.assertions.shouldSucceed
 import opensavvy.formulaide.test.assertions.shouldSucceedAnd
-import opensavvy.formulaide.test.utils.TestClock.Companion.testClock
+import opensavvy.formulaide.test.structure.TestClock
 import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
 import opensavvy.state.outcome.orThrow
 import kotlin.js.JsName
@@ -28,7 +29,7 @@ class SubmissionTest {
 	//region Utilities
 
 	private suspend fun createTestForm(field: Field) = withContext(administratorAuth) {
-		FakeForms(testClock())
+		FakeForms(TestClock(coroutineContext[TestCoroutineScheduler]!!))
 			.create(
 				"Test",
 				"First version",
@@ -49,7 +50,7 @@ class SubmissionTest {
 	@Test
 	@JsName("parseLabel")
 	fun `labels do not appear in submissions`() = runTest {
-		val files = FakeFiles(testClock())
+		val files = FakeFiles(TestClock(testScheduler))
 		val form = createTestForm(
 			label("Label"),
 		)
@@ -67,7 +68,7 @@ class SubmissionTest {
 	@Test
 	@JsName("parseInputMissing")
 	fun `inputs are mandatory`() = runTest {
-		val files = FakeFiles(testClock())
+		val files = FakeFiles(TestClock(testScheduler))
 		val form = createTestForm(
 			input("Input", Input.Text()),
 		)
@@ -85,7 +86,7 @@ class SubmissionTest {
 	@Test
 	@JsName("parseInputText")
 	fun `parse text`() = runTest {
-		val files = FakeFiles(testClock())
+		val files = FakeFiles(TestClock(testScheduler))
 		val form = createTestForm(
 			input("Input", Input.Text()),
 		)
@@ -107,7 +108,7 @@ class SubmissionTest {
 	@Test
 	@JsName("parseInputInt")
 	fun `parse int`() = runTest {
-		val files = FakeFiles(testClock())
+		val files = FakeFiles(TestClock(testScheduler))
 		val form = createTestForm(
 			input("Input", Input.Integer()),
 		)
@@ -129,7 +130,7 @@ class SubmissionTest {
 	@Test
 	@JsName("parseGroup")
 	fun `parse group`() = runTest {
-		val files = FakeFiles(testClock())
+		val files = FakeFiles(TestClock(testScheduler))
 		val form = createTestForm(
 			group(
 				"Group",
@@ -158,7 +159,7 @@ class SubmissionTest {
 	@Test
 	@JsName("parseIncompleteGroup")
 	fun `parse incomplete group`() = runTest {
-		val files = FakeFiles(testClock())
+		val files = FakeFiles(TestClock(testScheduler))
 		val form = createTestForm(
 			group(
 				"Group",
@@ -182,7 +183,7 @@ class SubmissionTest {
 	@Test
 	@JsName("parseChoice")
 	fun `parse choice`() = runTest {
-		val files = FakeFiles(testClock())
+		val files = FakeFiles(TestClock(testScheduler))
 		val form = createTestForm(
 			choice(
 				"Choice",
@@ -211,7 +212,7 @@ class SubmissionTest {
 	@Test
 	@JsName("parseArity")
 	fun `parse arity`() = runTest {
-		val files = FakeFiles(testClock())
+		val files = FakeFiles(TestClock(testScheduler))
 		val form = createTestForm(
 			arity(
 				"Names",
@@ -274,7 +275,7 @@ class SubmissionTest {
 	@Test
 	@JsName("complexValid")
 	fun `complex correct submission`() = runTest {
-		val files = FakeFiles(testClock())
+		val files = FakeFiles(TestClock(testScheduler))
 		val form = createTestForm(complexField)
 		println(form.versionsSorted.first().now().orThrow().field)
 
