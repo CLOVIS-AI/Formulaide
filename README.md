@@ -24,6 +24,4 @@ Liens utiles :
 - [Documentation du code et de l'API](http://opensavvy.gitlab.io/formulaide/documentation)
 - [Guide de déploiement](docs/deploiement.md)
 - [Étape de sécurisation lors du premier lancement](docs/debut.md)
-- [Manuel utilisateur](https://opensavvy.gitlab.io/formulaide/docs/user-guide.pdf) (en cours de rédaction)
-- [Rapport de stage](https://opensavvy.gitlab.io/formulaide/docs/report.pdf)
 - [Open source](LICENSE.txt)
