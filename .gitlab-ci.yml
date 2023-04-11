@@ -168,6 +168,19 @@ test-js:
   script:
     - "./gradlew jsBrowserTest"
 
+  after_script:
+    - mkdir -p test-output
+    - |
+      for project in $(find . -type d -exec test -e '{}'/build.gradle.kts -a -e '{}'/build/test-results/jsBrowserTest \; -print)
+      do
+        echo "Found test results in $project" 
+        cp -r $project/build/test-results/jsBrowserTest/* test-output
+      done
+
+  artifacts:
+    reports:
+      junit: test-output/TEST-*.xml
+
   interruptible: true
 
 pages:
