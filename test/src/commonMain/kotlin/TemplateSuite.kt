@@ -6,7 +6,6 @@ import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.withContext
 import opensavvy.backbone.Ref.Companion.now
 import opensavvy.formulaide.core.Field.Companion.arity
@@ -18,8 +17,9 @@ import opensavvy.formulaide.core.Input
 import opensavvy.formulaide.core.Template
 import opensavvy.formulaide.test.assertions.*
 import opensavvy.formulaide.test.execution.Factory
-import opensavvy.formulaide.test.execution.Suite
-import opensavvy.formulaide.test.utils.TestClock.Companion.currentInstant
+import opensavvy.formulaide.test.structure.Suite
+import opensavvy.formulaide.test.structure.advanceTimeBy
+import opensavvy.formulaide.test.structure.currentInstant
 import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
 import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
 import opensavvy.state.outcome.orThrow
@@ -151,7 +151,7 @@ private fun Suite.create(
 
 	test("administrators can create a template", administratorAuth) {
 		val templates = createTemplates()
-		val testStart = currentInstant()
+		val testStart = currentInstant
 		advanceTimeBy(10)
 
 		val template = templates.create(
@@ -161,7 +161,7 @@ private fun Suite.create(
 		).shouldSucceed()
 
 		advanceTimeBy(10)
-		val testEnd = currentInstant()
+		val testEnd = currentInstant
 
 		template.now() shouldSucceedAnd {
 			it.name shouldBe "An example template"
@@ -213,7 +213,7 @@ private fun Suite.createVersion(
 
 	test("administrators can create new versions of a template", administratorAuth) {
 		val templates = createTemplates()
-		val testStart = currentInstant()
+		val testStart = currentInstant
 		advanceTimeBy(10)
 
 		val template = createCityTemplate(templates)
@@ -225,7 +225,7 @@ private fun Suite.createVersion(
 		).shouldSucceed()
 
 		advanceTimeBy(10)
-		val testEnd = currentInstant()
+		val testEnd = currentInstant
 
 		versionRef.now() shouldSucceedAnd {
 			it.title shouldBe "Second version"

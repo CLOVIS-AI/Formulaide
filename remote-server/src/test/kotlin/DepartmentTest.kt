@@ -1,18 +1,16 @@
 package opensavvy.formulaide.remote.server
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import opensavvy.formulaide.fake.FakeDepartments
 import opensavvy.formulaide.fake.spies.SpyDepartments.Companion.spied
 import opensavvy.formulaide.remote.client.Departments
 import opensavvy.formulaide.remote.server.utils.TestClient
 import opensavvy.formulaide.remote.server.utils.createTestServer
 import opensavvy.formulaide.test.departmentTestSuite
-import opensavvy.formulaide.test.execution.Executor
-import opensavvy.formulaide.test.execution.Suite
+import opensavvy.formulaide.test.structure.Suite
+import opensavvy.formulaide.test.structure.TestExecutor
 
-class RemoteDepartmentTest : Executor() {
+class RemoteDepartmentTest : TestExecutor() {
 
-	@OptIn(ExperimentalCoroutinesApi::class)
 	override fun Suite.register() {
 		departmentTestSuite {
 			val application = backgroundScope.createTestServer {

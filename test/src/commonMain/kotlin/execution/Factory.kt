@@ -1,6 +1,6 @@
 package opensavvy.formulaide.test.execution
 
-import kotlinx.coroutines.test.TestScope
+import opensavvy.formulaide.test.structure.TestScope
 
 /**
  * Asynchronously creates an instance of `T`.

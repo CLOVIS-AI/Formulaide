@@ -1,13 +1,11 @@
-package opensavvy.formulaide.test
+package opensavvy.formulaide.test.structure
 
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
-import opensavvy.formulaide.test.execution.Executor
-import opensavvy.formulaide.test.execution.Suite
 
 @Suppress("unused")
-class ExecutionTest : Executor() {
+class ExecutionTest : TestExecutor() {
 
 	override fun Suite.register() {
 		suite("test suite") {

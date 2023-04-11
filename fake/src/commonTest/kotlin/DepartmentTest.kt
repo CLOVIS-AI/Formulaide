@@ -1,14 +1,12 @@
 package opensavvy.formulaide.fake
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import opensavvy.formulaide.fake.spies.SpyDepartments.Companion.spied
 import opensavvy.formulaide.test.departmentTestSuite
-import opensavvy.formulaide.test.execution.Executor
-import opensavvy.formulaide.test.execution.Suite
+import opensavvy.formulaide.test.structure.Suite
+import opensavvy.formulaide.test.structure.TestExecutor
 
-class FakeDepartmentTest : Executor() {
+class FakeDepartmentTest : TestExecutor() {
 
-	@OptIn(ExperimentalCoroutinesApi::class)
 	override fun Suite.register() {
 		departmentTestSuite { FakeDepartments().spied() }
 	}

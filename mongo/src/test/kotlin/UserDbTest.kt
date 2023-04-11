@@ -1,17 +1,15 @@
 package opensavvy.formulaide.mongo
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import opensavvy.formulaide.fake.FakeDepartments
 import opensavvy.formulaide.fake.spies.SpyDepartments.Companion.spied
-import opensavvy.formulaide.test.execution.Executor
-import opensavvy.formulaide.test.execution.Suite
-import opensavvy.formulaide.test.execution.prepare
-import opensavvy.formulaide.test.execution.prepared
+import opensavvy.formulaide.test.structure.Suite
+import opensavvy.formulaide.test.structure.TestExecutor
+import opensavvy.formulaide.test.structure.prepare
+import opensavvy.formulaide.test.structure.prepared
 import opensavvy.formulaide.test.usersTestSuite
 
-class UserDbTest : Executor() {
+class UserDbTest : TestExecutor() {
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     override fun Suite.register() {
         val departments by prepared { FakeDepartments().spied() }
 

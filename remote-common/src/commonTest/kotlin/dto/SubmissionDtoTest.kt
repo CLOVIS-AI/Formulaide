@@ -10,7 +10,7 @@ import opensavvy.formulaide.core.Form
 import opensavvy.formulaide.core.Submission
 import opensavvy.formulaide.fake.FakeDepartments
 import opensavvy.formulaide.fake.FakeForms
-import opensavvy.formulaide.test.utils.TestClock.Companion.testClock
+import opensavvy.formulaide.test.structure.TestClock
 import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
 import opensavvy.state.outcome.orThrow
 import kotlin.js.JsName
@@ -24,7 +24,7 @@ class SubmissionDtoTest {
 	@JsName("conversion")
 	fun `submission DTO conversion`() = runTest(administratorAuth) {
 		val departments = FakeDepartments()
-		val forms = FakeForms(testClock())
+		val forms = FakeForms(TestClock(testScheduler))
 
 		val dept = departments.create("Test").orThrow()
 		val form = forms.create(
