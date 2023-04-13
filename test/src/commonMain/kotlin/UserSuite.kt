@@ -139,6 +139,8 @@ private fun Suite.joinLeave(
 	createDepartments: Setup<Department.Service>,
 	createUsers: Setup<User.Service>,
 ) = suite("Join or leave a department") {
+	val testDepartment by createDepartment(createDepartments)
+
 	suspend fun shouldHaveNoDepartments(userRef: User.Ref) {
 		withClue("The user doesn't have the rights to join or leave a department, so it should not have been modified") {
 			withContext(employeeAuth) {
@@ -151,7 +153,7 @@ private fun Suite.joinLeave(
 
 	test("guests cannot make a user join or leave a department") {
 		val users = prepare(createUsers)
-		val department = createDepartment(prepare(createDepartments))
+		val department = prepare(testDepartment)
 		val user = createEmployee(users).first
 
 		shouldNotBeAuthenticated(user.join(department))
@@ -163,7 +165,7 @@ private fun Suite.joinLeave(
 
 	test("employees cannot make a user join or leave a department", employeeAuth) {
 		val users = prepare(createUsers)
-		val department = createDepartment(prepare(createDepartments))
+		val department = prepare(testDepartment)
 		val user = createEmployee(users).first
 
 		shouldNotBeAuthorized(user.join(department))
@@ -175,7 +177,7 @@ private fun Suite.joinLeave(
 
 	test("employees cannot join or leave a department", employeeAuth) {
 		val users = prepare(createUsers)
-		val department = createDepartment(prepare(createDepartments))
+		val department = prepare(testDepartment)
 		val user = createEmployee(users).first
 
 		executeAs(user) {
@@ -189,7 +191,7 @@ private fun Suite.joinLeave(
 
 	test("administrators can make a user join or leave a department", administratorAuth) {
 		val users = prepare(createUsers)
-		val department = createDepartment(prepare(createDepartments))
+		val department = prepare(testDepartment)
 		val user = createEmployee(users).first
 
 		shouldSucceed(user.join(department))

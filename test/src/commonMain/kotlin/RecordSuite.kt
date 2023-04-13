@@ -27,11 +27,7 @@ fun Suite.recordsTestSuite(
 	testRecords: Setup<Record.Service>,
 	testFiles: Setup<File.Service>,
 ) {
-	val testDepartment by prepared {
-		val departments = prepare(testDepartments)
-
-		createDepartment(departments)
-	}
+	val testDepartment by createDepartment(testDepartments)
 
 	suite("Create a record") {
 		val testPrivateForm by prepared(administratorAuth) {

@@ -32,11 +32,7 @@ fun Suite.formTestSuite(
 	testTemplates: Setup<Template.Service>,
 	testForms: Setup<Form.Service>,
 ) {
-	val testDepartment by prepared {
-		val departments = prepare(testDepartments)
-
-		createDepartment(departments)
-	}
+	val testDepartment by createDepartment(testDepartments)
 
 	suite("Access forms") {
 		val testPrivateForm by prepared(administratorAuth) {

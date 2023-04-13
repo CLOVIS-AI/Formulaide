@@ -8,11 +8,12 @@ import opensavvy.formulaide.remote.server.utils.createTestServer
 import opensavvy.formulaide.test.departmentTestSuite
 import opensavvy.formulaide.test.structure.Suite
 import opensavvy.formulaide.test.structure.TestExecutor
+import opensavvy.formulaide.test.structure.prepared
 
 class RemoteDepartmentTest : TestExecutor() {
 
 	override fun Suite.register() {
-		departmentTestSuite {
+		val departments by prepared {
 			val application = backgroundScope.createTestServer {
 				routing {
 					departments(FakeDepartments().spied())
@@ -22,8 +23,10 @@ class RemoteDepartmentTest : TestExecutor() {
 			Departments(
 				TestClient(application.client),
 				backgroundScope.coroutineContext,
-			).spied()
+			)
 		}
+
+		departmentTestSuite(departments)
 	}
 
 }
