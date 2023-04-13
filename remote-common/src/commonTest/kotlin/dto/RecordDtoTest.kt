@@ -15,7 +15,6 @@ import opensavvy.formulaide.test.structure.TestExecutor
 import opensavvy.formulaide.test.structure.clock
 import opensavvy.formulaide.test.utils.TestUsers
 import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
-import opensavvy.state.outcome.orThrow
 import kotlin.test.assertEquals
 
 class RecordDtoTest : TestExecutor() {
@@ -26,7 +25,7 @@ class RecordDtoTest : TestExecutor() {
 			val forms = FakeForms(clock)
 			val records = FakeRecords(clock, FakeFiles(clock))
 
-			val dept = departments.create("Test").orThrow()
+			val dept = departments.create("Test").bind()
 			val form = forms.create(
 				"Test",
 				"Initial version",
@@ -34,10 +33,10 @@ class RecordDtoTest : TestExecutor() {
 				Form.Step(0, "First step", dept, null),
 				Form.Step(1, "Second step", dept, null),
 			)
-				.tap { it.publicize().orThrow() }
+				.tap { it.publicize().bind() }
 				.flatMap { it.now() }
 				.map { it.versionsSorted.first() }
-				.orThrow()
+				.bind()
 
 			val initialSubmission = records.create(
 				Submission(
@@ -48,8 +47,8 @@ class RecordDtoTest : TestExecutor() {
 						Field.Id(1, 2, 3) to "Test 2",
 					)
 				)
-			).orThrow()
-				.now().orThrow()
+			).bind()
+				.now().bind()
 				.historySorted.first().submission!!
 
 			val editedSubmission = records.create(
@@ -61,8 +60,8 @@ class RecordDtoTest : TestExecutor() {
 						Field.Id(1, 2, 3) to "Test 3",
 					)
 				)
-			).orThrow()
-				.now().orThrow()
+			).bind()
+				.now().bind()
 				.historySorted.first().submission!!
 
 			val record = Record(
@@ -111,7 +110,7 @@ class RecordDtoTest : TestExecutor() {
 			val dto = record.toDto()
 			println("DTO:    $dto")
 
-			assertEquals(record, dto.toCore(forms, TestUsers, initialSubmission.backbone).orThrow())
+			assertEquals(record, dto.toCore(forms, TestUsers, initialSubmission.backbone).bind())
 		}
 	}
 

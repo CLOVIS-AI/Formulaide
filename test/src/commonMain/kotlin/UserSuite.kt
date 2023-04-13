@@ -18,7 +18,6 @@ import opensavvy.formulaide.test.structure.prepare
 import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
 import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
 import opensavvy.formulaide.test.utils.executeAs
-import opensavvy.state.outcome.orThrow
 import kotlin.random.Random
 import kotlin.random.nextUInt
 
@@ -327,7 +326,7 @@ private fun Suite.password(
 			it.singleUsePassword shouldBe true
 		}
 
-		val email = employee.now().orThrow().email
+		val email = employee.now().bind().email
 
 		withClue("First usage of the single-use password") {
 			users.logIn(email, singleUsePassword) shouldSucceedAnd { (ref, token) ->
@@ -345,7 +344,7 @@ private fun Suite.password(
 		val users = prepare(createUsers)
 		val (employee, singleUsePassword) = createEmployee(users)
 
-		val email = employee.now().orThrow().email
+        val email = employee.now().bind().email
 
 		withClue("Using the single-use password two times to lock the account") {
 			users.logIn(email, singleUsePassword)
@@ -373,7 +372,7 @@ private fun Suite.password(
 		val users = prepare(createUsers)
 		val (employee, singleUsePassword) = createEmployee(users)
 
-		val email = employee.now().orThrow().email
+        val email = employee.now().bind().email
 
 		// Cannot use the single-use password after it has been changed
 
@@ -425,11 +424,11 @@ private fun Suite.password(
 
 		// We first need to make the password non-single use
 		executeAs(employee) {
-			employee.setPassword(singleUsePassword.value, password).orThrow()
+            employee.setPassword(singleUsePassword.value, password).bind()
 		}
 
-		val email = employee.now().orThrow().email
-		val newPassword = employee.resetPassword().shouldSucceed()
+        val email = employee.now().bind().email
+        val newPassword = employee.resetPassword().shouldSucceed()
 
 		withClue("We just reset the password, the user should be in single-use mode") {
 			employee.now() shouldSucceedAnd {
@@ -452,7 +451,7 @@ private fun Suite.password(
 
 		// Prepare the user
 		employee.disable().shouldSucceed()
-		val email = employee.now().orThrow().email
+        val email = employee.now().bind().email
 
 		// Do not return NotFound! -> It would help an attacker enumerate users
 		shouldNotBeAuthenticated(users.logIn(email, singleUsePassword))
@@ -482,7 +481,7 @@ private fun Suite.token(
 		val users = prepare(createUsers)
 		val (employee, password) = createEmployee(users)
 
-		val token = users.logIn(employee.now().orThrow().email, password).orThrow().second
+        val token = users.logIn(employee.now().bind().email, password).bind().second
 		shouldSucceed(employee.verifyToken(token))
 
 		executeAs(employee) {
@@ -515,7 +514,7 @@ private fun Suite.token(
 		val users = prepare(createUsers)
 		val (employee, password) = createEmployee(users)
 
-		val token = users.logIn(employee.now().orThrow().email, password).orThrow().second
+        val token = users.logIn(employee.now().bind().email, password).bind().second
 
 		withClue("I'm not 'employee', so I shouldn't be able to log them out, even with the correct token") {
 			shouldNotBeAuthenticated(employee.logOut(token))
@@ -527,50 +526,50 @@ private fun Suite.token(
 	}
 
 	test("reset a password delogs the user", administratorAuth) {
-		val users = prepare(createUsers)
-		val (employee, singleUsePassword) = createEmployee(users)
+        val users = prepare(createUsers)
+        val (employee, singleUsePassword) = createEmployee(users)
 
-		//region Setup: log in with two tokens
-		val password = Password("password-${generateId()}")
-		executeAs(employee) {
-			employee.setPassword(singleUsePassword.value, password)
-		}
-		val email = employee.now().orThrow().email
+        //region Setup: log in with two tokens
+        val password = Password("password-${generateId()}")
+        executeAs(employee) {
+            employee.setPassword(singleUsePassword.value, password)
+        }
+        val email = employee.now().bind().email
 
-		val token1 = users.logIn(email, password).orThrow().second
-		val token2 = users.logIn(email, password).orThrow().second
-		//endregion
+        val token1 = users.logIn(email, password).bind().second
+        val token2 = users.logIn(email, password).bind().second
+        //endregion
 
-		shouldSucceed(employee.resetPassword())
+        shouldSucceed(employee.resetPassword())
 
-		withClue("The user's password just changed, previously-created tokens should now invalid") {
-			shouldNotBeAuthenticated(employee.verifyToken(token1))
-			shouldNotBeAuthenticated(employee.verifyToken(token2))
-		}
+        withClue("The user's password just changed, previously-created tokens should now invalid") {
+            shouldNotBeAuthenticated(employee.verifyToken(token1))
+            shouldNotBeAuthenticated(employee.verifyToken(token2))
+        }
 	}
 
 	test("setting a password delogs the user", administratorAuth) {
-		val users = prepare(createUsers)
-		val (employee, singleUsePassword) = createEmployee(users)
+        val users = prepare(createUsers)
+        val (employee, singleUsePassword) = createEmployee(users)
 
-		//region Setup: log in with two tokens
-		val password = Password("password-${generateId()}")
-		executeAs(employee) {
-			employee.setPassword(singleUsePassword.value, password)
-		}
-		val email = employee.now().orThrow().email
+        //region Setup: log in with two tokens
+        val password = Password("password-${generateId()}")
+        executeAs(employee) {
+            employee.setPassword(singleUsePassword.value, password)
+        }
+        val email = employee.now().bind().email
 
-		val token1 = users.logIn(email, password).orThrow().second
-		val token2 = users.logIn(email, password).orThrow().second
-		//endregion
+        val token1 = users.logIn(email, password).bind().second
+        val token2 = users.logIn(email, password).bind().second
+        //endregion
 
-		executeAs(employee) {
-			employee.setPassword(password.value, Password("Some new password"))
-		}
+        executeAs(employee) {
+            employee.setPassword(password.value, Password("Some new password"))
+        }
 
-		withClue("The user's password just changed, previously-created tokens should now invalid") {
-			shouldNotBeAuthenticated(employee.verifyToken(token1))
-			shouldNotBeAuthenticated(employee.verifyToken(token2))
-		}
+        withClue("The user's password just changed, previously-created tokens should now invalid") {
+            shouldNotBeAuthenticated(employee.verifyToken(token1))
+            shouldNotBeAuthenticated(employee.verifyToken(token2))
+        }
 	}
 }

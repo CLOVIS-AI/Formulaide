@@ -19,7 +19,6 @@ import opensavvy.formulaide.test.assertions.*
 import opensavvy.formulaide.test.structure.*
 import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
 import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
-import opensavvy.state.outcome.orThrow
 
 fun Suite.recordsTestSuite(
 	testDepartments: Setup<Department.Service>,
@@ -35,14 +34,14 @@ fun Suite.recordsTestSuite(
 			val department = prepare(testDepartment)
 
 			forms.create(
-				name = "Private form",
-				firstVersionTitle = "Initial version",
-				field = input("The illusion of choice", Input.Toggle),
-				Form.Step(0, "Review", department, null),
-			).tap { it.privatize().orThrow() }
-				.flatMap { it.now() }
-				.map { it.versionsSorted.first() }
-				.orThrow()
+                name = "Private form",
+                firstVersionTitle = "Initial version",
+                field = input("The illusion of choice", Input.Toggle),
+                Form.Step(0, "Review", department, null),
+            ).tap { it.privatize().bind() }
+                .flatMap { it.now() }
+                .map { it.versionsSorted.first() }
+                .bind()
 		}
 
 		test("Guests cannot create records to a private form") {
@@ -73,15 +72,15 @@ fun Suite.recordsTestSuite(
 			val forms = prepare(testForms)
 			val department = prepare(testDepartment)
 
-			forms.create(
-				name = "Private form",
-				firstVersionTitle = "Initial version",
-				field = input("The illusion of choice", Input.Toggle),
-				Form.Step(0, "Review", department, null),
-			).tap { it.publicize().orThrow() }
-				.flatMap { it.now() }
-				.map { it.versionsSorted.first() }
-				.orThrow()
+            forms.create(
+                name = "Private form",
+                firstVersionTitle = "Initial version",
+                field = input("The illusion of choice", Input.Toggle),
+                Form.Step(0, "Review", department, null),
+            ).tap { it.publicize().bind() }
+                .flatMap { it.now() }
+                .map { it.versionsSorted.first() }
+                .bind()
 		}
 
 		test("Guests can create records to a public form") {
@@ -99,17 +98,17 @@ fun Suite.recordsTestSuite(
 				val form = prepare(testPublicForm)
 				val records = prepare(testRecords)
 
-				records.create(
-					form,
-					"" to "true",
-				).orThrow()
+                records.create(
+                    form,
+                    "" to "true",
+                ).bind()
 			}
 
 			val testRecord by prepared {
 				val recordRef = prepare(testRecordRef)
 
 				withContext(employeeAuth) {
-					recordRef.now().orThrow()
+                    recordRef.now().bind()
 				}
 			}
 
@@ -199,22 +198,22 @@ fun Suite.recordsTestSuite(
 	}
 
 	val workflowForm by prepared(administratorAuth) {
-		val forms = prepare(testForms)
-		val departments = prepare(testDepartments)
+        val forms = prepare(testForms)
+        val departments = prepare(testDepartments)
 
-		val first = departments.create("First department").orThrow()
-		val second = departments.create("Second department").orThrow()
-		val third = departments.create("Third department").orThrow()
+        val first = departments.create("First department").bind()
+        val second = departments.create("Second department").bind()
+        val third = departments.create("Third department").bind()
 
-		forms.create(
-			"The workflow tester",
-			"First version",
-			group(
-				"Initial field",
-				0 to group(
-					"Identity",
-					0 to input("First name", Input.Text()),
-					1 to input("Last name", Input.Text()),
+        forms.create(
+            "The workflow tester",
+            "First version",
+            group(
+                "Initial field",
+                0 to group(
+                    "Identity",
+                    0 to input("First name", Input.Text()),
+                    1 to input("Last name", Input.Text()),
 				),
 				1 to input("Idea", Input.Text()),
 			),
@@ -232,17 +231,17 @@ fun Suite.recordsTestSuite(
 			Form.Step(
 				id = 1,
 				name = "Decide whether the request is worth it",
-				reviewer = second,
-				field = input("Request ID", Input.Text()),
-			),
-			Form.Step(
-				id = 2,
-				name = "Completed requests",
-				reviewer = third,
-				field = null,
-			)
-		).flatMap { it.now() }
-			.orThrow()
+                reviewer = second,
+                field = input("Request ID", Input.Text()),
+            ),
+            Form.Step(
+                id = 2,
+                name = "Completed requests",
+                reviewer = third,
+                field = null,
+            )
+        ).flatMap { it.now() }
+            .bind()
 			.versionsSorted.first()
 	}
 
@@ -250,14 +249,14 @@ fun Suite.recordsTestSuite(
 		val records = prepare(testRecords)
 		val form = prepare(workflowForm)
 
-		records.create(
-			form,
-			"" to "",
-			"0" to "",
-			"0:0" to "My first name",
-			"0:1" to "My last name",
-			"1" to "Plant more trees!",
-		).orThrow()
+        records.create(
+            form,
+            "" to "",
+            "0" to "",
+            "0:0" to "My first name",
+            "0:1" to "My last name",
+            "1" to "Plant more trees!",
+        ).bind()
 	}
 
 	suite("Workflow") {
@@ -273,11 +272,11 @@ fun Suite.recordsTestSuite(
 				val record = prepare(testRecord)
 				val records = prepare(testRecords)
 
-				records.accept(
-					record,
-					null,
-					"" to "1",
-				).orThrow()
+                records.accept(
+                    record,
+                    null,
+                    "" to "1",
+                ).bind()
 
 				record
 			}
@@ -305,7 +304,7 @@ fun Suite.recordsTestSuite(
 			val acceptDiff by prepared(employeeAuth) {
 				val record = prepare(accept)
 
-				record.now().orThrow()
+                record.now().bind()
 					.historySorted.last()
 			}
 
@@ -363,10 +362,10 @@ fun Suite.recordsTestSuite(
 				val record = prepare(testRecord)
 				val records = prepare(testRecords)
 
-				records.refuse(
-					record,
-					"I don't like it",
-				).orThrow()
+                records.refuse(
+                    record,
+                    "I don't like it",
+                ).bind()
 
 				record
 			}
@@ -394,7 +393,7 @@ fun Suite.recordsTestSuite(
 			val refuseDiff by prepared(employeeAuth) {
 				val record = prepare(refuse)
 
-				record.now().orThrow()
+                record.now().bind()
 					.historySorted.last()
 			}
 
@@ -452,11 +451,11 @@ fun Suite.recordsTestSuite(
 				val record = prepare(testRecord)
 				val records = prepare(testRecords)
 
-				records.editCurrent(
-					record,
-					null,
-					"" to "0",
-				).orThrow()
+                records.editCurrent(
+                    record,
+                    null,
+                    "" to "0",
+                ).bind()
 
 				record
 			}
@@ -484,7 +483,7 @@ fun Suite.recordsTestSuite(
 			val editCurrentDiff by prepared(employeeAuth) {
 				val record = prepare(editCurrent)
 
-				record.now().orThrow()
+                record.now().bind()
 					.historySorted.last()
 			}
 
@@ -542,11 +541,11 @@ fun Suite.recordsTestSuite(
 				val record = prepare(testRecord)
 				val records = prepare(testRecords)
 
-				records.editInitial(
-					record,
-					"I didn't like it",
-					"" to "0",
-				).orThrow()
+                records.editInitial(
+                    record,
+                    "I didn't like it",
+                    "" to "0",
+                ).bind()
 
 				record
 			}
@@ -574,7 +573,7 @@ fun Suite.recordsTestSuite(
 			val editInitialDiff by prepared(employeeAuth) {
 				val record = prepare(editInitial)
 
-				record.now().orThrow()
+                record.now().bind()
 					.historySorted.last()
 			}
 
@@ -632,17 +631,17 @@ fun Suite.recordsTestSuite(
 				val record = prepare(testRecord)
 				val records = prepare(testRecords)
 
-				records.accept(
-					record,
-					null,
-					"" to "0",
-				).orThrow()
+                records.accept(
+                    record,
+                    null,
+                    "" to "0",
+                ).bind()
 
-				records.moveBack(
-					record,
-					0,
-					"I didn't like it",
-				).orThrow()
+                records.moveBack(
+                    record,
+                    0,
+                    "I didn't like it",
+                ).bind()
 
 				record
 			}
@@ -670,7 +669,7 @@ fun Suite.recordsTestSuite(
 			val moveBackDiff by prepared(employeeAuth) {
 				val record = prepare(moveBack)
 
-				record.now().orThrow()
+                record.now().bind()
 					.historySorted.last()
 			}
 

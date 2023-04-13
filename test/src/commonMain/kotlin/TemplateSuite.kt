@@ -78,7 +78,7 @@ private fun Suite.list(
 
 		val open = createCityTemplate(templates)
 		val closed = createIdentityTemplate(templates)
-			.also { withContext(administratorAuth) { it.close().orThrow() } }
+            .also { withContext(administratorAuth) { it.close().bind() } }
 
 		templates.list(includeClosed = false) shouldSucceedAnd {
 			it shouldContain open
@@ -91,7 +91,7 @@ private fun Suite.list(
 
 		val open = createCityTemplate(templates)
 		val closed = createIdentityTemplate(templates)
-			.also { withContext(administratorAuth) { it.close().orThrow() } }
+            .also { withContext(administratorAuth) { it.close().bind() } }
 
 		templates.list(includeClosed = true) shouldSucceedAnd {
 			it shouldContain open
@@ -114,7 +114,7 @@ private fun Suite.request(
 		val templates = createTemplates()
 
 		val target = createCityTemplate(templates)
-			.also { withContext(administratorAuth) { it.close().orThrow() } }
+            .also { withContext(administratorAuth) { it.close().bind() } }
 		shouldNotBeAuthenticated(target.now())
 	}
 
@@ -129,7 +129,7 @@ private fun Suite.request(
 		val templates = createTemplates()
 
 		val target = createCityTemplate(templates)
-			.also { withContext(administratorAuth) { it.close().orThrow() } }
+            .also { withContext(administratorAuth) { it.close().bind() } }
 		shouldSucceed(target.now())
 	}
 }
@@ -182,7 +182,7 @@ private fun Suite.create(
 		val templates = createTemplates()
 
 		val cities = createCityTemplate(templates).now()
-			.map { it.versions.first() }.orThrow()
+            .map { it.versions.first() }.bind()
 
 		shouldBeInvalid(
 			templates.create(
@@ -248,7 +248,7 @@ private fun Suite.createVersion(
 		advanceTimeBy(10)
 
 		val firstVersion = cities.now()
-			.map { it.versions.first() }.orThrow()
+            .map { it.versions.first() }.bind()
 
 		shouldBeInvalid(
 			cities.createVersion(
