@@ -1,6 +1,5 @@
 package opensavvy.formulaide.core
 
-import arrow.core.flatMap
 import kotlinx.coroutines.withContext
 import opensavvy.backbone.Ref.Companion.now
 import opensavvy.formulaide.core.Field.Companion.arity
@@ -23,25 +22,25 @@ import opensavvy.formulaide.test.structure.TestScope
 import opensavvy.formulaide.test.structure.clock
 import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
 import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
-import opensavvy.state.outcome.orThrow
 import opensavvy.state.outcome.out
 
 class ImportedFieldTest : TestExecutor() {
 
-	private suspend fun Template.Service.of(field: Field) = withContext(administratorAuth) {
-		create(
-			name = "Test",
-			initialVersionTitle = "Initial version",
-			field = field,
-		).flatMap { it.now() }
-			.map { it.versions.first() }
-			.orThrow()
-	}
+	private suspend fun TestScope.createTemplateForField(service: Template.Service, field: Field) =
+		withContext(administratorAuth) {
+			service.create(
+				name = "Test",
+				initialVersionTitle = "Initial version",
+				field = field,
+			).bind()
+				.now().bind()
+				.versions.first()
+		}
 
 	private suspend fun TestScope.import(field: Field, imported: suspend (Template.Version.Ref) -> Field) = out {
 		val templates = FakeTemplates(clock)
 
-		val template = templates.of(field)
+		val template = createTemplateForField(templates, field)
 
 		val new = imported(template)
 

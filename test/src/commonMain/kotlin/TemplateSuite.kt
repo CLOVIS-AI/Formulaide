@@ -16,18 +16,14 @@ import opensavvy.formulaide.core.Field.Companion.labelFrom
 import opensavvy.formulaide.core.Input
 import opensavvy.formulaide.core.Template
 import opensavvy.formulaide.test.assertions.*
-import opensavvy.formulaide.test.execution.Factory
-import opensavvy.formulaide.test.structure.Suite
-import opensavvy.formulaide.test.structure.advanceTimeBy
-import opensavvy.formulaide.test.structure.currentInstant
+import opensavvy.formulaide.test.structure.*
 import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
 import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
-import opensavvy.state.outcome.orThrow
 
 //region Test data
 
-internal suspend fun createCityTemplate(templates: Template.Service) = withContext(administratorAuth) {
-	templates.create(
+internal fun createCityTemplate(templates: Setup<Template.Service>) = prepared(administratorAuth) {
+	prepare(templates).create(
 		"Cities",
 		"First version",
 		group(
@@ -35,11 +31,11 @@ internal suspend fun createCityTemplate(templates: Template.Service) = withConte
 			0 to input("Name", Input.Text(maxLength = 50u)),
 			1 to input("Postal code", Input.Text(maxLength = 5u)),
 		)
-	).orThrow()
+	).bind()
 }
 
-internal suspend fun createIdentityTemplate(templates: Template.Service) = withContext(administratorAuth) {
-	templates.create(
+internal fun createIdentityTemplate(templates: Setup<Template.Service>) = prepared(administratorAuth) {
+	prepare(templates).create(
 		"Identities",
 		"First version",
 		group(
@@ -48,13 +44,13 @@ internal suspend fun createIdentityTemplate(templates: Template.Service) = withC
 			1 to input("Last name", Input.Text(maxLength = 30u)),
 			// In the future, add the city here
 		)
-	).orThrow()
+	).bind()
 }
 
 //endregion
 
 fun Suite.templateTestSuite(
-	createTemplates: Factory<Template.Service>,
+	createTemplates: Setup<Template.Service>,
 ) {
 	list(createTemplates)
 	request(createTemplates)
@@ -64,21 +60,24 @@ fun Suite.templateTestSuite(
 }
 
 private fun Suite.list(
-	createTemplates: Factory<Template.Service>,
+	createTemplates: Setup<Template.Service>,
 ) = suite("List templates") {
+	val createCityTemplate by createCityTemplate(createTemplates)
+	val createIdentityTemplate by createIdentityTemplate(createTemplates)
+
 	test("guests cannot list templates") {
-		val templates = createTemplates()
+		val templates = prepare(createTemplates)
 
 		shouldNotBeAuthenticated(templates.list(includeClosed = false))
 		shouldNotBeAuthenticated(templates.list(includeClosed = true))
 	}
 
 	test("employees can list open templates", employeeAuth) {
-		val templates = createTemplates()
+		val templates = prepare(createTemplates)
 
-		val open = createCityTemplate(templates)
-		val closed = createIdentityTemplate(templates)
-			.also { withContext(administratorAuth) { it.close().orThrow() } }
+		val open = prepare(createCityTemplate)
+		val closed = prepare(createIdentityTemplate)
+			.also { withContext(administratorAuth) { it.close().bind() } }
 
 		templates.list(includeClosed = false) shouldSucceedAnd {
 			it shouldContain open
@@ -87,11 +86,11 @@ private fun Suite.list(
 	}
 
 	test("employees can list private templates", employeeAuth) {
-		val templates = createTemplates()
+		val templates = prepare(createTemplates)
 
-		val open = createCityTemplate(templates)
-		val closed = createIdentityTemplate(templates)
-			.also { withContext(administratorAuth) { it.close().orThrow() } }
+		val open = prepare(createCityTemplate)
+		val closed = prepare(createIdentityTemplate)
+			.also { withContext(administratorAuth) { it.close().bind() } }
 
 		templates.list(includeClosed = true) shouldSucceedAnd {
 			it shouldContain open
@@ -101,56 +100,60 @@ private fun Suite.list(
 }
 
 private fun Suite.request(
-	createTemplates: Factory<Template.Service>,
+	createTemplates: Setup<Template.Service>,
 ) = suite("Access templates") {
-	test("guests cannot access open templates") {
-		val templates = createTemplates()
+	val createCityTemplate by createCityTemplate(createTemplates)
 
-		val target = createCityTemplate(templates)
+	test("guests cannot access open templates") {
+		prepare(createTemplates)
+
+		val target = prepare(createCityTemplate)
 		shouldNotBeAuthenticated(target.now())
 	}
 
 	test("guests cannot access closed templates") {
-		val templates = createTemplates()
+		prepare(createTemplates)
 
-		val target = createCityTemplate(templates)
-			.also { withContext(administratorAuth) { it.close().orThrow() } }
+		val target = prepare(createCityTemplate)
+			.also { withContext(administratorAuth) { it.close().bind() } }
 		shouldNotBeAuthenticated(target.now())
 	}
 
 	test("employees can access templates", employeeAuth) {
-		val templates = createTemplates()
+		prepare(createTemplates)
 
-		val target = createCityTemplate(templates)
+		val target = prepare(createCityTemplate)
 		shouldSucceed(target.now())
 	}
 
 	test("employees can access closed templates", employeeAuth) {
-		val templates = createTemplates()
+		prepare(createTemplates)
 
-		val target = createCityTemplate(templates)
-			.also { withContext(administratorAuth) { it.close().orThrow() } }
+		val target = prepare(createCityTemplate)
+			.also { withContext(administratorAuth) { it.close().bind() } }
 		shouldSucceed(target.now())
 	}
 }
 
 private fun Suite.create(
-	createTemplates: Factory<Template.Service>,
+	createTemplates: Setup<Template.Service>,
 ) = suite("Create templates") {
+	val createCityTemplate by createCityTemplate(createTemplates)
+
 	test("guests cannot create templates") {
-		val templates = createTemplates()
+		val templates = prepare(createTemplates)
 
 		shouldNotBeAuthenticated(templates.create("A new template", "First version", label("field")))
 	}
 
 	test("employees cannot create templates", employeeAuth) {
-		val templates = createTemplates()
+		val templates = prepare(createTemplates)
 
 		shouldNotBeAuthorized(templates.create("A new template", "First version", label("field")))
 	}
 
 	test("administrators can create a template", administratorAuth) {
-		val templates = createTemplates()
+		val templates = prepare(createTemplates)
 		val testStart = currentInstant
 		advanceTimeBy(10)
 
@@ -179,10 +182,10 @@ private fun Suite.create(
 	}
 
 	test("cannot create a template with an invalid field import", administratorAuth) {
-		val templates = createTemplates()
+		val templates = prepare(createTemplates)
 
-		val cities = createCityTemplate(templates).now()
-			.map { it.versions.first() }.orThrow()
+		val cities = prepare(createCityTemplate).now()
+			.map { it.versions.first() }.bind()
 
 		shouldBeInvalid(
 			templates.create(
@@ -195,28 +198,30 @@ private fun Suite.create(
 }
 
 private fun Suite.createVersion(
-	createTemplates: Factory<Template.Service>,
+	createTemplates: Setup<Template.Service>,
 ) = suite("Create a new version of an existing template") {
+	val createCityTemplate by createCityTemplate(createTemplates)
+
 	test("guests cannot create a new version of a template") {
-		val templates = createTemplates()
-		val target = createCityTemplate(templates)
+		prepare(createTemplates)
+		val target = prepare(createCityTemplate)
 
 		shouldNotBeAuthenticated(target.createVersion("Second version", label("field")))
 	}
 
 	test("employees cannot create new versions of a template", employeeAuth) {
-		val templates = createTemplates()
-		val target = createCityTemplate(templates)
+		prepare(createTemplates)
+		val target = prepare(createCityTemplate)
 
 		shouldNotBeAuthorized(target.createVersion("Second version", label("field")))
 	}
 
 	test("administrators can create new versions of a template", administratorAuth) {
-		val templates = createTemplates()
+		prepare(createTemplates)
 		val testStart = currentInstant
 		advanceTimeBy(10)
 
-		val template = createCityTemplate(templates)
+		val template = prepare(createCityTemplate)
 		advanceTimeBy(10)
 
 		val versionRef = template.createVersion(
@@ -242,13 +247,13 @@ private fun Suite.createVersion(
 	}
 
 	test("cannot create a template version with an invalid field import", administratorAuth) {
-		val templates = createTemplates()
+		prepare(createTemplates)
 
-		val cities = createCityTemplate(templates)
+		val cities = prepare(createCityTemplate)
 		advanceTimeBy(10)
 
 		val firstVersion = cities.now()
-			.map { it.versions.first() }.orThrow()
+			.map { it.versions.first() }.bind()
 
 		shouldBeInvalid(
 			cities.createVersion(
@@ -263,11 +268,13 @@ private fun Suite.createVersion(
 }
 
 private fun Suite.edit(
-	createTemplates: Factory<Template.Service>,
+	createTemplates: Setup<Template.Service>,
 ) = suite("Edit a template") {
+	val createCityTemplate by createCityTemplate(createTemplates)
+
 	test("guests cannot rename templates") {
-		val templates = createTemplates()
-		val target = createCityTemplate(templates)
+		prepare(createTemplates)
+		val target = prepare(createCityTemplate)
 
 		shouldNotBeAuthenticated(target.rename("New name"))
 
@@ -279,8 +286,8 @@ private fun Suite.edit(
 	}
 
 	test("guests cannot open or close templates") {
-		val templates = createTemplates()
-		val target = createCityTemplate(templates)
+		prepare(createTemplates)
+		val target = prepare(createCityTemplate)
 
 		shouldNotBeAuthenticated(target.close())
 
@@ -300,8 +307,8 @@ private fun Suite.edit(
 	}
 
 	test("employees cannot rename templates", employeeAuth) {
-		val templates = createTemplates()
-		val target = createCityTemplate(templates)
+		prepare(createTemplates)
+		val target = prepare(createCityTemplate)
 
 		shouldNotBeAuthorized(target.rename("New name"))
 
@@ -313,8 +320,8 @@ private fun Suite.edit(
 	}
 
 	test("employees cannot open or close templates", employeeAuth) {
-		val templates = createTemplates()
-		val target = createCityTemplate(templates)
+		prepare(createTemplates)
+		val target = prepare(createCityTemplate)
 
 		shouldNotBeAuthorized(target.close())
 
@@ -334,8 +341,8 @@ private fun Suite.edit(
 	}
 
 	test("administrators can rename templates", administratorAuth) {
-		val templates = createTemplates()
-		val target = createCityTemplate(templates)
+		prepare(createTemplates)
+		val target = prepare(createCityTemplate)
 
 		shouldSucceed(target.rename("New name"))
 
@@ -345,8 +352,8 @@ private fun Suite.edit(
 	}
 
 	test("administrators can open or close templates", administratorAuth) {
-		val templates = createTemplates()
-		val target = createCityTemplate(templates)
+		val templates = prepare(createTemplates)
+		val target = prepare(createCityTemplate)
 
 		shouldSucceed(target.close())
 

@@ -14,7 +14,6 @@ import opensavvy.formulaide.test.assertions.shouldSucceedAnd
 import opensavvy.formulaide.test.structure.*
 import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
 import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
-import opensavvy.state.outcome.orThrow
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.seconds
 
@@ -31,7 +30,7 @@ fun Suite.fileTestSuite(
 		val testFile by prepared {
 			val files = prepare(testFiles)
 
-			files.create("text/plain", "Hello world!".encodeToByteArray().iterator()).orThrow()
+			files.create("text/plain", "Hello world!".encodeToByteArray().iterator()).bind()
 		}
 
 		suite("Metadata access") {
@@ -56,7 +55,7 @@ fun Suite.fileTestSuite(
 		val testFileMetadata by prepared(administratorAuth) {
 			val file = prepare(testFile)
 
-			file.now().orThrow()
+			file.now().bind()
 		}
 
 		suite("Metadata validity") {
@@ -115,10 +114,10 @@ fun Suite.fileTestSuite(
 
 			test("The metadata is not impacted", employeeAuth) {
 				val initial = prepare(testFile)
-				val initialMetadata = initial.now().orThrow()
+				val initialMetadata = initial.now().bind()
 
 				val old = prepare(oldFile)
-				val oldMetadata = old.now().orThrow()
+				val oldMetadata = old.now().bind()
 
 				oldMetadata shouldBe initialMetadata
 			}
@@ -137,7 +136,7 @@ fun Suite.fileTestSuite(
 			Value 3,Value 4
 		""".trimIndent()
 
-		files.create("text/csv", content.encodeToByteArray().iterator()).orThrow()
+		files.create("text/csv", content.encodeToByteArray().iterator()).bind()
 	}
 
 	/**
@@ -159,7 +158,7 @@ fun Suite.fileTestSuite(
 			"Initial version",
 			Field.input("Uploaded file", file),
 			Form.Step(0, "Validation", department, null),
-		).orThrow()
+		).bind()
 	}
 
 	/**
@@ -170,13 +169,13 @@ fun Suite.fileTestSuite(
 		val records = prepare(testRecords)
 		val csv = prepare(testCsv)
 
-		val firstFormVersion = form.now().orThrow()
+		val firstFormVersion = form.now().bind()
 			.versions.first()
 
 		records.create(
 			firstFormVersion,
 			"" to csv.id, // The answer to the root field is the provided field
-		).orThrow()
+		).bind()
 	}
 
 	suite("When a matching submission is created, the file is linked") {
@@ -187,7 +186,7 @@ fun Suite.fileTestSuite(
 			val file = prepare(testCsv)
 			prepare(testRecord)
 
-			file.now().orThrow()
+			file.now().bind()
 		}
 
 		suite("The origin should be filled in") {
@@ -213,7 +212,7 @@ fun Suite.fileTestSuite(
 
 			test("The origin is the correct submission") {
 				val origin = prepare(testFileMetadata).origin
-				val record = prepare(testRecord).now().orThrow()
+				val record = prepare(testRecord).now().bind()
 				val submission = record.initialSubmission.submission
 
 				origin!!.submission shouldBe submission

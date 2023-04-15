@@ -25,18 +25,13 @@ import opensavvy.formulaide.test.assertions.*
 import opensavvy.formulaide.test.structure.*
 import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
 import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
-import opensavvy.state.outcome.orThrow
 
 fun Suite.formTestSuite(
 	testDepartments: Setup<Department.Service>,
 	testTemplates: Setup<Template.Service>,
 	testForms: Setup<Form.Service>,
 ) {
-	val testDepartment by prepared {
-		val departments = prepare(testDepartments)
-
-		createDepartment(departments)
-	}
+	val testDepartment by createDepartment(testDepartments)
 
 	suite("Access forms") {
 		val testPrivateForm by prepared(administratorAuth) {
@@ -48,7 +43,7 @@ fun Suite.formTestSuite(
 				firstVersionTitle = "Initial version",
 				field = label("Field"),
 				Form.Step(0, "Review", department, null),
-			).orThrow()
+			).bind()
 		}
 
 		val testPublicForm by prepared(administratorAuth) {
@@ -61,7 +56,7 @@ fun Suite.formTestSuite(
 				field = label("Field"),
 				Form.Step(0, "Review", department, null),
 			).tap { it.publicize() }
-				.orThrow()
+				.bind()
 		}
 
 		suite("Guests can access open forms that are public") {
@@ -82,7 +77,7 @@ fun Suite.formTestSuite(
 
 			test("Guests can read form versions that are open and public") {
 				val publicForm = prepare(testPublicForm)
-					.now().map { it.versionsSorted.first() }.orThrow()
+					.now().map { it.versionsSorted.first() }.bind()
 
 				publicForm.now().shouldSucceed()
 			}
@@ -110,7 +105,7 @@ fun Suite.formTestSuite(
 
 			test("Guests cannot read closed forms") {
 				val publicForm = prepare(testPublicForm)
-					.also { withContext(administratorAuth) { it.close().orThrow() } }
+					.also { withContext(administratorAuth) { it.close().bind() } }
 
 				shouldNotBeFound(publicForm.now())
 			}
@@ -150,9 +145,9 @@ fun Suite.formTestSuite(
 			test("Employees can list closed forms", employeeAuth) {
 				val forms = prepare(testForms)
 				val publicForm =
-					prepare(testPublicForm).also { withContext(administratorAuth) { it.close().orThrow() } }
+					prepare(testPublicForm).also { withContext(administratorAuth) { it.close().bind() } }
 				val privateForm =
-					prepare(testPrivateForm).also { withContext(administratorAuth) { it.close().orThrow() } }
+					prepare(testPrivateForm).also { withContext(administratorAuth) { it.close().bind() } }
 
 				forms.list(includeClosed = true) shouldSucceedAndSoftly {
 					it shouldContain publicForm
@@ -199,7 +194,7 @@ fun Suite.formTestSuite(
 					"First version",
 					label("The field"),
 					Form.Step(0, "Validation", department, null),
-				).orThrow()
+				).bind()
 			}
 
 			test("The name of the form is correct", administratorAuth) {
@@ -273,7 +268,7 @@ fun Suite.formTestSuite(
 					)
 				).flatMap { it.now() }
 					.map { it.versions.first() }
-					.orThrow()
+					.bind()
 			}
 
 			test("It is possible to import a template in a form", administratorAuth) {
@@ -319,7 +314,7 @@ fun Suite.formTestSuite(
 				"Initial version",
 				label("The field"),
 				Form.Step(0, "Validation", department, null),
-			).orThrow()
+			).bind()
 		}
 
 		val newVersion by prepared {
@@ -349,7 +344,7 @@ fun Suite.formTestSuite(
 
 		suite("The created version is correct") {
 			test("The title of the version is correct", administratorAuth) {
-				val version = prepare(newVersion).orThrow()
+				val version = prepare(newVersion).bind()
 
 				version.now() shouldSucceedAnd {
 					it.title shouldBe "Version 2"
@@ -360,7 +355,7 @@ fun Suite.formTestSuite(
 				val testStart = currentInstant
 				advanceTimeBy(10)
 
-				val version = prepare(newVersion).orThrow()
+				val version = prepare(newVersion).bind()
 
 				advanceTimeBy(10)
 				val testEnd = currentInstant
@@ -372,7 +367,7 @@ fun Suite.formTestSuite(
 			}
 
 			test("The field is correct", administratorAuth) {
-				val version = prepare(newVersion).orThrow()
+				val version = prepare(newVersion).bind()
 
 				version.now() shouldSucceedAnd {
 					it.field shouldBe input("New field", Input.Text())
@@ -381,7 +376,7 @@ fun Suite.formTestSuite(
 
 			test("The step is correct", administratorAuth) {
 				val department = prepare(testDepartment)
-				val version = prepare(newVersion).orThrow()
+				val version = prepare(newVersion).bind()
 
 				version.now() shouldSucceedAnd {
 					it.stepsSorted shouldBe listOf(Form.Step(0, "Validation 2", department, null))
@@ -391,7 +386,7 @@ fun Suite.formTestSuite(
 			test("The resulting form has the correct number of versions", administratorAuth) {
 				val form = prepare(newVersion)
 					.flatMap { it.form.now() }
-					.orThrow()
+					.bind()
 
 				form.versions shouldHaveSize 2
 			}
@@ -400,7 +395,7 @@ fun Suite.formTestSuite(
 				val department = prepare(testDepartment)
 				val form = prepare(newVersion)
 					.flatMap { it.form.now() }
-					.orThrow()
+					.bind()
 
 				form.versionsSorted[0].now() shouldSucceedAndSoftly {
 					it.title shouldBe "Initial version"
@@ -413,7 +408,7 @@ fun Suite.formTestSuite(
 				val department = prepare(testDepartment)
 				val form = prepare(newVersion)
 					.flatMap { it.form.now() }
-					.orThrow()
+					.bind()
 
 				form.versionsSorted[1].now() shouldSucceedAnd {
 					it.title shouldBe "Version 2"
@@ -425,10 +420,10 @@ fun Suite.formTestSuite(
 			test("The new version has a timestamp strictly superior to the previous one", administratorAuth) {
 				val form = prepare(newVersion)
 					.flatMap { it.form.now() }
-					.orThrow()
+					.bind()
 
-				val firstVersion = form.versionsSorted[0].now().orThrow().creationDate
-				val secondVersion = form.versionsSorted[1].now().orThrow().creationDate
+				val firstVersion = form.versionsSorted[0].now().bind().creationDate
+				val secondVersion = form.versionsSorted[1].now().bind().creationDate
 
 				secondVersion shouldBeGreaterThan firstVersion
 			}
@@ -448,7 +443,7 @@ fun Suite.formTestSuite(
 					)
 				).flatMap { it.now() }
 					.map { it.versions.first() }
-					.orThrow()
+					.bind()
 			}
 
 			test("It is possible to import a template in a version", administratorAuth) {
@@ -505,17 +500,17 @@ fun Suite.formTestSuite(
 				"Initial version",
 				label("The field"),
 				Form.Step(0, "Validation", department, null),
-			).orThrow()
+			).bind()
 
 			if (!open) {
-				form.close().orThrow()
+				form.close().bind()
 			}
 
 			if (public) {
-				form.publicize().orThrow()
+				form.publicize().bind()
 			}
 
-			form.now().orThrow().also {
+			form.now().bind().also {
 				check(it.open == open) { "The created form is not in the expected status, expected open=$open but found $it" }
 				check(it.public == public) { "The created form is not in the expected status, expected public=$public but found $it" }
 			}
