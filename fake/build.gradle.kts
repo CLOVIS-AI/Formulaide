@@ -21,7 +21,7 @@ kotlin {
 			dependencies {
 				api(projects.core)
 
-				implementation("opensavvy:logger:_")
+				implementation("opensavvy.pedestal:logger:_")
 			}
 		}
 

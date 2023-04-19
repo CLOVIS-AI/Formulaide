@@ -1,15 +1,18 @@
 package opensavvy.formulaide.test.structure
 
-import arrow.core.continuations.EffectScope
+import arrow.core.raise.Raise
+import arrow.core.raise.RaiseDSL
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.test.TestCoroutineScheduler
+import opensavvy.state.arrow.toEither
+import opensavvy.state.outcome.Outcome
 
-interface TestScope : EffectScope<Any> {
+interface TestScope : Raise<Any> {
 
     val testJob: Job
         get() = testScope.coroutineContext[Job]
-            ?: error("Couldn't find a job in the testScope")
+                ?: error("Couldn't find a job in the testScope")
 
     val testScope: CoroutineScope
 
@@ -20,5 +23,8 @@ interface TestScope : EffectScope<Any> {
     val backgroundScope: CoroutineScope
 
     val scheduler: TestCoroutineScheduler
+
+    @RaiseDSL
+    fun <T> Outcome<*, T>.bind() = this.toEither().bind()
 
 }

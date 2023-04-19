@@ -1,6 +1,6 @@
 package opensavvy.formulaide.test.structure
 
-import arrow.core.continuations.EffectScope
+import arrow.core.raise.Raise
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -45,8 +45,8 @@ internal class Test(val name: String) : AbstractCoroutineContextElement(Test) {
 }
 
 private class TestScopeImpl(
-    private val scope: kotlinx.coroutines.test.TestScope
-) : TestScope, EffectScope<Any> by TestRaise {
+        private val scope: kotlinx.coroutines.test.TestScope
+) : TestScope, Raise<Any> by TestRaise {
     override val testScope: CoroutineScope
         get() = scope
 

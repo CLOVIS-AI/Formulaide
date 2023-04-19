@@ -9,7 +9,7 @@ dependencies {
 	implementation(projects.mongo)
 	implementation(projects.remoteServer)
 
-	implementation("opensavvy:logger:_")
+	implementation("opensavvy.pedestal:logger:_")
 
 	implementation(Ktor.server)
 	implementation(Ktor.server.netty)

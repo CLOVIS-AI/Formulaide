@@ -24,7 +24,7 @@ kotlin {
 			dependencies {
 				api(projects.core)
 
-				api("opensavvy:spine:_")
+				api("opensavvy.pedestal:spine:_")
 				api(KotlinX.serialization.core)
 				api(KotlinX.serialization.json)
 			}

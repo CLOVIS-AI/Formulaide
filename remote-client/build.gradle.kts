@@ -22,11 +22,11 @@ kotlin {
 		val commonMain by getting {
 			dependencies {
 				implementation(projects.remoteCommon)
-				implementation("opensavvy:spine-ktor-client:_")
+				implementation("opensavvy.pedestal:spine-ktor-client:_")
 				implementation(Ktor.client.contentNegotiation)
 				implementation(Ktor.plugins.serialization.kotlinx.json)
 
-				implementation("opensavvy:logger:_")
+				implementation("opensavvy.pedestal:logger:_")
 			}
 		}
 

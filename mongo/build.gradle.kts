@@ -13,7 +13,7 @@ dependencies {
 
 	implementation("at.favre.lib:bcrypt:_")
 
-	implementation("opensavvy:logger:_")
+	implementation("opensavvy.pedestal:logger:_")
 
 	testImplementation(projects.test)
 	testImplementation(projects.fake)

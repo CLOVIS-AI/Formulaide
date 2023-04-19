@@ -27,7 +27,9 @@ kotlin {
                 api(Kotlin.test.common)
                 api(Kotlin.test.annotationsCommon)
 
-                api("opensavvy:state:_")
+                api("opensavvy.pedestal:state:_")
+                api("opensavvy.pedestal:state-arrow:_")
+                api("opensavvy.pedestal:state-coroutines:_")
 
                 api(KotlinX.datetime)
 

@@ -21,7 +21,8 @@ kotlin {
 	sourceSets {
 		val commonMain by getting {
 			dependencies {
-				api("opensavvy:backbone:_")
+				api("opensavvy.pedestal:backbone:_")
+				api("opensavvy.pedestal:state-arrow:_")
 				api(KotlinX.datetime)
 			}
 		}
