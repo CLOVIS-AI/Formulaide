@@ -1,45 +1,60 @@
 package opensavvy.formulaide.fake
 
+import arrow.core.raise.ensure
+import arrow.core.raise.ensureNotNull
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
-import opensavvy.backbone.Ref
-import opensavvy.backbone.RefCache
-import opensavvy.backbone.defaultRefCache
-import opensavvy.formulaide.core.Auth.Companion.currentRole
-import opensavvy.formulaide.core.Auth.Companion.currentUser
-import opensavvy.formulaide.core.Auth.Companion.ensureAdministrator
-import opensavvy.formulaide.core.Auth.Companion.ensureEmployee
-import opensavvy.formulaide.core.Department
-import opensavvy.formulaide.core.User
+import opensavvy.cache.contextual.cache
+import opensavvy.formulaide.core.*
 import opensavvy.formulaide.core.data.Email
 import opensavvy.formulaide.core.data.Password
 import opensavvy.formulaide.core.data.Token
 import opensavvy.formulaide.fake.utils.newId
-import opensavvy.state.Failure
-import opensavvy.state.outcome.*
+import opensavvy.logger.Logger.Companion.warn
+import opensavvy.logger.loggerFor
+import opensavvy.state.arrow.out
+import opensavvy.state.coroutines.ProgressiveFlow
+import opensavvy.state.outcome.Outcome
 import kotlin.random.Random
 import kotlin.random.nextUInt
 
-class FakeUsers : User.Service {
+class FakeUsers : User.Service<FakeUsers.Ref> {
 
-	override val cache: RefCache<User> = defaultRefCache()
+	private val log = loggerFor(this)
 
-	private val users = HashMap<String, User>()
-	private val passwords = HashMap<String, Password>()
-	private val tokens = HashMap<String, ArrayList<Token>>()
-	private val blocked = HashSet<String>()
+	private val users = HashMap<Long, User>()
+	private val passwords = HashMap<Long, Password>()
+	private val tokens = HashMap<Long, ArrayList<Token>>()
+	private val blocked = HashSet<Long>()
 
 	private val lock = Semaphore(1)
 
-	private fun toRef(id: String) = User.Ref(id, this)
+	private val cache = cache<Ref, User.Role, User.Failures.Get, User> { ref, role ->
+		out {
+			ensureEmployee { User.Failures.Unauthenticated }
 
-	override suspend fun list(includeClosed: Boolean): Outcome<List<User.Ref>> = out {
-		ensureAdministrator()
+			lock.withPermit {
+				val user = users[ref.id]
+				ensureNotNull(user) { User.Failures.NotFound(ref) }
+				ensure(user.active || role >= User.Role.Administrator) {
+					log.warn(ref) { "User ${currentUser()} attempted to access user $ref. Only administrators can access other users." }
+					User.Failures.NotFound(ref)
+				}
+				user
+			}
+		}
+	}
+
+	override suspend fun list(includeClosed: Boolean): Outcome<User.Failures.List, List<User.Ref>> = out {
+		ensureEmployee { User.Failures.Unauthenticated }
+		ensureAdministrator { User.Failures.Unauthorized }
 
 		lock.withPermit {
 			users.asSequence()
 				.filter { (_, it) -> it.active || includeClosed }
-				.map { toRef(it.key) }
+				.map { Ref(it.key) }
 				.toList()
 		}
 	}
@@ -48,11 +63,12 @@ class FakeUsers : User.Service {
 		email: Email,
 		fullName: String,
 		administrator: Boolean,
-	): Outcome<Pair<User.Ref, Password>> = out {
-		ensureAdministrator()
+	): Outcome<User.Failures.Create, Pair<User.Ref, Password>> = out {
+		ensureEmployee { User.Failures.Unauthenticated }
+		ensureAdministrator { User.Failures.Unauthorized }
 
 		lock.withPermit {
-			ensureValid(email !in users.values.map { it.email }) { "The email $email already belongs to another user" }
+			ensure(email !in users.values.map { it.email }) { User.Failures.UserAlreadyExists(email) }
 		}
 
 		val id = newId()
@@ -72,100 +88,29 @@ class FakeUsers : User.Service {
 			passwords[id] = singleUsePassword
 		}
 
-		toRef(id) to singleUsePassword
+		Ref(id) to singleUsePassword
 	}
 
-	override suspend fun join(user: User.Ref, department: Department.Ref): Outcome<Unit> = out {
-		ensureAdministrator()
-
-		lock.withPermit {
-			val current = users[user.id]!!
-
-			users[user.id] = current.copy(departments = current.departments + department)
-		}
-	}
-
-	override suspend fun leave(user: User.Ref, department: Department.Ref): Outcome<Unit> = out {
-		ensureAdministrator()
-
-		lock.withPermit {
-			val current = users[user.id]!!
-
-			users[user.id] = current.copy(departments = current.departments - department)
-		}
-	}
-
-	override suspend fun edit(user: User.Ref, active: Boolean?, administrator: Boolean?): Outcome<Unit> = out {
-		ensureAdministrator()
-
-		if (user == currentUser()) {
-			ensureValid(active == null) { "Cannot edit your own activity status" }
-			ensureValid(administrator == null) { "Cannot edit your own role" }
-		}
-
-		lock.withPermit {
-			val current = users[user.id]!!
-
-			users[user.id] = current.copy(
-				active = active ?: current.active,
-				administrator = administrator ?: current.administrator,
-			)
-		}
-	}
-
-	override suspend fun resetPassword(user: User.Ref): Outcome<Password> = out {
-		ensureAdministrator()
-
-		val newPassword = Password("some-new-password-${Random.nextUInt()}")
-
-		lock.withPermit {
-			val current = users[user.id]
-			ensureFound(current != null) { "Could not find user $user" }
-
-			passwords[user.id] = newPassword
-			tokens[user.id]?.clear()
-
-			users[user.id] = current.copy(singleUsePassword = true)
-			blocked.remove(user.id)
-		}
-
-		newPassword
-	}
-
-	override suspend fun setPassword(user: User.Ref, oldPassword: String, newPassword: Password): Outcome<Unit> = out {
-		ensureEmployee()
-		ensureAuthorized(user == currentUser()) { "Setting the password of another user is forbidden" }
-
-		lock.withPermit {
-			val password = passwords[user.id]
-			ensureValid(oldPassword == password?.value) { "The wrong password was provided" }
-
-			passwords[user.id] = newPassword
-			tokens[user.id]?.clear()
-
-			users[user.id]?.copy(singleUsePassword = false)
-				?.also { users[user.id] = it }
-
-			blocked.remove(user.id)
-		}
-	}
-
-	override suspend fun verifyToken(user: User.Ref, token: Token): Outcome<Unit> = out {
-		lock.withPermit {
-			val theirs = tokens[user.id]
-			ensureFound(theirs != null) { "User $user doesn't exist" }
-			ensureAuthenticated(token in theirs) { "The provided token is invalid" }
-		}
-	}
-
-	override suspend fun logIn(email: Email, password: Password): Outcome<Pair<User.Ref, Token>> = out {
+	override suspend fun logIn(email: Email, password: Password): Outcome<User.Failures.LogIn, Pair<User.Ref, Token>> = out {
 		lock.withPermit {
 			val (id, user) = users.asSequence()
 				.firstOrNull { it.value.email == email }
-				?: shift(Failure(Failure.Kind.Unauthenticated, "Invalid credentials"))
-			ensureAuthenticated(user.active) { "Invalid credentials" }
-			ensureAuthenticated(passwords[id] == password) { "Invalid credentials" }
-			ensureAuthenticated(id !in blocked) { "Invalid credentials" }
+				?: raise(User.Failures.IncorrectCredentials())
+
+			ensure(user.active) {
+				log.warn(email) { "Blocked login because the user is inactive" }
+				User.Failures.IncorrectCredentials()
+			}
+
+			ensure(passwords[id] == password) {
+				log.warn(email) { "Blocked login because the password is incorrect" }
+				User.Failures.IncorrectCredentials()
+			}
+
+			ensure(id !in blocked) {
+				log.warn(email) { "Blocked login because the user is blocked" }
+				User.Failures.IncorrectCredentials()
+			}
 
 			val token = Token("very-strong-token-${Random.nextUInt()}")
 			tokens.getOrPut(id) { ArrayList() }
@@ -174,28 +119,145 @@ class FakeUsers : User.Service {
 			if (user.singleUsePassword)
 				blocked += id
 
-			toRef(id) to token
+			Ref(id) to token
 		}
 	}
 
-	override suspend fun logOut(user: User.Ref, token: Token): Outcome<Unit> = out {
-		ensureAuthenticated(currentUser() == user) { "Cannot log out another user" }
+	inner class Ref internal constructor(
+		val id: Long,
+	) : User.Ref {
 
-		lock.withPermit {
-			tokens[user.id]?.remove(token)
+		private suspend fun edit(transform: (User) -> User): Outcome<User.Failures.Edit, Unit> = out {
+			ensureEmployee { User.Failures.Unauthenticated }
+			ensureAdministrator { User.Failures.Unauthorized }
+
+			lock.withPermit {
+				val current = users[id]
+				ensureNotNull(current) { User.Failures.NotFound(this@Ref) }
+
+				users[id] = transform(current)
+			}
+
+			cache.expire(this@Ref)
 		}
-	}
 
-	override suspend fun directRequest(ref: Ref<User>): Outcome<User> = out {
-		ensureEmployee()
-		ensureValid(ref is User.Ref) { "Wrong ref: $ref" }
+		override suspend fun join(department: Department.Ref): Outcome<User.Failures.Edit, Unit> =
+			edit { it.copy(departments = it.departments + department) }
 
-		lock.withPermit {
-			val user = users[ref.id]
-			ensureFound(user != null) { "Could not find user $ref" }
-			ensureFound(user.active || currentRole() >= User.Role.Administrator) { "Could not find user $user" }
-			user
+		override suspend fun leave(department: Department.Ref): Outcome<User.Failures.Edit, Unit> =
+			edit { it.copy(departments = it.departments - department) }
+
+		private suspend fun securityEdit(transform: (User) -> User): Outcome<User.Failures.SecurityEdit, Unit> = out {
+			ensureEmployee { User.Failures.Unauthenticated }
+			ensureAdministrator { User.Failures.Unauthorized }
+
+			ensure(this@Ref != currentUser()) { User.Failures.CannotEditYourself }
+
+			lock.withPermit {
+				val current = users[id]
+				ensureNotNull(current) { User.Failures.NotFound(this@Ref) }
+
+				users[id] = transform(current)
+			}
+
+			cache.expire(this@Ref)
 		}
-	}
 
+		override suspend fun enable(): Outcome<User.Failures.SecurityEdit, Unit> =
+			securityEdit { it.copy(active = true) }
+
+		override suspend fun disable(): Outcome<User.Failures.SecurityEdit, Unit> =
+			securityEdit { it.copy(active = false) }
+
+		override suspend fun promote(): Outcome<User.Failures.SecurityEdit, Unit> =
+			securityEdit { it.copy(administrator = true) }
+
+		override suspend fun demote(): Outcome<User.Failures.SecurityEdit, Unit> =
+			securityEdit { it.copy(administrator = false) }
+
+		override suspend fun resetPassword(): Outcome<User.Failures.Edit, Password> = out {
+			ensureEmployee { User.Failures.Unauthenticated }
+			ensureAdministrator { User.Failures.Unauthorized }
+
+			val newPassword = Password("some-new-password-${Random.nextUInt()}")
+
+			lock.withPermit {
+				val current = users[id]
+				ensureNotNull(current) { User.Failures.NotFound(this@Ref) }
+
+				passwords[id] = newPassword
+				tokens[id]?.clear()
+
+				users[id] = current.copy(singleUsePassword = true)
+				blocked.remove(id)
+			}
+
+			newPassword
+		}
+
+		override suspend fun setPassword(oldPassword: String, newPassword: Password): Outcome<User.Failures.SetPassword, Unit> = out {
+			ensureEmployee { User.Failures.Unauthenticated }
+			ensure(this@Ref == currentUser()) { User.Failures.CanOnlySetYourOwnPassword }
+
+			lock.withPermit {
+				val password = passwords[id]
+				ensure(oldPassword == password?.value) { User.Failures.IncorrectPassword() }
+
+				passwords[id] = newPassword
+				tokens[id]?.clear()
+
+				users[id]?.copy(singleUsePassword = false)
+					?.also { users[id] = it }
+
+				blocked.remove(id)
+			}
+		}
+
+		override suspend fun verifyToken(token: Token): Outcome<User.Failures.TokenVerification, Unit> = out {
+			lock.withPermit {
+				val theirs = tokens[id]
+				ensureNotNull(theirs) {
+					log.warn(this@Ref) { "Could not find any tokens for user" }
+					User.Failures.IncorrectCredentials()
+				}
+				ensure(token in theirs) {
+					log.warn(this@Ref) { "The provided token is invalid" }
+					User.Failures.IncorrectCredentials()
+				}
+			}
+		}
+
+		override suspend fun logOut(token: Token): Outcome<User.Failures.Get, Unit> = out {
+			ensureEmployee { User.Failures.Unauthenticated }
+			ensure(this@Ref == currentUser()) {
+				log.warn { "'${currentUser()}' attempted to log out $this@Ref" }
+				User.Failures.Unauthorized
+			}
+
+			lock.withPermit {
+				tokens[id]?.remove(token)
+			}
+		}
+
+		override fun request(): ProgressiveFlow<User.Failures.Get, User> = flow {
+			emitAll(cache[this@Ref, currentRole()])
+		}
+
+		// region Overrides
+
+		override fun equals(other: Any?): Boolean {
+			if (this === other) return true
+			if (other !is Ref) return false
+
+			return id == other.id
+		}
+
+		override fun hashCode(): Int {
+			return id.hashCode()
+		}
+
+		override fun toString() = "FakeUsers.Ref($id)"
+
+		// endregion
+	}
 }
