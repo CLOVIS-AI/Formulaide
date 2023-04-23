@@ -1,7 +1,7 @@
 package opensavvy.formulaide.test.utils
 
 import kotlinx.coroutines.withContext
-import opensavvy.backbone.Ref.Companion.now
+import opensavvy.backbone.now
 import opensavvy.formulaide.core.Auth
 import opensavvy.formulaide.core.User
 import opensavvy.formulaide.core.User.Role.Companion.role
