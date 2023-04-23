@@ -6,7 +6,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.withContext
-import opensavvy.backbone.Ref.Companion.now
+import opensavvy.backbone.now
 import opensavvy.formulaide.core.Department
 import opensavvy.formulaide.test.assertions.*
 import opensavvy.formulaide.test.structure.Setup
@@ -18,24 +18,24 @@ import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
 
 //region Test data
 
-internal fun createDepartment(departments: Setup<Department.Service>) = prepared(administratorAuth) {
+internal fun <D : Department.Ref> createDepartment(departments: Setup<Department.Service<D>>) = prepared(administratorAuth) {
 	prepare(departments).create("A new department").bind()
 }
 
-internal fun createOpenDepartment(departments: Setup<Department.Service>) = prepared(administratorAuth) {
+internal fun <D : Department.Ref> createOpenDepartment(departments: Setup<Department.Service<D>>) = prepared(administratorAuth) {
 	prepare(departments).create("An open department").bind()
 		.also { it.open().bind() }
 }
 
-private fun createClosedDepartment(departments: Setup<Department.Service>) = prepared(administratorAuth) {
+private fun <D : Department.Ref> createClosedDepartment(departments: Setup<Department.Service<D>>) = prepared(administratorAuth) {
 	prepare(departments).create("A closed department").bind()
 		.also { it.close().bind() }
 }
 
 //endregion
 
-fun Suite.departmentTestSuite(
-	createDepartments: Setup<Department.Service>,
+fun <D : Department.Ref> Suite.departmentTestSuite(
+	createDepartments: Setup<Department.Service<D>>,
 ) {
 	list(createDepartments)
 	request(createDepartments)
@@ -43,8 +43,8 @@ fun Suite.departmentTestSuite(
 	edit(createDepartments)
 }
 
-private fun Suite.list(
-	createDepartments: Setup<Department.Service>,
+private fun <D : Department.Ref> Suite.list(
+	createDepartments: Setup<Department.Service<D>>,
 ) = suite("List departments") {
 	val createOpen by createOpenDepartment(createDepartments)
 	val createClosed by createClosedDepartment(createDepartments)
@@ -103,8 +103,8 @@ private fun Suite.list(
 	}
 }
 
-private fun Suite.request(
-	createDepartments: Setup<Department.Service>,
+private fun <D : Department.Ref> Suite.request(
+	createDepartments: Setup<Department.Service<D>>,
 ) = suite("Request a department") {
 	val createOpen by createOpenDepartment(createDepartments)
 	val createClosed by createClosedDepartment(createDepartments)
@@ -119,8 +119,8 @@ private fun Suite.request(
 	}
 }
 
-private fun Suite.create(
-	createDepartments: Setup<Department.Service>,
+private fun <D : Department.Ref> Suite.create(
+	createDepartments: Setup<Department.Service<D>>,
 ) = suite("Create a department") {
 	test("guests cannot create departments") {
 		val departments = prepare(createDepartments)
@@ -147,8 +147,8 @@ private fun Suite.create(
 	}
 }
 
-private fun Suite.edit(
-	createDepartments: Setup<Department.Service>,
+private fun <D : Department.Ref> Suite.edit(
+	createDepartments: Setup<Department.Service<D>>,
 ) = suite("Edit a department") {
 	val createDepartment by createDepartment(createDepartments)
 	val createOpen by createOpenDepartment(createDepartments)
