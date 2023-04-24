@@ -1,11 +1,17 @@
 package opensavvy.formulaide.core
 
+import arrow.core.raise.Raise
+import arrow.core.raise.ensure
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
-import opensavvy.backbone.Ref.Companion.now
+import opensavvy.backbone.now
+import opensavvy.state.arrow.out
+import opensavvy.state.arrow.toEither
+import opensavvy.state.failure.CustomFailure
+import opensavvy.state.failure.Failure
 import opensavvy.state.outcome.Outcome
-import opensavvy.state.outcome.ensureValid
-import opensavvy.state.outcome.out
+import opensavvy.state.outcome.failed
+import opensavvy.state.outcome.success
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import opensavvy.formulaide.core.data.Email as DataEmail
@@ -15,35 +21,35 @@ import opensavvy.formulaide.core.data.Email as DataEmail
  */
 sealed class Input {
 
-	abstract suspend fun parse(value: String, uploads: File.Service): Outcome<Any>
+	abstract suspend fun parse(value: String, uploads: File.Service): Outcome<Failures.Parsing, Any>
 
 	/**
 	 * An input is compatible with its [source] if it is more restrictive (or equivalent).
 	 */
-	abstract suspend fun validateCompatibleWith(source: Input): Outcome<Unit>
+	abstract suspend fun validateCompatibleWith(source: Input): Outcome<Failures.Compatibility, Unit>
 
 	data class Text(
-		val maxLength: UInt? = null,
+		val maxLength: UInt?,
 	) : Input() {
 		val effectiveMaxLength get() = maxLength ?: 4096u
 
 		override suspend fun parse(value: String, uploads: File.Service) = out {
-			ensureValid(value.length <= effectiveMaxLength.toInt()) { "Le texte saisi fait plus de $effectiveMaxLength caractères : ${value.length}" }
+			ensure(value.length <= effectiveMaxLength.toInt()) { Failures.Parsing("Le texte saisi fait plus de $effectiveMaxLength caractères : ${value.length}") }
 			value
 		}
 
-		override suspend fun validateCompatibleWith(source: Input): Outcome<Unit> = out {
-			ensureValid(source is Text) { "Impossible d'importer un texte à partir d'un ${source::class} (${this@Text} -> $source)" }
+		override suspend fun validateCompatibleWith(source: Input) = out {
+			ensure(source is Text) { Failures.Compatibility("Impossible d'importer un texte à partir d'un ${source::class} (${this@Text} -> $source)") }
 
-			ensureValid(effectiveMaxLength <= source.effectiveMaxLength) { "Un texte importé ne peut pas autoriser une longueur ($effectiveMaxLength) plus élevée que celle de sa source (${source.effectiveMaxLength})" }
+			ensure(effectiveMaxLength <= source.effectiveMaxLength) { Failures.Compatibility("Un texte importé ne peut pas autoriser une longueur ($effectiveMaxLength) plus élevée que celle de sa source (${source.effectiveMaxLength})") }
 		}
 
 		override fun toString() = "Texte (longueur maximale : $effectiveMaxLength)"
 	}
 
 	data class Integer(
-		val min: Long? = null,
-		val max: Long? = null,
+		val min: Long?,
+		val max: Long?,
 	) : Input() {
 		val effectiveMin get() = min ?: Long.MIN_VALUE
 		val effectiveMax get() = max ?: Long.MAX_VALUE
@@ -59,19 +65,19 @@ sealed class Input {
 
 		override suspend fun parse(value: String, uploads: File.Service) = out {
 			val long = value.toLongOrNull()
-			ensureValid(long != null) { "'$value' n'est pas un nombre valide" }
+			ensure(long != null) { Failures.Parsing("'$value' n'est pas un nombre valide") }
 
-			ensureValid(long >= effectiveMin) { "$value est inférieur à la valeur minimale autorisée, $effectiveMin" }
-			ensureValid(long <= effectiveMax) { "$value est supérieur à la valeur maximale autorisée, $effectiveMax" }
+			ensure(long >= effectiveMin) { Failures.Parsing("$value est inférieur à la valeur minimale autorisée, $effectiveMin") }
+			ensure(long <= effectiveMax) { Failures.Parsing("$value est supérieur à la valeur maximale autorisée, $effectiveMax") }
 
 			long
 		}
 
-		override suspend fun validateCompatibleWith(source: Input): Outcome<Unit> = out {
-			ensureValid(source is Integer) { "Impossible d'importer un texte à partir d'un ${source::class} (${this@Integer} -> $source)" }
+		override suspend fun validateCompatibleWith(source: Input) = out {
+			ensure(source is Integer) { Failures.Compatibility("Impossible d'importer un texte à partir d'un ${source::class} (${this@Integer} -> $source)") }
 
-			ensureValid(effectiveMin >= source.effectiveMin) { "Un nombre importé ne peut pas autoriser une valeur minimale ($effectiveMin) plus petite que celle de sa source (${source.effectiveMin})" }
-			ensureValid(effectiveMax <= source.effectiveMax) { "Un nombre importé ne peut pas autoriser une valeur maximale ($effectiveMax) plus grande que celle de sa source (${source.effectiveMax})" }
+			ensure(effectiveMin >= source.effectiveMin) { Failures.Compatibility("Un nombre importé ne peut pas autoriser une valeur minimale ($effectiveMin) plus petite que celle de sa source (${source.effectiveMin})") }
+			ensure(effectiveMax <= source.effectiveMax) { Failures.Compatibility("Un nombre importé ne peut pas autoriser une valeur maximale ($effectiveMax) plus grande que celle de sa source (${source.effectiveMax})") }
 		}
 
 		override fun toString() = "Nombre (de $effectiveMin à $effectiveMax)"
@@ -80,13 +86,13 @@ sealed class Input {
 	object Toggle : Input() {
 		override suspend fun parse(value: String, uploads: File.Service) = out {
 			val bool = value.toBooleanStrictOrNull()
-			ensureValid(bool != null) { "'$value' n'est pas un booléen" }
+			ensure(bool != null) { Failures.Parsing("'$value' n'est pas un booléen") }
 
 			bool
 		}
 
-		override suspend fun validateCompatibleWith(source: Input): Outcome<Unit> = out {
-			ensureValid(source is Toggle) { "Impossible d'importer un booléen à partir d'un ${source::class} (${this@Toggle} -> $source)" }
+		override suspend fun validateCompatibleWith(source: Input) = out {
+			ensure(source is Toggle) { Failures.Compatibility("Impossible d'importer un booléen à partir d'un ${source::class} (${this@Toggle} -> $source)") }
 		}
 
 		override fun toString() = "Coche"
@@ -94,11 +100,11 @@ sealed class Input {
 
 	object Email : Input() {
 		override suspend fun parse(value: String, uploads: File.Service) = out {
-			DataEmail(value)
+			captureParsingFailure { DataEmail(value) }
 		}
 
-		override suspend fun validateCompatibleWith(source: Input): Outcome<Unit> = out {
-			ensureValid(source is Email) { "Impossible d'importer une adresse email à partir d'un ${source::class} (${this@Email} -> $source)" }
+		override suspend fun validateCompatibleWith(source: Input) = out {
+			ensure(source is Email) { Failures.Compatibility("Impossible d'importer une adresse email à partir d'un ${source::class} (${this@Email} -> $source)") }
 		}
 
 		override fun toString() = "Adresse électronique"
@@ -106,17 +112,17 @@ sealed class Input {
 
 	object Phone : Input() {
 		override suspend fun parse(value: String, uploads: File.Service) = out {
-			ensureValid(value.length <= 20) { "Un numéro de téléphone ne peut pas comporter ${value.length} caractères" }
+			ensure(value.length <= 20) { Failures.Parsing("Un numéro de téléphone ne peut pas comporter ${value.length} caractères") }
 
 			for (char in value) {
-				ensureValid(char.isDigit() || char == '+') { "Le caractère '$char' n'est pas autorisé dans un numéro de téléphone" }
+				ensure(char.isDigit() || char == '+') { Failures.Parsing("Le caractère '$char' n'est pas autorisé dans un numéro de téléphone") }
 			}
 
 			value
 		}
 
-		override suspend fun validateCompatibleWith(source: Input): Outcome<Unit> = out {
-			ensureValid(source is Phone) { "Impossible d'importer un numéro de téléphone à partir d'un ${source::class} (${this@Phone} -> $source)" }
+		override suspend fun validateCompatibleWith(source: Input) = out {
+			ensure(source is Phone) { Failures.Compatibility("Impossible d'importer un numéro de téléphone à partir d'un ${source::class} (${this@Phone} -> $source)") }
 		}
 
 		override fun toString() = "Numéro de téléphone"
@@ -124,11 +130,11 @@ sealed class Input {
 
 	object Date : Input() {
 		override suspend fun parse(value: String, uploads: File.Service) = out {
-			LocalDate.parse(value)
+			captureParsingFailure { LocalDate.parse(value) }
 		}
 
-		override suspend fun validateCompatibleWith(source: Input): Outcome<Unit> = out {
-			ensureValid(source is Date) { "Impossible d'importer une date à partir d'un ${source::class} (${this@Date} -> $source)" }
+		override suspend fun validateCompatibleWith(source: Input) = out {
+			ensure(source is Date) { Failures.Compatibility("Impossible d'importer une date à partir d'un ${source::class} (${this@Date} -> $source)") }
 		}
 
 		override fun toString() = "Date"
@@ -136,11 +142,11 @@ sealed class Input {
 
 	object Time : Input() {
 		override suspend fun parse(value: String, uploads: File.Service) = out {
-			LocalTime.parse(value)
+			captureParsingFailure { LocalTime.parse(value) }
 		}
 
-		override suspend fun validateCompatibleWith(source: Input): Outcome<Unit> = out {
-			ensureValid(source is Time) { "Impossible d'importer une heure à partir d'un ${source::class} (${this@Time} -> $source)" }
+		override suspend fun validateCompatibleWith(source: Input) = out {
+			ensure(source is Time) { Failures.Compatibility("Impossible d'importer une heure à partir d'un ${source::class} (${this@Time} -> $source)") }
 		}
 
 		override fun toString() = "Heure"
@@ -148,8 +154,8 @@ sealed class Input {
 
 	data class Upload(
 		val allowedFormats: Set<Format>,
-		val maxSizeMB: Int? = null,
-		val expiresAfter: Duration? = null,
+		val maxSizeMB: Int?,
+		val expiresAfter: Duration?,
 	) : Input() {
 
 		val effectiveMaxSizeMB get() = maxSizeMB ?: maxAllowedSizeMB
@@ -162,26 +168,30 @@ sealed class Input {
 			require(effectiveExpiresAfter < (31 * 12 * 10).days) { "Une pièce jointe ne peux pas être stockée plus de 10 ans" }
 		}
 
-		override suspend fun parse(value: String, uploads: File.Service): Outcome<File.Ref> = out {
-			ensureValid(value.isNotBlank()) { "Un identifiant de fichier ne peut pas être vide : '$value'" }
+		override suspend fun parse(value: String, uploads: File.Service): Outcome<Failures.Parsing, Any> = out {
+			ensure(value.isNotBlank()) { Failures.Parsing("Un identifiant de fichier ne peut pas être vide : '$value'") }
 
-			File.Ref(value, uploads)
-				.also { it.now().bind() } // check that it exists
+			val file = uploads.fromId(value)
+
+			// Check that it exists
+			file.now().toEither().mapLeft { Failures.Parsing("Le fichier est introuvable", cause = it) }.bind()
+
+			file
 		}
 
-		override suspend fun validateCompatibleWith(source: Input): Outcome<Unit> = out {
-			ensureValid(source is Upload) { "Impossible d'importer une heure à partir d'un ${source::class} (${this@Upload} -> $source)" }
+		override suspend fun validateCompatibleWith(source: Input) = out {
+			ensure(source is Upload) { Failures.Compatibility("Impossible d'importer une heure à partir d'un ${source::class} (${this@Upload} -> $source)") }
 
-			ensureValid(effectiveMaxSizeMB <= source.effectiveMaxSizeMB) { "Un fichier importé ne peut pas autoriser une taille maximale ($effectiveMaxSizeMB Mo) plus grande que celle de sa source (${source.effectiveMaxSizeMB})" }
-			ensureValid(effectiveExpiresAfter <= source.effectiveExpiresAfter) { "Un fichier importé ne peut pas être conservé (${effectiveExpiresAfter.inWholeDays} jours) plus grande que celle de sa source (${source.effectiveExpiresAfter} jours)" }
-			ensureValid(allowedFormats.all { it in source.allowedFormats }) {
-				"Un fichier importé ne peut pas accepter des formats refusés par sa source : ${
+			ensure(effectiveMaxSizeMB <= source.effectiveMaxSizeMB) { Failures.Compatibility("Un fichier importé ne peut pas autoriser une taille maximale ($effectiveMaxSizeMB Mo) plus grande que celle de sa source (${source.effectiveMaxSizeMB})") }
+			ensure(effectiveExpiresAfter <= source.effectiveExpiresAfter) { Failures.Compatibility("Un fichier importé ne peut pas être conservé (${effectiveExpiresAfter.inWholeDays} jours) plus grande que celle de sa source (${source.effectiveExpiresAfter} jours)") }
+			ensure(allowedFormats.all { it in source.allowedFormats }) {
+				Failures.Compatibility("Un fichier importé ne peut pas accepter des formats refusés par sa source : ${
 					allowedFormats
 						.asSequence()
 						.filter { it !in source.allowedFormats }
 						.flatMap { it.extensions }
 						.joinToString(", ")
-				}"
+				}")
 			}
 		}
 
@@ -238,4 +248,41 @@ sealed class Input {
 		}
 	}
 
+	sealed interface Failures : Failure {
+		// For now, errors are just strings.
+		// I will maybe replace them by proper sealed class hierarchies in the future if needed.
+
+		class Creating(message: String) : CustomFailure(Companion, message),
+			Failures {
+			companion object : Failure.Key
+		}
+
+		class Parsing(message: String, cause: Failure? = null) : CustomFailure(Companion, message, cause),
+			Failures {
+			companion object : Failure.Key
+		}
+
+		class Compatibility(message: String) : CustomFailure(Companion, message),
+			Failures {
+			companion object : Failure.Key
+		}
+	}
+
+	companion object
 }
+
+private inline fun <T> Raise<Input.Failures.Parsing>.captureParsingFailure(block: () -> T): T = try {
+	block()
+} catch (e: IllegalArgumentException) {
+	raise(Input.Failures.Parsing(e.message ?: "Pas de message"))
+}
+
+private inline fun <T> captureCreationFailure(block: () -> T): Outcome<Input.Failures.Creating, T> = try {
+	block().success()
+} catch (e: IllegalArgumentException) {
+	Input.Failures.Creating(e.message ?: "Pas de message").failed()
+}
+
+fun Input.Companion.text(maxLength: UInt? = null) = captureCreationFailure { Input.Text(maxLength) }
+fun Input.Companion.integer(min: Long? = null, max: Long? = null) = captureCreationFailure { Input.Integer(min, max) }
+fun Input.Companion.upload(allowedFormats: Set<Input.Upload.Format>, maxSizeMB: Int? = null, expiresAfter: Duration? = null) = captureCreationFailure { Input.Upload(allowedFormats, maxSizeMB, expiresAfter) }

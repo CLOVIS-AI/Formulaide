@@ -1,7 +1,8 @@
 package opensavvy.formulaide.core
 
+import arrow.core.NonEmptyList
 import kotlinx.coroutines.withContext
-import opensavvy.backbone.Ref.Companion.now
+import opensavvy.backbone.now
 import opensavvy.formulaide.core.Field.Companion.arity
 import opensavvy.formulaide.core.Field.Companion.arityFrom
 import opensavvy.formulaide.core.Field.Companion.choice
@@ -14,7 +15,7 @@ import opensavvy.formulaide.core.Field.Companion.label
 import opensavvy.formulaide.core.Field.Companion.labelFrom
 import opensavvy.formulaide.core.Input.*
 import opensavvy.formulaide.fake.FakeTemplates
-import opensavvy.formulaide.test.assertions.shouldBeInvalid
+import opensavvy.formulaide.test.assertions.shouldFailWithKey
 import opensavvy.formulaide.test.assertions.shouldSucceed
 import opensavvy.formulaide.test.structure.Suite
 import opensavvy.formulaide.test.structure.TestExecutor
@@ -22,9 +23,19 @@ import opensavvy.formulaide.test.structure.TestScope
 import opensavvy.formulaide.test.structure.clock
 import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
 import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
-import opensavvy.state.outcome.out
+import opensavvy.state.arrow.out
+import opensavvy.state.failure.CustomFailure
+import opensavvy.state.failure.Failure
+import opensavvy.state.outcome.failed
+import opensavvy.state.outcome.success
 
 class ImportedFieldTest : TestExecutor() {
+
+	private data class CombinedFieldFailure(
+		val failure: NonEmptyList<Field.Failures.Compatibility>,
+	) : CustomFailure(Companion, "Invalid field: $failure") {
+		companion object : Failure.Key
+	}
 
 	private suspend fun TestScope.createTemplateForField(service: Template.Service, field: Field) =
 		withContext(administratorAuth) {
@@ -44,7 +55,10 @@ class ImportedFieldTest : TestExecutor() {
 
 		val new = imported(template)
 
-		new.validate().bind()
+		new.validate().fold(
+			ifLeft = { CombinedFieldFailure(it).failed() },
+			ifRight = { it.success() },
+		).bind()
 	}
 
 	override fun Suite.register() {
@@ -66,28 +80,26 @@ class ImportedFieldTest : TestExecutor() {
 
 		test("Identical test input", employeeAuth) {
 			shouldSucceed(import(
-				input("Name", Text())
+				input("Name", Input.text().bind())
 			) {
-				inputFrom(it, "Name", Text())
+				inputFrom(it, "Name", Input.text().bind())
 			})
 		}
 
 		test("Text input with a different name", employeeAuth) {
 			shouldSucceed(import(
-				input("Name", Text())
+				input("Name", Input.text().bind())
 			) {
-				inputFrom(it, "Other name", Text())
+				inputFrom(it, "Other name", Input.text().bind())
 			})
 		}
 
 		test("Text input with a greater maximum length", employeeAuth) {
-			shouldBeInvalid(
-				import(
-					input("Name", Text(maxLength = 5u))
-				) {
-					inputFrom(it, "Name", Text(maxLength = 10u))
-				}
-			)
+			import(
+				input("Name", Text(maxLength = 5u))
+			) {
+				inputFrom(it, "Name", Text(maxLength = 10u))
+			} shouldFailWithKey CombinedFieldFailure
 		}
 
 		test("Text input with lesser maximum length", employeeAuth) {
@@ -100,17 +112,17 @@ class ImportedFieldTest : TestExecutor() {
 
 		test("Identical int input", employeeAuth) {
 			shouldSucceed(import(
-				input("Name", Integer())
+				input("Name", Input.integer().bind())
 			) {
-				inputFrom(it, "Name", Integer())
+				inputFrom(it, "Name", Input.integer().bind())
 			})
 		}
 
 		test("Int input with a different name", employeeAuth) {
 			shouldSucceed(import(
-				input("Name", Integer())
+				input("Name", Input.integer().bind())
 			) {
-				inputFrom(it, "Other name", Integer())
+				inputFrom(it, "Other name", Input.integer().bind())
 			})
 		}
 
@@ -135,63 +147,63 @@ class ImportedFieldTest : TestExecutor() {
 		}
 
 		test("Int input with a less restrictive minimum", employeeAuth) {
-			shouldBeInvalid(import(
+			import(
 				input("Name", Integer(0..5))
 			) {
 				inputFrom(it, "Name", Integer(-1..5))
-			})
+			} shouldFailWithKey CombinedFieldFailure
 
-			shouldBeInvalid(import(
+			import(
 				input("Name", Integer(0..5))
 			) {
 				inputFrom(it, "Name", Integer(-1..3))
-			})
+			} shouldFailWithKey CombinedFieldFailure
 		}
 
 		test("Int input with a less restrictive maximum", employeeAuth) {
-			shouldBeInvalid(import(
+			import(
 				input("Name", Integer(0..5))
 			) {
 				inputFrom(it, "Name", Integer(0..6))
-			})
+			} shouldFailWithKey CombinedFieldFailure
 
-			shouldBeInvalid(import(
+			import(
 				input("Name", Integer(0..5))
 			) {
 				inputFrom(it, "Name", Integer(3..6))
-			})
+			} shouldFailWithKey CombinedFieldFailure
 		}
 
 		test("Identical toggle input", employeeAuth) {
-			shouldSucceed(import(
+			import(
 				input("Name", Toggle)
 			) {
 				inputFrom(it, "Name", Toggle)
-			})
+			}.bind()
 		}
 
 		test("Toggle input with a different name", employeeAuth) {
-			shouldSucceed(import(
+			import(
 				input("Name", Toggle)
 			) {
 				inputFrom(it, "Other name", Toggle)
-			})
+			}.bind()
 		}
 
 		test("Identical email input", employeeAuth) {
-			shouldSucceed(import(
+			import(
 				input("Name", Email)
 			) {
 				inputFrom(it, "Name", Email)
-			})
+			}.bind()
 		}
 
 		test("Email input with a different name", employeeAuth) {
-			shouldSucceed(import(
+			import(
 				input("Name", Email)
 			) {
 				inputFrom(it, "Other name", Email)
-			})
+			}.bind()
 		}
 
 		test("Identical phone input", employeeAuth) {
@@ -244,8 +256,8 @@ class ImportedFieldTest : TestExecutor() {
 
 		test("Cannot import a different type of input", employeeAuth) {
 			val types = listOf(
-				Text(),
-				Integer(),
+				Input.text().bind(),
+				Input.integer().bind(),
 				Toggle,
 				Email,
 				Phone,
@@ -256,11 +268,11 @@ class ImportedFieldTest : TestExecutor() {
 			for (original in types) {
 				for (imported in types.filter { it != original }) {
 					println("Checking that it is not possible to import $imported for the original input $original")
-					shouldBeInvalid(import(
+					import(
 						input("Name", original)
 					) {
 						inputFrom(it, "Name", imported)
-					})
+					} shouldFailWithKey CombinedFieldFailure
 				}
 			}
 		}
@@ -322,7 +334,7 @@ class ImportedFieldTest : TestExecutor() {
 		}
 
 		test("Choice with more options", employeeAuth) {
-			shouldBeInvalid(import(
+			import(
 				choice(
 					"Name",
 					0 to label("First choice"),
@@ -338,7 +350,7 @@ class ImportedFieldTest : TestExecutor() {
 					2 to label("Third choice"),
 					3 to label("Fourth choice"),
 				)
-			})
+			} shouldFailWithKey CombinedFieldFailure
 		}
 
 		test("Identical group", employeeAuth) {
@@ -380,7 +392,7 @@ class ImportedFieldTest : TestExecutor() {
 		}
 
 		test("Group with different fields", employeeAuth) {
-			shouldBeInvalid(import(
+			import(
 				group(
 					"Name",
 					0 to label("First field"),
@@ -394,9 +406,9 @@ class ImportedFieldTest : TestExecutor() {
 					0 to label("First field"),
 					1 to label("Second field"),
 				)
-			})
+			} shouldFailWithKey CombinedFieldFailure
 
-			shouldBeInvalid(import(
+			import(
 				group(
 					"Name",
 					0 to label("First field"),
@@ -412,7 +424,7 @@ class ImportedFieldTest : TestExecutor() {
 					2 to label("Third field"),
 					3 to label("Fourth field"),
 				)
-			})
+			} shouldFailWithKey CombinedFieldFailure
 		}
 
 		test("Identical arity", employeeAuth) {
@@ -467,7 +479,7 @@ class ImportedFieldTest : TestExecutor() {
 		}
 
 		test("Import mandatory arity as optional", employeeAuth) {
-			shouldBeInvalid(import(
+			import(
 				arity(
 					"Name",
 					1u..1u,
@@ -480,11 +492,11 @@ class ImportedFieldTest : TestExecutor() {
 					0u..1u,
 					label("Field"),
 				)
-			})
+			} shouldFailWithKey CombinedFieldFailure
 		}
 
 		test("Arity with a lower minimum bound", employeeAuth) {
-			shouldBeInvalid(import(
+			import(
 				arity(
 					"Name",
 					5u..6u,
@@ -497,7 +509,7 @@ class ImportedFieldTest : TestExecutor() {
 					4u..6u,
 					label("Field"),
 				)
-			})
+			} shouldFailWithKey CombinedFieldFailure
 		}
 
 		test("Arity with a higher minimum bound", employeeAuth) {
@@ -518,7 +530,7 @@ class ImportedFieldTest : TestExecutor() {
 		}
 
 		test("Arity with a higher maximum bound", employeeAuth) {
-			shouldBeInvalid(import(
+			import(
 				arity(
 					"Name",
 					5u..6u,
@@ -531,7 +543,7 @@ class ImportedFieldTest : TestExecutor() {
 					5u..7u,
 					label("Field"),
 				)
-			})
+			} shouldFailWithKey CombinedFieldFailure
 		}
 
 		test("Arity with a lower maximum bound", employeeAuth) {

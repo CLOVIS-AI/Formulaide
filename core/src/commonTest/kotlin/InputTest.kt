@@ -2,12 +2,11 @@ package opensavvy.formulaide.core
 
 import opensavvy.formulaide.core.data.Email
 import opensavvy.formulaide.fake.FakeFiles
-import opensavvy.formulaide.test.assertions.shouldBeInvalid
+import opensavvy.formulaide.test.assertions.shouldFailWithKey
 import opensavvy.formulaide.test.assertions.shouldSucceedAnd
 import opensavvy.formulaide.test.structure.Suite
 import opensavvy.formulaide.test.structure.TestExecutor
 import opensavvy.formulaide.test.structure.clock
-import opensavvy.state.outcome.out
 import kotlin.test.assertEquals
 
 class InputTest : TestExecutor() {
@@ -24,8 +23,8 @@ class InputTest : TestExecutor() {
 				assertEquals("hello", it)
 			}
 
-			shouldBeInvalid(text.parse("too long", files))
-			shouldBeInvalid(text.parse("123456", files))
+			text.parse("too long", files) shouldFailWithKey Input.Failures.Parsing
+			text.parse("123456", files) shouldFailWithKey Input.Failures.Parsing
 		}
 
 		test("Parse integer") {
@@ -48,14 +47,14 @@ class InputTest : TestExecutor() {
 				assertEquals(5, it)
 			}
 
-			shouldBeInvalid(int.parse("-6", files))
-			shouldBeInvalid(int.parse("6", files))
-			shouldBeInvalid(int.parse("95", files))
+			int.parse("-6", files) shouldFailWithKey Input.Failures.Parsing
+			int.parse("6", files) shouldFailWithKey Input.Failures.Parsing
+			int.parse("95", files) shouldFailWithKey Input.Failures.Parsing
 		}
 
 		test("Check invalid int range") {
-			shouldBeInvalid(out { Input.Integer(min = 6, max = 5) })
-			shouldBeInvalid(out { Input.Integer(min = 5, max = 5) })
+			Input.integer(min = 6, max = 5) shouldFailWithKey Input.Failures.Creating
+			Input.integer(min = 5, max = 5) shouldFailWithKey Input.Failures.Creating
 		}
 
 		test("Parse boolean") {
@@ -70,8 +69,8 @@ class InputTest : TestExecutor() {
 				assertEquals(false, it)
 			}
 
-			shouldBeInvalid(bool.parse("other", files))
-			shouldBeInvalid(bool.parse("something", files))
+			bool.parse("other", files) shouldFailWithKey Input.Failures.Parsing
+			bool.parse("something", files) shouldFailWithKey Input.Failures.Parsing
 		}
 
 		test("Email") {
@@ -82,7 +81,7 @@ class InputTest : TestExecutor() {
 				assertEquals(Email("my-email@gmail.com"), it)
 			}
 
-			shouldBeInvalid(email.parse("something", files))
+			email.parse("something", files) shouldFailWithKey Input.Failures.Parsing
 		}
 
 		test("Parse phone number") {
@@ -93,8 +92,8 @@ class InputTest : TestExecutor() {
 				assertEquals("+332345678", it)
 			}
 
-			shouldBeInvalid(phone.parse("thing", files))
-			shouldBeInvalid(phone.parse("123456789123456789123456789", files))
+			phone.parse("thing", files) shouldFailWithKey Input.Failures.Parsing
+			phone.parse("123456789123456789123456789", files) shouldFailWithKey Input.Failures.Parsing
 		}
 
 		test("Int range constructor") {
