@@ -7,7 +7,7 @@ import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.withContext
-import opensavvy.backbone.Ref.Companion.now
+import opensavvy.backbone.now
 import opensavvy.formulaide.core.Field.Companion.arity
 import opensavvy.formulaide.core.Field.Companion.group
 import opensavvy.formulaide.core.Field.Companion.input
@@ -19,6 +19,7 @@ import opensavvy.formulaide.test.assertions.*
 import opensavvy.formulaide.test.structure.*
 import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
 import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
+import opensavvy.state.outcome.map
 
 //region Test data
 
@@ -187,13 +188,11 @@ private fun Suite.create(
 		val cities = prepare(createCityTemplate).now()
 			.map { it.versions.first() }.bind()
 
-		shouldBeInvalid(
-			templates.create(
-				"Test",
-				"Initial version",
-				labelFrom(cities, "This field does not match the imported template at all")
-			)
-		)
+		templates.create(
+			"Test",
+			"Initial version",
+			labelFrom(cities, "This field does not match the imported template at all")
+		) shouldFailWithKey Template.Failures.InvalidImport
 	}
 }
 
@@ -255,15 +254,13 @@ private fun Suite.createVersion(
 		val firstVersion = cities.now()
 			.map { it.versions.first() }.bind()
 
-		shouldBeInvalid(
-			cities.createVersion(
-				"Second version",
-				labelFrom(
-					firstVersion,
-					"This field does not match the imported template at all"
-				)
+		cities.createVersion(
+			"Second version",
+			labelFrom(
+				firstVersion,
+				"This field does not match the imported template at all"
 			)
-		)
+		) shouldFailWithKey Template.Failures.InvalidImport
 	}
 }
 
