@@ -5,6 +5,7 @@ import opensavvy.backbone.Backbone
 import opensavvy.formulaide.core.File.Companion.TTL_UNLINKED
 import opensavvy.formulaide.core.File.Ref
 import opensavvy.formulaide.core.File.Service
+import opensavvy.state.failure.*
 import opensavvy.state.outcome.Outcome
 import kotlin.time.Duration.Companion.hours
 
@@ -37,29 +38,27 @@ data class File(
 		val field: Field.Id,
 	)
 
-	data class Ref(
-		val id: String,
-		override val backbone: Service,
-	) : opensavvy.backbone.Ref<File> {
+	interface Ref : opensavvy.backbone.Ref<Failures.Get, File> {
+
+		val id: String
 
 		/**
 		 * Links this upload to a [record] and a [submission].
 		 *
-		 * @see Service.link
+		 * When a file is linked, its expiration time is extended to match what is configured in the field the file is
+		 * based on.
+		 *
+		 * This function can only be called server-side, there is no HTTP API to call it.
 		 */
-		suspend fun linkTo(record: Record.Ref, submission: Submission.Ref, field: Field.Id) =
-			backbone.link(this, record, submission, field)
+		suspend fun linkTo(record: Record.Ref, submission: Submission.Ref, field: Field.Id): Outcome<Failures.Link, Unit>
 
 		/**
 		 * Reads the binary contents of this file.
-		 *
-		 * @see Service.read
 		 */
-		suspend fun read() =
-			backbone.read(this)
+		suspend fun read(): Outcome<Failures.Read, ByteIterator>
 	}
 
-	interface Service : Backbone<File> {
+	interface Service : Backbone<Ref, Failures.Get, File> {
 
 		/**
 		 * Creates a new [File].
@@ -70,30 +69,68 @@ data class File(
 		suspend fun create(
 			mime: String,
 			content: ByteIterator,
-		): Outcome<Ref>
+		): Outcome<Failures.Create, Ref>
 
-		/**
-		 * Links [upload] to the provided [record] and [submission].
-		 *
-		 * When an upload is linked, its expiration time is extended to match what is configured in the field the upload
-		 * was based on.
-		 *
-		 * This function can only be called server-side, there is no HTTP API to call it.
-		 */
-		suspend fun link(
-			upload: Ref,
-			record: Record.Ref,
-			submission: Submission.Ref,
-			field: Field.Id,
-		): Outcome<Unit>
+		fun fromId(id: String): Ref
+	}
 
-		/**
-		 * Reads the binary contents of this file.
-		 *
-		 * Will fail with 'not found' if the upload has expired.
-		 */
-		suspend fun read(upload: Ref): Outcome<ByteIterator>
+	sealed interface Failures : Failure {
+		sealed interface Get : Failures
+		sealed interface Create : Failures
+		sealed interface Link : Failures
+		sealed interface Read : Failures
 
+		class NotFound(val ref: Ref) : CustomFailure(opensavvy.state.failure.NotFound(ref)),
+			Get,
+			Link,
+			Read
+
+		object Unauthenticated : CustomFailure(Unauthenticated()),
+			Get,
+			Create,
+			Link,
+			Read
+
+		object Unauthorized : CustomFailure(Unauthorized()),
+			Get,
+			Create,
+			Link,
+			Read
+
+		class RecordNotFound(
+			val ref: Record.Ref,
+			val failure: Record.Failures.Get?,
+		) : CustomFailure(NotFound(ref, cause = failure)),
+			Link
+
+		class SubmissionNotFound(
+			val ref: Submission.Ref,
+			val failure: Submission.Failures.Get?,
+		) : CustomFailure(NotFound(ref, cause = failure)),
+			Read
+
+		class FormVersionNotFound(
+			val ref: Form.Version.Ref,
+			val form: Form.Version.Failures.Get,
+		) : CustomFailure(NotFound(ref, cause = form)),
+			Read
+
+		class InvalidField(
+			val reason: String,
+		) : CustomFailure(Companion, reason),
+			Read {
+			companion object : Failure.Key
+		}
+
+		class Expired(val ref: Ref) : CustomFailure(Companion, "Le fichier $ref a été supprimé après son expiration"),
+			Read {
+			companion object : Failure.Key
+		}
+
+		class AlreadyLinked(val ref: Ref) : CustomFailure(Companion, "Le fichier $ref a déjà été lié à une saisie"),
+			Link {
+			companion object : Failure.Key
+		}
 	}
 
 	companion object {
