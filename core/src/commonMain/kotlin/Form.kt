@@ -1,9 +1,15 @@
 package opensavvy.formulaide.core
 
+import arrow.core.Nel
 import kotlinx.datetime.Instant
 import opensavvy.backbone.Backbone
 import opensavvy.formulaide.core.Form.*
+import opensavvy.state.failure.CustomFailure
+import opensavvy.state.failure.Failure
 import opensavvy.state.outcome.Outcome
+import opensavvy.state.failure.NotFound as StandardNotFound
+import opensavvy.state.failure.Unauthenticated as StandardUnauthenticated
+import opensavvy.state.failure.Unauthorized as StandardUnauthorized
 
 /**
  * The schema of a user's interactions with Formulaide.
@@ -56,77 +62,57 @@ data class Form(
 	val public: Boolean,
 ) {
 
-	val versionsSorted by lazy(LazyThreadSafetyMode.PUBLICATION) { versions.sortedBy { it.version } }
+	val versionsSorted by lazy(LazyThreadSafetyMode.PUBLICATION) { versions.sortedBy { it.creationDate } }
 
-	data class Ref(
-		val id: String,
-		override val backbone: Service,
-	) : opensavvy.backbone.Ref<Form> {
+	interface Ref : opensavvy.backbone.Ref<Failures.Get, Form> {
 
 		/**
 		 * Renames this form.
 		 *
 		 * @see Form.name
-		 * @see Service.edit
 		 */
-		suspend fun rename(name: String) = backbone.edit(this, name = name)
+		suspend fun rename(name: String): Outcome<Failures.Edit, Unit>
 
 		/**
 		 * Opens this form.
 		 *
 		 * @see Form.open
-		 * @see Service.edit
 		 */
-		suspend fun open() = backbone.edit(this, open = true)
+		suspend fun open(): Outcome<Failures.Edit, Unit>
 
 		/**
 		 * Closes this form.
 		 *
 		 * @see Form.open
-		 * @see Service.edit
 		 */
-		suspend fun close() = backbone.edit(this, open = false)
+		suspend fun close(): Outcome<Failures.Edit, Unit>
 
 		/**
 		 * Makes this form public.
 		 *
 		 * @see Form.open
-		 * @see Service.edit
 		 */
-		suspend fun publicize() = backbone.edit(this, public = true)
+		suspend fun publicize(): Outcome<Failures.Edit, Unit>
 
 		/**
 		 * Makes this form private.
 		 *
 		 * @see Form.open
-		 * @see Service.edit
 		 */
-		suspend fun privatize() = backbone.edit(this, public = false)
-
-		/**
-		 * Creates a new [version] of this template.
-		 *
-		 * @see Template.versions
-		 * @see Service.createVersion
-		 */
-		suspend fun createVersion(version: Version) = backbone.createVersion(this, version)
+		suspend fun privatize(): Outcome<Failures.Edit, Unit>
 
 		/**
 		 * Creates a new version of this template.
 		 *
 		 * @see Template.versions
-		 * @see Service.createVersion
 		 */
-		suspend fun createVersion(title: String, field: Field, vararg step: Step) =
-			createVersion(Version(Instant.Companion.DISTANT_PAST, title, field, step.asList()))
+		suspend fun createVersion(title: String, field: Field, vararg step: Step): Outcome<Failures.CreateVersion, Version.Ref>
 
 		// This is a compiler trick to make the vararg mandatory
-		@Suppress("DeprecatedCallableAddReplaceWith", "UNUSED_PARAMETER")
+		@Suppress("DeprecatedCallableAddReplaceWith")
 		@Deprecated("It is not allowed to create a form with no review steps.", level = DeprecationLevel.ERROR)
-		fun createVersion(title: String, field: Field): Outcome<Version.Ref> =
+		fun createVersion(title: String, field: Field): Outcome<Failures.CreateVersion, Version.Ref> =
 			throw NotImplementedError("It is not allowed to create a form with no review steps.")
-
-		override fun toString() = "Formulaire $id"
 	}
 
 	data class Version(
@@ -187,16 +173,22 @@ data class Form(
 				?: error("L'étape $step de cette version n'a pas de champ : $this")
 			else field
 
-		data class Ref(
-			val form: Form.Ref,
-			val version: Instant,
-			override val backbone: Service,
-		) : opensavvy.backbone.Ref<Version> {
-
-			override fun toString() = "$form $version"
+		interface Ref : opensavvy.backbone.Ref<Failures.Get, Version> {
+			val creationDate: Instant
+			val form: Form.Ref
 		}
 
-		interface Service : Backbone<Version>
+		interface Service : Backbone<Ref, Failures.Get, Version>
+
+		sealed interface Failures : Failure {
+			sealed interface Get : Failures
+
+			class NotFound(val ref: Ref) : CustomFailure(StandardNotFound(ref)),
+				Get
+
+			object Unauthenticated : CustomFailure(StandardUnauthenticated()),
+				Get
+		}
 	}
 
 	/**
@@ -276,7 +268,7 @@ data class Form(
 		val field: Field?,
 	)
 
-	interface Service : Backbone<Form> {
+	interface Service : Backbone<Ref, Failures.Get, Form> {
 
 		val versions: Version.Service
 
@@ -287,14 +279,7 @@ data class Form(
 		 * - guests only see [public] forms,
 		 * - employees see all forms.
 		 */
-		suspend fun list(includeClosed: Boolean = false): Outcome<List<Ref>>
-
-		/**
-		 * Creates a new form.
-		 *
-		 * Only administrators can create forms.
-		 */
-		suspend fun create(name: String, firstVersion: Version): Outcome<Ref>
+		suspend fun list(includeClosed: Boolean = false): Outcome<Failures.List, List<Ref>>
 
 		/**
 		 * Creates a new form.
@@ -306,7 +291,7 @@ data class Form(
 			firstVersionTitle: String,
 			field: Field,
 			vararg step: Step,
-		) = create(name, Version(Instant.DISTANT_PAST, firstVersionTitle, field, step.asList()))
+		): Outcome<Failures.Create, Ref>
 
 		// This is a compiler trick to make the vararg mandatory
 		@Suppress("DeprecatedCallableAddReplaceWith")
@@ -315,39 +300,40 @@ data class Form(
 			name: String,
 			firstVersionTitle: String,
 			field: Field,
-		): Outcome<Ref> = throw NotImplementedError("It is not allowed to create a form with no review steps.")
+		): Outcome<Failures.Create, Ref> = throw NotImplementedError("It is not allowed to create a form with no review steps.")
+	}
 
-		/**
-		 * Creates a new version of a given form.
-		 *
-		 * Only administrators can create new versions.
-		 */
-		suspend fun createVersion(form: Ref, version: Version): Outcome<Version.Ref>
+	sealed interface Failures : Failure {
+		sealed interface Get : Failures
+		sealed interface List : Failures
+		sealed interface Create : Failures
+		sealed interface CreateVersion : Failures
+		sealed interface Edit : Failures
 
-		/**
-		 * Creates a new version of a given form.
-		 *
-		 * Only administrators can create new versions.
-		 */
-		suspend fun createVersion(form: Ref, title: String, field: Field, vararg step: Step) =
-			createVersion(form, Version(Instant.DISTANT_PAST, title, field, step.asList()))
+		class NotFound(val ref: Ref) : CustomFailure(StandardNotFound(ref)),
+			Get,
+			Edit,
+			CreateVersion
 
-		// This is a compiler trick to make the vararg mandatory
-		@Suppress("DeprecatedCallableAddReplaceWith")
-		@Deprecated("It is not allowed to create a form with no review steps.", level = DeprecationLevel.ERROR)
-		fun createVersion(form: Ref, title: String, field: Field): Outcome<Ref> =
-			throw NotImplementedError("It is not allowed to create a form with no review steps.")
+		object Unauthenticated : CustomFailure(StandardUnauthenticated()),
+			Get,
+			List,
+			Create,
+			CreateVersion,
+			Edit
 
-		/**
-		 * Edits a form.
-		 *
-		 * Only administrators can edit forms.
-		 */
-		suspend fun edit(
-			form: Ref,
-			name: String? = null,
-			open: Boolean? = null,
-			public: Boolean? = null,
-		): Outcome<Unit>
+		object Unauthorized : CustomFailure(StandardUnauthorized()),
+			List,
+			Create,
+			CreateVersion,
+			Edit
+
+		class InvalidImport(
+			val failures: Nel<Field.Failures.Compatibility>,
+		) : CustomFailure(Companion, "Champ incompatible : $failures"),
+			Create,
+			CreateVersion {
+			companion object : Failure.Key
+		}
 	}
 }

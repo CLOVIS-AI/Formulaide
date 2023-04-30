@@ -1,6 +1,5 @@
 package opensavvy.formulaide.test
 
-import arrow.core.flatMap
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
@@ -11,23 +10,22 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-import opensavvy.backbone.Ref.Companion.now
-import opensavvy.formulaide.core.Department
+import opensavvy.backbone.now
+import opensavvy.formulaide.core.*
 import opensavvy.formulaide.core.Field.Companion.group
 import opensavvy.formulaide.core.Field.Companion.groupFrom
 import opensavvy.formulaide.core.Field.Companion.input
 import opensavvy.formulaide.core.Field.Companion.label
 import opensavvy.formulaide.core.Field.Companion.labelFrom
-import opensavvy.formulaide.core.Form
-import opensavvy.formulaide.core.Input
-import opensavvy.formulaide.core.Template
 import opensavvy.formulaide.test.assertions.*
 import opensavvy.formulaide.test.structure.*
 import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
 import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
+import opensavvy.state.arrow.toEither
+import opensavvy.state.outcome.map
 
-fun Suite.formTestSuite(
-	testDepartments: Setup<Department.Service>,
+fun <D : Department.Ref> Suite.formTestSuite(
+	testDepartments: Setup<Department.Service<D>>,
 	testTemplates: Setup<Template.Service>,
 	testForms: Setup<Form.Service>,
 ) {
@@ -55,7 +53,8 @@ fun Suite.formTestSuite(
 				firstVersionTitle = "Initial version",
 				field = label("Field"),
 				Form.Step(0, "Review", department, null),
-			).tap { it.publicize() }
+			).toEither()
+				.onRight { it.publicize() }
 				.bind()
 		}
 
@@ -245,8 +244,8 @@ fun Suite.formTestSuite(
 				advanceTimeBy(10)
 				val testEnd = currentInstant
 
-				form.now()
-					.flatMap { it.versions.first().now() }
+				form.now().bind()
+					.versions.first().now()
 					.shouldSucceedAndSoftly {
 						it.creationDate shouldBeGreaterThan testStart
 						it.creationDate shouldBeLessThan testEnd
@@ -266,7 +265,8 @@ fun Suite.formTestSuite(
 						0 to input("Name", Input.Text(maxLength = 50u)),
 						1 to input("Postal code", Input.Text(maxLength = 5u)),
 					)
-				).flatMap { it.now() }
+				).bind()
+					.now()
 					.map { it.versions.first() }
 					.bind()
 			}
@@ -325,7 +325,7 @@ fun Suite.formTestSuite(
 
 			form.createVersion(
 				"Version 2",
-				input("New field", Input.Text()),
+				input("New field", Input.text().bind()),
 				Form.Step(0, "Validation 2", department, null),
 			)
 		}
@@ -370,7 +370,7 @@ fun Suite.formTestSuite(
 				val version = prepare(newVersion).bind()
 
 				version.now() shouldSucceedAnd {
-					it.field shouldBe input("New field", Input.Text())
+					it.field shouldBe input("New field", Input.text().bind())
 				}
 			}
 
@@ -385,7 +385,8 @@ fun Suite.formTestSuite(
 
 			test("The resulting form has the correct number of versions", administratorAuth) {
 				val form = prepare(newVersion)
-					.flatMap { it.form.now() }
+					.bind()
+					.form.now()
 					.bind()
 
 				form.versions shouldHaveSize 2
@@ -394,7 +395,8 @@ fun Suite.formTestSuite(
 			test("The previous versions are not modified", administratorAuth) {
 				val department = prepare(testDepartment)
 				val form = prepare(newVersion)
-					.flatMap { it.form.now() }
+					.bind()
+					.form.now()
 					.bind()
 
 				form.versionsSorted[0].now() shouldSucceedAndSoftly {
@@ -407,19 +409,21 @@ fun Suite.formTestSuite(
 			test("The version is correctly added to the list of versions", administratorAuth) {
 				val department = prepare(testDepartment)
 				val form = prepare(newVersion)
-					.flatMap { it.form.now() }
+					.bind()
+					.form.now()
 					.bind()
 
 				form.versionsSorted[1].now() shouldSucceedAnd {
 					it.title shouldBe "Version 2"
-					it.field shouldBe input("New field", Input.Text())
+					it.field shouldBe input("New field", Input.text().bind())
 					it.stepsSorted shouldBe listOf(Form.Step(0, "Validation 2", department, null))
 				}
 			}
 
 			test("The new version has a timestamp strictly superior to the previous one", administratorAuth) {
 				val form = prepare(newVersion)
-					.flatMap { it.form.now() }
+					.bind()
+					.form.now()
 					.bind()
 
 				val firstVersion = form.versionsSorted[0].now().bind().creationDate
@@ -441,7 +445,8 @@ fun Suite.formTestSuite(
 						0 to input("First name", Input.Text(maxLength = 20u)),
 						1 to input("Last name", Input.Text(maxLength = 20u)),
 					)
-				).flatMap { it.now() }
+				).bind()
+					.now()
 					.map { it.versions.first() }
 					.bind()
 			}
@@ -474,18 +479,16 @@ fun Suite.formTestSuite(
 
 				delay(1000)
 
-				shouldBeInvalid(
-					form.createVersion(
-						"Imported version",
-						groupFrom(
-							template,
-							"Imported root",
-							0 to input("First name", Input.Text(maxLength = 30u)), // larger than the imported value
-							1 to input("Last name", Input.Text(maxLength = 30u)),
-						),
-						Form.Step(0, "Validation", department, null),
-					)
-				)
+				form.createVersion(
+					"Imported version",
+					groupFrom(
+						template,
+						"Imported root",
+						0 to input("First name", Input.Text(maxLength = 30u)), // larger than the imported value
+						1 to input("Last name", Input.Text(maxLength = 30u)),
+					),
+					Form.Step(0, "Validation", department, null),
+				) shouldFailWithKey Form.Failures.InvalidImport
 			}
 		}
 	}
