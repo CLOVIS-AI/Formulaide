@@ -1,9 +1,15 @@
 package opensavvy.formulaide.core
 
+import arrow.core.Nel
 import kotlinx.datetime.Instant
 import opensavvy.backbone.Backbone
 import opensavvy.formulaide.core.Submission.Companion.toSubmissionData
+import opensavvy.state.failure.CustomFailure
+import opensavvy.state.failure.Failure
 import opensavvy.state.outcome.Outcome
+import opensavvy.state.failure.NotFound as StandardNotFound
+import opensavvy.state.failure.Unauthenticated as StandardUnauthenticated
+import opensavvy.state.failure.Unauthorized as StandardUnauthorized
 
 /**
  * A user request and its modifications over time.
@@ -218,18 +224,79 @@ data class Record(
 
 	sealed class QueryCriterion
 
-	data class Ref(
-		val id: String,
-		override val backbone: Service,
-	) : opensavvy.backbone.Ref<Record>
+	interface Ref : opensavvy.backbone.Ref<Failures.Get, Record> {
 
-	interface Service : Backbone<Record> {
+		/**
+		 * Creates a [Diff.EditInitial] for this record.
+		 */
+		suspend fun editInitial(
+			reason: String,
+			submission: Map<Field.Id, String>,
+		): Outcome<Failures.Action, Unit>
 
-		suspend fun search(criteria: List<QueryCriterion>): Outcome<List<Ref>>
+		/**
+		 * Creates a [Diff.EditInitial] for this record.
+		 */
+		suspend fun editInitial(
+			reason: String,
+			vararg submission: Pair<String, String>,
+		) = editInitial(reason, submission.toSubmissionData())
+
+		/**
+		 * Creates a [Diff.EditCurrent] for this record.
+		 */
+		suspend fun editCurrent(
+			reason: String?,
+			submission: Map<Field.Id, String>,
+		): Outcome<Failures.Action, Unit>
+
+		/**
+		 * Creates a [Diff.EditCurrent] for this record.
+		 */
+		suspend fun editCurrent(
+			reason: String?,
+			vararg submission: Pair<String, String>,
+		) = editCurrent(reason, submission.toSubmissionData())
+
+		/**
+		 * Creates a [Diff.Accept] for this record.
+		 */
+		suspend fun accept(
+			reason: String?,
+			submission: Map<Field.Id, String>,
+		): Outcome<Failures.Action, Unit>
+
+		/**
+		 * Creates a [Diff.Accept] for this record.
+		 */
+		suspend fun accept(
+			reason: String?,
+			vararg submission: Pair<String, String>,
+		) = accept(reason, submission.toSubmissionData())
+
+		/**
+		 * Creates a [Diff.Refuse] for this record.
+		 */
+		suspend fun refuse(
+			reason: String,
+		): Outcome<Failures.Action, Unit>
+
+		/**
+		 * Creates a [Diff.MoveBack] for this record.
+		 */
+		suspend fun moveBack(
+			toStep: Int,
+			reason: String,
+		): Outcome<Failures.Action, Unit>
+	}
+
+	interface Service : Backbone<Ref, Failures.Get, Record> {
+
+		suspend fun search(criteria: List<QueryCriterion>): Outcome<Failures.Search, List<Ref>>
 
 		suspend fun search(vararg criteria: QueryCriterion) = search(criteria.asList())
 
-		suspend fun create(submission: Submission): Outcome<Ref>
+		suspend fun create(submission: Submission): Outcome<Failures.Create, Ref>
 
 		suspend fun create(form: Form.Version.Ref, vararg data: Pair<String, String>) = create(
 			Submission(
@@ -238,53 +305,87 @@ data class Record(
 				data = data.toSubmissionData(),
 			)
 		)
+	}
 
-		suspend fun editInitial(
-			record: Ref,
-			reason: String,
-			submission: Map<Field.Id, String>,
-		): Outcome<Unit>
+	sealed interface Failures : Failure {
+		sealed interface Get : Failures, Action
+		sealed interface Search : Failures
+		sealed interface Action : Failures
+		sealed interface Create : Failures
 
-		suspend fun editInitial(
-			record: Ref,
-			reason: String,
-			vararg submission: Pair<String, String>,
-		) = editInitial(record, reason, submission.toSubmissionData())
+		class NotFound(val ref: Ref) : CustomFailure(StandardNotFound(ref)),
+			Get,
+			Action
 
-		suspend fun accept(
-			record: Ref,
-			reason: String?,
-			submission: Map<Field.Id, String>?,
-		): Outcome<Unit>
+		object Unauthenticated : CustomFailure(StandardUnauthenticated()),
+			Get,
+			Search,
+			Action,
+			Create
 
-		suspend fun accept(
-			record: Ref,
-			reason: String?,
-			vararg submission: Pair<String, String>,
-		) = accept(record, reason, submission.toSubmissionData())
+		object Unauthorized : CustomFailure(StandardUnauthorized()),
+			Get,
+			Search,
+			Action
 
-		suspend fun editCurrent(
-			record: Ref,
-			reason: String?,
-			submission: Map<Field.Id, String>,
-		): Outcome<Unit>
+		class CannotCreateRecordForNonInitialStep : CustomFailure(Companion, "It is not allowed to create a record for another step than the first one"),
+			Create {
+			companion object : Failure.Key
+		}
 
-		suspend fun editCurrent(
-			record: Ref,
-			reason: String?,
-			vararg submission: Pair<String, String>,
-		) = editCurrent(record, reason, submission.toSubmissionData())
+		class FormNotFound(
+			val ref: Form.Ref,
+			val form: Form.Failures.Get?,
+		) : CustomFailure(StandardNotFound(ref, cause = form)),
+			Create
 
-		suspend fun refuse(
-			record: Ref,
-			reason: String,
-		): Outcome<Unit>
+		class FormVersionNotFound(
+			val ref: Form.Version.Ref,
+			val form: Form.Version.Failures.Get,
+		) : CustomFailure(StandardNotFound(ref, cause = form)),
+			Create,
+			Action
 
-		suspend fun moveBack(
-			record: Ref,
-			toStep: Int,
-			reason: String,
-		): Outcome<Unit>
+		class InvalidSubmission(
+			val failure: Nel<Submission.ParsingFailure>,
+		) : CustomFailure(Companion, "Invalid submission: $failure"),
+			Action,
+			Create {
+			companion object : Failure.Key
+		}
+
+		class DiffShouldStartAtCurrentState(
+			val current: Status.NonInitial,
+			val diffSource: Status,
+		) : CustomFailure(Companion, "A transition must start on the current state of the record ($current), but found $diffSource"),
+			Action {
+			companion object : Failure.Key
+		}
+
+		class CannotAcceptRefusedRecord : CustomFailure(Companion, "Cannot accept a refused record"),
+			Action {
+			companion object : Failure.Key
+		}
+
+		class CannotRefuseRefusedRecord : CustomFailure(Companion, "Cannot refuse a refused record"),
+			Action {
+			companion object : Failure.Key
+		}
+
+		class CannotAcceptFinishedRecord : CustomFailure(Companion, "Cannot accept a record currently in its last step"),
+			Action {
+			companion object : Failure.Key
+		}
+
+		class MandatoryReason : CustomFailure(Companion, "For this action, giving a reason is mandatory"),
+			Action {
+			companion object : Failure.Key
+		}
+
+		class CannotMoveBackToFutureStep : CustomFailure(Companion, "Cannot move back a record to a step it has never been in"),
+			Action {
+			companion object : Failure.Key
+		}
 
 	}
 }

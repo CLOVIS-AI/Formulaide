@@ -1,20 +1,20 @@
 package opensavvy.formulaide.fake
 
+import arrow.core.raise.ensure
+import arrow.core.raise.ensureNotNull
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.datetime.Clock
-import opensavvy.backbone.Ref
-import opensavvy.backbone.Ref.Companion.expire
-import opensavvy.backbone.Ref.Companion.now
-import opensavvy.backbone.RefCache
-import opensavvy.backbone.defaultRefCache
+import opensavvy.backbone.now
 import opensavvy.formulaide.core.*
-import opensavvy.formulaide.core.Auth.Companion.currentRole
-import opensavvy.formulaide.core.Auth.Companion.currentUser
-import opensavvy.formulaide.core.Auth.Companion.ensureEmployee
 import opensavvy.formulaide.fake.utils.newId
-import opensavvy.state.Failure
-import opensavvy.state.outcome.*
+import opensavvy.state.arrow.out
+import opensavvy.state.arrow.toEither
+import opensavvy.state.coroutines.ProgressiveFlow
+import opensavvy.state.outcome.Outcome
+import opensavvy.state.outcome.failureOrNull
+import opensavvy.state.progressive.withProgress
 
 class FakeRecords(
 	private val clock: Clock,
@@ -22,39 +22,45 @@ class FakeRecords(
 ) : Record.Service {
 
 	private val lock = Semaphore(1)
-	private val data = HashMap<String, Record>()
+	private val data = HashMap<Long, Record>()
 
 	private val _submissions = FakeSubmissions()
 	val submissions: Submission.Service = _submissions
 
-	private fun toRef(id: String) = Record.Ref(id, this)
-
-	override suspend fun search(criteria: List<Record.QueryCriterion>): Outcome<List<Record.Ref>> = out {
-		ensureEmployee()
+	override suspend fun search(criteria: List<Record.QueryCriterion>): Outcome<Record.Failures.Search, List<Record.Ref>> = out {
+		ensureEmployee { Record.Failures.Unauthenticated }
 
 		lock.withPermit {
-			data.keys.map { toRef(it) }
+			data.keys.map { Ref(it) }
 		}
 	}
 
-	override suspend fun create(submission: Submission): Outcome<Record.Ref> = out {
-		if (currentRole() == User.Role.Guest && !submission.form.form.now().bind().public) {
-			@Suppress("IMPLICIT_NOTHING_TYPE_ARGUMENT_IN_RETURN_POSITION") // Will be fixed in Arrow 2.0
-			failed("Le formulaire demandé est introuvable", Failure.Kind.NotFound).bind()
+	override suspend fun create(submission: Submission): Outcome<Record.Failures.Create, Record.Ref> = out {
+		if (currentRole() == User.Role.Guest) {
+			val form = submission.form.form.now()
+			ensure(form is Outcome.Success) { Record.Failures.FormNotFound(submission.form.form, form.failureOrNull!!) }
+			ensure(form.value.public) { Record.Failures.FormNotFound(submission.form.form, null) }
 		}
 
-		ensureValid(submission.formStep == null) { "Il n'est pas possible de créer un dossier pour une autre étape que la saisie initiale, ${submission.formStep} a été demandé" }
-		submission.parse(files).bind()
+		ensure(submission.formStep == null) { Record.Failures.CannotCreateRecordForNonInitialStep() }
+		submission.parse(files)
+			.mapLeft { Record.Failures.InvalidSubmission(it) }
+			.bind()
 
 		val id = newId()
 
 		val submissionRef = _submissions.lock.withPermit {
 			val subId = newId()
 			_submissions.data[subId] = submission
-			_submissions.toRef(subId)
+			_submissions.Ref(subId)
 		}
 
 		val now = clock.now()
+
+		val formVersion = submission.form.now()
+			.toEither()
+			.mapLeft { Record.Failures.FormVersionNotFound(submission.form, it) }
+			.bind()
 
 		val record = Record(
 			form = submission.form,
@@ -65,7 +71,7 @@ class FakeRecords(
 					submission = submissionRef,
 					author = currentUser(),
 					at = now,
-					firstStep = submission.form.now().bind().stepsSorted.first().id,
+					firstStep = formVersion.stepsSorted.first().id,
 				)
 			),
 		)
@@ -74,27 +80,8 @@ class FakeRecords(
 			data[id] = record
 		}
 
-		toRef(id)
+		Ref(id)
 			.also { linkFiles(it, submissionRef) }
-	}
-
-	private suspend fun createSubmission(
-		record: Record.Ref,
-		submission: Map<Field.Id, String>,
-	) = out {
-		val rec = record.now().bind()
-
-		val sub = Submission(
-			rec.form,
-			(rec.status as Record.Status.Step).step,
-			submission,
-		)
-
-		lock.withPermit {
-			val subId = newId()
-			_submissions.data[subId] = sub
-			_submissions.toRef(subId)
-		}.also { linkFiles(record, it) }
 	}
 
 	private suspend fun linkFiles(record: Record.Ref, submission: Submission.Ref) = out {
@@ -108,7 +95,7 @@ class FakeRecords(
 			.forEach { (id, value) ->
 				if (value == null) return@forEach
 
-				val file = File.Ref(value, files)
+				val file = files.fromId(value)
 
 				file.linkTo(
 					record,
@@ -118,186 +105,202 @@ class FakeRecords(
 			}
 	}
 
-	private suspend fun advance(
-		record: Record.Ref,
-		diff: Record.Diff,
-	): Outcome<Unit> = out {
-		diff.submission?.also {
-			it.now().bind().parse(files)
+	inner class Ref(
+		private val id: Long,
+	) : Record.Ref {
+		private suspend fun createSubmission(
+			submission: Map<Field.Id, String>,
+		) = out {
+			val rec = now().bind()
+
+			val sub = Submission(
+				rec.form,
+				(rec.status as Record.Status.Step).step,
+				submission,
+			)
+
+			val subRef = lock.withPermit {
+				val subId = newId()
+				_submissions.data[subId] = sub
+				_submissions.Ref(subId)
+			}.also { linkFiles(this@Ref, it) }
+
+			subRef to sub
 		}
 
-		run {
-			val rec = record.now().bind()
-			ensureValid(rec.status == diff.source) { "Une transition doit commencer sur l'état actuel du dossier (${rec.status}), trouvé ${diff.source}" }
+		private suspend fun advance(
+			diff: Record.Diff,
+			submission: Submission?,
+		): Outcome<Record.Failures.Action, Unit> = out {
+			diff.submission?.also {
+				requireNotNull(submission) { "If the user created a submission, it should have been created before this point." }
+				submission.parse(files)
+					.mapLeft { Record.Failures.InvalidSubmission(it) }
+					.bind()
+			}
+
+			val rec = now().bind()
+			ensure(rec.status == diff.source) { Record.Failures.DiffShouldStartAtCurrentState(rec.status, diff.source) }
+
+			val now = clock.now()
+
+			lock.withPermit {
+				val result = rec.copy(modifiedAt = now, history = rec.history + diff)
+				data[id] = result
+			}
 		}
 
-		val now = clock.now()
+		override suspend fun editInitial(reason: String, submission: Map<Field.Id, String>): Outcome<Record.Failures.Action, Unit> = out {
+			ensureEmployee { Record.Failures.Unauthenticated }
 
-		lock.withPermit {
-			val rec = data[record.id]
-			ensureFound(rec != null) { "Could not find $record" }
+			val (subRef, sub) = createSubmission(submission).bind()
 
-			val result = rec.copy(modifiedAt = now, history = rec.history + diff)
-			data[record.id] = result
+			advance(
+				Record.Diff.EditInitial(
+					submission = subRef,
+					author = currentUser()!!,
+					reason = reason,
+					currentStatus = now().bind().status,
+					at = clock.now(),
+				),
+				sub,
+			)
 		}
 
-		record.expire()
-	}
+		override suspend fun editCurrent(reason: String?, submission: Map<Field.Id, String>): Outcome<Record.Failures.Action, Unit> = out {
+			ensureEmployee { Record.Failures.Unauthenticated }
 
-	override suspend fun editInitial(
-		record: Record.Ref,
-		reason: String,
-		submission: Map<Field.Id, String>,
-	): Outcome<Unit> = out {
-		ensureEmployee()
+			val (subRef, sub) = createSubmission(submission).bind()
 
-		val sub = createSubmission(
-			record,
-			submission,
-		).bind()
-
-		advance(
-			record,
-			Record.Diff.EditInitial(
-				submission = sub,
-				author = currentUser()!!,
-				reason = reason,
-				currentStatus = record.now().bind().status,
-				at = clock.now(),
+			advance(
+				Record.Diff.EditCurrent(
+					submission = subRef,
+					author = currentUser()!!,
+					currentStatus = now().bind().status,
+					reason = reason,
+					at = clock.now(),
+				),
+				sub,
 			)
-		)
-	}
+		}
 
-	override suspend fun editCurrent(
-		record: Record.Ref,
-		reason: String?,
-		submission: Map<Field.Id, String>,
-	): Outcome<Unit> = out {
-		ensureEmployee()
+		override suspend fun accept(reason: String?, submission: Map<Field.Id, String>): Outcome<Record.Failures.Action, Unit> = out {
+			ensureEmployee { Record.Failures.Unauthenticated }
 
-		val sub = createSubmission(
-			record,
-			submission,
-		).bind()
+			val (subRef, sub) = createSubmission(submission).bind()
 
-		advance(
-			record,
-			Record.Diff.EditCurrent(
-				submission = sub,
-				author = currentUser()!!,
-				currentStatus = record.now().bind().status,
-				reason = reason,
-				at = clock.now(),
+			val rec = now().bind()
+			val form = rec.form.now()
+				.toEither()
+				.mapLeft { Record.Failures.FormVersionNotFound(rec.form, it) }
+				.bind()
+
+			ensure(rec.status is Record.Status.Step) { Record.Failures.CannotAcceptRefusedRecord() }
+			val currentStatus = rec.status as Record.Status.Step
+
+			val nextStep = form.stepsSorted.asSequence()
+				.dropWhile { it.id <= currentStatus.step }
+				.firstOrNull()
+			ensureNotNull(nextStep) { Record.Failures.CannotAcceptFinishedRecord() }
+
+			advance(
+				Record.Diff.Accept(
+					submission = subRef,
+					author = currentUser()!!,
+					source = currentStatus,
+					target = Record.Status.Step(nextStep.id),
+					reason = reason,
+					at = clock.now(),
+				),
+				sub,
 			)
-		)
-	}
+		}
 
-	override suspend fun accept(
-		record: Record.Ref,
-		reason: String?,
-		submission: Map<Field.Id, String>?,
-	): Outcome<Unit> = out {
-		ensureEmployee()
+		override suspend fun refuse(reason: String): Outcome<Record.Failures.Action, Unit> = out {
+			ensureEmployee { Record.Failures.Unauthenticated }
+			ensure(reason.isNotBlank()) { Record.Failures.MandatoryReason() }
 
-		val sub = submission?.let {
-			createSubmission(record, submission)
-		}?.bind()
+			val rec = now().bind()
 
-		val rec = record.now().bind()
-		val form = rec.form.now().bind()
+			ensure(rec.status is Record.Status.Step) { Record.Failures.CannotRefuseRefusedRecord() }
+			val currentStatus = rec.status as Record.Status.Step
 
-		ensureValid(rec.status is Record.Status.Step) { "Il est impossible d'accepter un dossier dans cet état : ${rec.status}" }
-		val currentStatus = rec.status as Record.Status.Step
-
-		val nextStep = form.stepsSorted.asSequence()
-			.dropWhile { it.id <= currentStatus.step }
-			.firstOrNull()
-		ensureValid(nextStep != null) { "Il est impossible d'accepter un dossier dans le dernier état de son formulaire : ${rec.status}" }
-
-		advance(
-			record,
-			Record.Diff.Accept(
-				submission = sub,
-				author = currentUser()!!,
-				source = currentStatus,
-				target = Record.Status.Step(nextStep.id),
-				reason = reason,
-				at = clock.now(),
+			advance(
+				Record.Diff.Refuse(
+					author = currentUser()!!,
+					source = currentStatus,
+					reason = reason,
+					at = clock.now(),
+				),
+				null,
 			)
-		)
-	}
+		}
 
-	override suspend fun refuse(record: Record.Ref, reason: String): Outcome<Unit> = out {
-		ensureEmployee()
-		ensureValid(reason.isNotBlank()) { "Pour refuser un dossier, il est obligatoire de fournir une raison" }
+		override suspend fun moveBack(toStep: Int, reason: String): Outcome<Record.Failures.Action, Unit> = out {
+			ensureEmployee { Record.Failures.Unauthenticated }
+			ensure(reason.isNotBlank()) { Record.Failures.MandatoryReason() }
 
-		val rec = record.now().bind()
+			val rec = now().bind()
 
-		ensureValid(rec.status is Record.Status.Step) { "Il est impossible de refuser un dossier dans cet état : ${rec.status}" }
-		val currentStatus = rec.status as Record.Status.Step
+			val previousSteps = rec.history.asSequence()
+				.map { it.source }
+				.filterIsInstance<Record.Status.Step>()
+				.map { it.step }
+			ensure(toStep in previousSteps) { Record.Failures.CannotMoveBackToFutureStep() }
 
-		advance(
-			record,
-			Record.Diff.Refuse(
-				author = currentUser()!!,
-				source = currentStatus,
-				reason = reason,
-				at = clock.now(),
+			advance(
+				Record.Diff.MoveBack(
+					author = currentUser()!!,
+					source = rec.status,
+					target = Record.Status.Step(toStep),
+					reason = reason,
+					at = clock.now(),
+				),
+				null,
 			)
-		)
-	}
+		}
 
-	override suspend fun moveBack(record: Record.Ref, toStep: Int, reason: String): Outcome<Unit> = out {
-		ensureEmployee()
-		ensureValid(reason.isNotBlank()) { "Pour renvoyer un dossier, il est obligatoire de fournir une raison" }
+		override fun request(): ProgressiveFlow<Record.Failures.Get, Record> = flow {
+			out {
+				val result = lock.withPermit { data[id] }
+				ensureNotNull(result) { Record.Failures.NotFound(this@Ref) }
 
-		val rec = record.now().bind()
+				result
+			}.also { emit(it.withProgress()) }
+		}
 
-		val previousSteps = rec.history.asSequence()
-			.map { it.source }
-			.filterIsInstance<Record.Status.Step>()
-			.map { it.step }
-		ensureValid(toStep in previousSteps) { "Il n'est pas possible de renvoyer un dossier vers un état dans lequel il n'a jamais été" }
+		// region Overrides
 
-		advance(
-			record,
-			Record.Diff.MoveBack(
-				author = currentUser()!!,
-				source = rec.status,
-				target = Record.Status.Step(toStep),
-				reason = reason,
-				at = clock.now(),
-			)
-		)
-	}
+		override fun equals(other: Any?): Boolean {
+			if (this === other) return true
+			if (other !is Ref) return false
 
-	override val cache: RefCache<Record> = defaultRefCache()
+			return id == other.id
+		}
 
-	override suspend fun directRequest(ref: Ref<Record>): Outcome<Record> = out {
-		ensureValid(ref is Record.Ref) { "Invalid reference $ref" }
+		override fun hashCode(): Int {
+			return id.hashCode()
+		}
 
-		val result = lock.withPermit { data[ref.id] }
-		ensureFound(result != null) { "Could not find $ref" }
+		override fun toString() = "FakeRecords.Ref($id)"
 
-		result
+		// endregion
 	}
 
 	private inner class FakeSubmissions : Submission.Service {
-		override val cache: RefCache<Submission> = defaultRefCache()
-
 		val lock = Semaphore(1)
-		val data = HashMap<String, Submission>()
+		val data = HashMap<Long, Submission>()
 
-		fun toRef(id: String) = Submission.Ref(id, this)
-
-		override suspend fun directRequest(ref: Ref<Submission>): Outcome<Submission> = out {
-			ensureValid(ref is Submission.Ref) { "Invalid reference $ref" }
-
-			val result = lock.withPermit { data[ref.id] }
-			ensureFound(result != null) { "Could not find $ref" }
-
-			result
+		inner class Ref(
+			private val id: Long,
+		) : Submission.Ref {
+			override fun request(): ProgressiveFlow<Submission.Failures.Get, Submission> = flow {
+				out {
+					val result = lock.withPermit { data[id] }
+					ensureNotNull(result) { Submission.Failures.NotFound(this@Ref) }
+					result
+				}.also { emit(it.withProgress()) }
+			}
 		}
-
 	}
 }
