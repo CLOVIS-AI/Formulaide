@@ -2,13 +2,11 @@ package opensavvy.formulaide.fake
 
 import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
-import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import opensavvy.backbone.now
-import opensavvy.cache.contextual.cache
 import opensavvy.formulaide.core.*
 import opensavvy.formulaide.core.User.Role.Companion.role
 import opensavvy.formulaide.fake.utils.newId
@@ -19,6 +17,7 @@ import opensavvy.state.outcome.Outcome
 import opensavvy.state.outcome.onFailure
 import opensavvy.state.outcome.onSuccess
 import opensavvy.state.progressive.failed
+import opensavvy.state.progressive.withProgress
 
 class FakeFiles(
 	private val clock: Clock,
@@ -27,17 +26,6 @@ class FakeFiles(
 	private val lock = Mutex()
 	private val data = HashMap<Long, File>()
 	private val contents = HashMap<Long, ByteArray>()
-
-	private val cache = cache { ref: Ref, user: User ->
-		out<File.Failures.Get, File> {
-			ensure(user.role >= User.Role.Employee) { File.Failures.Unauthenticated }
-
-			val file = lock.withLock { data[ref.realId] }
-			ensureNotNull(file) { File.Failures.NotFound(ref) }
-
-			file
-		}
-	}
 
 	override suspend fun create(mime: String, content: ByteIterator): Outcome<File.Failures.Create, File.Ref> = out {
 		val id = newId()
@@ -136,7 +124,14 @@ class FakeFiles(
 			}
 
 			user.onSuccess {
-				emitAll(cache[this@Ref, it])
+				out<File.Failures.Get, File> {
+					ensure(it.role >= User.Role.Employee) { File.Failures.Unauthenticated }
+
+					val file = lock.withLock { data[realId] }
+					ensureNotNull(file) { File.Failures.NotFound(this@Ref) }
+
+					file
+				}.also { emit(it.withProgress()) }
 			}
 		}
 

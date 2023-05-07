@@ -2,11 +2,9 @@ package opensavvy.formulaide.fake
 
 import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
-import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
-import opensavvy.cache.contextual.cache
 import opensavvy.formulaide.core.*
 import opensavvy.formulaide.core.data.Email
 import opensavvy.formulaide.core.data.Password
@@ -17,6 +15,7 @@ import opensavvy.logger.loggerFor
 import opensavvy.state.arrow.out
 import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.outcome.Outcome
+import opensavvy.state.progressive.withProgress
 import kotlin.random.Random
 import kotlin.random.nextUInt
 
@@ -30,22 +29,6 @@ class FakeUsers : User.Service<FakeUsers.Ref> {
 	private val blocked = HashSet<Long>()
 
 	private val lock = Semaphore(1)
-
-	private val cache = cache<Ref, User.Role, User.Failures.Get, User> { ref, role ->
-		out {
-			ensureEmployee { User.Failures.Unauthenticated }
-
-			lock.withPermit {
-				val user = users[ref.id]
-				ensureNotNull(user) { User.Failures.NotFound(ref) }
-				ensure(user.active || role >= User.Role.Administrator) {
-					log.warn(ref) { "User ${currentUser()} attempted to access user $ref. Only administrators can access other users." }
-					User.Failures.NotFound(ref)
-				}
-				user
-			}
-		}
-	}
 
 	override suspend fun list(includeClosed: Boolean): Outcome<User.Failures.List, List<User.Ref>> = out {
 		ensureEmployee { User.Failures.Unauthenticated }
@@ -137,8 +120,6 @@ class FakeUsers : User.Service<FakeUsers.Ref> {
 
 				users[id] = transform(current)
 			}
-
-			cache.expire(this@Ref)
 		}
 
 		override suspend fun join(department: Department.Ref): Outcome<User.Failures.Edit, Unit> =
@@ -159,8 +140,6 @@ class FakeUsers : User.Service<FakeUsers.Ref> {
 
 				users[id] = transform(current)
 			}
-
-			cache.expire(this@Ref)
 		}
 
 		override suspend fun enable(): Outcome<User.Failures.SecurityEdit, Unit> =
@@ -240,7 +219,19 @@ class FakeUsers : User.Service<FakeUsers.Ref> {
 		}
 
 		override fun request(): ProgressiveFlow<User.Failures.Get, User> = flow {
-			emitAll(cache[this@Ref, currentRole()])
+			out {
+				ensureEmployee { User.Failures.Unauthenticated }
+
+				lock.withPermit {
+					val user = users[id]
+					ensureNotNull(user) { User.Failures.NotFound(this@Ref) }
+					ensure(user.active || currentRole() >= User.Role.Administrator) {
+						log.warn(this@Ref) { "User ${currentUser()} attempted to access user ${this@Ref}. Only administrators can access other users." }
+						User.Failures.NotFound(this@Ref)
+					}
+					user
+				}
+			}.also { emit(it.withProgress()) }
 		}
 
 		// region Overrides

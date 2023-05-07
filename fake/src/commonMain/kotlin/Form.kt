@@ -16,6 +16,7 @@ import opensavvy.logger.loggerFor
 import opensavvy.state.arrow.out
 import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.outcome.Outcome
+import opensavvy.state.progressive.withProgress
 
 class FakeForms(
 	private val clock: Clock,
@@ -29,20 +30,6 @@ class FakeForms(
 
 	override val versions: Form.Version.Service
 		get() = _versions
-
-	private val cache = cache { ref: Ref, role: User.Role ->
-		out<Form.Failures.Get, Form> {
-			lock.withPermit {
-				val result = forms[ref.id]
-				ensureNotNull(result) { Form.Failures.NotFound(ref) }
-				ensure((result.public && result.open) || role >= User.Role.Employee) {
-					log.warn { "${currentUser()} ($role) requested to access $ref, but it is private" }
-					Form.Failures.NotFound(ref)
-				}
-				result
-			}
-		}
-	}
 
 	override suspend fun list(includeClosed: Boolean): Outcome<Form.Failures.List, List<Form.Ref>> = out {
 		if (includeClosed)
@@ -112,8 +99,6 @@ class FakeForms(
 
 				forms[id] = new
 			}
-
-			cache.expire(this@Ref)
 		}
 
 		override suspend fun rename(name: String): Outcome<Form.Failures.Edit, Unit> =
@@ -161,13 +146,21 @@ class FakeForms(
 				forms[id] = value.copy(versions = value.versions + ref)
 			}
 
-			cache.expire(this@Ref)
-
 			ref
 		}
 
 		override fun request(): ProgressiveFlow<Form.Failures.Get, Form> = flow {
-			emitAll(cache[this@Ref, currentRole()])
+			out<Form.Failures.Get, Form> {
+				lock.withPermit {
+					val result = forms[id]
+					ensureNotNull(result) { Form.Failures.NotFound(this@Ref) }
+					ensure((result.public && result.open) || currentRole() >= User.Role.Employee) {
+						log.warn { "${currentUser()} (${currentRole()}) requested to access ${this@Ref}, but it is private" }
+						Form.Failures.NotFound(this@Ref)
+					}
+					result
+				}
+			}.also { emit(it.withProgress()) }
 		}
 
 		// region Overrides
@@ -189,16 +182,6 @@ class FakeForms(
 	}
 
 	private inner class FakeVersions : Form.Version.Service {
-		private val cache = cache { ref: Ref, _: User.Role ->
-			out<Form.Version.Failures.Get, Form.Version> {
-				lock.withPermit {
-					val result = versions[ref.form.id to ref.creationDate]
-					ensureNotNull(result) { Form.Version.Failures.NotFound(ref) }
-					result
-				}
-			}
-		}
-
 		val versions = HashMap<Pair<Long, Instant>, Form.Version>()
 
 		inner class Ref internal constructor(
@@ -206,7 +189,13 @@ class FakeForms(
 			override val creationDate: Instant,
 		) : Form.Version.Ref {
 			override fun request(): ProgressiveFlow<Form.Version.Failures.Get, Form.Version> = flow {
-				emitAll(cache[this@Ref, currentRole()])
+				out<Form.Version.Failures.Get, Form.Version> {
+					lock.withLock("request") {
+						val result = versions[form.id to creationDate]
+						ensureNotNull(result) { Form.Version.Failures.NotFound(this@Ref) }
+						result
+					}
+				}.also { emit(it.withProgress()) }
 			}
 
 			// region Overrides

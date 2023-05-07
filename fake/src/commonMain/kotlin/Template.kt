@@ -2,18 +2,17 @@ package opensavvy.formulaide.fake
 
 import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
-import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import opensavvy.cache.contextual.cache
 import opensavvy.formulaide.core.*
 import opensavvy.formulaide.fake.utils.newId
 import opensavvy.state.arrow.out
 import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.outcome.Outcome
+import opensavvy.state.progressive.withProgress
 
 class FakeTemplates(
 	private val clock: Clock,
@@ -25,18 +24,6 @@ class FakeTemplates(
 
 	override val versions: Template.Version.Service
 		get() = _versions
-
-	private val cache = cache<Ref, User.Role, Template.Failures.Get, Template> { it, role ->
-		out {
-			ensure(role >= User.Role.Employee) { Template.Failures.Unauthenticated }
-
-			lock.withPermit {
-				val result = templates[it.id]
-				ensureNotNull(result) { Template.Failures.NotFound(it) }
-				result
-			}
-		}
-	}
 
 	override suspend fun list(includeClosed: Boolean): Outcome<Template.Failures.List, List<Template.Ref>> = out {
 		ensureEmployee { Template.Failures.Unauthenticated }
@@ -138,7 +125,15 @@ class FakeTemplates(
 		}
 
 		override fun request(): ProgressiveFlow<Template.Failures.Get, Template> = flow {
-			emitAll(cache[this@Ref, currentRole()])
+			out {
+				ensure(currentRole() >= User.Role.Employee) { Template.Failures.Unauthenticated }
+
+				lock.withPermit {
+					val result = templates[id]
+					ensureNotNull(result) { Template.Failures.NotFound(this@Ref) }
+					result
+				}
+			}.also { emit(it.withProgress()) }
 		}
 
 		// region Overrides
@@ -162,24 +157,20 @@ class FakeTemplates(
 	private inner class FakeVersions : Template.Version.Service {
 		val versions = HashMap<Pair<Long, Instant>, Template.Version>()
 
-		private val cache = cache { it: Ref, role: User.Role ->
-			out<Template.Version.Failures.Get, Template.Version> {
-				ensure(role >= User.Role.Employee) { Template.Version.Failures.Unauthenticated }
-
-				lock.withPermit {
-					val result = versions[it.template.id to it.creationDate]
-					ensureNotNull(result) { Template.Version.Failures.NotFound(it) }
-					result
-				}
-			}
-		}
-
 		inner class Ref internal constructor(
 			override val template: FakeTemplates.Ref,
 			val creationDate: Instant,
 		) : Template.Version.Ref {
 			override fun request(): ProgressiveFlow<Template.Version.Failures.Get, Template.Version> = flow {
-				emitAll(cache[this@Ref, currentRole()])
+				out {
+					ensure(currentRole() >= User.Role.Employee) { Template.Version.Failures.Unauthenticated }
+
+					lock.withPermit {
+						val result = versions[template.id to creationDate]
+						ensureNotNull(result) { Template.Version.Failures.NotFound(this@Ref) }
+						result
+					}
+				}.also { emit(it.withProgress()) }
 			}
 		}
 	}

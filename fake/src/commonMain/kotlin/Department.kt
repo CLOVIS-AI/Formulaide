@@ -3,33 +3,20 @@ package opensavvy.formulaide.fake
 import arrow.core.raise.Raise
 import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
-import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
-import opensavvy.cache.contextual.cache
 import opensavvy.formulaide.core.*
 import opensavvy.formulaide.fake.utils.newId
 import opensavvy.state.arrow.out
 import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.outcome.Outcome
+import opensavvy.state.progressive.withProgress
 
 class FakeDepartments : Department.Service<FakeDepartments.Ref> {
 
 	private val lock = Semaphore(1)
 	private val data = HashMap<Long, Department>()
-
-	private val cache = cache<Ref, User.Role, Department.Failures.Get, Department> { it, role ->
-		out {
-			ensure(role >= User.Role.Employee) { Department.Failures.Unauthenticated }
-
-			val result = lock.withPermit { data[it.id] }
-				?.takeIf { it.open || currentRole() >= User.Role.Administrator }
-			ensure(result != null) { Department.Failures.NotFound(it) }
-
-			result
-		}
-	}
 
 	override suspend fun list(includeClosed: Boolean): Outcome<Department.Failures.List, List<Ref>> = out {
 		ensureEmployee { Department.Failures.Unauthenticated }
@@ -73,8 +60,6 @@ class FakeDepartments : Department.Service<FakeDepartments.Ref> {
 
 				data[id] = current
 			}
-
-			cache.expire(this@Ref)
 		}
 
 		override suspend fun open(): Outcome<Department.Failures.Edit, Unit> = out {
@@ -86,7 +71,15 @@ class FakeDepartments : Department.Service<FakeDepartments.Ref> {
 		}
 
 		override fun request(): ProgressiveFlow<Department.Failures.Get, Department> = flow {
-			emitAll(cache[this@Ref, currentRole()])
+			out {
+				ensure(currentRole() >= User.Role.Employee) { Department.Failures.Unauthenticated }
+
+				val result = lock.withPermit { data[id] }
+					?.takeIf { it.open || currentRole() >= User.Role.Administrator }
+				ensure(result != null) { Department.Failures.NotFound(this@Ref) }
+
+				result
+			}.also { emit(it.withProgress()) }
 		}
 
 		// region equals & hashCode
