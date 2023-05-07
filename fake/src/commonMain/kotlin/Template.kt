@@ -3,8 +3,8 @@ package opensavvy.formulaide.fake
 import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import opensavvy.formulaide.core.*
@@ -18,7 +18,7 @@ class FakeTemplates(
 	private val clock: Clock,
 ) : Template.Service {
 
-	private val lock = Semaphore(1)
+	private val lock = Mutex()
 	private val templates = HashMap<Long, Template>()
 	private val _versions = FakeVersions()
 
@@ -28,7 +28,7 @@ class FakeTemplates(
 	override suspend fun list(includeClosed: Boolean): Outcome<Template.Failures.List, List<Template.Ref>> = out {
 		ensureEmployee { Template.Failures.Unauthenticated }
 
-		lock.withPermit {
+		lock.withLock("list") {
 			templates
 				.asSequence()
 				.filter { (_, it) -> it.open || includeClosed }
@@ -54,7 +54,7 @@ class FakeTemplates(
 		)
 
 		val ref = Ref(newId())
-		lock.withPermit {
+		lock.withLock("create") {
 			_versions.versions[ref.id to now] = firstVersion
 
 			templates[ref.id] = Template(
@@ -74,7 +74,7 @@ class FakeTemplates(
 			ensureEmployee { Template.Failures.Unauthenticated }
 			ensureAdministrator { Template.Failures.Unauthorized }
 
-			lock.withPermit {
+			lock.withLock("edit") {
 				val template = templates[id]
 				ensureNotNull(template) { Template.Failures.NotFound(this@Ref) }
 
@@ -113,7 +113,7 @@ class FakeTemplates(
 			)
 
 			val ref = _versions.Ref(this@Ref, now)
-			lock.withPermit {
+			lock.withLock("createVersion") {
 				val template = templates[id]
 				ensureNotNull(template) { Template.Failures.NotFound(this@Ref) }
 
@@ -128,7 +128,7 @@ class FakeTemplates(
 			out {
 				ensure(currentRole() >= User.Role.Employee) { Template.Failures.Unauthenticated }
 
-				lock.withPermit {
+				lock.withLock("request") {
 					val result = templates[id]
 					ensureNotNull(result) { Template.Failures.NotFound(this@Ref) }
 					result
@@ -165,7 +165,7 @@ class FakeTemplates(
 				out {
 					ensure(currentRole() >= User.Role.Employee) { Template.Version.Failures.Unauthenticated }
 
-					lock.withPermit {
+					lock.withLock("version:request") {
 						val result = versions[template.id to creationDate]
 						ensureNotNull(result) { Template.Version.Failures.NotFound(this@Ref) }
 						result

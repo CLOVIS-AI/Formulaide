@@ -30,7 +30,7 @@ class FakeFiles(
 	override suspend fun create(mime: String, content: ByteIterator): Outcome<File.Failures.Create, File.Ref> = out {
 		val id = newId()
 
-		lock.withLock {
+		lock.withLock("create") {
 			data[id] = File(
 				origin = null,
 				mime = mime,
@@ -52,7 +52,7 @@ class FakeFiles(
 			get() = realId.toString()
 
 		override suspend fun linkTo(record: Record.Ref, submission: Submission.Ref, field: Field.Id): Outcome<File.Failures.Link, Unit> = out {
-			lock.withLock {
+			lock.withLock("linkTo") {
 				val file = data[realId]
 				ensureNotNull(file) { File.Failures.NotFound(this@Ref) }
 				ensure(file.origin == null) { File.Failures.AlreadyLinked(this@Ref) }
@@ -71,7 +71,7 @@ class FakeFiles(
 		}
 
 		override suspend fun read(): Outcome<File.Failures.Read, ByteIterator> = out {
-			val file = lock.withLock { data[realId] }
+			val file = lock.withLock("read:initial") { data[realId] }
 			ensureNotNull(file) { File.Failures.NotFound(this@Ref) }
 			ensure(
 				file.origin == null && currentRole() > User.Role.Employee ||
@@ -100,11 +100,11 @@ class FakeFiles(
 			}
 
 			ensure(clock.now() < file.uploadedAt + timeToLive) {
-				lock.withLock { data.remove(realId) }
+				lock.withLock("read:remove") { data.remove(realId) }
 				File.Failures.Expired(this@Ref)
 			}
 
-			val content = lock.withLock { contents[realId] }
+			val content = lock.withLock("read:read") { contents[realId] }
 			ensureNotNull(content) { File.Failures.NotFound(this@Ref) }
 
 			content.iterator()
@@ -127,7 +127,7 @@ class FakeFiles(
 				out<File.Failures.Get, File> {
 					ensure(it.role >= User.Role.Employee) { File.Failures.Unauthenticated }
 
-					val file = lock.withLock { data[realId] }
+					val file = lock.withLock("request") { data[realId] }
 					ensureNotNull(file) { File.Failures.NotFound(this@Ref) }
 
 					file

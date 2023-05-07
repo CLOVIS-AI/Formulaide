@@ -3,8 +3,8 @@ package opensavvy.formulaide.fake
 import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import opensavvy.formulaide.core.*
 import opensavvy.formulaide.core.data.Email
 import opensavvy.formulaide.core.data.Password
@@ -28,13 +28,13 @@ class FakeUsers : User.Service<FakeUsers.Ref> {
 	private val tokens = HashMap<Long, ArrayList<Token>>()
 	private val blocked = HashSet<Long>()
 
-	private val lock = Semaphore(1)
+	private val lock = Mutex()
 
 	override suspend fun list(includeClosed: Boolean): Outcome<User.Failures.List, List<User.Ref>> = out {
 		ensureEmployee { User.Failures.Unauthenticated }
 		ensureAdministrator { User.Failures.Unauthorized }
 
-		lock.withPermit {
+		lock.withLock("list") {
 			users.asSequence()
 				.filter { (_, it) -> it.active || includeClosed }
 				.map { Ref(it.key) }
@@ -50,7 +50,7 @@ class FakeUsers : User.Service<FakeUsers.Ref> {
 		ensureEmployee { User.Failures.Unauthenticated }
 		ensureAdministrator { User.Failures.Unauthorized }
 
-		lock.withPermit {
+		lock.withLock("create:initial") {
 			ensure(email !in users.values.map { it.email }) { User.Failures.UserAlreadyExists(email) }
 		}
 
@@ -66,7 +66,7 @@ class FakeUsers : User.Service<FakeUsers.Ref> {
 			singleUsePassword = true,
 		)
 
-		lock.withPermit {
+		lock.withLock("create:final") {
 			users[id] = user
 			passwords[id] = singleUsePassword
 		}
@@ -75,7 +75,7 @@ class FakeUsers : User.Service<FakeUsers.Ref> {
 	}
 
 	override suspend fun logIn(email: Email, password: Password): Outcome<User.Failures.LogIn, Pair<User.Ref, Token>> = out {
-		lock.withPermit {
+		lock.withLock("logIn") {
 			val (id, user) = users.asSequence()
 				.firstOrNull { it.value.email == email }
 				?: raise(User.Failures.IncorrectCredentials)
@@ -114,7 +114,7 @@ class FakeUsers : User.Service<FakeUsers.Ref> {
 			ensureEmployee { User.Failures.Unauthenticated }
 			ensureAdministrator { User.Failures.Unauthorized }
 
-			lock.withPermit {
+			lock.withLock("edit") {
 				val current = users[id]
 				ensureNotNull(current) { User.Failures.NotFound(this@Ref) }
 
@@ -134,7 +134,7 @@ class FakeUsers : User.Service<FakeUsers.Ref> {
 
 			ensure(this@Ref != currentUser()) { User.Failures.CannotEditYourself }
 
-			lock.withPermit {
+			lock.withLock("securityEdit") {
 				val current = users[id]
 				ensureNotNull(current) { User.Failures.NotFound(this@Ref) }
 
@@ -160,7 +160,7 @@ class FakeUsers : User.Service<FakeUsers.Ref> {
 
 			val newPassword = Password("some-new-password-${Random.nextUInt()}")
 
-			lock.withPermit {
+			lock.withLock("resetPassword") {
 				val current = users[id]
 				ensureNotNull(current) { User.Failures.NotFound(this@Ref) }
 
@@ -178,7 +178,7 @@ class FakeUsers : User.Service<FakeUsers.Ref> {
 			ensureEmployee { User.Failures.Unauthenticated }
 			ensure(this@Ref == currentUser()) { User.Failures.CanOnlySetYourOwnPassword }
 
-			lock.withPermit {
+			lock.withLock("setPassword") {
 				val password = passwords[id]
 				ensure(oldPassword == password?.value) { User.Failures.IncorrectPassword }
 
@@ -193,7 +193,7 @@ class FakeUsers : User.Service<FakeUsers.Ref> {
 		}
 
 		override suspend fun verifyToken(token: Token): Outcome<User.Failures.TokenVerification, Unit> = out {
-			lock.withPermit {
+			lock.withLock("verifyToken") {
 				val theirs = tokens[id]
 				ensureNotNull(theirs) {
 					log.warn(this@Ref) { "Could not find any tokens for user" }
@@ -213,7 +213,7 @@ class FakeUsers : User.Service<FakeUsers.Ref> {
 				User.Failures.Unauthorized
 			}
 
-			lock.withPermit {
+			lock.withLock("logOut") {
 				tokens[id]?.remove(token)
 			}
 		}
@@ -222,7 +222,7 @@ class FakeUsers : User.Service<FakeUsers.Ref> {
 			out {
 				ensureEmployee { User.Failures.Unauthenticated }
 
-				lock.withPermit {
+				lock.withLock("request") {
 					val user = users[id]
 					ensureNotNull(user) { User.Failures.NotFound(this@Ref) }
 					ensure(user.active || currentRole() >= User.Role.Administrator) {

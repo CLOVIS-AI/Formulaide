@@ -4,8 +4,8 @@ import arrow.core.raise.Raise
 import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import opensavvy.formulaide.core.*
 import opensavvy.formulaide.fake.utils.newId
 import opensavvy.state.arrow.out
@@ -15,7 +15,7 @@ import opensavvy.state.progressive.withProgress
 
 class FakeDepartments : Department.Service<FakeDepartments.Ref> {
 
-	private val lock = Semaphore(1)
+	private val lock = Mutex()
 	private val data = HashMap<Long, Department>()
 
 	override suspend fun list(includeClosed: Boolean): Outcome<Department.Failures.List, List<Ref>> = out {
@@ -24,7 +24,7 @@ class FakeDepartments : Department.Service<FakeDepartments.Ref> {
 		if (includeClosed)
 			ensureAdministrator { Department.Failures.Unauthorized }
 
-		lock.withPermit {
+		lock.withLock("list") {
 			data.asSequence()
 				.filter { (_, it) -> it.open || includeClosed }
 				.map { (id, _) -> Ref(id) }
@@ -37,7 +37,7 @@ class FakeDepartments : Department.Service<FakeDepartments.Ref> {
 		ensureAdministrator { Department.Failures.Unauthorized }
 
 		val id = newId()
-		lock.withPermit {
+		lock.withLock("create") {
 			data[id] = Department(name, open = true)
 		}
 		Ref(id)
@@ -51,7 +51,7 @@ class FakeDepartments : Department.Service<FakeDepartments.Ref> {
 			ensureEmployee { Department.Failures.Unauthenticated }
 			ensureAdministrator { Department.Failures.Unauthorized }
 
-			lock.withPermit {
+			lock.withLock("edit") {
 				var current = data[id]
 				ensureNotNull(current) { Department.Failures.NotFound(this@Ref) }
 
@@ -74,7 +74,7 @@ class FakeDepartments : Department.Service<FakeDepartments.Ref> {
 			out {
 				ensure(currentRole() >= User.Role.Employee) { Department.Failures.Unauthenticated }
 
-				val result = lock.withPermit { data[id] }
+				val result = lock.withLock("request") { data[id] }
 					?.takeIf { it.open || currentRole() >= User.Role.Administrator }
 				ensure(result != null) { Department.Failures.NotFound(this@Ref) }
 

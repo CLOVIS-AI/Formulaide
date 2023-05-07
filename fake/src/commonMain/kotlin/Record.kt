@@ -3,8 +3,8 @@ package opensavvy.formulaide.fake
 import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import opensavvy.backbone.now
 import opensavvy.formulaide.core.*
@@ -21,7 +21,7 @@ class FakeRecords(
 	private val files: File.Service,
 ) : Record.Service {
 
-	private val lock = Semaphore(1)
+	private val lock = Mutex()
 	private val data = HashMap<Long, Record>()
 
 	private val _submissions = FakeSubmissions()
@@ -30,7 +30,7 @@ class FakeRecords(
 	override suspend fun search(criteria: List<Record.QueryCriterion>): Outcome<Record.Failures.Search, List<Record.Ref>> = out {
 		ensureEmployee { Record.Failures.Unauthenticated }
 
-		lock.withPermit {
+		lock.withLock("search") {
 			data.keys.map { Ref(it) }
 		}
 	}
@@ -49,7 +49,7 @@ class FakeRecords(
 
 		val id = newId()
 
-		val submissionRef = _submissions.lock.withPermit {
+		val submissionRef = _submissions.lock.withLock("create:submission") {
 			val subId = newId()
 			_submissions.data[subId] = submission
 			_submissions.Ref(subId)
@@ -76,7 +76,7 @@ class FakeRecords(
 			),
 		)
 
-		lock.withPermit {
+		lock.withLock("create:record") {
 			data[id] = record
 		}
 
@@ -119,7 +119,7 @@ class FakeRecords(
 				submission,
 			)
 
-			val subRef = lock.withPermit {
+			val subRef = lock.withLock("createSubmission") {
 				val subId = newId()
 				_submissions.data[subId] = sub
 				_submissions.Ref(subId)
@@ -144,7 +144,7 @@ class FakeRecords(
 
 			val now = clock.now()
 
-			lock.withPermit {
+			lock.withLock("advance") {
 				val result = rec.copy(modifiedAt = now, history = rec.history + diff)
 				data[id] = result
 			}
@@ -262,7 +262,7 @@ class FakeRecords(
 
 		override fun request(): ProgressiveFlow<Record.Failures.Get, Record> = flow {
 			out {
-				val result = lock.withPermit { data[id] }
+				val result = lock.withLock("request") { data[id] }
 				ensureNotNull(result) { Record.Failures.NotFound(this@Ref) }
 
 				result
@@ -288,7 +288,7 @@ class FakeRecords(
 	}
 
 	private inner class FakeSubmissions : Submission.Service {
-		val lock = Semaphore(1)
+		val lock = Mutex()
 		val data = HashMap<Long, Submission>()
 
 		inner class Ref(
@@ -296,7 +296,7 @@ class FakeRecords(
 		) : Submission.Ref {
 			override fun request(): ProgressiveFlow<Submission.Failures.Get, Submission> = flow {
 				out {
-					val result = lock.withPermit { data[id] }
+					val result = lock.withLock("request") { data[id] }
 					ensureNotNull(result) { Submission.Failures.NotFound(this@Ref) }
 					result
 				}.also { emit(it.withProgress()) }

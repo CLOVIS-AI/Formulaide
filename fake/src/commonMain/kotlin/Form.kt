@@ -2,13 +2,11 @@ package opensavvy.formulaide.fake
 
 import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
-import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import opensavvy.cache.contextual.cache
 import opensavvy.formulaide.core.*
 import opensavvy.formulaide.fake.utils.newId
 import opensavvy.logger.Logger.Companion.warn
@@ -24,7 +22,7 @@ class FakeForms(
 
 	private val log = loggerFor(this)
 
-	private val lock = Semaphore(1)
+	private val lock = Mutex()
 	private val forms = HashMap<Long, Form>()
 	private val _versions = FakeVersions()
 
@@ -37,7 +35,7 @@ class FakeForms(
 
 		val role = currentRole()
 
-		lock.withPermit {
+		lock.withLock("list") {
 			forms
 				.asSequence()
 				.filter { (_, it) -> it.open || includeClosed }
@@ -66,7 +64,7 @@ class FakeForms(
 
 		val ref = Ref(newId())
 
-		lock.withPermit {
+		lock.withLock("create") {
 			_versions.versions[ref.id to now] = version
 
 			forms[ref.id] = Form(
@@ -87,7 +85,7 @@ class FakeForms(
 			ensureEmployee { Form.Failures.Unauthenticated }
 			ensureAdministrator { Form.Failures.Unauthorized }
 
-			lock.withPermit {
+			lock.withLock("edit") {
 				val value = forms[id]
 				ensureNotNull(value) { Form.Failures.NotFound(this@Ref) }
 
@@ -138,7 +136,7 @@ class FakeForms(
 				steps = step.asList(),
 			)
 
-			lock.withPermit {
+			lock.withLock("createVersion") {
 				val value = forms[id]
 				ensureNotNull(value) { Form.Failures.NotFound(this@Ref) }
 
@@ -151,7 +149,7 @@ class FakeForms(
 
 		override fun request(): ProgressiveFlow<Form.Failures.Get, Form> = flow {
 			out<Form.Failures.Get, Form> {
-				lock.withPermit {
+				lock.withLock("request") {
 					val result = forms[id]
 					ensureNotNull(result) { Form.Failures.NotFound(this@Ref) }
 					ensure((result.public && result.open) || currentRole() >= User.Role.Employee) {
@@ -190,7 +188,7 @@ class FakeForms(
 		) : Form.Version.Ref {
 			override fun request(): ProgressiveFlow<Form.Version.Failures.Get, Form.Version> = flow {
 				out<Form.Version.Failures.Get, Form.Version> {
-					lock.withLock("request") {
+					lock.withLock("version:request") {
 						val result = versions[form.id to creationDate]
 						ensureNotNull(result) { Form.Version.Failures.NotFound(this@Ref) }
 						result
