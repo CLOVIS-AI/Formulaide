@@ -32,10 +32,10 @@ class FakeDepartments : Department.Service<FakeDepartments.Ref> {
 	}
 
 	override suspend fun list(includeClosed: Boolean): Outcome<Department.Failures.List, List<Ref>> = out {
+		ensureEmployee { Department.Failures.Unauthenticated }
+
 		if (includeClosed)
 			ensureAdministrator { Department.Failures.Unauthorized }
-		else
-			ensureEmployee { Department.Failures.Unauthenticated }
 
 		lock.withPermit {
 			data.asSequence()
@@ -46,6 +46,7 @@ class FakeDepartments : Department.Service<FakeDepartments.Ref> {
 	}
 
 	override suspend fun create(name: String): Outcome<Department.Failures.Create, Ref> = out {
+		ensureEmployee { Department.Failures.Unauthenticated }
 		ensureAdministrator { Department.Failures.Unauthorized }
 
 		val id = newId()
@@ -60,6 +61,7 @@ class FakeDepartments : Department.Service<FakeDepartments.Ref> {
 	) : Department.Ref {
 
 		private suspend fun Raise<Department.Failures.Edit>.edit(open: Boolean?) {
+			ensureEmployee { Department.Failures.Unauthenticated }
 			ensureAdministrator { Department.Failures.Unauthorized }
 
 			lock.withPermit {

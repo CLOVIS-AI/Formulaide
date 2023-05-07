@@ -1,38 +1,61 @@
 package opensavvy.formulaide.fake.spies
 
 import opensavvy.backbone.Ref
-import opensavvy.backbone.RefCache
 import opensavvy.formulaide.core.Department
 import opensavvy.logger.loggerFor
+import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.outcome.Outcome
+import opensavvy.state.outcome.map
 
-class SpyDepartments(private val upstream: Department.Service) : Department.Service {
+class SpyDepartments<D : Department.Ref>(private val upstream: Department.Service<D>) : Department.Service<SpyDepartments<D>.Ref> {
 
 	private val log = loggerFor(upstream)
 
-	override suspend fun list(includeClosed: Boolean): Outcome<List<Department.Ref>> = spy(
+	override suspend fun list(includeClosed: Boolean): Outcome<Department.Failures.List, List<Ref>> = spy(
 		log, "list", includeClosed
 	) { upstream.list(includeClosed) }
-		.map { it.map { it.copy(backbone = this) } }
+		.map { it.map(::Ref) }
 
-	override suspend fun create(name: String): Outcome<Department.Ref> = spy(
+	override suspend fun create(name: String) = spy(
 		log, "create", name,
 	) { upstream.create(name) }
-		.map { it.copy(backbone = this) }
+		.map(::Ref)
 
-	override suspend fun edit(department: Department.Ref, open: Boolean?): Outcome<Unit> = spy(
-		log, "edit", department, open,
-	) { upstream.edit(department, open) }
+	inner class Ref internal constructor(
+		private val upstream: D,
+	) : Department.Ref {
+		override suspend fun open(): Outcome<Department.Failures.Edit, Unit> = spy(
+			log, "open",
+		) { upstream.open() }
 
-	override val cache: RefCache<Department>
-		get() = upstream.cache
+		override suspend fun close(): Outcome<Department.Failures.Edit, Unit> = spy(
+			log, "close",
+		) { upstream.close() }
 
-	override suspend fun directRequest(ref: Ref<Department>): Outcome<Department> = spy(
-		log, "directRequest", ref,
-	) { upstream.directRequest(ref) }
+		override fun request(): ProgressiveFlow<Department.Failures.Get, Department> = spy(
+			log, "request",
+		) { upstream.request() }
+
+		// region Overrides
+
+		override fun equals(other: Any?): Boolean {
+			if (this === other) return true
+			if (other !is SpyDepartments<*>.Ref) return false
+
+			return upstream == other.upstream
+		}
+
+		override fun hashCode(): Int {
+			return upstream.hashCode()
+		}
+
+		override fun toString() = upstream.toString()
+
+		// endregion
+	}
 
 	companion object {
 
-		fun Department.Service.spied() = SpyDepartments(this)
+		fun <D : Department.Ref> Department.Service<D>.spied() = SpyDepartments(this)
 	}
 }
