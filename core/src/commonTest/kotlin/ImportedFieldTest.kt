@@ -15,7 +15,7 @@ import opensavvy.formulaide.core.Field.Companion.label
 import opensavvy.formulaide.core.Field.Companion.labelFrom
 import opensavvy.formulaide.core.Input.*
 import opensavvy.formulaide.fake.FakeTemplates
-import opensavvy.formulaide.test.assertions.shouldFailWithKey
+import opensavvy.formulaide.test.assertions.shouldFailWithType
 import opensavvy.formulaide.test.assertions.shouldSucceed
 import opensavvy.formulaide.test.structure.Suite
 import opensavvy.formulaide.test.structure.TestExecutor
@@ -24,8 +24,6 @@ import opensavvy.formulaide.test.structure.clock
 import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
 import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
 import opensavvy.state.arrow.out
-import opensavvy.state.failure.CustomFailure
-import opensavvy.state.failure.Failure
 import opensavvy.state.outcome.failed
 import opensavvy.state.outcome.success
 
@@ -33,9 +31,7 @@ class ImportedFieldTest : TestExecutor() {
 
 	private data class CombinedFieldFailure(
 		val failure: NonEmptyList<Field.Failures.Compatibility>,
-	) : CustomFailure(Companion, "Invalid field: $failure") {
-		companion object : Failure.Key
-	}
+	)
 
 	private suspend fun TestScope.createTemplateForField(service: Template.Service, field: Field) =
 		withContext(administratorAuth) {
@@ -99,7 +95,7 @@ class ImportedFieldTest : TestExecutor() {
 				input("Name", Text(maxLength = 5u))
 			) {
 				inputFrom(it, "Name", Text(maxLength = 10u))
-			} shouldFailWithKey CombinedFieldFailure
+			} shouldFailWithType CombinedFieldFailure::class
 		}
 
 		test("Text input with lesser maximum length", employeeAuth) {
@@ -151,13 +147,13 @@ class ImportedFieldTest : TestExecutor() {
 				input("Name", Integer(0..5))
 			) {
 				inputFrom(it, "Name", Integer(-1..5))
-			} shouldFailWithKey CombinedFieldFailure
+			} shouldFailWithType CombinedFieldFailure::class
 
 			import(
 				input("Name", Integer(0..5))
 			) {
 				inputFrom(it, "Name", Integer(-1..3))
-			} shouldFailWithKey CombinedFieldFailure
+			} shouldFailWithType CombinedFieldFailure::class
 		}
 
 		test("Int input with a less restrictive maximum", employeeAuth) {
@@ -165,13 +161,13 @@ class ImportedFieldTest : TestExecutor() {
 				input("Name", Integer(0..5))
 			) {
 				inputFrom(it, "Name", Integer(0..6))
-			} shouldFailWithKey CombinedFieldFailure
+			} shouldFailWithType CombinedFieldFailure::class
 
 			import(
 				input("Name", Integer(0..5))
 			) {
 				inputFrom(it, "Name", Integer(3..6))
-			} shouldFailWithKey CombinedFieldFailure
+			} shouldFailWithType CombinedFieldFailure::class
 		}
 
 		test("Identical toggle input", employeeAuth) {
@@ -272,7 +268,7 @@ class ImportedFieldTest : TestExecutor() {
 						input("Name", original)
 					) {
 						inputFrom(it, "Name", imported)
-					} shouldFailWithKey CombinedFieldFailure
+					} shouldFailWithType CombinedFieldFailure::class
 				}
 			}
 		}
@@ -350,7 +346,7 @@ class ImportedFieldTest : TestExecutor() {
 					2 to label("Third choice"),
 					3 to label("Fourth choice"),
 				)
-			} shouldFailWithKey CombinedFieldFailure
+			} shouldFailWithType CombinedFieldFailure::class
 		}
 
 		test("Identical group", employeeAuth) {
@@ -406,7 +402,7 @@ class ImportedFieldTest : TestExecutor() {
 					0 to label("First field"),
 					1 to label("Second field"),
 				)
-			} shouldFailWithKey CombinedFieldFailure
+			} shouldFailWithType CombinedFieldFailure::class
 
 			import(
 				group(
@@ -424,7 +420,7 @@ class ImportedFieldTest : TestExecutor() {
 					2 to label("Third field"),
 					3 to label("Fourth field"),
 				)
-			} shouldFailWithKey CombinedFieldFailure
+			} shouldFailWithType CombinedFieldFailure::class
 		}
 
 		test("Identical arity", employeeAuth) {
@@ -492,7 +488,7 @@ class ImportedFieldTest : TestExecutor() {
 					0u..1u,
 					label("Field"),
 				)
-			} shouldFailWithKey CombinedFieldFailure
+			} shouldFailWithType CombinedFieldFailure::class
 		}
 
 		test("Arity with a lower minimum bound", employeeAuth) {
@@ -509,7 +505,7 @@ class ImportedFieldTest : TestExecutor() {
 					4u..6u,
 					label("Field"),
 				)
-			} shouldFailWithKey CombinedFieldFailure
+			} shouldFailWithType CombinedFieldFailure::class
 		}
 
 		test("Arity with a higher minimum bound", employeeAuth) {
@@ -543,7 +539,7 @@ class ImportedFieldTest : TestExecutor() {
 					5u..7u,
 					label("Field"),
 				)
-			} shouldFailWithKey CombinedFieldFailure
+			} shouldFailWithType CombinedFieldFailure::class
 		}
 
 		test("Arity with a lower maximum bound", employeeAuth) {

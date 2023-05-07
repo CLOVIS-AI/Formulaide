@@ -8,12 +8,11 @@ import arrow.core.raise.ensureNotNull
 import opensavvy.backbone.Backbone
 import opensavvy.formulaide.core.Submission.Parsed
 import opensavvy.formulaide.core.Submission.ParsingFailure.InvalidValue
+import opensavvy.formulaide.core.data.StandardNotFound
+import opensavvy.formulaide.core.data.StandardUnauthenticated
+import opensavvy.formulaide.core.data.StandardUnauthorized
 import opensavvy.state.arrow.toEither
 import opensavvy.state.coroutines.now
-import opensavvy.state.failure.CustomFailure
-import opensavvy.state.failure.Failure
-import opensavvy.state.failure.Unauthenticated
-import opensavvy.state.failure.Unauthorized
 
 private typealias CanFail = Raise<NonEmptyList<Submission.ParsingFailure>>
 private typealias MutableParsedData = MutableMap<Field.Id, Any>
@@ -362,16 +361,16 @@ data class Submission(
 
 	interface Service : Backbone<Ref, Failures.Get, Submission>
 
-	interface Failures : Failure {
+	interface Failures {
 		sealed interface Get : Failures
 
-		class NotFound(val ref: Ref) : CustomFailure(opensavvy.state.failure.NotFound(ref)),
+		data class NotFound(override val id: Ref) : StandardNotFound<Ref>,
 			Get
 
-		object Unauthenticated : CustomFailure(Unauthenticated()),
+		object Unauthenticated : StandardUnauthenticated,
 			Get
 
-		object Unauthorized : CustomFailure(Unauthorized()),
+		object Unauthorized : StandardUnauthorized,
 			Get
 	}
 

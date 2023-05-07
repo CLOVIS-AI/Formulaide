@@ -5,14 +5,15 @@ package opensavvy.formulaide.test.assertions
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
-import opensavvy.state.failure.Failure
-import opensavvy.state.failure.NotFound
-import opensavvy.state.failure.Unauthenticated
-import opensavvy.state.failure.Unauthorized
+import io.kotest.matchers.types.shouldBeInstanceOf
+import opensavvy.formulaide.core.data.StandardNotFound
+import opensavvy.formulaide.core.data.StandardUnauthenticated
+import opensavvy.formulaide.core.data.StandardUnauthorized
 import opensavvy.state.outcome.Outcome
 import kotlin.contracts.contract
 import kotlin.js.JsName
 import kotlin.jvm.JvmName
+import kotlin.reflect.KClass
 
 fun <T> shouldSucceed(outcome: Outcome<*, T>): T {
 	contract {
@@ -68,7 +69,7 @@ inline infix fun <T> Outcome<*, T>.shouldSucceedAndSoftly(assertions: (T) -> Uni
 	return value
 }
 
-fun <F : Failure> Outcome<F, *>.shouldFail(): Failure {
+fun <F> Outcome<F, *>.shouldFail(): F {
 	contract {
 		returns() implies (this@shouldFail is Outcome.Failure<F>)
 	}
@@ -80,15 +81,30 @@ fun <F : Failure> Outcome<F, *>.shouldFail(): Failure {
 	return failure
 }
 
-infix fun <F : Failure> Outcome<F, *>.shouldFailWithKey(key: Failure.Key) {
+infix fun <F : Any> Outcome<F, *>.shouldFailWith(failure: F) {
 	withClue({ "Result: $this" }) {
-		withClue({ "Expected to fail with $key" }) {
-			shouldFail()
-			(this as Outcome.Failure).failure.key shouldBe key
+		withClue({ "Expected to fail with $failure" }) {
+			val value = this
+			value.shouldFail()
+			value.failure shouldBe failure
 		}
 	}
 }
 
-fun <F : Failure, T> shouldNotBeAuthenticated(outcome: Outcome<F, T>) = outcome shouldFailWithKey Unauthenticated
-fun <F : Failure, T> shouldNotBeAuthorized(outcome: Outcome<F, T>) = outcome shouldFailWithKey Unauthorized
-fun <F : Failure, T> shouldNotBeFound(outcome: Outcome<F, T>) = outcome shouldFailWithKey NotFound
+inline fun <reified F : Any> Outcome<*, *>.shouldFailWithType() {
+	withClue({ "Result: $this" }) {
+		withClue({ "Expected to fail with ${F::class}" }) {
+			val value = this
+			value.shouldFail()
+			value.failure.shouldBeInstanceOf<F>()
+		}
+	}
+}
+
+inline infix fun <reified F : Any> Outcome<*, *>.shouldFailWithType(@Suppress("UNUSED_PARAMETER") type: KClass<F>) {
+	shouldFailWithType<F>()
+}
+
+fun <F : Any, T> shouldNotBeAuthenticated(outcome: Outcome<F, T>) = outcome shouldFailWithType StandardUnauthenticated::class
+fun <F : Any, T> shouldNotBeAuthorized(outcome: Outcome<F, T>) = outcome shouldFailWithType StandardUnauthorized::class
+fun <F : Any, T> shouldNotBeFound(outcome: Outcome<F, T>) = outcome shouldFailWithType StandardNotFound::class

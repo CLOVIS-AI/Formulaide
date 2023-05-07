@@ -25,6 +25,6 @@ interface TestScope : Raise<Any> {
     val scheduler: TestCoroutineScheduler
 
     @RaiseDSL
-    fun <T> Outcome<*, T>.bind() = this.toEither().bind()
+    fun <T> Outcome<Any, T>.bind() = this.toEither().bind()
 
 }

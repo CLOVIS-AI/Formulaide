@@ -4,12 +4,10 @@ import arrow.core.Nel
 import kotlinx.datetime.Instant
 import opensavvy.backbone.Backbone
 import opensavvy.formulaide.core.Submission.Companion.toSubmissionData
-import opensavvy.state.failure.CustomFailure
-import opensavvy.state.failure.Failure
+import opensavvy.formulaide.core.data.StandardNotFound
+import opensavvy.formulaide.core.data.StandardUnauthenticated
+import opensavvy.formulaide.core.data.StandardUnauthorized
 import opensavvy.state.outcome.Outcome
-import opensavvy.state.failure.NotFound as StandardNotFound
-import opensavvy.state.failure.Unauthenticated as StandardUnauthenticated
-import opensavvy.state.failure.Unauthorized as StandardUnauthorized
 
 /**
  * A user request and its modifications over time.
@@ -307,85 +305,62 @@ data class Record(
 		)
 	}
 
-	sealed interface Failures : Failure {
+	sealed interface Failures {
 		sealed interface Get : Failures, Action
 		sealed interface Search : Failures
 		sealed interface Action : Failures
 		sealed interface Create : Failures
 
-		class NotFound(val ref: Ref) : CustomFailure(StandardNotFound(ref)),
+		data class NotFound(override val id: Ref) : StandardNotFound<Ref>,
 			Get,
 			Action
 
-		object Unauthenticated : CustomFailure(StandardUnauthenticated()),
+		object Unauthenticated : StandardUnauthenticated,
 			Get,
 			Search,
 			Action,
 			Create
 
-		object Unauthorized : CustomFailure(StandardUnauthorized()),
+		object Unauthorized : StandardUnauthorized,
 			Get,
 			Search,
 			Action
 
-		class CannotCreateRecordForNonInitialStep : CustomFailure(Companion, "It is not allowed to create a record for another step than the first one"),
-			Create {
-			companion object : Failure.Key
-		}
+		object CannotCreateRecordForNonInitialStep : Create
 
-		class FormNotFound(
-			val ref: Form.Ref,
+		data class FormNotFound(
+			override val id: Form.Ref,
 			val form: Form.Failures.Get?,
-		) : CustomFailure(StandardNotFound(ref, cause = form)),
+		) : StandardNotFound<Form.Ref>,
 			Create
 
 		class FormVersionNotFound(
-			val ref: Form.Version.Ref,
+			override val id: Form.Version.Ref,
 			val form: Form.Version.Failures.Get,
-		) : CustomFailure(StandardNotFound(ref, cause = form)),
+		) : StandardNotFound<Form.Version.Ref>,
 			Create,
 			Action
 
-		class InvalidSubmission(
+		data class InvalidSubmission(
 			val failure: Nel<Submission.ParsingFailure>,
-		) : CustomFailure(Companion, "Invalid submission: $failure"),
-			Action,
-			Create {
-			companion object : Failure.Key
-		}
+		) : Action,
+			Create
 
-		class DiffShouldStartAtCurrentState(
+		data class DiffShouldStartAtCurrentState(
 			val current: Status.NonInitial,
 			val diffSource: Status,
-		) : CustomFailure(Companion, "A transition must start on the current state of the record ($current), but found $diffSource"),
-			Action {
-			companion object : Failure.Key
+		) : Action {
+			override fun toString() = "A transition must start on the current state of the record ($current), but found $diffSource"
 		}
 
-		class CannotAcceptRefusedRecord : CustomFailure(Companion, "Cannot accept a refused record"),
-			Action {
-			companion object : Failure.Key
-		}
+		object CannotAcceptRefusedRecord : Action
 
-		class CannotRefuseRefusedRecord : CustomFailure(Companion, "Cannot refuse a refused record"),
-			Action {
-			companion object : Failure.Key
-		}
+		object CannotRefuseRefusedRecord : Action
 
-		class CannotAcceptFinishedRecord : CustomFailure(Companion, "Cannot accept a record currently in its last step"),
-			Action {
-			companion object : Failure.Key
-		}
+		object CannotAcceptFinishedRecord : Action
 
-		class MandatoryReason : CustomFailure(Companion, "For this action, giving a reason is mandatory"),
-			Action {
-			companion object : Failure.Key
-		}
+		object MandatoryReason : Action
 
-		class CannotMoveBackToFutureStep : CustomFailure(Companion, "Cannot move back a record to a step it has never been in"),
-			Action {
-			companion object : Failure.Key
-		}
-
+		object CannotMoveBackToFutureStep : Action
 	}
 }

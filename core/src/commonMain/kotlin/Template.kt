@@ -5,12 +5,10 @@ import kotlinx.datetime.Instant
 import opensavvy.backbone.Backbone
 import opensavvy.formulaide.core.Template.Ref
 import opensavvy.formulaide.core.Template.Version
-import opensavvy.state.failure.CustomFailure
-import opensavvy.state.failure.Failure
+import opensavvy.formulaide.core.data.StandardNotFound
+import opensavvy.formulaide.core.data.StandardUnauthenticated
+import opensavvy.formulaide.core.data.StandardUnauthorized
 import opensavvy.state.outcome.Outcome
-import opensavvy.state.failure.NotFound as StandardNotFound
-import opensavvy.state.failure.Unauthenticated as StandardUnauthenticated
-import opensavvy.state.failure.Unauthorized as StandardUnauthorized
 
 /**
  * A field container that is reused between [forms][Form].
@@ -89,13 +87,13 @@ data class Template(
 
 		interface Service : Backbone<Ref, Failures.Get, Version>
 
-		sealed interface Failures : Failure {
+		sealed interface Failures {
 			sealed interface Get : Failures
 
-			class NotFound(val ref: Ref) : CustomFailure(StandardNotFound(ref)),
+			data class NotFound(override val id: Ref) : StandardNotFound<Ref>,
 				Get
 
-			object Unauthenticated : CustomFailure(StandardUnauthenticated()),
+			object Unauthenticated : StandardUnauthenticated,
 				Get
 		}
 	}
@@ -123,37 +121,34 @@ data class Template(
 		): Outcome<Failures.Create, Ref>
 	}
 
-	sealed interface Failures : Failure {
+	sealed interface Failures {
 		sealed interface Get : Failures
 		sealed interface List : Failures
 		sealed interface Create : Failures
 		sealed interface CreateVersion : Failures
 		sealed interface Edit : Failures
 
-		class NotFound(val ref: Ref) : CustomFailure(StandardNotFound(ref)),
+		data class NotFound(override val id: Ref) : StandardNotFound<Ref>,
 			Get,
 			Edit,
 			CreateVersion
 
-		object Unauthenticated : CustomFailure(StandardUnauthenticated()),
+		object Unauthenticated : StandardUnauthenticated,
 			Get,
 			List,
 			Create,
 			CreateVersion,
 			Edit
 
-		object Unauthorized : CustomFailure(StandardUnauthorized()),
+		object Unauthorized : StandardUnauthorized,
 			List,
 			Create,
 			CreateVersion,
 			Edit
 
-		class InvalidImport(
+		data class InvalidImport(
 			val failures: Nel<Field.Failures.Compatibility>,
-		) : CustomFailure(Companion, "Champ incompatible : $failures"),
-			Create,
-			CreateVersion {
-			companion object : Failure.Key
-		}
+		) : Create,
+			CreateVersion
 	}
 }

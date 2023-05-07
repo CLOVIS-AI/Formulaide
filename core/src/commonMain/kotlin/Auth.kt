@@ -4,7 +4,6 @@ import arrow.core.raise.Raise
 import arrow.core.raise.ensure
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.withContext
-import opensavvy.state.failure.Failure
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 
@@ -94,7 +93,7 @@ suspend fun currentRole(): User.Role =
 /**
  * Checks that the user has at least the role [User.Role.Employee].
  */
-suspend fun <F : Failure> Raise<F>.ensureEmployee(
+suspend fun <F> Raise<F>.ensureEmployee(
 	lazyFailure: () -> F,
 ) {
 	ensure(currentRole() >= User.Role.Employee, lazyFailure)
@@ -103,7 +102,7 @@ suspend fun <F : Failure> Raise<F>.ensureEmployee(
 /**
  * Checks that the user has at least the role [User.Role.Administrator].
  */
-suspend fun <F : Failure> Raise<F>.ensureAdministrator(
+suspend fun <F> Raise<F>.ensureAdministrator(
 	lazyFailure: () -> F,
 ) {
 	ensureEmployee(lazyFailure)

@@ -488,7 +488,7 @@ fun <D : Department.Ref> Suite.formTestSuite(
 						1 to input("Last name", Input.Text(maxLength = 30u)),
 					),
 					Form.Step(0, "Validation", department, null),
-				) shouldFailWithKey Form.Failures.InvalidImport
+				) shouldFailWithType Form.Failures.InvalidImport::class
 			}
 		}
 	}

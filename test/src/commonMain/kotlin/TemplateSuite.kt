@@ -192,7 +192,7 @@ private fun Suite.create(
 			"Test",
 			"Initial version",
 			labelFrom(cities, "This field does not match the imported template at all")
-		) shouldFailWithKey Template.Failures.InvalidImport
+		) shouldFailWithType Template.Failures.InvalidImport::class
 	}
 }
 
@@ -260,7 +260,7 @@ private fun Suite.createVersion(
 				firstVersion,
 				"This field does not match the imported template at all"
 			)
-		) shouldFailWithKey Template.Failures.InvalidImport
+		) shouldFailWithType Template.Failures.InvalidImport::class
 	}
 }
 

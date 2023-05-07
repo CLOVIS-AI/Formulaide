@@ -1,12 +1,10 @@
 package opensavvy.formulaide.core
 
 import opensavvy.backbone.Backbone
-import opensavvy.state.failure.CustomFailure
-import opensavvy.state.failure.Failure
+import opensavvy.formulaide.core.data.StandardNotFound
+import opensavvy.formulaide.core.data.StandardUnauthenticated
+import opensavvy.formulaide.core.data.StandardUnauthorized
 import opensavvy.state.outcome.Outcome
-import opensavvy.state.failure.NotFound as StandardNotFound
-import opensavvy.state.failure.Unauthenticated as StandardUnauthenticated
-import opensavvy.state.failure.Unauthorized as StandardUnauthorized
 
 /**
  * A department of the organisation, for example "Human resources" or "IT support".
@@ -66,23 +64,23 @@ data class Department(
 
 	}
 
-	sealed interface Failures : Failure {
+	sealed interface Failures {
 		sealed interface Get : Failures
 		sealed interface List : Failures
 		sealed interface Create : Failures
 		sealed interface Edit : Failures
 
-		class NotFound(val ref: Ref) : CustomFailure(StandardNotFound(ref)),
+		data class NotFound(override val id: Ref) : StandardNotFound<Ref>,
 			Get,
 			Edit
 
-		object Unauthenticated : CustomFailure(StandardUnauthenticated()),
+		object Unauthenticated : StandardUnauthenticated,
 			Get,
 			Create,
 			Edit,
 			List
 
-		object Unauthorized : CustomFailure(StandardUnauthorized()),
+		object Unauthorized : StandardUnauthorized,
 			Create,
 			Edit,
 			List

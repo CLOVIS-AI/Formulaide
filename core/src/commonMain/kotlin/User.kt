@@ -1,13 +1,7 @@
 package opensavvy.formulaide.core
 
 import opensavvy.backbone.Backbone
-import opensavvy.formulaide.core.data.Email
-import opensavvy.formulaide.core.data.Password
-import opensavvy.formulaide.core.data.Token
-import opensavvy.state.failure.CustomFailure
-import opensavvy.state.failure.Failure
-import opensavvy.state.failure.Unauthenticated
-import opensavvy.state.failure.Unauthorized
+import opensavvy.formulaide.core.data.*
 import opensavvy.state.outcome.Outcome
 import kotlin.jvm.JvmName
 
@@ -179,7 +173,7 @@ data class User(
 		): Outcome<Failures.LogIn, Pair<Ref, Token>>
 	}
 
-	sealed interface Failures : Failure {
+	sealed interface Failures {
 		sealed interface Get : Failures
 		sealed interface List : Failures
 		sealed interface Create : Failures
@@ -189,13 +183,13 @@ data class User(
 		sealed interface TokenVerification : Failures
 		sealed interface SetPassword : Failures
 
-		class NotFound(val ref: Ref) : CustomFailure(opensavvy.state.failure.NotFound(ref)),
+		data class NotFound(override val id: Ref) : StandardNotFound<Ref>,
 			Get,
 			Create,
 			Edit,
 			SecurityEdit
 
-		object Unauthenticated : CustomFailure(Unauthenticated()),
+		object Unauthenticated : StandardUnauthenticated,
 			Get,
 			Create,
 			Edit,
@@ -203,33 +197,22 @@ data class User(
 			List,
 			SetPassword
 
-		object Unauthorized : CustomFailure(Unauthorized()),
+		object Unauthorized : StandardUnauthorized,
 			Get,
 			Create,
 			Edit,
 			SecurityEdit,
 			List
 
-		class UserAlreadyExists(val email: Email) : CustomFailure(Companion, "The user '$email' already exists"),
-			Create {
-			companion object : Failure.Key
-		}
+		data class UserAlreadyExists(val email: Email) : Create
 
-		object CannotEditYourself : CustomFailure(Unauthorized("Editing yourself is forbidden")),
-			SecurityEdit
+		object CannotEditYourself : SecurityEdit
 
-		object CanOnlySetYourOwnPassword : CustomFailure(Unauthorized("Setting another user's password is forbidden")),
-			SetPassword
+		object CanOnlySetYourOwnPassword : SetPassword
 
-		class IncorrectPassword : CustomFailure(Companion, "The provided password is incorrect"),
-			SetPassword {
-			companion object : Failure.Key
-		}
+		object IncorrectPassword : SetPassword
 
-		class IncorrectCredentials : CustomFailure(Companion, "The provided credentials are incorrect"),
-			LogIn,
-			TokenVerification {
-			companion object : Failure.Key
-		}
+		object IncorrectCredentials : LogIn,
+			TokenVerification
 	}
 }

@@ -15,10 +15,8 @@ import opensavvy.formulaide.core.Field.Failures.Compatibility.IncompatibleField.
 import opensavvy.formulaide.core.Field.Failures.Compatibility.IncompatibleField.Companion.tooFewFields
 import opensavvy.formulaide.core.Field.Failures.Compatibility.IncompatibleField.Companion.tooManyFields
 import opensavvy.formulaide.core.Field.Input
+import opensavvy.formulaide.core.data.StandardNotFound
 import opensavvy.state.arrow.toEither
-import opensavvy.state.failure.CustomFailure
-import opensavvy.state.failure.Failure
-import opensavvy.state.failure.NotFound
 import kotlin.reflect.KClass
 
 private const val INDENT = "    "
@@ -439,14 +437,13 @@ sealed class Field {
 		}
 
 		sealed interface Compatibility : FieldFailure {
-			class IncompatibleField(
+			data class IncompatibleField(
 				override val field: Id,
-				message: String,
-			) : CustomFailure(Companion, "Champ $field : $message"),
-				Compatibility,
+				val message: String,
+			) : Compatibility,
 				FieldFailure {
 
-				companion object : Failure.Key {
+				companion object {
 					internal fun invalidType(
 						field: Id,
 						target: KClass<out Field>,
@@ -484,10 +481,10 @@ sealed class Field {
 				val failure: opensavvy.formulaide.core.Input.Failures.Compatibility,
 			) : Compatibility
 
-			class TemplateNotFound(
+			data class TemplateNotFound(
 				override val field: Id,
-				template: Template.Version.Ref,
-			) : CustomFailure(NotFound(template)),
+				override val id: Template.Version.Ref,
+			) : StandardNotFound<Template.Version.Ref>,
 				Compatibility
 		}
 	}

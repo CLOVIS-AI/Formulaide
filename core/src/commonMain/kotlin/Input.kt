@@ -7,8 +7,6 @@ import kotlinx.datetime.LocalTime
 import opensavvy.backbone.now
 import opensavvy.state.arrow.out
 import opensavvy.state.arrow.toEither
-import opensavvy.state.failure.CustomFailure
-import opensavvy.state.failure.Failure
 import opensavvy.state.outcome.Outcome
 import opensavvy.state.outcome.failed
 import opensavvy.state.outcome.success
@@ -248,24 +246,15 @@ sealed class Input {
 		}
 	}
 
-	sealed interface Failures : Failure {
+	sealed interface Failures {
 		// For now, errors are just strings.
 		// I will maybe replace them by proper sealed class hierarchies in the future if needed.
 
-		class Creating(message: String) : CustomFailure(Companion, message),
-			Failures {
-			companion object : Failure.Key
-		}
+		data class Creating(val message: String) : Failures
 
-		class Parsing(message: String, cause: Failure? = null) : CustomFailure(Companion, message, cause),
-			Failures {
-			companion object : Failure.Key
-		}
+		data class Parsing(val message: String, val cause: Any? = null) : Failures
 
-		class Compatibility(message: String) : CustomFailure(Companion, message),
-			Failures {
-			companion object : Failure.Key
-		}
+		data class Compatibility(val message: String) : Failures
 	}
 
 	companion object

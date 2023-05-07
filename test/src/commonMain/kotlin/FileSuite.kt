@@ -106,7 +106,7 @@ fun Suite.fileTestSuite(
 			test("The file cannot be read anymore after the timeout", administratorAuth) {
 				val file = prepare(oldFile)
 
-				file.read() shouldFailWithKey File.Failures.Expired
+				file.read().shouldFailWithType<File.Failures.Expired>()
 			}
 
 			test("The metadata is not impacted", employeeAuth) {
@@ -237,7 +237,7 @@ fun Suite.fileTestSuite(
 
 			delay(30.days + 10.seconds)
 
-			file.read() shouldFailWithKey File.Failures.Expired
+			file.read().shouldFailWithType<File.Failures.Expired>()
 		}
 	}
 }

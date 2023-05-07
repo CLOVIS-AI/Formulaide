@@ -175,7 +175,7 @@ fun <D : Department.Ref> Suite.recordsTestSuite(
 			records.create(Submission(form, 1, // not the correct step
 				mapOf(
 					Field.Id.root to "true",
-				))) shouldFailWithKey Record.Failures.CannotCreateRecordForNonInitialStep
+				))) shouldFailWith Record.Failures.CannotCreateRecordForNonInitialStep
 		}
 
 		test("Cannot create a record with an invalid submission") {
@@ -185,7 +185,7 @@ fun <D : Department.Ref> Suite.recordsTestSuite(
 			records.create(
 				form,
 				"" to "this is not a boolean",
-			) shouldFailWithKey Record.Failures.InvalidSubmission
+			) shouldFailWithType Record.Failures.InvalidSubmission::class
 		}
 	}
 

@@ -95,21 +95,21 @@ class FakeUsers : User.Service<FakeUsers.Ref> {
 		lock.withPermit {
 			val (id, user) = users.asSequence()
 				.firstOrNull { it.value.email == email }
-				?: raise(User.Failures.IncorrectCredentials())
+				?: raise(User.Failures.IncorrectCredentials)
 
 			ensure(user.active) {
 				log.warn(email) { "Blocked login because the user is inactive" }
-				User.Failures.IncorrectCredentials()
+				User.Failures.IncorrectCredentials
 			}
 
 			ensure(passwords[id] == password) {
 				log.warn(email) { "Blocked login because the password is incorrect" }
-				User.Failures.IncorrectCredentials()
+				User.Failures.IncorrectCredentials
 			}
 
 			ensure(id !in blocked) {
 				log.warn(email) { "Blocked login because the user is blocked" }
-				User.Failures.IncorrectCredentials()
+				User.Failures.IncorrectCredentials
 			}
 
 			val token = Token("very-strong-token-${Random.nextUInt()}")
@@ -201,7 +201,7 @@ class FakeUsers : User.Service<FakeUsers.Ref> {
 
 			lock.withPermit {
 				val password = passwords[id]
-				ensure(oldPassword == password?.value) { User.Failures.IncorrectPassword() }
+				ensure(oldPassword == password?.value) { User.Failures.IncorrectPassword }
 
 				passwords[id] = newPassword
 				tokens[id]?.clear()
@@ -218,11 +218,11 @@ class FakeUsers : User.Service<FakeUsers.Ref> {
 				val theirs = tokens[id]
 				ensureNotNull(theirs) {
 					log.warn(this@Ref) { "Could not find any tokens for user" }
-					User.Failures.IncorrectCredentials()
+					User.Failures.IncorrectCredentials
 				}
 				ensure(token in theirs) {
 					log.warn(this@Ref) { "The provided token is invalid" }
-					User.Failures.IncorrectCredentials()
+					User.Failures.IncorrectCredentials
 				}
 			}
 		}

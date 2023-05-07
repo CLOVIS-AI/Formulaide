@@ -5,7 +5,9 @@ import opensavvy.backbone.Backbone
 import opensavvy.formulaide.core.File.Companion.TTL_UNLINKED
 import opensavvy.formulaide.core.File.Ref
 import opensavvy.formulaide.core.File.Service
-import opensavvy.state.failure.*
+import opensavvy.formulaide.core.data.StandardNotFound
+import opensavvy.formulaide.core.data.StandardUnauthenticated
+import opensavvy.formulaide.core.data.StandardUnauthorized
 import opensavvy.state.outcome.Outcome
 import kotlin.time.Duration.Companion.hours
 
@@ -74,63 +76,54 @@ data class File(
 		fun fromId(id: String): Ref
 	}
 
-	sealed interface Failures : Failure {
+	sealed interface Failures {
 		sealed interface Get : Failures
 		sealed interface Create : Failures
 		sealed interface Link : Failures
 		sealed interface Read : Failures
 
-		class NotFound(val ref: Ref) : CustomFailure(opensavvy.state.failure.NotFound(ref)),
+		data class NotFound(override val id: Ref) : StandardNotFound<Ref>,
 			Get,
 			Link,
 			Read
 
-		object Unauthenticated : CustomFailure(Unauthenticated()),
-			Get,
-			Create,
-			Link,
-			Read
-
-		object Unauthorized : CustomFailure(Unauthorized()),
+		object Unauthenticated : StandardUnauthenticated,
 			Get,
 			Create,
 			Link,
 			Read
 
-		class RecordNotFound(
-			val ref: Record.Ref,
+		object Unauthorized : StandardUnauthorized,
+			Get,
+			Create,
+			Link,
+			Read
+
+		data class RecordNotFound(
+			override val id: Record.Ref,
 			val failure: Record.Failures.Get?,
-		) : CustomFailure(NotFound(ref, cause = failure)),
+		) : StandardNotFound<Record.Ref>,
 			Link
 
-		class SubmissionNotFound(
-			val ref: Submission.Ref,
+		data class SubmissionNotFound(
+			override val id: Submission.Ref,
 			val failure: Submission.Failures.Get?,
-		) : CustomFailure(NotFound(ref, cause = failure)),
+		) : StandardNotFound<Submission.Ref>,
 			Read
 
-		class FormVersionNotFound(
-			val ref: Form.Version.Ref,
+		data class FormVersionNotFound(
+			override val id: Form.Version.Ref,
 			val form: Form.Version.Failures.Get,
-		) : CustomFailure(NotFound(ref, cause = form)),
+		) : StandardNotFound<Form.Version.Ref>,
 			Read
 
-		class InvalidField(
+		data class InvalidField(
 			val reason: String,
-		) : CustomFailure(Companion, reason),
-			Read {
-			companion object : Failure.Key
-		}
+		) : Read
 
-		class Expired(val ref: Ref) : CustomFailure(Companion, "Le fichier $ref a été supprimé après son expiration"),
-			Read {
-			companion object : Failure.Key
-		}
+		data class Expired(val ref: Ref) : Read
 
-		class AlreadyLinked(val ref: Ref) : CustomFailure(Companion, "Le fichier $ref a déjà été lié à une saisie"),
-			Link {
-			companion object : Failure.Key
-		}
+		data class AlreadyLinked(val ref: Ref) : Link
 	}
 
 	companion object {

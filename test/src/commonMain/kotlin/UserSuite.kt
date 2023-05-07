@@ -247,7 +247,7 @@ private fun <U : User.Ref> Suite.edit(
 		val me = prepare(testAdministrator).first
 
 		executeAs(me) {
-			shouldNotBeAuthorized(me.disable())
+			me.disable() shouldFailWith User.Failures.CannotEditYourself
 
 			withClue("I'm not allowed to disable myself, so I should still be active") {
 				me.now() shouldSucceedAnd {
@@ -275,7 +275,7 @@ private fun <U : User.Ref> Suite.edit(
 		val me = prepare(testAdministrator).first
 
 		executeAs(me) {
-			shouldNotBeAuthorized(me.demote())
+			me.demote() shouldFailWith User.Failures.CannotEditYourself
 
 			withClue("I'm not allowed to demote myself, so I should still be an administrator") {
 				me.now() shouldSucceedAnd {
@@ -334,7 +334,7 @@ private fun <U : User.Ref> Suite.password(
 		}
 
 		withClue("Second usage of the single-use password, it should be invalid") {
-			users.logIn(email, singleUsePassword) shouldFailWithKey User.Failures.IncorrectCredentials
+			users.logIn(email, singleUsePassword) shouldFailWithType User.Failures.IncorrectCredentials::class
 		}
 	}
 
@@ -381,7 +381,7 @@ private fun <U : User.Ref> Suite.password(
 		}
 
 		withClue("The password has been changed to ${password1.value}, the single-use password ${singleUsePassword.value} should not be valid anymore") {
-			users.logIn(email, singleUsePassword) shouldFailWithKey User.Failures.IncorrectCredentials
+			users.logIn(email, singleUsePassword) shouldFailWithType User.Failures.IncorrectCredentials::class
 		}
 
 		// Cannot use any previous password after is has been changed
@@ -393,18 +393,18 @@ private fun <U : User.Ref> Suite.password(
 		}
 
 		withClue("The password has been changed to ${password2.value}, the previous password ${password1.value} should not be valid anymore") {
-			users.logIn(email, password1) shouldFailWithKey User.Failures.IncorrectCredentials
+			users.logIn(email, password1) shouldFailWithType User.Failures.IncorrectCredentials::class
 		}
 
 		withClue("The password has been changed to ${password2.value}, the single-use password ${singleUsePassword.value} should not be valid anymore") {
-			users.logIn(email, singleUsePassword) shouldFailWithKey User.Failures.IncorrectCredentials
+			users.logIn(email, singleUsePassword) shouldFailWithType User.Failures.IncorrectCredentials::class
 		}
 	}
 
 	test("cannot edit the password of another user", administratorAuth) {
 		val (employee, password) = prepare(testEmployee)
 
-		shouldNotBeAuthorized(employee.setPassword(password.value, Password("a strong password")))
+		employee.setPassword(password.value, Password("a strong password")) shouldFailWith User.Failures.CanOnlySetYourOwnPassword
 
 		employee.now() shouldSucceedAnd {
 			withClue("The password should not have been modified, so the user's status should be unchanged") {
@@ -451,7 +451,7 @@ private fun <U : User.Ref> Suite.password(
 		val email = employee.now().bind().email
 
 		// Do not return NotFound! -> It would help an attacker enumerate users
-		users.logIn(email, singleUsePassword) shouldFailWithKey User.Failures.IncorrectCredentials
+		users.logIn(email, singleUsePassword) shouldFailWithType User.Failures.IncorrectCredentials::class
 	}
 
 	test("cannot log in as a user that doesn't exist") {
@@ -459,7 +459,7 @@ private fun <U : User.Ref> Suite.password(
 
 		withClue("No user was created, this user does not exist") {
 			// Do not return NotFound! -> it would help an attacker enumerate accounts
-			users.logIn(Email("this-email-does-not-exist@google.com"), Password("whatever")) shouldFailWithKey User.Failures.IncorrectCredentials
+			users.logIn(Email("this-email-does-not-exist@google.com"), Password("whatever")) shouldFailWithType User.Failures.IncorrectCredentials::class
 		}
 	}
 }
@@ -487,7 +487,7 @@ private fun <U : User.Ref> Suite.token(
 		}
 
 		withClue("We just logged out, the token should not be valid anymore") {
-			employee.verifyToken(token) shouldFailWithKey User.Failures.IncorrectCredentials
+			employee.verifyToken(token) shouldFailWithType User.Failures.IncorrectCredentials::class
 		}
 
 		employee.now() shouldSucceedAnd {
@@ -540,8 +540,8 @@ private fun <U : User.Ref> Suite.token(
 		shouldSucceed(employee.resetPassword())
 
 		withClue("The user's password just changed, previously-created tokens should now invalid") {
-			employee.verifyToken(token1) shouldFailWithKey User.Failures.IncorrectCredentials
-			employee.verifyToken(token2) shouldFailWithKey User.Failures.IncorrectCredentials
+			employee.verifyToken(token1) shouldFailWithType User.Failures.IncorrectCredentials::class
+			employee.verifyToken(token2) shouldFailWithType User.Failures.IncorrectCredentials::class
 		}
 	}
 
@@ -565,8 +565,8 @@ private fun <U : User.Ref> Suite.token(
 		}
 
 		withClue("The user's password just changed, previously-created tokens should now invalid") {
-			employee.verifyToken(token1) shouldFailWithKey User.Failures.IncorrectCredentials
-			employee.verifyToken(token2) shouldFailWithKey User.Failures.IncorrectCredentials
+			employee.verifyToken(token1) shouldFailWithType User.Failures.IncorrectCredentials::class
+			employee.verifyToken(token2) shouldFailWithType User.Failures.IncorrectCredentials::class
 		}
 	}
 }

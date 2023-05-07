@@ -42,7 +42,7 @@ class FakeRecords(
 			ensure(form.value.public) { Record.Failures.FormNotFound(submission.form.form, null) }
 		}
 
-		ensure(submission.formStep == null) { Record.Failures.CannotCreateRecordForNonInitialStep() }
+		ensure(submission.formStep == null) { Record.Failures.CannotCreateRecordForNonInitialStep }
 		submission.parse(files)
 			.mapLeft { Record.Failures.InvalidSubmission(it) }
 			.bind()
@@ -195,13 +195,13 @@ class FakeRecords(
 				.mapLeft { Record.Failures.FormVersionNotFound(rec.form, it) }
 				.bind()
 
-			ensure(rec.status is Record.Status.Step) { Record.Failures.CannotAcceptRefusedRecord() }
+			ensure(rec.status is Record.Status.Step) { Record.Failures.CannotAcceptRefusedRecord }
 			val currentStatus = rec.status as Record.Status.Step
 
 			val nextStep = form.stepsSorted.asSequence()
 				.dropWhile { it.id <= currentStatus.step }
 				.firstOrNull()
-			ensureNotNull(nextStep) { Record.Failures.CannotAcceptFinishedRecord() }
+			ensureNotNull(nextStep) { Record.Failures.CannotAcceptFinishedRecord }
 
 			advance(
 				Record.Diff.Accept(
@@ -218,11 +218,11 @@ class FakeRecords(
 
 		override suspend fun refuse(reason: String): Outcome<Record.Failures.Action, Unit> = out {
 			ensureEmployee { Record.Failures.Unauthenticated }
-			ensure(reason.isNotBlank()) { Record.Failures.MandatoryReason() }
+			ensure(reason.isNotBlank()) { Record.Failures.MandatoryReason }
 
 			val rec = now().bind()
 
-			ensure(rec.status is Record.Status.Step) { Record.Failures.CannotRefuseRefusedRecord() }
+			ensure(rec.status is Record.Status.Step) { Record.Failures.CannotRefuseRefusedRecord }
 			val currentStatus = rec.status as Record.Status.Step
 
 			advance(
@@ -238,7 +238,7 @@ class FakeRecords(
 
 		override suspend fun moveBack(toStep: Int, reason: String): Outcome<Record.Failures.Action, Unit> = out {
 			ensureEmployee { Record.Failures.Unauthenticated }
-			ensure(reason.isNotBlank()) { Record.Failures.MandatoryReason() }
+			ensure(reason.isNotBlank()) { Record.Failures.MandatoryReason }
 
 			val rec = now().bind()
 
@@ -246,7 +246,7 @@ class FakeRecords(
 				.map { it.source }
 				.filterIsInstance<Record.Status.Step>()
 				.map { it.step }
-			ensure(toStep in previousSteps) { Record.Failures.CannotMoveBackToFutureStep() }
+			ensure(toStep in previousSteps) { Record.Failures.CannotMoveBackToFutureStep }
 
 			advance(
 				Record.Diff.MoveBack(
