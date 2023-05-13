@@ -11,6 +11,8 @@ import opensavvy.formulaide.core.Submission.ParsingFailure.InvalidValue
 import opensavvy.formulaide.core.data.StandardNotFound
 import opensavvy.formulaide.core.data.StandardUnauthenticated
 import opensavvy.formulaide.core.data.StandardUnauthorized
+import opensavvy.formulaide.core.utils.IdentifierParser
+import opensavvy.formulaide.core.utils.IdentifierWriter
 import opensavvy.state.arrow.toEither
 import opensavvy.state.coroutines.now
 
@@ -357,9 +359,9 @@ data class Submission(
 		}
 	}
 
-	interface Ref : opensavvy.backbone.Ref<Failures.Get, Submission>
+	interface Ref : opensavvy.backbone.Ref<Failures.Get, Submission>, IdentifierWriter
 
-	interface Service : Backbone<Ref, Failures.Get, Submission>
+	interface Service : Backbone<Ref, Failures.Get, Submission>, IdentifierParser<Ref>
 
 	interface Failures {
 		sealed interface Get : Failures

@@ -8,6 +8,8 @@ import opensavvy.formulaide.core.Template.Version
 import opensavvy.formulaide.core.data.StandardNotFound
 import opensavvy.formulaide.core.data.StandardUnauthenticated
 import opensavvy.formulaide.core.data.StandardUnauthorized
+import opensavvy.formulaide.core.utils.IdentifierParser
+import opensavvy.formulaide.core.utils.IdentifierWriter
 import opensavvy.state.outcome.Outcome
 
 /**
@@ -43,7 +45,7 @@ data class Template(
 	val open: Boolean,
 ) {
 
-	interface Ref : opensavvy.backbone.Ref<Failures.Get, Template> {
+	interface Ref : opensavvy.backbone.Ref<Failures.Get, Template>, IdentifierWriter {
 
 		/**
 		 * Renames this template.
@@ -80,12 +82,12 @@ data class Template(
 		val field: Field,
 	) {
 
-		interface Ref : opensavvy.backbone.Ref<Failures.Get, Version> {
+		interface Ref : opensavvy.backbone.Ref<Failures.Get, Version>, IdentifierWriter {
 
 			val template: Template.Ref
 		}
 
-		interface Service : Backbone<Ref, Failures.Get, Version>
+		interface Service : Backbone<Ref, Failures.Get, Version>, IdentifierParser<Ref>
 
 		sealed interface Failures {
 			sealed interface Get : Failures
@@ -98,7 +100,7 @@ data class Template(
 		}
 	}
 
-	interface Service : Backbone<Ref, Failures.Get, Template> {
+	interface Service : Backbone<Ref, Failures.Get, Template>, IdentifierParser<Ref> {
 
 		val versions: Version.Service
 

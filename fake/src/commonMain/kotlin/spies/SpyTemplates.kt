@@ -3,6 +3,7 @@ package opensavvy.formulaide.fake.spies
 import kotlinx.coroutines.flow.map
 import opensavvy.formulaide.core.Field
 import opensavvy.formulaide.core.Template
+import opensavvy.formulaide.core.utils.Identifier
 import opensavvy.logger.loggerFor
 import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.outcome.Outcome
@@ -25,6 +26,8 @@ class SpyTemplates(private val upstream: Template.Service) : Template.Service {
 		log, "create", name, initialVersionTitle, field,
 	) { upstream.create(name, initialVersionTitle, field) }
 		.map(::Ref)
+
+	override fun fromIdentifier(identifier: Identifier) = upstream.fromIdentifier(identifier).let(::Ref)
 
 	inner class Ref internal constructor(
 		private val upstream: Template.Ref,
@@ -65,11 +68,12 @@ class SpyTemplates(private val upstream: Template.Service) : Template.Service {
 		}
 
 		override fun toString() = upstream.toString()
+		override fun toIdentifier() = upstream.toIdentifier()
 
 		// endregion
 	}
 
-	inner class SpyVersion(upstream: Template.Version.Service) : Template.Version.Service {
+	inner class SpyVersion(private val upstream: Template.Version.Service) : Template.Version.Service {
 		private val log = loggerFor(upstream)
 
 		inner class Ref internal constructor(
@@ -96,9 +100,12 @@ class SpyTemplates(private val upstream: Template.Service) : Template.Service {
 			}
 
 			override fun toString() = upstream.toString()
+			override fun toIdentifier() = upstream.toIdentifier()
 
 			// endregion
 		}
+
+		override fun fromIdentifier(identifier: Identifier) = upstream.fromIdentifier(identifier).let(::Ref)
 	}
 
 	companion object {

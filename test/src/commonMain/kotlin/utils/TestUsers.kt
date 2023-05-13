@@ -9,6 +9,7 @@ import opensavvy.formulaide.core.data.Email
 import opensavvy.formulaide.core.data.Email.Companion.asEmail
 import opensavvy.formulaide.core.data.Password
 import opensavvy.formulaide.core.data.Token
+import opensavvy.formulaide.core.utils.Identifier
 import opensavvy.state.arrow.out
 import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.outcome.Outcome
@@ -75,6 +76,8 @@ object TestUsers : User.Service<TestUsers.Ref> {
 			""".trimIndent()
 		)
 	}
+
+	override fun fromIdentifier(identifier: Identifier) = Ref(identifier.text)
 
 	class Ref internal constructor(
 		private val id: String,
@@ -197,6 +200,8 @@ object TestUsers : User.Service<TestUsers.Ref> {
 		}
 
 		override fun toString() = "TestUsers.Ref($id)"
+
+		override fun toIdentifier() = Identifier(id)
 
 		// endregion
 	}

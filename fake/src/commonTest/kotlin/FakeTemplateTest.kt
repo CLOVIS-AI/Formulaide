@@ -1,9 +1,8 @@
 package opensavvy.formulaide.fake
 
-import opensavvy.formulaide.test.structure.Suite
-import opensavvy.formulaide.test.structure.TestExecutor
-import opensavvy.formulaide.test.structure.clock
-import opensavvy.formulaide.test.structure.prepared
+import opensavvy.formulaide.fake.utils.commonIds
+import opensavvy.formulaide.test.identifierParsingSuite
+import opensavvy.formulaide.test.structure.*
 import opensavvy.formulaide.test.templateTestSuite
 
 class FakeTemplateTest : TestExecutor() {
@@ -12,6 +11,11 @@ class FakeTemplateTest : TestExecutor() {
 		val templates by prepared { FakeTemplates(clock) }
 
 		templateTestSuite(templates)
+
+		identifierParsingSuite(
+			templates,
+			*commonIds,
+		) { prepare(templates).Ref(it) }
 	}
 
 }

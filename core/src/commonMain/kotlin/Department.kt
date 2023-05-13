@@ -4,6 +4,8 @@ import opensavvy.backbone.Backbone
 import opensavvy.formulaide.core.data.StandardNotFound
 import opensavvy.formulaide.core.data.StandardUnauthenticated
 import opensavvy.formulaide.core.data.StandardUnauthorized
+import opensavvy.formulaide.core.utils.IdentifierParser
+import opensavvy.formulaide.core.utils.IdentifierWriter
 import opensavvy.state.outcome.Outcome
 
 /**
@@ -24,7 +26,7 @@ data class Department(
 	val open: Boolean,
 ) {
 
-	interface Ref : opensavvy.backbone.Ref<Failures.Get, Department> {
+	interface Ref : opensavvy.backbone.Ref<Failures.Get, Department>, IdentifierWriter {
 
 		/**
 		 * Makes this department visible.
@@ -45,7 +47,7 @@ data class Department(
 		suspend fun close(): Outcome<Failures.Edit, Unit>
 	}
 
-	interface Service<R : Ref> : Backbone<R, Failures.Get, Department> {
+	interface Service<R : Ref> : Backbone<R, Failures.Get, Department>, IdentifierParser<R> {
 
 		/**
 		 * Lists all departments.
@@ -61,7 +63,6 @@ data class Department(
 		 * Requires administrator authentication.
 		 */
 		suspend fun create(name: String): Outcome<Failures.Create, R>
-
 	}
 
 	sealed interface Failures {

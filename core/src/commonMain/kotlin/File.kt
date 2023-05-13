@@ -8,6 +8,8 @@ import opensavvy.formulaide.core.File.Service
 import opensavvy.formulaide.core.data.StandardNotFound
 import opensavvy.formulaide.core.data.StandardUnauthenticated
 import opensavvy.formulaide.core.data.StandardUnauthorized
+import opensavvy.formulaide.core.utils.IdentifierParser
+import opensavvy.formulaide.core.utils.IdentifierWriter
 import opensavvy.state.outcome.Outcome
 import kotlin.time.Duration.Companion.hours
 
@@ -40,7 +42,7 @@ data class File(
 		val field: Field.Id,
 	)
 
-	interface Ref : opensavvy.backbone.Ref<Failures.Get, File> {
+	interface Ref : opensavvy.backbone.Ref<Failures.Get, File>, IdentifierWriter {
 
 		val id: String
 
@@ -60,7 +62,7 @@ data class File(
 		suspend fun read(): Outcome<Failures.Read, ByteIterator>
 	}
 
-	interface Service : Backbone<Ref, Failures.Get, File> {
+	interface Service : Backbone<Ref, Failures.Get, File>, IdentifierParser<Ref> {
 
 		/**
 		 * Creates a new [File].
@@ -72,8 +74,6 @@ data class File(
 			mime: String,
 			content: ByteIterator,
 		): Outcome<Failures.Create, Ref>
-
-		fun fromId(id: String): Ref
 	}
 
 	sealed interface Failures {

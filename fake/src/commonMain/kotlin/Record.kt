@@ -8,6 +8,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import opensavvy.backbone.now
 import opensavvy.formulaide.core.*
+import opensavvy.formulaide.core.utils.Identifier
 import opensavvy.formulaide.fake.utils.newId
 import opensavvy.state.arrow.out
 import opensavvy.state.arrow.toEither
@@ -25,7 +26,7 @@ class FakeRecords(
 	private val data = HashMap<Long, Record>()
 
 	private val _submissions = FakeSubmissions()
-	val submissions: Submission.Service = _submissions
+	val submissions = _submissions
 
 	override suspend fun search(criteria: List<Record.QueryCriterion>): Outcome<Record.Failures.Search, List<Record.Ref>> = out {
 		ensureEmployee { Record.Failures.Unauthenticated }
@@ -84,6 +85,8 @@ class FakeRecords(
 			.also { linkFiles(it, submissionRef) }
 	}
 
+	override fun fromIdentifier(identifier: Identifier) = Ref(identifier.text.toLong())
+
 	private suspend fun linkFiles(record: Record.Ref, submission: Submission.Ref) = out {
 		val sub = submission.now().bind()
 		val form = sub.form.now().bind()
@@ -95,7 +98,7 @@ class FakeRecords(
 			.forEach { (id, value) ->
 				if (value == null) return@forEach
 
-				val file = files.fromId(value)
+				val file = files.fromIdentifier(Identifier(value))
 
 				file.linkTo(
 					record,
@@ -283,11 +286,12 @@ class FakeRecords(
 		}
 
 		override fun toString() = "FakeRecords.Ref($id)"
+		override fun toIdentifier() = Identifier(id.toString())
 
 		// endregion
 	}
 
-	private inner class FakeSubmissions : Submission.Service {
+	inner class FakeSubmissions : Submission.Service {
 		val lock = Mutex()
 		val data = HashMap<Long, Submission>()
 
@@ -301,6 +305,26 @@ class FakeRecords(
 					result
 				}.also { emit(it.withProgress()) }
 			}
+
+			// region Overrides
+
+			override fun equals(other: Any?): Boolean {
+				if (this === other) return true
+				if (other !is Ref) return false
+
+				return id == other.id
+			}
+
+			override fun hashCode(): Int {
+				return id.hashCode()
+			}
+
+			override fun toString() = "FakeFiles.FakeSubmissions.Ref($id)"
+			override fun toIdentifier() = Identifier(id.toString())
+
+			// endregion
 		}
+
+		override fun fromIdentifier(identifier: Identifier) = Ref(identifier.text.toLong())
 	}
 }

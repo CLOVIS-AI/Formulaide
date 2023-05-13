@@ -1,6 +1,8 @@
 package opensavvy.formulaide.fake
 
+import opensavvy.formulaide.fake.utils.commonIds
 import opensavvy.formulaide.test.fileTestSuite
+import opensavvy.formulaide.test.identifierParsingSuite
 import opensavvy.formulaide.test.structure.*
 import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
 
@@ -30,5 +32,10 @@ class FakeFileTest : TestExecutor() {
 			testRecords,
 			testFiles,
 		)
+
+		identifierParsingSuite(
+			testFiles,
+			*commonIds,
+		) { prepare(testFiles).Ref(it) }
 	}
 }

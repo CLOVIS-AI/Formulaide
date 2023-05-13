@@ -8,6 +8,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import opensavvy.formulaide.core.*
+import opensavvy.formulaide.core.utils.Identifier
 import opensavvy.formulaide.fake.utils.newId
 import opensavvy.state.arrow.out
 import opensavvy.state.coroutines.ProgressiveFlow
@@ -66,6 +67,8 @@ class FakeTemplates(
 
 		ref
 	}
+
+	override fun fromIdentifier(identifier: Identifier) = Ref(identifier.text.toLong())
 
 	inner class Ref internal constructor(
 		val id: Long,
@@ -150,6 +153,7 @@ class FakeTemplates(
 		}
 
 		override fun toString() = "FakeTemplates.Ref($id)"
+		override fun toIdentifier() = Identifier(id.toString())
 
 		// endregion
 	}
@@ -172,6 +176,17 @@ class FakeTemplates(
 					}
 				}.also { emit(it.withProgress()) }
 			}
+
+			override fun toIdentifier() = Identifier("${template.id}_$creationDate")
+		}
+
+		override fun fromIdentifier(identifier: Identifier): FakeTemplates.FakeVersions.Ref {
+			val (form, version) = identifier.text.split('_', limit = 2)
+
+			return Ref(
+				this@FakeTemplates.fromIdentifier(Identifier(form)),
+				Instant.parse(version),
+			)
 		}
 	}
 }

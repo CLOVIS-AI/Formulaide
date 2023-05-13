@@ -8,6 +8,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import opensavvy.formulaide.core.*
+import opensavvy.formulaide.core.utils.Identifier
 import opensavvy.formulaide.fake.utils.newId
 import opensavvy.logger.Logger.Companion.warn
 import opensavvy.logger.loggerFor
@@ -77,6 +78,8 @@ class FakeForms(
 
 		ref
 	}
+
+	override fun fromIdentifier(identifier: Identifier) = Ref(identifier.text.toLong())
 
 	inner class Ref internal constructor(
 		val id: Long,
@@ -175,6 +178,8 @@ class FakeForms(
 		}
 
 		override fun toString() = "FakeForms.Ref($id)"
+
+		override fun toIdentifier() = Identifier(id.toString())
 
 		// endregion
 	}

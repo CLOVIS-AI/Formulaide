@@ -1,7 +1,7 @@
 package opensavvy.formulaide.fake.spies
 
-import opensavvy.backbone.Ref
 import opensavvy.formulaide.core.Department
+import opensavvy.formulaide.core.utils.Identifier
 import opensavvy.logger.loggerFor
 import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.outcome.Outcome
@@ -20,6 +20,8 @@ class SpyDepartments<D : Department.Ref>(private val upstream: Department.Servic
 		log, "create", name,
 	) { upstream.create(name) }
 		.map(::Ref)
+
+	override fun fromIdentifier(identifier: Identifier) = upstream.fromIdentifier(identifier).let(::Ref)
 
 	inner class Ref internal constructor(
 		private val upstream: D,
@@ -50,6 +52,7 @@ class SpyDepartments<D : Department.Ref>(private val upstream: Department.Servic
 		}
 
 		override fun toString() = upstream.toString()
+		override fun toIdentifier() = upstream.toIdentifier()
 
 		// endregion
 	}

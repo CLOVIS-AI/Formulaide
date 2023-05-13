@@ -7,6 +7,8 @@ import opensavvy.formulaide.core.Submission.Companion.toSubmissionData
 import opensavvy.formulaide.core.data.StandardNotFound
 import opensavvy.formulaide.core.data.StandardUnauthenticated
 import opensavvy.formulaide.core.data.StandardUnauthorized
+import opensavvy.formulaide.core.utils.IdentifierParser
+import opensavvy.formulaide.core.utils.IdentifierWriter
 import opensavvy.state.outcome.Outcome
 
 /**
@@ -222,7 +224,7 @@ data class Record(
 
 	sealed class QueryCriterion
 
-	interface Ref : opensavvy.backbone.Ref<Failures.Get, Record> {
+	interface Ref : opensavvy.backbone.Ref<Failures.Get, Record>, IdentifierWriter {
 
 		/**
 		 * Creates a [Diff.EditInitial] for this record.
@@ -288,7 +290,7 @@ data class Record(
 		): Outcome<Failures.Action, Unit>
 	}
 
-	interface Service : Backbone<Ref, Failures.Get, Record> {
+	interface Service : Backbone<Ref, Failures.Get, Record>, IdentifierParser<Ref> {
 
 		suspend fun search(criteria: List<QueryCriterion>): Outcome<Failures.Search, List<Ref>>
 

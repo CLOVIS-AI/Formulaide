@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Instant
 import opensavvy.formulaide.core.Field
 import opensavvy.formulaide.core.Form
+import opensavvy.formulaide.core.utils.Identifier
 import opensavvy.logger.loggerFor
 import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.outcome.Outcome
@@ -26,6 +27,8 @@ class SpyForms(private val upstream: Form.Service) : Form.Service {
 		log, "create", name, firstVersionTitle, field, *step,
 	) { upstream.create(name, firstVersionTitle, field, *step) }
 		.map(::Ref)
+
+	override fun fromIdentifier(identifier: Identifier) = upstream.fromIdentifier(identifier).let(::Ref)
 
 	inner class Ref internal constructor(
 		private val upstream: Form.Ref,
@@ -74,6 +77,7 @@ class SpyForms(private val upstream: Form.Service) : Form.Service {
 		}
 
 		override fun toString() = upstream.toString()
+		override fun toIdentifier() = upstream.toIdentifier()
 
 		// endregion
 	}
@@ -106,9 +110,12 @@ class SpyForms(private val upstream: Form.Service) : Form.Service {
 			}
 
 			override fun toString() = upstream.toString()
+			override fun toIdentifier() = upstream.toIdentifier()
 
 			// endregion
 		}
+
+		override fun fromIdentifier(identifier: Identifier) = upstream.fromIdentifier(identifier).let(::Ref)
 	}
 
 	companion object {

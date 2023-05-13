@@ -5,6 +5,7 @@ import arrow.core.raise.ensure
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import opensavvy.backbone.now
+import opensavvy.formulaide.core.utils.Identifier
 import opensavvy.state.arrow.out
 import opensavvy.state.arrow.toEither
 import opensavvy.state.outcome.Outcome
@@ -169,7 +170,7 @@ sealed class Input {
 		override suspend fun parse(value: String, uploads: File.Service): Outcome<Failures.Parsing, Any> = out {
 			ensure(value.isNotBlank()) { Failures.Parsing("Un identifiant de fichier ne peut pas être vide : '$value'") }
 
-			val file = uploads.fromId(value)
+			val file = uploads.fromIdentifier(Identifier(value))
 
 			// Check that it exists
 			file.now().toEither().mapLeft { Failures.Parsing("Le fichier est introuvable", cause = it) }.bind()

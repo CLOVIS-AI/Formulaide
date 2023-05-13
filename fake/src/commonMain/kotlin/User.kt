@@ -9,6 +9,7 @@ import opensavvy.formulaide.core.*
 import opensavvy.formulaide.core.data.Email
 import opensavvy.formulaide.core.data.Password
 import opensavvy.formulaide.core.data.Token
+import opensavvy.formulaide.core.utils.Identifier
 import opensavvy.formulaide.fake.utils.newId
 import opensavvy.logger.Logger.Companion.warn
 import opensavvy.logger.loggerFor
@@ -105,6 +106,8 @@ class FakeUsers : User.Service<FakeUsers.Ref> {
 			Ref(id) to token
 		}
 	}
+
+	override fun fromIdentifier(identifier: Identifier) = Ref(identifier.text.toLong())
 
 	inner class Ref internal constructor(
 		val id: Long,
@@ -248,6 +251,7 @@ class FakeUsers : User.Service<FakeUsers.Ref> {
 		}
 
 		override fun toString() = "FakeUsers.Ref($id)"
+		override fun toIdentifier() = Identifier(id.toString())
 
 		// endregion
 	}

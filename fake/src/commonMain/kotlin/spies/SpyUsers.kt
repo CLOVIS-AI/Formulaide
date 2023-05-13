@@ -5,6 +5,7 @@ import opensavvy.formulaide.core.User
 import opensavvy.formulaide.core.data.Email
 import opensavvy.formulaide.core.data.Password
 import opensavvy.formulaide.core.data.Token
+import opensavvy.formulaide.core.utils.Identifier
 import opensavvy.logger.loggerFor
 import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.outcome.Outcome
@@ -27,6 +28,8 @@ class SpyUsers<U : User.Ref>(private val upstream: User.Service<U>) : User.Servi
 		log, "logIn", email, password,
 	) { upstream.logIn(email, password) }
 		.map { (user, token) -> Ref(user) to token }
+
+	override fun fromIdentifier(identifier: Identifier) = upstream.fromIdentifier(identifier).let(::Ref)
 
 	inner class Ref internal constructor(
 		private val upstream: User.Ref,
@@ -89,6 +92,7 @@ class SpyUsers<U : User.Ref>(private val upstream: User.Service<U>) : User.Servi
 		}
 
 		override fun toString() = upstream.toString()
+		override fun toIdentifier() = upstream.toIdentifier()
 
 		// endregion
 	}

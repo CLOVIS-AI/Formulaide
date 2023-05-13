@@ -9,6 +9,7 @@ import kotlinx.datetime.Clock
 import opensavvy.backbone.now
 import opensavvy.formulaide.core.*
 import opensavvy.formulaide.core.User.Role.Companion.role
+import opensavvy.formulaide.core.utils.Identifier
 import opensavvy.formulaide.fake.utils.newId
 import opensavvy.state.arrow.out
 import opensavvy.state.arrow.toEither
@@ -43,7 +44,7 @@ class FakeFiles(
 		Ref(id)
 	}
 
-	override fun fromId(id: String) = Ref(id.toLong())
+	override fun fromIdentifier(identifier: Identifier) = Ref(identifier.text.toLong())
 
 	inner class Ref internal constructor(
 		val realId: Long,
@@ -135,5 +136,22 @@ class FakeFiles(
 			}
 		}
 
+		// region Overrides
+
+		override fun equals(other: Any?): Boolean {
+			if (this === other) return true
+			if (other !is Ref) return false
+
+			return realId == other.realId
+		}
+
+		override fun hashCode(): Int {
+			return realId.hashCode()
+		}
+
+		override fun toString() = "FakeFiles.Ref($realId)"
+		override fun toIdentifier() = Identifier(realId.toString())
+
+		// endregion
 	}
 }

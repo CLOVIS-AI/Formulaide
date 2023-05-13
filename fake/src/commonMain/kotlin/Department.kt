@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import opensavvy.formulaide.core.*
+import opensavvy.formulaide.core.utils.Identifier
 import opensavvy.formulaide.fake.utils.newId
 import opensavvy.state.arrow.out
 import opensavvy.state.coroutines.ProgressiveFlow
@@ -42,6 +43,8 @@ class FakeDepartments : Department.Service<FakeDepartments.Ref> {
 		}
 		Ref(id)
 	}
+
+	override fun fromIdentifier(identifier: Identifier) = Ref(identifier.text.toLong())
 
 	inner class Ref internal constructor(
 		val id: Long,
@@ -81,6 +84,8 @@ class FakeDepartments : Department.Service<FakeDepartments.Ref> {
 				result
 			}.also { emit(it.withProgress()) }
 		}
+
+		override fun toIdentifier() = Identifier(id.toString())
 
 		// region equals & hashCode
 

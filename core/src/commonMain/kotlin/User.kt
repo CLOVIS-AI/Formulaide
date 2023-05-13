@@ -2,6 +2,8 @@ package opensavvy.formulaide.core
 
 import opensavvy.backbone.Backbone
 import opensavvy.formulaide.core.data.*
+import opensavvy.formulaide.core.utils.IdentifierParser
+import opensavvy.formulaide.core.utils.IdentifierWriter
 import opensavvy.state.outcome.Outcome
 import kotlin.jvm.JvmName
 
@@ -71,7 +73,7 @@ data class User(
 		}
 	}
 
-	interface Ref : opensavvy.backbone.Ref<Failures.Get, User> {
+	interface Ref : opensavvy.backbone.Ref<Failures.Get, User>, IdentifierWriter {
 
 		/**
 		 * Joins [department].
@@ -140,7 +142,7 @@ data class User(
 		suspend fun logOut(token: Token): Outcome<Failures.Get, Unit>
 	}
 
-	interface Service<R : Ref> : Backbone<R, Failures.Get, User> {
+	interface Service<R : Ref> : Backbone<R, Failures.Get, User>, IdentifierParser<Ref> {
 
 		/**
 		 * Lists all users.

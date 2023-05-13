@@ -7,6 +7,8 @@ import opensavvy.formulaide.core.Form.*
 import opensavvy.formulaide.core.data.StandardNotFound
 import opensavvy.formulaide.core.data.StandardUnauthenticated
 import opensavvy.formulaide.core.data.StandardUnauthorized
+import opensavvy.formulaide.core.utils.IdentifierParser
+import opensavvy.formulaide.core.utils.IdentifierWriter
 import opensavvy.state.outcome.Outcome
 
 /**
@@ -62,7 +64,7 @@ data class Form(
 
 	val versionsSorted by lazy(LazyThreadSafetyMode.PUBLICATION) { versions.sortedBy { it.creationDate } }
 
-	interface Ref : opensavvy.backbone.Ref<Failures.Get, Form> {
+	interface Ref : opensavvy.backbone.Ref<Failures.Get, Form>, IdentifierWriter {
 
 		/**
 		 * Renames this form.
@@ -171,12 +173,12 @@ data class Form(
 				?: error("L'étape $step de cette version n'a pas de champ : $this")
 			else field
 
-		interface Ref : opensavvy.backbone.Ref<Failures.Get, Version> {
+		interface Ref : opensavvy.backbone.Ref<Failures.Get, Version>, IdentifierWriter {
 			val creationDate: Instant
 			val form: Form.Ref
 		}
 
-		interface Service : Backbone<Ref, Failures.Get, Version>
+		interface Service : Backbone<Ref, Failures.Get, Version>, IdentifierParser<Ref>
 
 		sealed interface Failures {
 			sealed interface Get : Failures
@@ -266,7 +268,7 @@ data class Form(
 		val field: Field?,
 	)
 
-	interface Service : Backbone<Ref, Failures.Get, Form> {
+	interface Service : Backbone<Ref, Failures.Get, Form>, IdentifierParser<Ref> {
 
 		val versions: Version.Service
 
