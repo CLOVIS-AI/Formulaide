@@ -1,6 +1,10 @@
 package opensavvy.formulaide.mongo
 
+import arrow.core.raise.ensureNotNull
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -8,23 +12,20 @@ import kotlinx.datetime.toInstant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import opensavvy.backbone.Ref
-import opensavvy.backbone.Ref.Companion.expire
-import opensavvy.backbone.Ref.Companion.now
-import opensavvy.backbone.RefCache
-import opensavvy.backbone.defaultRefCache
-import opensavvy.cache.ExpirationCache.Companion.expireAfter
-import opensavvy.cache.MemoryCache.Companion.cachedInMemory
-import opensavvy.formulaide.core.Auth.Companion.ensureAdministrator
-import opensavvy.formulaide.core.Auth.Companion.ensureEmployee
-import opensavvy.formulaide.core.Template
+import opensavvy.backbone.now
+import opensavvy.cache.cache
+import opensavvy.cache.cachedInMemory
+import opensavvy.cache.expireAfter
+import opensavvy.formulaide.core.*
+import opensavvy.formulaide.core.utils.Identifier
 import opensavvy.formulaide.mongo.FieldDbDto.Companion.toCore
 import opensavvy.formulaide.mongo.FieldDbDto.Companion.toDto
+import opensavvy.state.arrow.out
+import opensavvy.state.arrow.toEither
+import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.outcome.Outcome
-import opensavvy.state.outcome.ensureFound
-import opensavvy.state.outcome.ensureValid
-import opensavvy.state.outcome.out
+import opensavvy.state.progressive.failed
 import org.litote.kmongo.*
-import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration.Companion.minutes
 
 @Serializable
@@ -45,32 +46,41 @@ private class TemplateVersionDbDto(
 
 class TemplateDb(
     database: Database,
-    context: CoroutineContext,
+    scope: CoroutineScope,
     private val clock: Clock,
 ) : Template.Service {
 
     private val collection = database.client.getCollection<TemplateDbDto>("templates")
+    private val versionsCollection = database.client.getCollection<TemplateVersionDbDto>("templateVersions")
 
-    private val _versions = Versions(database, context)
+    private val _versions = Versions(scope)
 
     init {
-        CoroutineScope(context).launch {
-            _versions.collection.ensureIndex(TemplateVersionDbDto::template)
-            _versions.collection.ensureUniqueIndex(TemplateVersionDbDto::template, TemplateVersionDbDto::version)
+        scope.launch {
+            versionsCollection.ensureIndex(TemplateVersionDbDto::template)
+            versionsCollection.ensureUniqueIndex(TemplateVersionDbDto::template, TemplateVersionDbDto::version)
         }
     }
 
     override val versions: Template.Version.Service
         get() = _versions
 
-    override val cache: RefCache<Template> = defaultRefCache<Template>()
-        .cachedInMemory(context)
-        .expireAfter(10.minutes, context)
+    private val cache = cache<Ref, Template.Failures.Get, Template> { ref ->
+        out {
+            val result = collection.findOneById(ref.id)
+            ensureNotNull(result) { Template.Failures.NotFound(ref) }
 
-    private fun toRef(id: String) = Template.Ref(id, this)
+            Template(
+                name = result.name,
+                open = result.open,
+                versions = result.versions.map { _versions.Ref(ref, it.toInstant()) }
+            )
+        }
+    }.cachedInMemory(scope.coroutineContext.job)
+        .expireAfter(10.minutes, scope)
 
-    override suspend fun list(includeClosed: Boolean): Outcome<List<Template.Ref>> = out {
-        ensureEmployee()
+    override suspend fun list(includeClosed: Boolean): Outcome<Template.Failures.List, List<Template.Ref>> = out {
+        ensureEmployee { Template.Failures.Unauthenticated }
 
         collection.find(
             (TemplateDbDto::open eq true).takeIf { !includeClosed },
@@ -80,20 +90,23 @@ class TemplateDb(
                 val template = Template(
                     name = templateDto.name,
                     open = templateDto.open,
-                    versions = templateDto.versions.map { _versions.toRef(templateDto.id, it.toInstant()) }
+                    versions = templateDto.versions.map { _versions.Ref(Ref(templateDto.id), it.toInstant()) }
                 )
 
-                toRef(templateDto.id)
+                Ref(templateDto.id)
                     .also { cache.update(it, template) }
             }
     }
 
-    override suspend fun create(name: String, firstVersion: Template.Version): Outcome<Template.Ref> = out {
-        ensureAdministrator()
+    override suspend fun create(name: String, initialVersionTitle: String, field: Field): Outcome<Template.Failures.Create, Template.Ref> = out {
+        ensureEmployee { Template.Failures.Unauthenticated }
+        ensureAdministrator { Template.Failures.Unauthorized }
 
         val id = newId<TemplateDbDto>().toString()
 
-        firstVersion.field.validate().bind()
+        field.validate()
+            .mapLeft(Template.Failures::InvalidImport)
+            .bind()
 
         collection.insertOne(
             TemplateDbDto(
@@ -104,114 +117,171 @@ class TemplateDb(
             )
         )
 
-        toRef(id)
-            .also { it.createVersion(firstVersion).bind() }
+        Ref(id)
+            .also { it.createVersion(initialVersionTitle, field).bind() }
     }
 
-    override suspend fun createVersion(
-        template: Template.Ref,
-        version: Template.Version
-    ): Outcome<Template.Version.Ref> = out {
-        ensureAdministrator()
+    override fun fromIdentifier(identifier: Identifier) = Ref(identifier.text)
 
-        // Ensure the template exists
-        template.now().bind()
+    inner class Ref internal constructor(
+        internal val id: String,
+    ) : Template.Ref {
+        private suspend fun edit(name: String? = null, open: Boolean? = null): Outcome<Template.Failures.Edit, Unit> = out {
+            ensureEmployee { Template.Failures.Unauthenticated }
+            ensureAdministrator { Template.Failures.Unauthorized }
 
-        version.field.validate().bind()
+            val updates = buildList {
+                if (name != null)
+                    add(setValue(TemplateDbDto::name, name))
 
-        // Do not trust the timestamp given by the user
-        val id = clock.now()
+                if (open != null)
+                    add(setValue(TemplateDbDto::open, open))
+            }
 
-        _versions.collection.insertOne(
-            TemplateVersionDbDto(
-                template = template.id,
-                version = id.toString(),
-                title = version.title,
-                field = version.field.toDto(),
+            if (updates.isEmpty())
+                return@out // nothing to do
+
+            collection.updateOneById(
+                id,
+                combine(updates),
             )
-        )
 
-        collection.updateOneById(
-            template.id,
-            addToSet(TemplateDbDto::versions, id.toString()),
-        )
-
-        template.expire()
-
-        _versions.toRef(template.id, id)
-    }
-
-    override suspend fun edit(template: Template.Ref, name: String?, open: Boolean?): Outcome<Unit> = out {
-        ensureAdministrator()
-
-        val updates = buildList {
-            if (name != null)
-                add(setValue(TemplateDbDto::name, name))
-
-            if (open != null)
-                add(setValue(TemplateDbDto::open, open))
+            cache.expire(this@Ref)
         }
 
-        if (updates.isEmpty())
-            return@out // nothing to do
+        override suspend fun rename(name: String): Outcome<Template.Failures.Edit, Unit> = edit(name = name)
 
-        collection.updateOneById(
-            template.id,
-            combine(updates),
-        )
+        override suspend fun open(): Outcome<Template.Failures.Edit, Unit> = edit(open = true)
 
-        template.expire()
-    }
+        override suspend fun close(): Outcome<Template.Failures.Edit, Unit> = edit(open = false)
 
-    override suspend fun directRequest(ref: Ref<Template>): Outcome<Template> = out {
-        ensureValid(ref is Template.Ref) { "Référence invalide : $ref" }
-        ensureEmployee()
+        override suspend fun createVersion(title: String, field: Field): Outcome<Template.Failures.CreateVersion, Template.Version.Ref> = out {
+            ensureEmployee { Template.Failures.Unauthenticated }
+            ensureAdministrator { Template.Failures.Unauthorized }
 
-        val result = collection.findOneById(ref.id)
-        ensureFound(result != null) { "Modèle introuvable : $ref" }
+            // Ensure the template exists
+            this@Ref.now().toEither()
+                .mapLeft { Template.Failures.NotFound(this@Ref) }
+                .bind()
 
-        Template(
-            name = result.name,
-            open = result.open,
-            versions = result.versions.map { _versions.toRef(ref.id, it.toInstant()) },
-        )
-    }
+            field.validate()
+                .mapLeft(Template.Failures::InvalidImport)
+                .bind()
 
-    private inner class Versions(
-        database: Database,
-        context: CoroutineContext,
-    ) : Template.Version.Service {
+            val creationDate = clock.now()
 
-        val collection = database.client.getCollection<TemplateVersionDbDto>("templateVersions")
-
-        override val cache: RefCache<Template.Version> = defaultRefCache<Template.Version>()
-            .cachedInMemory(context)
-            .expireAfter(5.minutes, context)
-
-        fun toRef(id: String, version: Instant) = Template.Version.Ref(
-            toRef(id),
-            version,
-            this,
-        )
-
-        override suspend fun directRequest(ref: Ref<Template.Version>): Outcome<Template.Version> = out {
-            ensureValid(ref is Template.Version.Ref) { "Référence invalide : $ref" }
-            ensureEmployee()
-
-            val result = collection.findOne(
-                and(
-                    TemplateVersionDbDto::template eq ref.template.id,
-                    TemplateVersionDbDto::version eq ref.version.toString(),
+            versionsCollection.insertOne(
+                TemplateVersionDbDto(
+                    template = id,
+                    version = creationDate.toString(),
+                    title = title,
+                    field = field.toDto(),
                 )
             )
-            ensureFound(result != null) { "Version du modèle introuvable : $ref" }
 
-            Template.Version(
-                creationDate = result.version.toInstant(),
-                title = result.title,
-                field = result.field.toCore(decodeTemplate = { template, version -> toRef(template, version) }),
+            collection.updateOneById(
+                id,
+                addToSet(TemplateDbDto::versions, creationDate.toString()),
             )
+
+            cache.expire(this@Ref)
+
+            _versions.Ref(this@Ref, creationDate)
         }
 
+        override fun versionOf(creationDate: Instant) = _versions.Ref(this, creationDate)
+
+        override fun request(): ProgressiveFlow<Template.Failures.Get, Template> = flow {
+            if (currentRole() == User.Role.Guest) {
+                emit(Template.Failures.Unauthenticated.failed())
+            } else {
+                emitAll(cache[this@Ref])
+            }
+        }
+
+        // region Overrides
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is Ref) return false
+
+            return id == other.id
+        }
+
+        override fun hashCode(): Int {
+            return id.hashCode()
+        }
+
+        override fun toString() = "TemplateDb.Ref($id)"
+        override fun toIdentifier() = Identifier(id)
+
+        // endregion
+    }
+
+    inner class Versions(
+        scope: CoroutineScope,
+    ) : Template.Version.Service {
+
+        private val cache = cache<Ref, Template.Version.Failures.Get, Template.Version> { ref ->
+            out {
+                val result = versionsCollection.findOne(
+                    and(
+                        TemplateVersionDbDto::template eq ref.template.id,
+                        TemplateVersionDbDto::version eq ref.creationDate.toString(),
+                    )
+                )
+                ensureNotNull(result) { Template.Version.Failures.NotFound(ref) }
+
+                Template.Version(
+                    creationDate = result.version.toInstant(),
+                    title = result.title,
+                    field = result.field.toCore(this@TemplateDb),
+                )
+            }
+        }.cachedInMemory(scope.coroutineContext.job)
+            .expireAfter(5.minutes, scope)
+
+        inner class Ref(
+            override val template: TemplateDb.Ref,
+            override val creationDate: Instant,
+        ) : Template.Version.Ref {
+            override fun request(): ProgressiveFlow<Template.Version.Failures.Get, Template.Version> = flow {
+                if (currentRole() == User.Role.Guest) {
+                    emit(Template.Version.Failures.Unauthenticated.failed())
+                } else {
+                    emitAll(cache[this@Ref])
+                }
+            }
+
+            // region Overrides
+
+            override fun equals(other: Any?): Boolean {
+                if (this === other) return true
+                if (other !is Ref) return false
+
+                if (template != other.template) return false
+                return creationDate == other.creationDate
+            }
+
+            override fun hashCode(): Int {
+                var result = template.hashCode()
+                result = 31 * result + creationDate.hashCode()
+                return result
+            }
+
+            override fun toString() = "TemplateDb.Ref(${template.id}).Version($creationDate)"
+            override fun toIdentifier() = Identifier("${template.id}_$creationDate")
+
+            // endregion
+        }
+
+        override fun fromIdentifier(identifier: Identifier): TemplateDb.Versions.Ref {
+            val (form, version) = identifier.text.split("_", limit = 2)
+
+            return Ref(
+                this@TemplateDb.fromIdentifier(Identifier(form)),
+                version.toInstant(),
+            )
+        }
     }
 }

@@ -189,7 +189,8 @@ data class User(
 			Get,
 			Create,
 			Edit,
-			SecurityEdit
+			SecurityEdit,
+			SetPassword
 
 		object Unauthenticated : StandardUnauthenticated,
 			Get,

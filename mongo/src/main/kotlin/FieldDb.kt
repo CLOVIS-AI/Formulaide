@@ -57,31 +57,31 @@ sealed class FieldDbDto {
 
     companion object {
 
-        suspend fun FieldDbDto.toCore(
-            decodeTemplate: suspend (String, Instant) -> Template.Version.Ref?,
+        fun FieldDbDto.toCore(
+            templates: Template.Service,
         ): Field {
             val importedFrom = if (importedFromTemplate != null && importedFromTemplateVersion != null)
-                decodeTemplate(importedFromTemplate!!, importedFromTemplateVersion!!)
+                templates.fromIdentifier(importedFromTemplate!!).versionOf(importedFromTemplateVersion!!)
             else
                 null
 
             return when (this) {
                 is Arity -> Field.Arity(
                     label,
-                    child.toCore(decodeTemplate),
+                    child.toCore(templates),
                     min..max,
                     importedFrom,
                 )
 
                 is Choice -> Field.Choice(
                     label,
-                    options.mapValues { (_, it) -> it.toCore(decodeTemplate) },
+                    options.mapValues { (_, it) -> it.toCore(templates) },
                     importedFrom,
                 )
 
                 is Group -> Field.Group(
                     label,
-                    fields.mapValues { (_, it) -> it.toCore(decodeTemplate) },
+                    fields.mapValues { (_, it) -> it.toCore(templates) },
                     importedFrom,
                 )
 
@@ -104,35 +104,35 @@ sealed class FieldDbDto {
                 child.toDto(),
                 allowed.first,
                 allowed.last,
-                importedFrom?.template?.id,
-                importedFrom?.version,
+                importedFrom?.template?.toIdentifier()?.text,
+                importedFrom?.creationDate,
             )
 
             is Field.Choice -> Choice(
                 label,
                 indexedFields.mapValues { (_, it) -> it.toDto() },
-                importedFrom?.template?.id,
-                importedFrom?.version,
+                importedFrom?.template?.toIdentifier()?.text,
+                importedFrom?.creationDate,
             )
 
             is Field.Group -> Group(
                 label,
                 indexedFields.mapValues { (_, it) -> it.toDto() },
-                importedFrom?.template?.id,
-                importedFrom?.version,
+                importedFrom?.template?.toIdentifier()?.text,
+                importedFrom?.creationDate,
             )
 
             is Field.Input -> Input(
                 label,
                 input.toDto(),
-                importedFrom?.template?.id,
-                importedFrom?.version,
+                importedFrom?.template?.toIdentifier()?.text,
+                importedFrom?.creationDate,
             )
 
             is Field.Label -> Label(
                 label,
-                importedFrom?.template?.id,
-                importedFrom?.version,
+                importedFrom?.template?.toIdentifier()?.text,
+                importedFrom?.creationDate,
             )
         }
 

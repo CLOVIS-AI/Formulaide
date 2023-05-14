@@ -4,7 +4,9 @@ import opensavvy.formulaide.fake.FakeDepartments
 import opensavvy.formulaide.fake.FakeTemplates
 import opensavvy.formulaide.fake.spies.SpyDepartments.Companion.spied
 import opensavvy.formulaide.fake.spies.SpyTemplates.Companion.spied
+import opensavvy.formulaide.mongo.utils.commonIds
 import opensavvy.formulaide.test.formTestSuite
+import opensavvy.formulaide.test.identifierParsingSuite
 import opensavvy.formulaide.test.structure.*
 
 class FormDbTest : TestExecutor() {
@@ -17,7 +19,7 @@ class FormDbTest : TestExecutor() {
             val departments = prepare(testDepartments)
             val templates = prepare(testTemplates)
 
-            FormDb(database, backgroundScope.coroutineContext, departments, templates, clock)
+            FormDb(database, backgroundScope, departments, templates, clock)
         }
 
         formTestSuite(
@@ -25,6 +27,11 @@ class FormDbTest : TestExecutor() {
             testTemplates,
             testForms,
         )
+
+        identifierParsingSuite(
+            testForms,
+            *commonIds,
+        ) { prepare(testForms).Ref(it) }
     }
 
 }

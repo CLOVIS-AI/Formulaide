@@ -1,23 +1,22 @@
 package opensavvy.formulaide.mongo
 
+import arrow.core.raise.ensure
+import arrow.core.raise.ensureNotNull
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.job
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import opensavvy.backbone.Ref
-import opensavvy.backbone.Ref.Companion.expire
-import opensavvy.backbone.defaultRefCache
-import opensavvy.cache.ExpirationCache.Companion.expireAfter
-import opensavvy.cache.MemoryCache.Companion.cachedInMemory
-import opensavvy.formulaide.core.Auth.Companion.currentRole
-import opensavvy.formulaide.core.Auth.Companion.ensureAdministrator
-import opensavvy.formulaide.core.Auth.Companion.ensureEmployee
-import opensavvy.formulaide.core.Department
-import opensavvy.formulaide.core.User
+import opensavvy.cache.contextual.cache
+import opensavvy.cache.contextual.cachedInMemory
+import opensavvy.cache.contextual.expireAfter
+import opensavvy.formulaide.core.*
+import opensavvy.formulaide.core.utils.Identifier
+import opensavvy.state.arrow.out
+import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.outcome.Outcome
-import opensavvy.state.outcome.ensureFound
-import opensavvy.state.outcome.ensureValid
-import opensavvy.state.outcome.out
 import org.litote.kmongo.*
-import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration.Companion.minutes
 
 @Serializable
@@ -29,22 +28,29 @@ private class DepartmentDbDto(
 
 class DepartmentDb(
     database: Database,
-    context: CoroutineContext,
-) : Department.Service {
+    scope: CoroutineScope,
+) : Department.Service<DepartmentDb.Ref> {
 
     private val collection = database.client.getCollection<DepartmentDbDto>("departments")
 
-    override val cache = defaultRefCache<Department>()
-        .cachedInMemory(context)
-        .expireAfter(30.minutes, context)
+    private val cache = cache<Ref, User.Role, Department.Failures.Get, Department> { ref, role ->
+        out {
+            ensure(role >= User.Role.Employee) { Department.Failures.Unauthenticated }
 
-    private fun toRef(id: String) = Department.Ref(id, this)
+            val result = collection.findOneById(ref.id)
+            ensureNotNull(result) { Department.Failures.NotFound(ref) }
+            ensure(result.open || role >= User.Role.Administrator) { Department.Failures.NotFound(ref) }
 
-    override suspend fun list(includeClosed: Boolean): Outcome<List<Department.Ref>> = out {
-        ensureEmployee()
+            Department(result.name, result.open)
+        }
+    }.cachedInMemory(scope.coroutineContext.job)
+        .expireAfter(30.minutes, scope)
+
+    override suspend fun list(includeClosed: Boolean): Outcome<Department.Failures.List, List<Ref>> = out {
+        ensureEmployee { Department.Failures.Unauthenticated }
 
         val filter = if (includeClosed) {
-            ensureAdministrator()
+            ensureAdministrator { Department.Failures.Unauthorized }
             EMPTY_BSON
         } else {
             DepartmentDbDto::open eq true
@@ -53,16 +59,17 @@ class DepartmentDb(
         collection.find(filter)
             .toList()
             .map {
-                val ref = toRef(it.id)
+                val ref = Ref(it.id)
 
-                cache.update(ref, Department(it.name, it.open))
+                cache.update(ref, currentRole(), Department(it.name, it.open))
 
                 ref
             }
     }
 
-    override suspend fun create(name: String): Outcome<Department.Ref> = out {
-        ensureAdministrator()
+    override suspend fun create(name: String): Outcome<Department.Failures.Create, Ref> = out {
+        ensureEmployee { Department.Failures.Unauthenticated }
+        ensureAdministrator { Department.Failures.Unauthorized }
 
         val id = newId<DepartmentDbDto>().toString()
 
@@ -74,38 +81,62 @@ class DepartmentDb(
             )
         )
 
-        toRef(id)
+        Ref(id)
     }
 
-    override suspend fun edit(department: Department.Ref, open: Boolean?): Outcome<Unit> = out {
-        ensureAdministrator()
+    override fun fromIdentifier(identifier: Identifier) = Ref(identifier.text)
 
-        val id = department.id.toId<DepartmentDbDto>()
+    inner class Ref internal constructor(
+        internal val id: String,
+    ) : Department.Ref {
+        private suspend fun edit(open: Boolean?): Outcome<Department.Failures.Edit, Unit> = out {
+            ensureEmployee { Department.Failures.Unauthenticated }
+            ensureAdministrator { Department.Failures.Unauthorized }
 
-        val updates = buildList {
-            if (open != null)
-                add(setValue(DepartmentDbDto::open, open))
+            val id = id.toId<DepartmentDbDto>()
+
+            val updates = buildList {
+                if (open != null)
+                    add(setValue(DepartmentDbDto::open, open))
+            }
+
+            if (updates.isEmpty())
+                return@out // nothing to do
+
+            collection.updateOneById(
+                id,
+                combine(updates),
+            )
+
+            cache.expire(this@Ref)
         }
 
-        if (updates.isEmpty())
-            return@out // nothing to do
+        override suspend fun open(): Outcome<Department.Failures.Edit, Unit> =
+            edit(open = true)
 
-        collection.updateOneById(
-            id,
-            combine(updates),
-        )
+        override suspend fun close(): Outcome<Department.Failures.Edit, Unit> =
+            edit(open = false)
 
-        department.expire()
-    }
+        override fun request(): ProgressiveFlow<Department.Failures.Get, Department> = flow {
+            emitAll(cache[this@Ref, currentRole()])
+        }
 
-    override suspend fun directRequest(ref: Ref<Department>): Outcome<Department> = out {
-        ensureValid(ref is Department.Ref) { "Référence invalide : $ref" }
-        ensureEmployee()
+        // region Overrides
 
-        val result = collection.findOneById(ref.id)
-        ensureFound(result != null) { "Département introuvable : $ref" }
-        ensureFound(result.open || currentRole() >= User.Role.Administrator) { "Département introuvable : $ref" }
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is Ref) return false
 
-        Department(result.name, result.open)
+            return id == other.id
+        }
+
+        override fun hashCode(): Int {
+            return id.hashCode()
+        }
+
+        override fun toString() = "DepartmentDb.Ref($id)"
+        override fun toIdentifier() = Identifier(id)
+
+        // endregion
     }
 }
