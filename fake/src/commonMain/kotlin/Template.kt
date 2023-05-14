@@ -127,6 +127,8 @@ class FakeTemplates(
 			ref
 		}
 
+		override fun versionOf(creationDate: Instant): Template.Version.Ref = _versions.Ref(this, creationDate)
+
 		override fun request(): ProgressiveFlow<Template.Failures.Get, Template> = flow {
 			out {
 				ensure(currentRole() >= User.Role.Employee) { Template.Failures.Unauthenticated }
@@ -163,7 +165,7 @@ class FakeTemplates(
 
 		inner class Ref internal constructor(
 			override val template: FakeTemplates.Ref,
-			val creationDate: Instant,
+			override val creationDate: Instant,
 		) : Template.Version.Ref {
 			override fun request(): ProgressiveFlow<Template.Version.Failures.Get, Template.Version> = flow {
 				out {

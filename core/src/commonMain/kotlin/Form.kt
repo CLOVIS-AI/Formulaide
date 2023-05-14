@@ -113,6 +113,13 @@ data class Form(
 		@Deprecated("It is not allowed to create a form with no review steps.", level = DeprecationLevel.ERROR)
 		fun createVersion(title: String, field: Field): Outcome<Failures.CreateVersion, Version.Ref> =
 			throw NotImplementedError("It is not allowed to create a form with no review steps.")
+
+		/**
+		 * Creates a reference to the version created at [creationDate].
+		 *
+		 * No verification is done that the version actually exists.
+		 */
+		fun versionOf(creationDate: Instant): Version.Ref
 	}
 
 	data class Version(
@@ -185,6 +192,8 @@ data class Form(
 
 			data class NotFound(override val id: Ref) : StandardNotFound<Ref>,
 				Get
+
+			data class CouldNotGetForm(val error: Form.Failures.Get) : Get
 
 			object Unauthenticated : StandardUnauthenticated,
 				Get
@@ -307,7 +316,7 @@ data class Form(
 		sealed interface Get : Failures
 		sealed interface List : Failures
 		sealed interface Create : Failures
-		sealed interface CreateVersion : Failures
+		sealed interface CreateVersion : Failures, Create
 		sealed interface Edit : Failures
 
 		data class NotFound(override val id: Ref) : StandardNotFound<Ref>,

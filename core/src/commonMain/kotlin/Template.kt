@@ -74,6 +74,13 @@ data class Template(
 		 * @see Template.versions
 		 */
 		suspend fun createVersion(title: String, field: Field): Outcome<Failures.CreateVersion, Version.Ref>
+
+		/**
+		 * Creates a reference to the version created at [creationDate].
+		 *
+		 * No verification is done that the version actually exists.
+		 */
+		fun versionOf(creationDate: Instant): Version.Ref
 	}
 
 	data class Version(
@@ -83,7 +90,7 @@ data class Template(
 	) {
 
 		interface Ref : opensavvy.backbone.Ref<Failures.Get, Version>, IdentifierWriter {
-
+			val creationDate: Instant
 			val template: Template.Ref
 		}
 
@@ -127,7 +134,7 @@ data class Template(
 		sealed interface Get : Failures
 		sealed interface List : Failures
 		sealed interface Create : Failures
-		sealed interface CreateVersion : Failures
+		sealed interface CreateVersion : Failures, Create
 		sealed interface Edit : Failures
 
 		data class NotFound(override val id: Ref) : StandardNotFound<Ref>,

@@ -150,6 +150,8 @@ class FakeForms(
 			ref
 		}
 
+		override fun versionOf(creationDate: Instant): Form.Version.Ref = _versions.Ref(this, creationDate)
+
 		override fun request(): ProgressiveFlow<Form.Failures.Get, Form> = flow {
 			out<Form.Failures.Get, Form> {
 				lock.withLock("request") {

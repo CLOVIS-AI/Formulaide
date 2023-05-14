@@ -1,6 +1,7 @@
 package opensavvy.formulaide.fake.spies
 
 import kotlinx.coroutines.flow.map
+import kotlinx.datetime.Instant
 import opensavvy.formulaide.core.Field
 import opensavvy.formulaide.core.Template
 import opensavvy.formulaide.core.utils.Identifier
@@ -49,6 +50,8 @@ class SpyTemplates(private val upstream: Template.Service) : Template.Service {
 		) { upstream.createVersion(title, field) }
 			.map(_versions::Ref)
 
+		override fun versionOf(creationDate: Instant): Template.Version.Ref = _versions.Ref(upstream.versionOf(creationDate))
+
 		override fun request(): ProgressiveFlow<Template.Failures.Get, Template> = spy(
 			log, "request",
 		) { upstream.request() }
@@ -81,6 +84,9 @@ class SpyTemplates(private val upstream: Template.Service) : Template.Service {
 		) : Template.Version.Ref {
 			override val template: Template.Ref
 				get() = Ref(upstream.template)
+
+			override val creationDate: Instant
+				get() = upstream.creationDate
 
 			override fun request(): ProgressiveFlow<Template.Version.Failures.Get, Template.Version> = spy(
 				log, "request",

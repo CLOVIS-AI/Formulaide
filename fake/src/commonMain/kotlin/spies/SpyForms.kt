@@ -58,6 +58,8 @@ class SpyForms(private val upstream: Form.Service) : Form.Service {
 		) { upstream.createVersion(title, field, *step) }
 			.map(_versions::Ref)
 
+		override fun versionOf(creationDate: Instant): Form.Version.Ref = _versions.Ref(upstream.versionOf(creationDate))
+
 		override fun request(): ProgressiveFlow<Form.Failures.Get, Form> = spy(
 			log, "request",
 		) { upstream.request() }
