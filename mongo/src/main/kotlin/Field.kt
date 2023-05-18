@@ -4,11 +4,11 @@ import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import opensavvy.formulaide.core.Field
 import opensavvy.formulaide.core.Template
-import opensavvy.formulaide.mongo.InputDbDto.Companion.toCore
-import opensavvy.formulaide.mongo.InputDbDto.Companion.toDto
+import opensavvy.formulaide.mongo.MongoInputDto.Companion.toCore
+import opensavvy.formulaide.mongo.MongoInputDto.Companion.toDto
 
 @Serializable
-sealed class FieldDbDto {
+sealed class MongoFieldDto {
 
     abstract val label: String
     abstract val importedFromTemplate: String?
@@ -19,45 +19,45 @@ sealed class FieldDbDto {
         override val label: String,
         override val importedFromTemplate: String? = null,
         override val importedFromTemplateVersion: Instant?,
-    ) : FieldDbDto()
+    ) : MongoFieldDto()
 
     @Serializable
     class Input(
         override val label: String,
-        val input: InputDbDto,
+        val input: MongoInputDto,
         override val importedFromTemplate: String? = null,
         override val importedFromTemplateVersion: Instant?,
-    ) : FieldDbDto()
+    ) : MongoFieldDto()
 
     @Serializable
     class Choice(
         override val label: String,
-        val options: Map<Int, FieldDbDto>,
+        val options: Map<Int, MongoFieldDto>,
         override val importedFromTemplate: String? = null,
         override val importedFromTemplateVersion: Instant?,
-    ) : FieldDbDto()
+    ) : MongoFieldDto()
 
     @Serializable
     class Group(
         override val label: String,
-        val fields: Map<Int, FieldDbDto>,
+        val fields: Map<Int, MongoFieldDto>,
         override val importedFromTemplate: String? = null,
         override val importedFromTemplateVersion: Instant?,
-    ) : FieldDbDto()
+    ) : MongoFieldDto()
 
     @Serializable
     class Arity(
         override val label: String,
-        val child: FieldDbDto,
+        val child: MongoFieldDto,
         val min: UInt,
         val max: UInt,
         override val importedFromTemplate: String? = null,
         override val importedFromTemplateVersion: Instant?,
-    ) : FieldDbDto()
+    ) : MongoFieldDto()
 
     companion object {
 
-        fun FieldDbDto.toCore(
+        fun MongoFieldDto.toCore(
             templates: Template.Service,
         ): Field {
             val importedFrom = if (importedFromTemplate != null && importedFromTemplateVersion != null)
@@ -98,7 +98,7 @@ sealed class FieldDbDto {
             }
         }
 
-        fun Field.toDto(): FieldDbDto = when (this) {
+        fun Field.toDto(): MongoFieldDto = when (this) {
             is Field.Arity -> Arity(
                 label,
                 child.toDto(),

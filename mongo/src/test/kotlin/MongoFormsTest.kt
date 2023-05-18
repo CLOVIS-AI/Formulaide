@@ -9,7 +9,7 @@ import opensavvy.formulaide.test.formTestSuite
 import opensavvy.formulaide.test.identifierParsingSuite
 import opensavvy.formulaide.test.structure.*
 
-class FormDbTest : TestExecutor() {
+class MongoFormsTest : TestExecutor() {
 
     override fun Suite.register() {
         val testDepartments by prepared { FakeDepartments().spied() }
@@ -19,7 +19,7 @@ class FormDbTest : TestExecutor() {
             val departments = prepare(testDepartments)
             val templates = prepare(testTemplates)
 
-            FormDb(database, backgroundScope, departments, templates, clock)
+            MongoForms(database, backgroundScope, departments, templates, clock)
         }
 
         formTestSuite(

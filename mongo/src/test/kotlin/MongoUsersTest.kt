@@ -10,7 +10,7 @@ import opensavvy.formulaide.test.structure.prepare
 import opensavvy.formulaide.test.structure.prepared
 import opensavvy.formulaide.test.usersTestSuite
 
-class UserDbTest : TestExecutor() {
+class MongoUsersTest : TestExecutor() {
 
     override fun Suite.register() {
         val departments by prepared { FakeDepartments().spied() }
@@ -18,7 +18,7 @@ class UserDbTest : TestExecutor() {
         val users by prepared {
             val database = testDatabase()
 
-            UserDb(
+            MongoUsers(
                 database,
                 backgroundScope,
                 prepare(departments),

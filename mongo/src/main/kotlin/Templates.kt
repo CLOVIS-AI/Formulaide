@@ -11,15 +11,14 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.toInstant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import opensavvy.backbone.Ref
 import opensavvy.backbone.now
 import opensavvy.cache.cache
 import opensavvy.cache.cachedInMemory
 import opensavvy.cache.expireAfter
 import opensavvy.formulaide.core.*
 import opensavvy.formulaide.core.utils.Identifier
-import opensavvy.formulaide.mongo.FieldDbDto.Companion.toCore
-import opensavvy.formulaide.mongo.FieldDbDto.Companion.toDto
+import opensavvy.formulaide.mongo.MongoFieldDto.Companion.toCore
+import opensavvy.formulaide.mongo.MongoFieldDto.Companion.toDto
 import opensavvy.state.arrow.out
 import opensavvy.state.arrow.toEither
 import opensavvy.state.coroutines.ProgressiveFlow
@@ -29,7 +28,7 @@ import org.litote.kmongo.*
 import kotlin.time.Duration.Companion.minutes
 
 @Serializable
-private class TemplateDbDto(
+private class MongoTemplateDto(
     @SerialName("_id") val id: String,
     val name: String,
     val open: Boolean,
@@ -37,28 +36,28 @@ private class TemplateDbDto(
 )
 
 @Serializable
-private class TemplateVersionDbDto(
+private class MongoTemplateVersionDto(
     val template: String,
     val version: String,
     val title: String,
-    val field: FieldDbDto,
+    val field: MongoFieldDto,
 )
 
-class TemplateDb(
+class MongoTemplate(
     database: Database,
     scope: CoroutineScope,
     private val clock: Clock,
 ) : Template.Service {
 
-    private val collection = database.client.getCollection<TemplateDbDto>("templates")
-    private val versionsCollection = database.client.getCollection<TemplateVersionDbDto>("templateVersions")
+    private val collection = database.client.getCollection<MongoTemplateDto>("templates")
+    private val versionsCollection = database.client.getCollection<MongoTemplateVersionDto>("templateVersions")
 
     private val _versions = Versions(scope)
 
     init {
         scope.launch {
-            versionsCollection.ensureIndex(TemplateVersionDbDto::template)
-            versionsCollection.ensureUniqueIndex(TemplateVersionDbDto::template, TemplateVersionDbDto::version)
+            versionsCollection.ensureIndex(MongoTemplateVersionDto::template)
+            versionsCollection.ensureUniqueIndex(MongoTemplateVersionDto::template, MongoTemplateVersionDto::version)
         }
     }
 
@@ -83,7 +82,7 @@ class TemplateDb(
         ensureEmployee { Template.Failures.Unauthenticated }
 
         collection.find(
-            (TemplateDbDto::open eq true).takeIf { !includeClosed },
+            (MongoTemplateDto::open eq true).takeIf { !includeClosed },
         )
             .toList()
             .map { templateDto ->
@@ -102,14 +101,14 @@ class TemplateDb(
         ensureEmployee { Template.Failures.Unauthenticated }
         ensureAdministrator { Template.Failures.Unauthorized }
 
-        val id = newId<TemplateDbDto>().toString()
+        val id = newId<MongoTemplateDto>().toString()
 
         field.validate()
             .mapLeft(Template.Failures::InvalidImport)
             .bind()
 
         collection.insertOne(
-            TemplateDbDto(
+            MongoTemplateDto(
                 id = id,
                 name = name,
                 open = true,
@@ -132,10 +131,10 @@ class TemplateDb(
 
             val updates = buildList {
                 if (name != null)
-                    add(setValue(TemplateDbDto::name, name))
+                    add(setValue(MongoTemplateDto::name, name))
 
                 if (open != null)
-                    add(setValue(TemplateDbDto::open, open))
+                    add(setValue(MongoTemplateDto::open, open))
             }
 
             if (updates.isEmpty())
@@ -171,7 +170,7 @@ class TemplateDb(
             val creationDate = clock.now()
 
             versionsCollection.insertOne(
-                TemplateVersionDbDto(
+                MongoTemplateVersionDto(
                     template = id,
                     version = creationDate.toString(),
                     title = title,
@@ -181,7 +180,7 @@ class TemplateDb(
 
             collection.updateOneById(
                 id,
-                addToSet(TemplateDbDto::versions, creationDate.toString()),
+                addToSet(MongoTemplateDto::versions, creationDate.toString()),
             )
 
             cache.expire(this@Ref)
@@ -212,7 +211,7 @@ class TemplateDb(
             return id.hashCode()
         }
 
-        override fun toString() = "TemplateDb.Ref($id)"
+        override fun toString() = "MongoTemplates.Ref($id)"
         override fun toIdentifier() = Identifier(id)
 
         // endregion
@@ -226,8 +225,8 @@ class TemplateDb(
             out {
                 val result = versionsCollection.findOne(
                     and(
-                        TemplateVersionDbDto::template eq ref.template.id,
-                        TemplateVersionDbDto::version eq ref.creationDate.toString(),
+                        MongoTemplateVersionDto::template eq ref.template.id,
+                        MongoTemplateVersionDto::version eq ref.creationDate.toString(),
                     )
                 )
                 ensureNotNull(result) { Template.Version.Failures.NotFound(ref) }
@@ -235,14 +234,14 @@ class TemplateDb(
                 Template.Version(
                     creationDate = result.version.toInstant(),
                     title = result.title,
-                    field = result.field.toCore(this@TemplateDb),
+                    field = result.field.toCore(this@MongoTemplate),
                 )
             }
         }.cachedInMemory(scope.coroutineContext.job)
             .expireAfter(5.minutes, scope)
 
         inner class Ref(
-            override val template: TemplateDb.Ref,
+            override val template: MongoTemplate.Ref,
             override val creationDate: Instant,
         ) : Template.Version.Ref {
             override fun request(): ProgressiveFlow<Template.Version.Failures.Get, Template.Version> = flow {
@@ -269,17 +268,17 @@ class TemplateDb(
                 return result
             }
 
-            override fun toString() = "TemplateDb.Ref(${template.id}).Version($creationDate)"
+            override fun toString() = "MongoTemplates.Ref(${template.id}).Version($creationDate)"
             override fun toIdentifier() = Identifier("${template.id}_$creationDate")
 
             // endregion
         }
 
-        override fun fromIdentifier(identifier: Identifier): TemplateDb.Versions.Ref {
+        override fun fromIdentifier(identifier: Identifier): MongoTemplate.Versions.Ref {
             val (form, version) = identifier.text.split("_", limit = 2)
 
             return Ref(
-                this@TemplateDb.fromIdentifier(Identifier(form)),
+                this@MongoTemplate.fromIdentifier(Identifier(form)),
                 version.toInstant(),
             )
         }

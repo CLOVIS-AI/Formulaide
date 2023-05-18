@@ -4,12 +4,12 @@ import io.kotest.matchers.shouldBe
 import opensavvy.formulaide.core.Input
 import opensavvy.formulaide.core.integer
 import opensavvy.formulaide.core.text
-import opensavvy.formulaide.mongo.InputDbDto.Companion.toCore
-import opensavvy.formulaide.mongo.InputDbDto.Companion.toDto
+import opensavvy.formulaide.mongo.MongoInputDto.Companion.toCore
+import opensavvy.formulaide.mongo.MongoInputDto.Companion.toDto
 import opensavvy.formulaide.test.structure.Suite
 import opensavvy.formulaide.test.structure.TestExecutor
 
-class InputDbTest : TestExecutor() {
+class MongoInputDbTest : TestExecutor() {
 
     override fun Suite.register() {
         test("Base text") {

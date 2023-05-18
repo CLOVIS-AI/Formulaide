@@ -35,7 +35,7 @@ import java.util.*
 import kotlin.time.Duration.Companion.minutes
 
 @Serializable
-private data class UserDbDto(
+private data class MongoUserDto(
     @SerialName("_id") val id: String,
     val name: String,
     val email: String,
@@ -49,22 +49,22 @@ private data class UserDbDto(
 )
 
 @Serializable
-private data class UserIdDto(
+private data class MongoUserIdDto(
     @SerialName("_id") val id: String,
 )
 
-class UserDb(
+class MongoUsers(
     database: Database,
     scope: CoroutineScope,
     private val departments: Department.Service<*>,
-) : User.Service<UserDb.Ref> {
+) : User.Service<MongoUsers.Ref> {
 
     private val log = loggerFor(this)
-    private val collection = database.client.getCollection<UserDbDto>("users")
+    private val collection = database.client.getCollection<MongoUserDto>("users")
 
     init {
         scope.launch {
-            collection.ensureUniqueIndex(UserDbDto::email)
+            collection.ensureUniqueIndex(MongoUserDto::email)
         }
     }
 
@@ -106,9 +106,9 @@ class UserDb(
         ensureAdministrator { User.Failures.Unauthorized }
 
         collection
-            .withDocumentClass<UserIdDto>()
+            .withDocumentClass<MongoUserIdDto>()
             .find(
-                (UserDbDto::active eq true).takeIf { !includeClosed },
+                (MongoUserDto::active eq true).takeIf { !includeClosed },
             )
             .toList()
             .map { Ref(it.id) }
@@ -123,15 +123,15 @@ class UserDb(
         ensureAdministrator { User.Failures.Unauthorized }
 
         run { // Check the email address is available
-            val previous = collection.findOne(UserDbDto::email eq email.value)
+            val previous = collection.findOne(MongoUserDto::email eq email.value)
             ensure(previous == null) { User.Failures.UserAlreadyExists(email) }
         }
 
-        val id = newId<UserDbDto>().toString()
+        val id = newId<MongoUserDto>().toString()
         val singleUsePassword = Password(UUID.randomUUID().toString())
 
         collection.insertOne(
-            UserDbDto(
+            MongoUserDto(
                 id = id,
                 name = fullName,
                 email = email.value,
@@ -148,7 +148,7 @@ class UserDb(
     // region Password & tokens
 
     private val cacheByEmail = cache<String, Unit, Ref> {
-        collection.findOne(UserDbDto::email eq it)
+        collection.findOne(MongoUserDto::email eq it)
             ?.id
             ?.let(::Ref)
             ?.success()
@@ -201,8 +201,8 @@ class UserDb(
         collection.updateOneById(
             ref.id,
             combine(
-                addToSet(UserDbDto::tokens, token.value),
-                setValue(UserDbDto::passwordWasUsed, true),
+                addToSet(MongoUserDto::tokens, token.value),
+                setValue(MongoUserDto::passwordWasUsed, true),
             ),
         )
 
@@ -224,7 +224,7 @@ class UserDb(
 
             collection.updateOneById(
                 id,
-                addToSet(UserDbDto::departments, department.toIdentifier().text),
+                addToSet(MongoUserDto::departments, department.toIdentifier().text),
             )
 
             cache.expire(this@Ref)
@@ -236,7 +236,7 @@ class UserDb(
 
             collection.updateOneById(
                 id,
-                pull(UserDbDto::departments, department.toIdentifier().text),
+                pull(MongoUserDto::departments, department.toIdentifier().text),
             )
 
             cache.expire(this@Ref)
@@ -250,10 +250,10 @@ class UserDb(
 
             val updates = buildList {
                 if (active != null)
-                    add(setValue(UserDbDto::active, active))
+                    add(setValue(MongoUserDto::active, active))
 
                 if (administrator != null)
-                    add(setValue(UserDbDto::administrator, administrator))
+                    add(setValue(MongoUserDto::administrator, administrator))
             }
 
             if (updates.isEmpty())
@@ -284,10 +284,10 @@ class UserDb(
             collection.updateOneById(
                 id,
                 combine(
-                    setValue(UserDbDto::hashedPassword, hash(newPassword.value)),
-                    setValue(UserDbDto::singleUsePassword, true),
-                    setValue(UserDbDto::passwordWasUsed, false),
-                    setValue(UserDbDto::tokens, emptySet()),
+                    setValue(MongoUserDto::hashedPassword, hash(newPassword.value)),
+                    setValue(MongoUserDto::singleUsePassword, true),
+                    setValue(MongoUserDto::passwordWasUsed, false),
+                    setValue(MongoUserDto::tokens, emptySet()),
                 )
             )
 
@@ -312,10 +312,10 @@ class UserDb(
             collection.updateOneById(
                 id,
                 combine(
-                    setValue(UserDbDto::hashedPassword, hash(newPassword.value)),
-                    setValue(UserDbDto::singleUsePassword, false),
-                    setValue(UserDbDto::passwordWasUsed, false),
-                    setValue(UserDbDto::tokens, emptySet()),
+                    setValue(MongoUserDto::hashedPassword, hash(newPassword.value)),
+                    setValue(MongoUserDto::singleUsePassword, false),
+                    setValue(MongoUserDto::passwordWasUsed, false),
+                    setValue(MongoUserDto::tokens, emptySet()),
                 )
             )
 
@@ -338,7 +338,7 @@ class UserDb(
 
             collection.updateOneById(
                 id,
-                pull(UserDbDto::tokens, token.value)
+                pull(MongoUserDto::tokens, token.value)
             )
 
             tokenCache.expire(this@Ref)
@@ -361,15 +361,9 @@ class UserDb(
             return id.hashCode()
         }
 
-        override fun toString() = "UserDb.Ref($id)"
+        override fun toString() = "MongoUsers.Ref($id)"
         override fun toIdentifier() = Identifier(id)
 
         // endregion
-    }
-
-    companion object {
-        private const val GENERIC_LOGIN_ERROR_MESSAGE =
-            "Les informations de connexion ne correspondent à aucun utilisateur"
-        private const val INCORRECT_OLD_PASSWORD = "Le mot de passe actuel est incorrect"
     }
 }

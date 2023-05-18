@@ -5,8 +5,8 @@ import opensavvy.formulaide.core.Field
 import opensavvy.formulaide.core.Input
 import opensavvy.formulaide.core.text
 import opensavvy.formulaide.fake.FakeTemplates
-import opensavvy.formulaide.mongo.FieldDbDto.Companion.toCore
-import opensavvy.formulaide.mongo.FieldDbDto.Companion.toDto
+import opensavvy.formulaide.mongo.MongoFieldDto.Companion.toCore
+import opensavvy.formulaide.mongo.MongoFieldDto.Companion.toDto
 import opensavvy.formulaide.test.structure.Suite
 import opensavvy.formulaide.test.structure.TestExecutor
 import opensavvy.formulaide.test.structure.clock

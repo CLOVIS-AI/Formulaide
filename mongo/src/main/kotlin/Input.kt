@@ -9,7 +9,7 @@ import kotlin.time.Duration
  * DTO for [Input].
  */
 @Serializable
-class InputDbDto(
+class MongoInputDto(
     val type: Type,
     val maxLength: UInt? = null,
     val minValue: Long? = null,
@@ -33,7 +33,7 @@ class InputDbDto(
 
     companion object {
 
-        fun InputDbDto.toCore() = when (type) {
+        fun MongoInputDto.toCore() = when (type) {
             Type.Text -> Input.Text(maxLength)
             Type.Integer -> Input.Integer(minValue, maxValue)
             Type.Toggle -> Input.Toggle
@@ -51,14 +51,14 @@ class InputDbDto(
         }
 
         fun Input.toDto() = when (this) {
-            Input.Date -> InputDbDto(Type.Date)
-            Input.Email -> InputDbDto(Type.Email)
-            is Input.Integer -> InputDbDto(Type.Integer, minValue = min, maxValue = max)
-            Input.Phone -> InputDbDto(Type.Phone)
-            is Input.Text -> InputDbDto(Type.Text, maxLength = maxLength)
-            Input.Time -> InputDbDto(Type.Time)
-            Input.Toggle -> InputDbDto(Type.Toggle)
-            is Input.Upload -> InputDbDto(
+            Input.Date -> MongoInputDto(Type.Date)
+            Input.Email -> MongoInputDto(Type.Email)
+            is Input.Integer -> MongoInputDto(Type.Integer, minValue = min, maxValue = max)
+            Input.Phone -> MongoInputDto(Type.Phone)
+            is Input.Text -> MongoInputDto(Type.Text, maxLength = maxLength)
+            Input.Time -> MongoInputDto(Type.Time)
+            Input.Toggle -> MongoInputDto(Type.Toggle)
+            is Input.Upload -> MongoInputDto(
                 Type.Upload,
                 maxSizeMB = maxSizeMB,
                 expiresAfter = expiresAfter,

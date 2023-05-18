@@ -18,8 +18,8 @@ import opensavvy.cache.contextual.cachedInMemory
 import opensavvy.cache.contextual.expireAfter
 import opensavvy.formulaide.core.*
 import opensavvy.formulaide.core.utils.Identifier
-import opensavvy.formulaide.mongo.FieldDbDto.Companion.toCore
-import opensavvy.formulaide.mongo.FieldDbDto.Companion.toDto
+import opensavvy.formulaide.mongo.MongoFieldDto.Companion.toCore
+import opensavvy.formulaide.mongo.MongoFieldDto.Companion.toDto
 import opensavvy.state.arrow.out
 import opensavvy.state.arrow.toEither
 import opensavvy.state.coroutines.ProgressiveFlow
@@ -28,7 +28,7 @@ import org.litote.kmongo.*
 import kotlin.time.Duration.Companion.minutes
 
 @Serializable
-private class FormDbDto(
+private class MongoFormDto(
     @SerialName("_id") val id: String,
     val name: String,
     val open: Boolean,
@@ -37,22 +37,22 @@ private class FormDbDto(
 )
 
 @Serializable
-private class FormVersionDbDto(
+private class MongoFormVersionDto(
     val form: String,
     val version: String,
     val title: String,
-    val initial: FieldDbDto,
-    val steps: Map<Int, FormStepDbDto>,
+    val initial: MongoFieldDto,
+    val steps: Map<Int, MongoFormStepDto>,
 )
 
 @Serializable
-private class FormStepDbDto(
+private class MongoFormStepDto(
     val name: String,
     val reviewerDepartment: String,
-    val field: FieldDbDto?,
+    val field: MongoFieldDto?,
 )
 
-class FormDb(
+class MongoForms(
     database: Database,
     scope: CoroutineScope,
     departments: Department.Service<*>,
@@ -60,15 +60,15 @@ class FormDb(
     private val clock: Clock,
 ) : Form.Service {
 
-    private val collection = database.client.getCollection<FormDbDto>("forms")
-    private val versionsCollection = database.client.getCollection<FormVersionDbDto>("formVersions")
+    private val collection = database.client.getCollection<MongoFormDto>("forms")
+    private val versionsCollection = database.client.getCollection<MongoFormVersionDto>("formVersions")
 
     private val _versions = Versions(scope, departments, templates)
 
     init {
         scope.launch {
-            versionsCollection.ensureIndex(FormVersionDbDto::form)
-            versionsCollection.ensureUniqueIndex(FormVersionDbDto::form, FormVersionDbDto::version)
+            versionsCollection.ensureIndex(MongoFormVersionDto::form)
+            versionsCollection.ensureUniqueIndex(MongoFormVersionDto::form, MongoFormVersionDto::version)
         }
     }
 
@@ -100,8 +100,8 @@ class FormDb(
         }
 
         collection.find(
-            (FormDbDto::open eq true).takeUnless { includeClosed && currentRole() >= User.Role.Employee },
-            (FormDbDto::public eq true).takeUnless { currentRole() >= User.Role.Employee },
+            (MongoFormDto::open eq true).takeUnless { includeClosed && currentRole() >= User.Role.Employee },
+            (MongoFormDto::public eq true).takeUnless { currentRole() >= User.Role.Employee },
         )
             .toList()
             .map { formDto ->
@@ -121,14 +121,14 @@ class FormDb(
         ensureEmployee { Form.Failures.Unauthenticated }
         ensureAdministrator { Form.Failures.Unauthorized }
 
-        val id = newId<FormDbDto>().toString()
+        val id = newId<MongoFormDto>().toString()
 
         field.validate()
             .mapLeft { Form.Failures.InvalidImport(it) }
             .bind()
 
         collection.insertOne(
-            FormDbDto(
+            MongoFormDto(
                 id = id,
                 name = name,
                 open = true,
@@ -152,13 +152,13 @@ class FormDb(
 
             val updates = buildList {
                 if (name != null)
-                    add(setValue(FormDbDto::name, name))
+                    add(setValue(MongoFormDto::name, name))
 
                 if (open != null)
-                    add(setValue(FormDbDto::open, open))
+                    add(setValue(MongoFormDto::open, open))
 
                 if (public != null)
-                    add(setValue(FormDbDto::public, public))
+                    add(setValue(MongoFormDto::public, public))
             }
 
             if (updates.isEmpty())
@@ -198,13 +198,13 @@ class FormDb(
             val creationDate = clock.now()
 
             versionsCollection.insertOne(
-                FormVersionDbDto(
+                MongoFormVersionDto(
                     form = id,
                     version = creationDate.toString(),
                     title = title,
                     initial = field.toDto(),
                     steps = step.associate {
-                        it.id to FormStepDbDto(
+                        it.id to MongoFormStepDto(
                             name = it.name,
                             reviewerDepartment = it.reviewer.toIdentifier().text,
                             field = it.field?.toDto(),
@@ -215,7 +215,7 @@ class FormDb(
 
             collection.updateOneById(
                 id,
-                addToSet(FormDbDto::versions, creationDate.toString())
+                addToSet(MongoFormDto::versions, creationDate.toString())
             )
 
             cache.expire(this@Ref)
@@ -242,7 +242,7 @@ class FormDb(
             return id.hashCode()
         }
 
-        override fun toString() = "FormDb.Ref($id)"
+        override fun toString() = "MongoForms.Ref($id)"
         override fun toIdentifier() = Identifier(id)
 
         // endregion
@@ -267,8 +267,8 @@ class FormDb(
 
                 val result = versionsCollection.findOne(
                     and(
-                        FormVersionDbDto::form eq ref.form.id,
-                        FormVersionDbDto::version eq ref.creationDate.toString(),
+                        MongoFormVersionDto::form eq ref.form.id,
+                        MongoFormVersionDto::version eq ref.creationDate.toString(),
                     )
                 )
                 ensureNotNull(result) { Form.Version.Failures.NotFound(ref) }
@@ -291,7 +291,7 @@ class FormDb(
             .expireAfter(10.minutes, scope)
 
         inner class Ref(
-            override val form: FormDb.Ref,
+            override val form: MongoForms.Ref,
             override val creationDate: Instant,
         ) : Form.Version.Ref {
             override fun request(): ProgressiveFlow<Form.Version.Failures.Get, Form.Version> = flow {
@@ -314,7 +314,7 @@ class FormDb(
                 return result
             }
 
-            override fun toString() = "FormsDb.Ref(${form.id}).Version($creationDate)"
+            override fun toString() = "MongoForms.Ref(${form.id}).Version($creationDate)"
             override fun toIdentifier() = Identifier("${form.id}_$creationDate")
 
             // endregion
@@ -324,7 +324,7 @@ class FormDb(
             val (form, version) = identifier.text.split("_", limit = 2)
 
             return Ref(
-                this@FormDb.fromIdentifier(Identifier(form)),
+                this@MongoForms.fromIdentifier(Identifier(form)),
                 version.toInstant(),
             )
         }

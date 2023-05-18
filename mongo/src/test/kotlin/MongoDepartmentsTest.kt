@@ -8,12 +8,12 @@ import opensavvy.formulaide.test.structure.TestExecutor
 import opensavvy.formulaide.test.structure.prepare
 import opensavvy.formulaide.test.structure.prepared
 
-class DepartmentDbTest : TestExecutor() {
+class MongoDepartmentsTest : TestExecutor() {
 
     override fun Suite.register() {
         val database = testDatabase()
 
-        val departments by prepared { DepartmentDb(database, backgroundScope) }
+        val departments by prepared { MongoDepartments(database, backgroundScope) }
 
         departmentTestSuite(departments)
 

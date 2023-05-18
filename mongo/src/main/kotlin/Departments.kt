@@ -20,18 +20,18 @@ import org.litote.kmongo.*
 import kotlin.time.Duration.Companion.minutes
 
 @Serializable
-private class DepartmentDbDto(
+private class MongoDepartmentDto(
     @SerialName("_id") val id: String,
     val name: String,
     val open: Boolean = true,
 )
 
-class DepartmentDb(
+class MongoDepartments(
     database: Database,
     scope: CoroutineScope,
-) : Department.Service<DepartmentDb.Ref> {
+) : Department.Service<MongoDepartments.Ref> {
 
-    private val collection = database.client.getCollection<DepartmentDbDto>("departments")
+    private val collection = database.client.getCollection<MongoDepartmentDto>("departments")
 
     private val cache = cache<Ref, User.Role, Department.Failures.Get, Department> { ref, role ->
         out {
@@ -53,7 +53,7 @@ class DepartmentDb(
             ensureAdministrator { Department.Failures.Unauthorized }
             EMPTY_BSON
         } else {
-            DepartmentDbDto::open eq true
+            MongoDepartmentDto::open eq true
         }
 
         collection.find(filter)
@@ -71,10 +71,10 @@ class DepartmentDb(
         ensureEmployee { Department.Failures.Unauthenticated }
         ensureAdministrator { Department.Failures.Unauthorized }
 
-        val id = newId<DepartmentDbDto>().toString()
+        val id = newId<MongoDepartmentDto>().toString()
 
         collection.insertOne(
-            DepartmentDbDto(
+            MongoDepartmentDto(
                 id = id,
                 name,
                 open = true,
@@ -93,11 +93,11 @@ class DepartmentDb(
             ensureEmployee { Department.Failures.Unauthenticated }
             ensureAdministrator { Department.Failures.Unauthorized }
 
-            val id = id.toId<DepartmentDbDto>()
+            val id = id.toId<MongoDepartmentDto>()
 
             val updates = buildList {
                 if (open != null)
-                    add(setValue(DepartmentDbDto::open, open))
+                    add(setValue(MongoDepartmentDto::open, open))
             }
 
             if (updates.isEmpty())
@@ -134,7 +134,7 @@ class DepartmentDb(
             return id.hashCode()
         }
 
-        override fun toString() = "DepartmentDb.Ref($id)"
+        override fun toString() = "MongoDepartments.Ref($id)"
         override fun toIdentifier() = Identifier(id)
 
         // endregion

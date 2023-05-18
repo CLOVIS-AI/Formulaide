@@ -5,10 +5,10 @@ import opensavvy.formulaide.test.identifierParsingSuite
 import opensavvy.formulaide.test.structure.*
 import opensavvy.formulaide.test.templateTestSuite
 
-class TemplateDbTest : TestExecutor() {
+class MongoTemplateTest : TestExecutor() {
 
     override fun Suite.register() {
-        val templates by prepared { TemplateDb(testDatabase(), backgroundScope, clock) }
+        val templates by prepared { MongoTemplate(testDatabase(), backgroundScope, clock) }
 
         templateTestSuite(templates)
 
