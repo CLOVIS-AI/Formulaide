@@ -163,7 +163,7 @@ class RemoteUsers(
 			cache.expire(this@Ref)
 		}
 
-		private suspend fun edit(active: Boolean? = null, administrator: Boolean? = null): Outcome<User.Failures.SecurityEdit, Unit> = out {
+		override suspend fun edit(active: Boolean?, administrator: Boolean?): Outcome<User.Failures.SecurityEdit, Unit> = out {
 			client.http.request(
 				api.users.id.edit,
 				api.users.id.idOf(id),
@@ -182,14 +182,6 @@ class RemoteUsers(
 
 			cache.expire(this@Ref)
 		}
-
-		override suspend fun enable(): Outcome<User.Failures.SecurityEdit, Unit> = edit(active = true)
-
-		override suspend fun disable(): Outcome<User.Failures.SecurityEdit, Unit> = edit(active = false)
-
-		override suspend fun promote(): Outcome<User.Failures.SecurityEdit, Unit> = edit(administrator = true)
-
-		override suspend fun demote(): Outcome<User.Failures.SecurityEdit, Unit> = edit(administrator = false)
 
 		override suspend fun resetPassword(): Outcome<User.Failures.Edit, Password> = out {
 			client.http.request(

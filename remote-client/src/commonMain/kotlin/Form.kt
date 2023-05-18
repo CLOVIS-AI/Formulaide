@@ -130,7 +130,7 @@ class RemoteForms(
 	inner class Ref internal constructor(
 		internal val id: String,
 	) : Form.Ref {
-		private suspend fun edit(name: String? = null, open: Boolean? = null, public: Boolean? = null): Outcome<Form.Failures.Edit, Unit> = out {
+		override suspend fun edit(name: String?, open: Boolean?, public: Boolean?): Outcome<Form.Failures.Edit, Unit> = out {
 			client.http.request(
 				api.forms.id.edit,
 				api.forms.id.idOf(id),
@@ -148,16 +148,6 @@ class RemoteForms(
 
 			cache.expire(this@Ref)
 		}
-
-		override suspend fun rename(name: String): Outcome<Form.Failures.Edit, Unit> = edit(name = name)
-
-		override suspend fun open(): Outcome<Form.Failures.Edit, Unit> = edit(open = true)
-
-		override suspend fun close(): Outcome<Form.Failures.Edit, Unit> = edit(open = false)
-
-		override suspend fun publicize(): Outcome<Form.Failures.Edit, Unit> = edit(public = true)
-
-		override suspend fun privatize(): Outcome<Form.Failures.Edit, Unit> = edit(public = false)
 
 		override suspend fun createVersion(title: String, field: Field, vararg step: Form.Step): Outcome<Form.Failures.CreateVersion, Form.Version.Ref> = out {
 			client.http.request(

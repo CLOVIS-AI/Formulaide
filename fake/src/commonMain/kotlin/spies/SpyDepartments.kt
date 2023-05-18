@@ -26,6 +26,10 @@ class SpyDepartments<D : Department.Ref>(private val upstream: Department.Servic
 	inner class Ref internal constructor(
 		private val upstream: D,
 	) : Department.Ref {
+		override suspend fun edit(open: Boolean?): Outcome<Department.Failures.Edit, Unit> = spy(
+			log, "edit", open,
+		) { upstream.edit(open) }
+
 		override suspend fun open(): Outcome<Department.Failures.Edit, Unit> = spy(
 			log, "open",
 		) { upstream.open() }

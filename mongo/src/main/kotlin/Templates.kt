@@ -125,7 +125,7 @@ class MongoTemplate(
     inner class Ref internal constructor(
         internal val id: String,
     ) : Template.Ref {
-        private suspend fun edit(name: String? = null, open: Boolean? = null): Outcome<Template.Failures.Edit, Unit> = out {
+        override suspend fun edit(name: String?, open: Boolean?): Outcome<Template.Failures.Edit, Unit> = out {
             ensureEmployee { Template.Failures.Unauthenticated }
             ensureAdministrator { Template.Failures.Unauthorized }
 
@@ -147,12 +147,6 @@ class MongoTemplate(
 
             cache.expire(this@Ref)
         }
-
-        override suspend fun rename(name: String): Outcome<Template.Failures.Edit, Unit> = edit(name = name)
-
-        override suspend fun open(): Outcome<Template.Failures.Edit, Unit> = edit(open = true)
-
-        override suspend fun close(): Outcome<Template.Failures.Edit, Unit> = edit(open = false)
 
         override suspend fun createVersion(title: String, field: Field): Outcome<Template.Failures.CreateVersion, Template.Version.Ref> = out {
             ensureEmployee { Template.Failures.Unauthenticated }

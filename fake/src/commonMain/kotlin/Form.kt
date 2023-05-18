@@ -84,7 +84,7 @@ class FakeForms(
 	inner class Ref internal constructor(
 		val id: Long,
 	) : Form.Ref {
-		private suspend fun edit(name: String? = null, open: Boolean? = null, public: Boolean? = null): Outcome<Form.Failures.Edit, Unit> = out {
+		override suspend fun edit(name: String?, open: Boolean?, public: Boolean?): Outcome<Form.Failures.Edit, Unit> = out {
 			ensureEmployee { Form.Failures.Unauthenticated }
 			ensureAdministrator { Form.Failures.Unauthorized }
 
@@ -101,21 +101,6 @@ class FakeForms(
 				forms[id] = new
 			}
 		}
-
-		override suspend fun rename(name: String): Outcome<Form.Failures.Edit, Unit> =
-			edit(name = name)
-
-		override suspend fun open(): Outcome<Form.Failures.Edit, Unit> =
-			edit(open = true)
-
-		override suspend fun close(): Outcome<Form.Failures.Edit, Unit> =
-			edit(open = false)
-
-		override suspend fun publicize(): Outcome<Form.Failures.Edit, Unit> =
-			edit(public = true)
-
-		override suspend fun privatize(): Outcome<Form.Failures.Edit, Unit> =
-			edit(public = false)
 
 		override suspend fun createVersion(
 			title: String,

@@ -48,25 +48,30 @@ data class Template(
 	interface Ref : opensavvy.backbone.Ref<Failures.Get, Template>, IdentifierWriter {
 
 		/**
+		 * Edits this template.
+		 */
+		suspend fun edit(name: String? = null, open: Boolean? = null): Outcome<Failures.Edit, Unit>
+
+		/**
 		 * Renames this template.
 		 *
 		 * @see Template.name
 		 */
-		suspend fun rename(name: String): Outcome<Failures.Edit, Unit>
+		suspend fun rename(name: String): Outcome<Failures.Edit, Unit> = edit(name = name)
 
 		/**
 		 * Opens this template.
 		 *
 		 * @see Template.open
 		 */
-		suspend fun open(): Outcome<Failures.Edit, Unit>
+		suspend fun open(): Outcome<Failures.Edit, Unit> = edit(open = true)
 
 		/**
 		 * Closes this template.
 		 *
 		 * @see Template.open
 		 */
-		suspend fun close(): Outcome<Failures.Edit, Unit>
+		suspend fun close(): Outcome<Failures.Edit, Unit> = edit(open = false)
 
 		/**
 		 * Creates a new version of this template, named [title] with [field].

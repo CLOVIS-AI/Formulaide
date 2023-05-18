@@ -1,6 +1,5 @@
 package opensavvy.formulaide.fake
 
-import arrow.core.raise.Raise
 import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
 import kotlinx.coroutines.flow.flow
@@ -50,7 +49,7 @@ class FakeDepartments : Department.Service<FakeDepartments.Ref> {
 		val id: Long,
 	) : Department.Ref {
 
-		private suspend fun Raise<Department.Failures.Edit>.edit(open: Boolean?) {
+		override suspend fun edit(open: Boolean?): Outcome<Department.Failures.Edit, Unit> = out {
 			ensureEmployee { Department.Failures.Unauthenticated }
 			ensureAdministrator { Department.Failures.Unauthorized }
 
@@ -63,14 +62,6 @@ class FakeDepartments : Department.Service<FakeDepartments.Ref> {
 
 				data[id] = current
 			}
-		}
-
-		override suspend fun open(): Outcome<Department.Failures.Edit, Unit> = out {
-			edit(open = true)
-		}
-
-		override suspend fun close(): Outcome<Department.Failures.Edit, Unit> = out {
-			edit(open = false)
 		}
 
 		override fun request(): ProgressiveFlow<Department.Failures.Get, Department> = flow {

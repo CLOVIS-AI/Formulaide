@@ -145,6 +145,19 @@ class FakeUsers : User.Service<FakeUsers.Ref> {
 			}
 		}
 
+		override suspend fun edit(active: Boolean?, administrator: Boolean?): Outcome<User.Failures.SecurityEdit, Unit> =
+			securityEdit {
+				var result = it
+
+				if (active != null)
+					result = result.copy(active = active)
+
+				if (administrator != null)
+					result = result.copy(administrator = administrator)
+
+				result
+			}
+
 		override suspend fun enable(): Outcome<User.Failures.SecurityEdit, Unit> =
 			securityEdit { it.copy(active = true) }
 

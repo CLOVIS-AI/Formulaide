@@ -33,6 +33,10 @@ class SpyTemplates(private val upstream: Template.Service) : Template.Service {
 	inner class Ref internal constructor(
 		private val upstream: Template.Ref,
 	) : Template.Ref {
+		override suspend fun edit(name: String?, open: Boolean?): Outcome<Template.Failures.Edit, Unit> = spy(
+			log, "edit", name, open,
+		) { upstream.edit(name, open) }
+
 		override suspend fun rename(name: String): Outcome<Template.Failures.Edit, Unit> = spy(
 			log, "rename", name,
 		) { upstream.rename(name) }

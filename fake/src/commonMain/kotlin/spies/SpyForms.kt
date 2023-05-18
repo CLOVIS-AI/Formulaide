@@ -33,6 +33,10 @@ class SpyForms(private val upstream: Form.Service) : Form.Service {
 	inner class Ref internal constructor(
 		private val upstream: Form.Ref,
 	) : Form.Ref {
+		override suspend fun edit(name: String?, open: Boolean?, public: Boolean?): Outcome<Form.Failures.Edit, Unit> = spy(
+			log, "edit", name, open, public,
+		) { upstream.edit(name, open, public) }
+
 		override suspend fun rename(name: String): Outcome<Form.Failures.Edit, Unit> = spy(
 			log, "name", name,
 		) { upstream.rename(name) }

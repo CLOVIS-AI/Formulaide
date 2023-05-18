@@ -67,39 +67,44 @@ data class Form(
 	interface Ref : opensavvy.backbone.Ref<Failures.Get, Form>, IdentifierWriter {
 
 		/**
+		 * Edits this form.
+		 */
+		suspend fun edit(name: String? = null, open: Boolean? = null, public: Boolean? = null): Outcome<Failures.Edit, Unit>
+
+		/**
 		 * Renames this form.
 		 *
 		 * @see Form.name
 		 */
-		suspend fun rename(name: String): Outcome<Failures.Edit, Unit>
+		suspend fun rename(name: String): Outcome<Failures.Edit, Unit> = edit(name = name)
 
 		/**
 		 * Opens this form.
 		 *
 		 * @see Form.open
 		 */
-		suspend fun open(): Outcome<Failures.Edit, Unit>
+		suspend fun open(): Outcome<Failures.Edit, Unit> = edit(open = true)
 
 		/**
 		 * Closes this form.
 		 *
 		 * @see Form.open
 		 */
-		suspend fun close(): Outcome<Failures.Edit, Unit>
+		suspend fun close(): Outcome<Failures.Edit, Unit> = edit(open = false)
 
 		/**
 		 * Makes this form public.
 		 *
 		 * @see Form.open
 		 */
-		suspend fun publicize(): Outcome<Failures.Edit, Unit>
+		suspend fun publicize(): Outcome<Failures.Edit, Unit> = edit(public = true)
 
 		/**
 		 * Makes this form private.
 		 *
 		 * @see Form.open
 		 */
-		suspend fun privatize(): Outcome<Failures.Edit, Unit>
+		suspend fun privatize(): Outcome<Failures.Edit, Unit> = edit(public = false)
 
 		/**
 		 * Creates a new version of this template.

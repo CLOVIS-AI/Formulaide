@@ -89,7 +89,7 @@ class MongoDepartments(
     inner class Ref internal constructor(
         internal val id: String,
     ) : Department.Ref {
-        private suspend fun edit(open: Boolean?): Outcome<Department.Failures.Edit, Unit> = out {
+        override suspend fun edit(open: Boolean?): Outcome<Department.Failures.Edit, Unit> = out {
             ensureEmployee { Department.Failures.Unauthenticated }
             ensureAdministrator { Department.Failures.Unauthorized }
 
@@ -110,12 +110,6 @@ class MongoDepartments(
 
             cache.expire(this@Ref)
         }
-
-        override suspend fun open(): Outcome<Department.Failures.Edit, Unit> =
-            edit(open = true)
-
-        override suspend fun close(): Outcome<Department.Failures.Edit, Unit> =
-            edit(open = false)
 
         override fun request(): ProgressiveFlow<Department.Failures.Get, Department> = flow {
             emitAll(cache[this@Ref, currentRole()])

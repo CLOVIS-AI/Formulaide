@@ -90,32 +90,37 @@ data class User(
 		suspend fun leave(department: Department.Ref): Outcome<Failures.Edit, Unit>
 
 		/**
+		 * Edits this user.
+		 */
+		suspend fun edit(active: Boolean? = null, administrator: Boolean? = null): Outcome<Failures.SecurityEdit, Unit>
+
+		/**
 		 * Enables this user.
 		 *
 		 * @see User.active
 		 */
-		suspend fun enable(): Outcome<Failures.SecurityEdit, Unit>
+		suspend fun enable(): Outcome<Failures.SecurityEdit, Unit> = edit(active = true)
 
 		/**
 		 * Disables this user.
 		 *
 		 * @see User.active
 		 */
-		suspend fun disable(): Outcome<Failures.SecurityEdit, Unit>
+		suspend fun disable(): Outcome<Failures.SecurityEdit, Unit> = edit(active = false)
 
 		/**
 		 * Promotes this user to [Role.Administrator].
 		 *
 		 * @see User.administrator
 		 */
-		suspend fun promote(): Outcome<Failures.SecurityEdit, Unit>
+		suspend fun promote(): Outcome<Failures.SecurityEdit, Unit> = edit(administrator = true)
 
 		/**
 		 * Demotes this user to [Role.Employee].
 		 *
 		 * @see User.administrator
 		 */
-		suspend fun demote(): Outcome<Failures.SecurityEdit, Unit>
+		suspend fun demote(): Outcome<Failures.SecurityEdit, Unit> = edit(administrator = false)
 
 		/**
 		 * Resets this user's password.

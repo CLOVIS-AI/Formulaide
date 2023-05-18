@@ -29,13 +29,18 @@ data class Department(
 	interface Ref : opensavvy.backbone.Ref<Failures.Get, Department>, IdentifierWriter {
 
 		/**
+		 * Edits this department.
+		 */
+		suspend fun edit(open: Boolean? = null): Outcome<Failures.Edit, Unit>
+
+		/**
 		 * Makes this department visible.
 		 *
 		 * Requires administrator authentication.
 		 *
 		 * @see Department.open
 		 */
-		suspend fun open(): Outcome<Failures.Edit, Unit>
+		suspend fun open(): Outcome<Failures.Edit, Unit> = edit(open = true)
 
 		/**
 		 * Makes this department invisible.
@@ -44,7 +49,7 @@ data class Department(
 		 *
 		 * @see Department.open
 		 */
-		suspend fun close(): Outcome<Failures.Edit, Unit>
+		suspend fun close(): Outcome<Failures.Edit, Unit> = edit(open = false)
 	}
 
 	interface Service<R : Ref> : Backbone<R, Failures.Get, Department>, IdentifierParser<R> {

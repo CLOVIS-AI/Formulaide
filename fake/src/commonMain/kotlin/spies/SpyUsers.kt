@@ -34,6 +34,10 @@ class SpyUsers<U : User.Ref>(private val upstream: User.Service<U>) : User.Servi
 	inner class Ref internal constructor(
 		private val upstream: User.Ref,
 	) : User.Ref {
+		override suspend fun edit(active: Boolean?, administrator: Boolean?): Outcome<User.Failures.SecurityEdit, Unit> = spy(
+			log, "edit", active, administrator,
+		) { upstream.edit(active, administrator) }
+
 		override suspend fun join(department: Department.Ref): Outcome<User.Failures.Edit, Unit> = spy(
 			log, "join", department,
 		) { upstream.join(department) }

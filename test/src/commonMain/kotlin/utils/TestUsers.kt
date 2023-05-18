@@ -82,6 +82,17 @@ object TestUsers : User.Service<TestUsers.Ref> {
 	class Ref internal constructor(
 		private val id: String,
 	) : User.Ref {
+		override suspend fun edit(active: Boolean?, administrator: Boolean?): Outcome<User.Failures.SecurityEdit, Unit> {
+			error(
+				"""
+			TestUsers does not allow editing a user. Called with:
+				user: $this
+				active: $active
+				administrator: $administrator
+			""".trimIndent()
+			)
+		}
+
 		override suspend fun join(department: Department.Ref): Outcome<User.Failures.Edit, Unit> {
 			error(
 				"""
