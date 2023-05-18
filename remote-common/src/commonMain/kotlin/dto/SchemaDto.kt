@@ -51,7 +51,14 @@ class SchemaDto(
 	@Serializable
 	class New(
 		val name: String,
-		val firstVersion: Version,
+		val firstVersion: NewVersion,
+	)
+
+	@Serializable
+	class NewVersion(
+		val title: String,
+		val field: FieldDto,
+		val steps: List<Step>? = null,
 	)
 
 	@Serializable
@@ -80,7 +87,7 @@ class SchemaDto(
 		)
 
 		private fun convertTemplateRef(ref: Template.Version.Ref): Id =
-			api.templates.id.version.idOf(ref.template.id, ref.version.toString())
+			api.templates.id.version.idOf(ref.template.toIdentifier().text, ref.creationDate.toString())
 
 		suspend fun SchemaDto.toTemplate(
 			decodeTemplate: suspend (Id) -> Template.Version.Ref?,
@@ -130,12 +137,12 @@ class SchemaDto(
 		)
 
 		private fun convertFormRef(ref: Form.Version.Ref): Id =
-			api.forms.id.version.idOf(ref.form.id, ref.version.toString())
+			api.forms.id.version.idOf(ref.form.toIdentifier().text, ref.creationDate.toString())
 
 		fun Form.Step.toDto() = Step(
 			id,
 			name,
-			api.departments.id.idOf(reviewer.id),
+			api.departments.id.idOf(reviewer.toIdentifier().text),
 			field?.toDto(),
 		)
 

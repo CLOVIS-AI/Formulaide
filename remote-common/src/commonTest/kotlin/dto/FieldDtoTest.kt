@@ -1,7 +1,6 @@
 package opensavvy.formulaide.remote.dto
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runTest
+import io.kotest.matchers.shouldBe
 import opensavvy.formulaide.core.Field.Companion.arity
 import opensavvy.formulaide.core.Field.Companion.choice
 import opensavvy.formulaide.core.Field.Companion.group
@@ -9,61 +8,52 @@ import opensavvy.formulaide.core.Field.Companion.input
 import opensavvy.formulaide.core.Field.Companion.label
 import opensavvy.formulaide.core.Input
 import opensavvy.formulaide.core.Template
+import opensavvy.formulaide.core.text
 import opensavvy.formulaide.remote.dto.FieldDto.Companion.toCore
 import opensavvy.formulaide.remote.dto.FieldDto.Companion.toDto
-import kotlin.js.JsName
-import kotlin.test.Test
-import kotlin.test.assertEquals
+import opensavvy.formulaide.test.structure.Suite
+import opensavvy.formulaide.test.structure.TestExecutor
 
-@OptIn(ExperimentalCoroutinesApi::class)
-class FieldDtoTest {
+class FieldDtoTest : TestExecutor() {
 
 	private fun decodeTemplate(): Template.Version.Ref? = null
 
-	@Test
-	@JsName("labelConversion")
-	fun `label conversion`() = runTest {
-		val field = label("Label")
-		assertEquals(field, field.toDto().toCore { decodeTemplate() })
-	}
+	override fun Suite.register() {
+		test("Label conversion") {
+			val field = label("Label")
+			field.toDto().toCore { decodeTemplate() } shouldBe field
+		}
 
-	@Test
-	@JsName("arityConversion")
-	fun `arity conversion`() = runTest {
-		val field = arity("Arity", 0u..2u, label("Label"))
-		assertEquals(field, field.toDto().toCore { decodeTemplate() })
-	}
+		test("Arity conversion") {
+			val field = arity("Arity", 0u..2u, label("Label"))
+			field.toDto().toCore { decodeTemplate() } shouldBe field
+		}
 
-	@Test
-	@JsName("choiceConversion")
-	fun `choice conversion`() = runTest {
-		val field = choice(
-			"Choice",
-			0 to label("Label 1"),
-			1 to label("Label 2"),
-		)
-		assertEquals(field, field.toDto().toCore { decodeTemplate() })
-	}
+		test("Choice conversion") {
+			val field = choice(
+				"Choice",
+				0 to label("Label 1"),
+				1 to label("Label 2"),
+			)
+			field.toDto().toCore { decodeTemplate() } shouldBe field
+		}
 
-	@Test
-	@JsName("groupConversion")
-	fun `group conversion`() = runTest {
-		val field = group(
-			"Group",
-			0 to label("Label 1"),
-			1 to label("Label 2"),
-		)
-		assertEquals(field, field.toDto().toCore { decodeTemplate() })
-	}
+		test("Group conversion") {
+			val field = group(
+				"Group",
+				0 to label("Label 1"),
+				1 to label("Label 2"),
+			)
+			field.toDto().toCore { decodeTemplate() } shouldBe field
+		}
 
-	@Test
-	@JsName("inputConversion")
-	fun `input conversion`() = runTest {
-		val field = input(
-			"Input",
-			Input.Text(),
-		)
-		assertEquals(field, field.toDto().toCore { decodeTemplate() })
+		test("Input conversion") {
+			val field = input(
+				"Input",
+				Input.text().bind(),
+			)
+			field.toDto().toCore { decodeTemplate() } shouldBe field
+		}
 	}
 
 }

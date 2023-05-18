@@ -105,7 +105,7 @@ sealed class FieldDto {
 		}
 
 		private fun convertTemplateRef(ref: Template.Version.Ref): Id =
-			api.templates.id.version.idOf(ref.template.id, ref.version.toString())
+			api.templates.id.version.idOf(ref.template.toIdentifier().text, ref.creationDate.toString())
 
 		fun Field.toDto(): FieldDto = when (this) {
 			is Field.Arity -> Arity(

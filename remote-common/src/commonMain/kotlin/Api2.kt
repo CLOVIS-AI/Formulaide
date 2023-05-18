@@ -1,7 +1,8 @@
 package opensavvy.formulaide.remote
 
-import kotlinx.datetime.Instant
-import opensavvy.formulaide.core.*
+import arrow.core.identity
+import arrow.core.raise.either
+import opensavvy.formulaide.core.utils.Identifier
 import opensavvy.formulaide.remote.Api2.*
 import opensavvy.formulaide.remote.Api2.DepartmentsEndpoint.DepartmentEndpoint
 import opensavvy.formulaide.remote.Api2.FormsEndpoint.FormEndpoint
@@ -13,13 +14,8 @@ import opensavvy.formulaide.remote.Api2.TemplatesEndpoint.TemplateEndpoint.Templ
 import opensavvy.formulaide.remote.Api2.UsersEndpoint.UserEndpoint
 import opensavvy.formulaide.remote.Api2.UsersEndpoint.UserEndpoint.*
 import opensavvy.formulaide.remote.dto.*
-import opensavvy.spine.Id
-import opensavvy.spine.Parameters
-import opensavvy.spine.Route
+import opensavvy.spine.*
 import opensavvy.spine.Route.Companion.div
-import opensavvy.spine.Service
-import opensavvy.state.outcome.Outcome
-import opensavvy.state.outcome.out
 
 val api = Api2()
 
@@ -92,9 +88,9 @@ class Api2 : Service("v2") {
 
 			val edit = edit<DepartmentDto.Edit, Parameters.Empty>()
 
-			suspend fun refOf(id: Id, departments: Department.Service): Outcome<Department.Ref> = out {
-				validateId(id, Unit)
-				Department.Ref(id.resource.segments.last().segment, departments)
+			suspend fun identifierOf(id: Id) = run {
+				validateIdOrThrow(id, Unit)
+				Identifier(id.resource.segments.last().segment)
 			}
 
 		}
@@ -256,9 +252,9 @@ class Api2 : Service("v2") {
 				val logOut = delete<String>()
 			}
 
-			suspend fun refOf(id: Id, users: User.Service): Outcome<User.Ref> = out {
-				validateId(id, Unit)
-				User.Ref(id.resource.segments[1].segment, users)
+			suspend fun identifierOf(id: Id) = run {
+				validateIdOrThrow(id, Unit)
+				Identifier(id.resource.segments[1].segment)
 			}
 
 			val departments = DepartmentEndpoint()
@@ -337,13 +333,13 @@ class Api2 : Service("v2") {
 		 */
 		inner class TemplateEndpoint : DynamicResource<SchemaDto, Unit>("template") {
 
-			val create = create<SchemaDto.Version, Unit, Parameters.Empty>()
+			val create = create<SchemaDto.NewVersion, Unit, Parameters.Empty>()
 
 			val edit = edit<SchemaDto.Edit, Parameters.Empty>()
 
-			suspend fun refOf(id: Id, templates: Template.Service): Outcome<Template.Ref> = out {
-				validateId(id, Unit)
-				Template.Ref(id.resource.segments[1].segment, templates)
+			suspend fun identifierOf(id: Id) = run {
+				validateIdOrThrow(id, Unit)
+				Identifier(id.resource.segments[1].segment)
 			}
 
 			/**
@@ -359,17 +355,9 @@ class Api2 : Service("v2") {
 			 */
 			inner class TemplateVersionEndpoint : DynamicResource<SchemaDto.Version, Unit>("version") {
 
-				suspend fun refOf(
-					id: Id,
-					templates: Template.Service,
-				): Outcome<Template.Version.Ref> = out {
-					validateId(id, Unit)
-					Template.Version.Ref(
-						this@TemplateEndpoint.refOf(Id(id.service, Route(id.resource.segments.dropLast(1))), templates)
-							.bind(),
-						Instant.parse(id.resource.segments.last().segment),
-						templates.versions,
-					)
+				suspend fun identifierOf(id: Id) = run {
+					validateIdOrThrow(id, Unit)
+					Identifier(id.resource.segments.takeLast(2).joinToString("_"))
 				}
 			}
 
@@ -451,13 +439,13 @@ class Api2 : Service("v2") {
 		 */
 		inner class FormEndpoint : DynamicResource<SchemaDto, Unit>("form") {
 
-			val create = create<SchemaDto.Version, Unit, Parameters.Empty>()
+			val create = create<SchemaDto.NewVersion, Unit, Parameters.Empty>()
 
 			val edit = edit<SchemaDto.Edit, Parameters.Empty>()
 
-			suspend fun refOf(id: Id, forms: Form.Service): Outcome<Form.Ref> = out {
-				validateId(id, Unit)
-				Form.Ref(id.resource.segments[1].segment, forms)
+			suspend fun identifierOf(id: Id) = run {
+				validateIdOrThrow(id, Unit)
+				Identifier(id.resource.segments[1].segment)
 			}
 
 			/**
@@ -475,17 +463,9 @@ class Api2 : Service("v2") {
 			 */
 			inner class FormVersionEndpoint : DynamicResource<SchemaDto.Version, Unit>("version") {
 
-				suspend fun refOf(
-					id: Id,
-					forms: Form.Service,
-				): Outcome<Form.Version.Ref> = out {
-					validateId(id, Unit)
-					Form.Version.Ref(
-						this@FormEndpoint.refOf(Id(id.service, Route(id.resource.segments.dropLast(1))), forms)
-							.bind(),
-						Instant.parse(id.resource.segments.last().segment),
-						forms.versions,
-					)
+				suspend fun identifierOf(id: Id) = run {
+					validateIdOrThrow(id, Unit)
+					Identifier(id.resource.segments.takeLast(2).joinToString("_"))
 				}
 			}
 
@@ -523,9 +503,9 @@ class Api2 : Service("v2") {
 		 */
 		inner class SubmissionEndpoint : DynamicResource<SubmissionDto, Unit>("submission") {
 
-			suspend fun refOf(id: Id, submissions: Submission.Service): Outcome<Submission.Ref> = out {
-				validateId(id, Unit)
-				Submission.Ref(id.resource.segments.last().segment, submissions)
+			suspend fun identifierOf(id: Id) = run {
+				validateIdOrThrow(id, Unit)
+				Identifier(id.resource.segments.last().segment)
 			}
 		}
 
@@ -585,9 +565,9 @@ class Api2 : Service("v2") {
 		 */
 		inner class RecordEndpoint : DynamicResource<RecordDto, Unit>("record") {
 
-			suspend fun refOf(id: Id, records: Record.Service): Outcome<Record.Ref> = out {
-				validateId(id, Unit)
-				Record.Ref(id.resource.segments.last().segment, records)
+			suspend fun identifierOf(id: Id) = run {
+				validateIdOrThrow(id, Unit)
+				Identifier(id.resource.segments.last().segment)
 			}
 
 			val advance = action<RecordDto.Advance, Unit, Parameters.Empty>(Route / "advance")
@@ -603,3 +583,15 @@ class Api2 : Service("v2") {
 	//endregion
 
 }
+
+// region Utils
+
+private suspend fun <O : Any, Context : Any> ResourceGroup.AbstractResource<O, Context>.validateIdOrThrow(id: Id, context: Context) = either {
+	validateCorrectId(id)
+	validateId(id, context)
+}.fold(
+	ifLeft = { error("Invalid identifier for $this: $id") },
+	ifRight = ::identity,
+)
+
+// endregion

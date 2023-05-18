@@ -8,7 +8,6 @@ import opensavvy.formulaide.core.Submission
 import opensavvy.formulaide.core.User
 import opensavvy.formulaide.remote.api
 import opensavvy.spine.Id
-import opensavvy.state.outcome.out
 
 /**
  * DTO for [Record].
@@ -105,28 +104,26 @@ private fun RecordDto.Status.toCore() = when (this) {
 	is RecordDto.Status.Step -> Record.Status.Step(step)
 }
 
-suspend fun RecordDto.toCore(forms: Form.Service, users: User.Service, submissions: Submission.Service) = out {
-	Record(
-		form = api.forms.id.version.refOf(form, forms).bind(),
+suspend fun RecordDto.toCore(forms: Form.Service, users: User.Service<*>, submissions: Submission.Service) = Record(
+	form = forms.versions.fromIdentifier(api.forms.id.version.identifierOf(form)),
 		createdAt = createdAt,
 		modifiedAt = modifiedAt,
-		history = history.map { it.toCore(users, submissions).bind() },
+	history = history.map { it.toCore(users, submissions) },
 	)
-}
 
 fun Record.toDto() = RecordDto(
-	api.forms.id.version.idOf(form.form.id, form.version.toString()),
+	api.forms.id.version.idOf(form.form.toIdentifier().text, form.creationDate.toString()),
 	createdAt,
 	modifiedAt,
 	status.toDto(),
 	history.map { it.toDto() },
 )
 
-suspend fun RecordDto.Diff.toCore(users: User.Service, submissions: Submission.Service) = out {
-	val submission = submission?.let { api.submissions.id.refOf(it, submissions).bind() }
-	val author = author?.let { api.users.id.refOf(it, users).bind() }
+suspend fun RecordDto.Diff.toCore(users: User.Service<*>, submissions: Submission.Service): Record.Diff {
+	val submission = submission?.let { submissions.fromIdentifier(api.submissions.id.identifierOf(it)) }
+	val author = author?.let { users.fromIdentifier(api.users.id.identifierOf(it)) }
 
-	when (type) {
+	return when (type) {
 		RecordDto.Diff.Type.Initial -> Record.Diff.Initial(
 			submission = submission!!,
 			author = author,
@@ -177,10 +174,10 @@ suspend fun RecordDto.Diff.toCore(users: User.Service, submissions: Submission.S
 }
 
 fun Record.Diff.toDto() = RecordDto.Diff(
-	author = author?.let { api.users.id.idOf(it.id) },
+	author = author?.let { api.users.id.idOf(it.toIdentifier().text) },
 	source = source.toDto(),
 	target = target.toDto(),
-	submission = submission?.let { api.submissions.id.idOf(it.id) },
+	submission = submission?.let { api.submissions.id.idOf(it.toIdentifier().text) },
 	reason = reason,
 	at = at,
 	type = when (this) {
