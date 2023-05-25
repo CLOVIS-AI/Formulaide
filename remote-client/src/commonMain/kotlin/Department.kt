@@ -60,7 +60,7 @@ class RemoteDepartments(
 			api.departments.get,
 			api.departments.idOf(),
 			Unit,
-			DepartmentDto.GetParams().apply { this.includeClosed = includeClosed },
+			DepartmentDto.ListParams().apply { this.includeClosed = includeClosed },
 			Unit,
 		)
 			.mapFailure {

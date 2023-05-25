@@ -69,7 +69,7 @@ class RemoteUsers(
 			api.users.get,
 			api.users.idOf(),
 			Unit,
-			UserDto.GetParams().apply { this.includeClosed = includeClosed },
+			UserDto.ListParams().apply { this.includeClosed = includeClosed },
 			Unit,
 		).mapFailure {
 			when (it.type) {

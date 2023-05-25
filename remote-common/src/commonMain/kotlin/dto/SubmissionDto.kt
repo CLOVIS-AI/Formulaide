@@ -15,7 +15,11 @@ class SubmissionDto(
 	val form: Id,
 	val step: Int?,
 	val data: Map<String, String>,
-)
+) {
+
+	@Serializable
+	object GetFailures
+}
 
 //region Conversion
 

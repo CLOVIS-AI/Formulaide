@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.job
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toInstant
-import opensavvy.backbone.Ref
 import opensavvy.cache.contextual.cache
 import opensavvy.cache.contextual.cachedInMemory
 import opensavvy.cache.contextual.expireAfter
@@ -89,7 +88,7 @@ class RemoteTemplates(
 			api.templates.get,
 			api.templates.idOf(),
 			Unit,
-			SchemaDto.GetParams().apply { this.includeClosed = includeClosed },
+			SchemaDto.ListParams().apply { this.includeClosed = includeClosed },
 			Unit,
 		).mapFailure {
 			when (it.type) {

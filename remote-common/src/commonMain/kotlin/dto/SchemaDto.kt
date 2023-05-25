@@ -44,15 +44,27 @@ class SchemaDto(
 		val field: FieldDto?,
 	)
 
-	class GetParams : Parameters() {
+	class ListParams : Parameters() {
 		var includeClosed by parameter("includeClosed", default = false)
 	}
+
+	@Serializable
+	object ListFailures
+
+	@Serializable
+	object GetFailures
+
+	@Serializable
+	object GetVersionFailures
 
 	@Serializable
 	class New(
 		val name: String,
 		val firstVersion: NewVersion,
 	)
+
+	@Serializable
+	object NewFailures
 
 	@Serializable
 	class NewVersion(
@@ -62,11 +74,17 @@ class SchemaDto(
 	)
 
 	@Serializable
+	object NewVersionFailures
+
+	@Serializable
 	class Edit(
 		val name: String? = null,
 		val open: Boolean? = null,
 		val public: Boolean? = null,
 	)
+
+	@Serializable
+	object EditFailures
 
 	companion object {
 

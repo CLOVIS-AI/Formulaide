@@ -13,9 +13,12 @@ data class DepartmentDto(
 	val open: Boolean,
 ) {
 
-	class GetParams : Parameters() {
+	class ListParams : Parameters() {
 		var includeClosed by parameter("includeClosed", default = false)
 	}
+
+	@Serializable
+	object ListFailures
 
 	@Serializable
 	class New(
@@ -23,9 +26,18 @@ data class DepartmentDto(
 	)
 
 	@Serializable
+	object NewFailures
+
+	@Serializable
 	class Edit(
 		val open: Boolean? = null,
 	)
+
+	@Serializable
+	object EditFailures
+
+	@Serializable
+	object GetFailures
 
 	companion object {
 

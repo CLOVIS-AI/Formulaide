@@ -88,7 +88,7 @@ class RemoteForms(
 			api.forms.get,
 			api.forms.idOf(),
 			Unit,
-			SchemaDto.GetParams().apply { this.includeClosed = includeClosed },
+			SchemaDto.ListParams().apply { this.includeClosed = includeClosed },
 			Unit,
 		).mapFailure {
 			when (it.type) {

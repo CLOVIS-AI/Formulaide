@@ -18,9 +18,12 @@ data class UserDto(
 	val singleUsePassword: Boolean,
 ) {
 
-	class GetParams : Parameters() {
+	class ListParams : Parameters() {
 		var includeClosed by parameter("includeClosed", default = false)
 	}
+
+	@Serializable
+	object ListFailures
 
 	@Serializable
 	class New(
@@ -30,10 +33,16 @@ data class UserDto(
 	)
 
 	@Serializable
+	object NewFailures
+
+	@Serializable
 	class Edit(
 		val active: Boolean? = null,
 		val administrator: Boolean? = null,
 	)
+
+	@Serializable
+	object EditFailures
 
 	@Serializable
 	class SetPassword(
@@ -47,4 +56,30 @@ data class UserDto(
 		val password: String,
 	)
 
+	@Serializable
+	object LogInFailures
+
+	@Serializable
+	object GetFailures
+
+	@Serializable
+	object DepartmentListFailures
+
+	@Serializable
+	object DepartmentAddFailures
+
+	@Serializable
+	object DepartmentRemoveFailures
+
+	@Serializable
+	object PasswordResetFailures
+
+	@Serializable
+	object PasswordSetFailures
+
+	@Serializable
+	object TokenVerifyFailures
+
+	@Serializable
+	object LogOutFailures
 }

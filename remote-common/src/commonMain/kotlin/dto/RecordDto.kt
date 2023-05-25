@@ -88,6 +88,18 @@ class RecordDto(
 		val submission: Map<String, String>? = null,
 		val toStep: Int? = null,
 	)
+
+	@Serializable
+	object SearchFailures
+
+	@Serializable
+	object NewFailures
+
+	@Serializable
+	object GetFailures
+
+	@Serializable
+	object AdvanceFailures
 }
 
 //region Conversions
