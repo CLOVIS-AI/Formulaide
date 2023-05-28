@@ -2,7 +2,7 @@ package opensavvy.formulaide.remote.server
 
 import opensavvy.formulaide.fake.FakeDepartments
 import opensavvy.formulaide.fake.spies.SpyDepartments.Companion.spied
-import opensavvy.formulaide.remote.client.Departments
+import opensavvy.formulaide.remote.client.RemoteDepartments
 import opensavvy.formulaide.remote.server.utils.TestClient
 import opensavvy.formulaide.remote.server.utils.createTestServer
 import opensavvy.formulaide.test.departmentTestSuite
@@ -20,9 +20,9 @@ class RemoteDepartmentTest : TestExecutor() {
 				}
 			}
 
-			Departments(
+			RemoteDepartments(
 				TestClient(application.client),
-				backgroundScope.coroutineContext,
+				backgroundScope,
 			)
 		}
 

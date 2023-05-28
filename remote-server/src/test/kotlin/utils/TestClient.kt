@@ -4,7 +4,7 @@ import io.ktor.client.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import opensavvy.formulaide.core.Auth
-import opensavvy.formulaide.core.Auth.Companion.currentAuth
+import opensavvy.formulaide.core.currentAuth
 import opensavvy.formulaide.remote.client.Client
 import opensavvy.formulaide.remote.client.Client.Companion.configureClient
 import opensavvy.logger.Logger.Companion.error

@@ -192,7 +192,6 @@ data class User(
 
 		data class NotFound(override val id: Ref) : StandardNotFound<Ref>,
 			Get,
-			Create,
 			Edit,
 			SecurityEdit,
 			SetPassword

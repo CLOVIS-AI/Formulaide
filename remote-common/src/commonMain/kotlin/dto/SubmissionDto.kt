@@ -3,6 +3,7 @@ package opensavvy.formulaide.remote.dto
 import kotlinx.serialization.Serializable
 import opensavvy.formulaide.core.Field
 import opensavvy.formulaide.core.Form
+import opensavvy.formulaide.core.Input
 import opensavvy.formulaide.core.Submission
 import opensavvy.formulaide.remote.api
 import opensavvy.spine.Id
@@ -19,6 +20,35 @@ class SubmissionDto(
 
 	@Serializable
 	object GetFailures
+
+	@Serializable
+	sealed class ParsingFailures {
+		@Serializable
+		object FormVersionNotFound : ParsingFailures()
+
+		@Serializable
+		class Mandatory(
+			val field: String,
+		) : ParsingFailures()
+
+		@Serializable
+		class InvalidInput(
+			val field: String,
+			val failure: String,
+		) : ParsingFailures()
+
+		@Serializable
+		class SelectedChoiceMatchesNoOptions(
+			val field: String,
+			val selected: String,
+			val valid: List<Int>,
+		) : ParsingFailures()
+
+		@Serializable
+		class MissingGroupMarker(
+			val field: String,
+		) : ParsingFailures()
+	}
 }
 
 //region Conversion
@@ -34,5 +64,21 @@ fun Submission.toDto() = SubmissionDto(
 	step = formStep,
 	data = data.mapKeys { (id, _) -> id.toString() },
 )
+
+fun SubmissionDto.ParsingFailures.toCore() = when (this) {
+	is SubmissionDto.ParsingFailures.FormVersionNotFound -> Submission.ParsingFailure.UnavailableForm
+	is SubmissionDto.ParsingFailures.InvalidInput -> Submission.ParsingFailure.InvalidValue.InputParsingFailure(Field.Id.fromString(field), Input.Failures.Parsing(failure))
+	is SubmissionDto.ParsingFailures.Mandatory -> Submission.ParsingFailure.InvalidValue.Mandatory(Field.Id.fromString(field))
+	is SubmissionDto.ParsingFailures.MissingGroupMarker -> Submission.ParsingFailure.InvalidValue.MissingGroupMarker(Field.Id.fromString(field))
+	is SubmissionDto.ParsingFailures.SelectedChoiceMatchesNoOptions -> Submission.ParsingFailure.InvalidValue.SelectedChoiceMatchesNoOptions(Field.Id.fromString(field), selected, valid)
+}
+
+fun Submission.ParsingFailure.toDto() = when (this) {
+	is Submission.ParsingFailure.InvalidValue.InputParsingFailure -> SubmissionDto.ParsingFailures.InvalidInput(field.toString(), failure.message)
+	is Submission.ParsingFailure.InvalidValue.Mandatory -> SubmissionDto.ParsingFailures.Mandatory(field.toString())
+	is Submission.ParsingFailure.InvalidValue.MissingGroupMarker -> SubmissionDto.ParsingFailures.MissingGroupMarker(field.toString())
+	is Submission.ParsingFailure.InvalidValue.SelectedChoiceMatchesNoOptions -> SubmissionDto.ParsingFailures.SelectedChoiceMatchesNoOptions(field.toString(), selected, valid.toList())
+	is Submission.ParsingFailure.UnavailableForm -> SubmissionDto.ParsingFailures.FormVersionNotFound
+}
 
 //endregion

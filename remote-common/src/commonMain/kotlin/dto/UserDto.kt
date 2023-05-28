@@ -33,7 +33,10 @@ data class UserDto(
 	)
 
 	@Serializable
-	object NewFailures
+	sealed class NewFailures {
+		@Serializable
+		class UserAlreadyExists(val email: String) : NewFailures()
+	}
 
 	@Serializable
 	class Edit(
@@ -42,7 +45,10 @@ data class UserDto(
 	)
 
 	@Serializable
-	object EditFailures
+	sealed class EditFailures {
+		@Serializable
+		object CannotEditYourself : EditFailures()
+	}
 
 	@Serializable
 	class SetPassword(
@@ -75,7 +81,13 @@ data class UserDto(
 	object PasswordResetFailures
 
 	@Serializable
-	object PasswordSetFailures
+	sealed class PasswordSetFailures {
+		@Serializable
+		object CanOnlySetYourOwnPassword : PasswordSetFailures()
+
+		@Serializable
+		object IncorrectOldPassword : PasswordSetFailures()
+	}
 
 	@Serializable
 	object TokenVerifyFailures

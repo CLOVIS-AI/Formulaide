@@ -1,5 +1,6 @@
 package opensavvy.formulaide.remote.client
 
+import arrow.core.toNonEmptyListOrNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
@@ -11,8 +12,10 @@ import opensavvy.formulaide.core.*
 import opensavvy.formulaide.core.utils.Identifier
 import opensavvy.formulaide.remote.api
 import opensavvy.formulaide.remote.dto.RecordDto
+import opensavvy.formulaide.remote.dto.SubmissionDto
 import opensavvy.formulaide.remote.dto.toCore
 import opensavvy.formulaide.remote.dto.toDto
+import opensavvy.formulaide.remote.failures.message
 import opensavvy.logger.Logger.Companion.warn
 import opensavvy.logger.loggerFor
 import opensavvy.spine.Parameters
@@ -83,6 +86,16 @@ class RemoteRecords(
 		).mapFailure {
 			when (it.type) {
 				SpineFailure.Type.Unauthenticated -> Record.Failures.Unauthenticated
+				SpineFailure.Type.NotFound -> when (val message = it.message) {
+					null -> error("Received a status with no message: $it")
+					else -> Record.Failures.FormNotFound(forms.fromIdentifier(message), null)
+				}
+
+				SpineFailure.Type.InvalidRequest -> when (val payload = it.payload) {
+					is RecordDto.NewFailures.CannotCreateRecordForNonInitialStep -> Record.Failures.CannotCreateRecordForNonInitialStep
+					is RecordDto.NewFailures.InvalidSubmission -> Record.Failures.InvalidSubmission(payload.failures.map(SubmissionDto.ParsingFailures::toCore).toNonEmptyListOrNull()!!)
+					null -> error("Received a status with no message: $it")
+				}
 				else -> error("Received an unexpected status: $it")
 			}
 		}.bind()
@@ -127,7 +140,7 @@ class RemoteRecords(
 				api.records.id.advance,
 				api.records.id.idOf(id),
 				RecordDto.Advance(
-					type = RecordDto.Diff.Type.Accept,
+					type = RecordDto.Diff.Type.EditCurrent,
 					reason = reason,
 					submission = submission.mapKeys { (it, _) -> it.toString() },
 				),
@@ -141,14 +154,14 @@ class RemoteRecords(
 				}
 			}
 
-		override suspend fun accept(reason: String?, submission: Map<Field.Id, String>): Outcome<Record.Failures.Action, Unit> =
+		override suspend fun accept(reason: String?, submission: Map<Field.Id, String>?): Outcome<Record.Failures.Action, Unit> =
 			client.http.request(
 				api.records.id.advance,
 				api.records.id.idOf(id),
 				RecordDto.Advance(
-					type = RecordDto.Diff.Type.EditCurrent,
+					type = RecordDto.Diff.Type.Accept,
 					reason = reason,
-					submission = submission.mapKeys { (it, _) -> it.toString() },
+					submission = submission?.mapKeys { (it, _) -> it.toString() },
 				),
 				Parameters.Empty,
 				Unit,

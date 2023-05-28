@@ -93,7 +93,15 @@ class RecordDto(
 	object SearchFailures
 
 	@Serializable
-	object NewFailures
+	sealed class NewFailures {
+		@Serializable
+		object CannotCreateRecordForNonInitialStep : NewFailures()
+
+		@Serializable
+		class InvalidSubmission(
+			val failures: List<SubmissionDto.ParsingFailures>,
+		) : NewFailures()
+	}
 
 	@Serializable
 	object GetFailures

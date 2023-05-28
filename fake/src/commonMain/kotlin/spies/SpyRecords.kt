@@ -36,7 +36,7 @@ class SpyRecords(private val upstream: Record.Service) : Record.Service {
 			log, "editCurrent", reason, submission,
 		) { upstream.editCurrent(reason, submission) }
 
-		override suspend fun accept(reason: String?, submission: Map<Field.Id, String>): Outcome<Record.Failures.Action, Unit> = spy(
+		override suspend fun accept(reason: String?, submission: Map<Field.Id, String>?): Outcome<Record.Failures.Action, Unit> = spy(
 			log, "accept", reason, submission,
 		) { upstream.accept(reason, submission) }
 

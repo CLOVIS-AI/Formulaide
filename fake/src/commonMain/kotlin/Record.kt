@@ -187,10 +187,12 @@ class FakeRecords(
 			)
 		}
 
-		override suspend fun accept(reason: String?, submission: Map<Field.Id, String>): Outcome<Record.Failures.Action, Unit> = out {
+		override suspend fun accept(reason: String?, submission: Map<Field.Id, String>?): Outcome<Record.Failures.Action, Unit> = out {
 			ensureEmployee { Record.Failures.Unauthenticated }
 
-			val (subRef, sub) = createSubmission(submission).bind()
+			val (subRef, sub) = submission
+				?.let { createSubmission(it).bind() }
+				?: (null to null)
 
 			val rec = now().bind()
 			val form = rec.form.now()

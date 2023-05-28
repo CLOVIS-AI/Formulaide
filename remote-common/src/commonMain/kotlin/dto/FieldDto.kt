@@ -2,6 +2,7 @@ package opensavvy.formulaide.remote.dto
 
 import kotlinx.serialization.Serializable
 import opensavvy.formulaide.core.Field
+import opensavvy.formulaide.core.Input
 import opensavvy.formulaide.core.Template
 import opensavvy.formulaide.remote.api
 import opensavvy.formulaide.remote.dto.InputDto.Companion.toCore
@@ -67,6 +68,27 @@ sealed class FieldDto {
 		val max: UInt,
 		override val importedFrom: Id? = null,
 	) : FieldDto()
+
+	@Serializable
+	sealed class CompatibilityFailure {
+		@Serializable
+		class IncompatibleField(
+			val field: String,
+			val message: String,
+		) : CompatibilityFailure()
+
+		@Serializable
+		class IncompatibleInput(
+			val field: String,
+			val message: String,
+		) : CompatibilityFailure()
+
+		@Serializable
+		class TemplateNotFound(
+			val field: String,
+			val template: Id,
+		) : CompatibilityFailure()
+	}
 
 	companion object {
 
@@ -140,5 +162,38 @@ sealed class FieldDto {
 			)
 		}
 
+		suspend fun CompatibilityFailure.toCore(templates: Template.Service) = when (this) {
+			is CompatibilityFailure.IncompatibleField -> Field.Failures.Compatibility.IncompatibleField(
+				field = Field.Id.fromString(field),
+				message = message,
+			)
+
+			is CompatibilityFailure.IncompatibleInput -> Field.Failures.Compatibility.IncompatibleInput(
+				field = Field.Id.fromString(field),
+				failure = opensavvy.formulaide.core.Input.Failures.Compatibility(message),
+			)
+
+			is CompatibilityFailure.TemplateNotFound -> Field.Failures.Compatibility.TemplateNotFound(
+				field = Field.Id.fromString(field),
+				id = templates.versions.fromIdentifier(api.templates.id.version.identifierOf(template)),
+			)
+		}
+
+		fun Field.Failures.Compatibility.toDto() = when (this) {
+			is Field.Failures.Compatibility.IncompatibleField -> CompatibilityFailure.IncompatibleField(
+				field = field.toString(),
+				message = message,
+			)
+
+			is Field.Failures.Compatibility.IncompatibleInput -> CompatibilityFailure.IncompatibleInput(
+				field = field.toString(),
+				message = failure.message,
+			)
+
+			is Field.Failures.Compatibility.TemplateNotFound -> CompatibilityFailure.TemplateNotFound(
+				field = field.toString(),
+				template = api.templates.id.version.idOf(id.template.toIdentifier().text, id.creationDate.toString()),
+			)
+		}
 	}
 }

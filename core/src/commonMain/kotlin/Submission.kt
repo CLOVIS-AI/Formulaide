@@ -172,7 +172,7 @@ data class Submission(
 		form.request()
 			.now()
 			.toEither()
-			.mapLeft { ParsingFailure.UnavailableForm(it) }
+			.mapLeft { ParsingFailure.UnavailableForm }
 			.bind()
 			.findFieldForStep(formStep)
 	}
@@ -309,9 +309,7 @@ data class Submission(
 	}
 
 	sealed interface ParsingFailure {
-		data class UnavailableForm(
-			val failure: Form.Version.Failures.Get,
-		) : ParsingFailure
+		object UnavailableForm : ParsingFailure
 
 		sealed class InvalidValue : ParsingFailure {
 			abstract val field: Field.Id

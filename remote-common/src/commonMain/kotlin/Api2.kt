@@ -333,7 +333,7 @@ class Api2 : Service("v2") {
 		 */
 		inner class TemplateEndpoint : DynamicResource<SchemaDto, SchemaDto.GetFailures, Unit>("template") {
 
-			val create = create<SchemaDto.NewVersion, SchemaDto.NewVersionFailures, Unit, Parameters.Empty>()
+			val create = create<SchemaDto.NewVersion, SchemaDto.NewFailures, Unit, Parameters.Empty>()
 
 			val edit = edit<SchemaDto.Edit, SchemaDto.EditFailures, Parameters.Empty>()
 
@@ -439,7 +439,7 @@ class Api2 : Service("v2") {
 		 */
 		inner class FormEndpoint : DynamicResource<SchemaDto, SchemaDto.GetFailures, Unit>("form") {
 
-			val create = create<SchemaDto.NewVersion, SchemaDto.NewVersionFailures, Unit, Parameters.Empty>()
+			val create = create<SchemaDto.NewVersion, SchemaDto.NewFailures, Unit, Parameters.Empty>()
 
 			val edit = edit<SchemaDto.Edit, SchemaDto.EditFailures, Parameters.Empty>()
 

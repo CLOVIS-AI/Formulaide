@@ -263,7 +263,7 @@ data class Record(
 		 */
 		suspend fun accept(
 			reason: String?,
-			submission: Map<Field.Id, String>,
+			submission: Map<Field.Id, String>?,
 		): Outcome<Failures.Action, Unit>
 
 		/**

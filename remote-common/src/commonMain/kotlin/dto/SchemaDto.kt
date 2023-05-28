@@ -8,6 +8,7 @@ import opensavvy.formulaide.core.Template
 import opensavvy.formulaide.remote.api
 import opensavvy.formulaide.remote.dto.FieldDto.Companion.toCore
 import opensavvy.formulaide.remote.dto.FieldDto.Companion.toDto
+import opensavvy.formulaide.remote.failures.EmbeddedFailure
 import opensavvy.spine.Id
 import opensavvy.spine.Parameters
 
@@ -55,7 +56,10 @@ class SchemaDto(
 	object GetFailures
 
 	@Serializable
-	object GetVersionFailures
+	sealed class GetVersionFailures {
+		@Serializable
+		class CouldNotGetForm(val failure: EmbeddedFailure<GetFailures>) : GetVersionFailures()
+	}
 
 	@Serializable
 	class New(
@@ -64,7 +68,10 @@ class SchemaDto(
 	)
 
 	@Serializable
-	object NewFailures
+	sealed class NewFailures {
+		@Serializable
+		class InvalidImport(val failures: List<FieldDto.CompatibilityFailure>) : NewFailures()
+	}
 
 	@Serializable
 	class NewVersion(
@@ -72,9 +79,6 @@ class SchemaDto(
 		val field: FieldDto,
 		val steps: List<Step>? = null,
 	)
-
-	@Serializable
-	object NewVersionFailures
 
 	@Serializable
 	class Edit(

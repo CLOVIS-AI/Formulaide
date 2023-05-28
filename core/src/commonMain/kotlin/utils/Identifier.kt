@@ -12,7 +12,7 @@ value class Identifier(
 	}
 
 	private fun parseChar(char: Char) {
-		require(char.isLetterOrDigit() || char == ':' || char == '-' || char == '_') { "The character '$char' is not a valid character in an identifier. Found: '$text'" }
+		require(char.isLetterOrDigit() || char == ':' || char == '-' || char == '_' || char == '.') { "The character '$char' is not a valid character in an identifier. Found: '$text'" }
 	}
 }
 

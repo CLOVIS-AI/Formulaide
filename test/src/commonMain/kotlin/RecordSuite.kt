@@ -18,6 +18,10 @@ import opensavvy.formulaide.test.assertions.*
 import opensavvy.formulaide.test.structure.*
 import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
 import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
+import opensavvy.formulaide.test.utils.executeAs
+import opensavvy.formulaide.test.utils.executeAsGuest
+import kotlin.random.Random
+import kotlin.random.nextUInt
 
 fun <D : Department.Ref> Suite.recordsTestSuite(
 	testDepartments: Setup<Department.Service<D>>,
@@ -229,14 +233,16 @@ fun <D : Department.Ref> Suite.recordsTestSuite(
 		val records = prepare(testRecords)
 		val form = prepare(workflowForm)
 
-        records.create(
-            form,
-            "" to "",
-            "0" to "",
-            "0:0" to "My first name",
-            "0:1" to "My last name",
-            "1" to "Plant more trees!",
-        ).bind()
+		executeAsGuest {
+			records.create(
+				form,
+				"" to "",
+				"0" to "",
+				"0:0" to "My first name",
+				"0:1" to "My last name",
+				"1" to "Plant more trees!",
+			).bind()
+		}
 	}
 
 	suite("Workflow") {
@@ -339,9 +345,11 @@ fun <D : Department.Ref> Suite.recordsTestSuite(
 			val refuse by prepared(employeeAuth) {
 				val record = prepare(testRecord)
 
-				record.refuse(
-					"I don't like it",
-				).bind()
+				executeAs(testReviewer) {
+					record.refuse(
+						"I don't like it",
+					).bind()
+				}
 
 				record
 			}
@@ -382,7 +390,7 @@ fun <D : Department.Ref> Suite.recordsTestSuite(
 			test("The refusal's author should be correct", employeeAuth) {
 				val diff = prepare(refuseDiff)
 
-				diff.author shouldBe employeeAuth.user!!
+				diff.author shouldBe prepare(testReviewer)
 			}
 
 			test("The refusal's date should be correct", employeeAuth) {
@@ -426,10 +434,12 @@ fun <D : Department.Ref> Suite.recordsTestSuite(
 			val editCurrent by prepared(employeeAuth) {
 				val record = prepare(testRecord)
 
-				record.editCurrent(
-					null,
-					"" to "0",
-				).bind()
+				executeAs(testReviewer) {
+					record.editCurrent(
+						null,
+						"" to "0",
+					).bind()
+				}
 
 				record
 			}
@@ -470,7 +480,7 @@ fun <D : Department.Ref> Suite.recordsTestSuite(
 			test("The edition's author should be correct", employeeAuth) {
 				val diff = prepare(editCurrentDiff)
 
-				diff.author shouldBe employeeAuth.user!!
+				diff.author shouldBe prepare(testReviewer)
 			}
 
 			test("The edition's date should be correct", employeeAuth) {
@@ -514,10 +524,12 @@ fun <D : Department.Ref> Suite.recordsTestSuite(
 			val editInitial by prepared(employeeAuth) {
 				val record = prepare(testRecord)
 
-				record.editInitial(
-					"I didn't like it",
-					"" to "0",
-				).bind()
+				executeAs(testReviewer) {
+					record.editInitial(
+						"I didn't like it",
+						"" to "0",
+					).bind()
+				}
 
 				record
 			}
@@ -558,7 +570,7 @@ fun <D : Department.Ref> Suite.recordsTestSuite(
 			test("The edition's author should be correct", employeeAuth) {
 				val diff = prepare(editInitialDiff)
 
-				diff.author shouldBe employeeAuth.user!!
+				diff.author shouldBe prepare(testReviewer)
 			}
 
 			test("The edition's date should be correct", employeeAuth) {
@@ -602,15 +614,17 @@ fun <D : Department.Ref> Suite.recordsTestSuite(
 			val moveBack by prepared(employeeAuth) {
 				val record = prepare(testRecord)
 
-				record.accept(
-					null,
-					"" to "0",
-				).bind()
+				executeAs(testReviewer) {
+					record.accept(
+						null,
+						"" to "0",
+					).bind()
 
-				record.moveBack(
-					0,
-					"I didn't like it",
-				).bind()
+					record.moveBack(
+						0,
+						"I didn't like it",
+					).bind()
+				}
 
 				record
 			}
@@ -651,7 +665,7 @@ fun <D : Department.Ref> Suite.recordsTestSuite(
 			test("The move's author should be correct", employeeAuth) {
 				val diff = prepare(moveBackDiff)
 
-				diff.author shouldBe employeeAuth.user!!
+				diff.author shouldBe prepare(testReviewer)
 			}
 
 			test("The move's date should be correct", employeeAuth) {
