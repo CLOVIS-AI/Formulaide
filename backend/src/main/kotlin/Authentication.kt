@@ -1,15 +1,16 @@
 package opensavvy.formulaide.backend
 
-import arrow.core.getOrHandle
 import io.ktor.server.application.*
 import kotlinx.coroutines.withContext
 import opensavvy.formulaide.core.Auth
 import opensavvy.formulaide.core.User
 import opensavvy.formulaide.core.User.Role.Companion.role
 import opensavvy.formulaide.core.data.Token
+import opensavvy.state.outcome.mapFailure
+import opensavvy.state.outcome.value
 
 class TokenAuthenticationConfig {
-	lateinit var users: User.Service
+	lateinit var users: User.Service<*>
 }
 
 val TokenAuthentication = createApplicationPlugin(
@@ -35,21 +36,22 @@ val TokenAuthentication = createApplicationPlugin(
 		val (id, token) = bearer
 		application.log.trace("Found authorization header for user $id, checking if token is valid…")
 
-		val user = User.Ref(id, users)
+		val user = users.fromIdentifier(id)
 
 		user.verifyToken(Token(token))
-			.getOrHandle {
+			.mapFailure {
 				application.log.warn("Could not check authorization token. $it")
 				proceed()
 				return@intercept
 			}
 
 		val role = getUserUnsafe(users, user)
-			.getOrHandle {
+			.mapFailure {
 				application.log.warn("Could not find role for user $user, proceeding as guest; $it")
 				proceed()
 				return@intercept
 			}
+			.value
 			.role
 
 		withContext(Auth(role, user)) {
