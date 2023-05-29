@@ -1,5 +1,6 @@
 package opensavvy.formulaide.remote.dto
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import opensavvy.formulaide.core.Field
 import opensavvy.formulaide.core.Input
@@ -22,6 +23,7 @@ sealed class FieldDto {
 	 * DTO for [Field.Label].
 	 */
 	@Serializable
+	@SerialName("LABEL")
 	class Label(
 		override val label: String,
 		override val importedFrom: Id? = null,
@@ -31,6 +33,7 @@ sealed class FieldDto {
 	 * DTO for [Field.Input].
 	 */
 	@Serializable
+	@SerialName("INPUT")
 	class Input(
 		override val label: String,
 		val input: InputDto,
@@ -41,6 +44,7 @@ sealed class FieldDto {
 	 * DTO for [Field.Choice].
 	 */
 	@Serializable
+	@SerialName("CHOICE")
 	class Choice(
 		override val label: String,
 		val options: Map<Int, FieldDto>,
@@ -51,6 +55,7 @@ sealed class FieldDto {
 	 * DTO for [Field.Group].
 	 */
 	@Serializable
+	@SerialName("GROUP")
 	class Group(
 		override val label: String,
 		val fields: Map<Int, FieldDto>,
@@ -61,6 +66,7 @@ sealed class FieldDto {
 	 * DTO for [Field.Arity].
 	 */
 	@Serializable
+	@SerialName("ARITY")
 	class Arity(
 		override val label: String,
 		val child: FieldDto,
@@ -72,18 +78,21 @@ sealed class FieldDto {
 	@Serializable
 	sealed class CompatibilityFailure {
 		@Serializable
+		@SerialName("INCOMPATIBLE_FIELD")
 		class IncompatibleField(
 			val field: String,
 			val message: String,
 		) : CompatibilityFailure()
 
 		@Serializable
+		@SerialName("INCOMPATIBLE_INPUT")
 		class IncompatibleInput(
 			val field: String,
 			val message: String,
 		) : CompatibilityFailure()
 
 		@Serializable
+		@SerialName("TEMPLATE_NOT_FOUND")
 		class TemplateNotFound(
 			val field: String,
 			val template: Id,

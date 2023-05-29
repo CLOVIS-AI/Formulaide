@@ -1,6 +1,7 @@
 package opensavvy.formulaide.remote.dto
 
 import kotlinx.datetime.Instant
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import opensavvy.formulaide.core.Form
 import opensavvy.formulaide.core.Record
@@ -72,12 +73,15 @@ class RecordDto(
 	@Serializable
 	sealed class Status {
 		@Serializable
+		@SerialName("INITIAL")
 		object Initial : Status()
 
 		@Serializable
+		@SerialName("STEP")
 		class Step(val step: Int) : Status()
 
 		@Serializable
+		@SerialName("REFUSED")
 		object Refused : Status()
 	}
 
@@ -95,9 +99,11 @@ class RecordDto(
 	@Serializable
 	sealed class NewFailures {
 		@Serializable
+		@SerialName("CANNOT_CREATE_RECORD_FOR_NON_INITIAL_STEP")
 		object CannotCreateRecordForNonInitialStep : NewFailures()
 
 		@Serializable
+		@SerialName("INVALID_SUBMISSION")
 		class InvalidSubmission(
 			val failures: List<SubmissionDto.ParsingFailures>,
 		) : NewFailures()

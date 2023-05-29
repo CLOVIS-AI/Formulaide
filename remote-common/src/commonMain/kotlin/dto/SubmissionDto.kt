@@ -1,5 +1,6 @@
 package opensavvy.formulaide.remote.dto
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import opensavvy.formulaide.core.Field
 import opensavvy.formulaide.core.Form
@@ -24,20 +25,24 @@ class SubmissionDto(
 	@Serializable
 	sealed class ParsingFailures {
 		@Serializable
+		@SerialName("FORM_VERSION_NOT_FOUND")
 		object FormVersionNotFound : ParsingFailures()
 
 		@Serializable
+		@SerialName("MISSING_FIELD")
 		class Mandatory(
 			val field: String,
 		) : ParsingFailures()
 
 		@Serializable
+		@SerialName("INVALID_INPUT")
 		class InvalidInput(
 			val field: String,
 			val failure: String,
 		) : ParsingFailures()
 
 		@Serializable
+		@SerialName("SELECTED_CHOICE_MATCHES_NO_OPTION")
 		class SelectedChoiceMatchesNoOptions(
 			val field: String,
 			val selected: String,
@@ -45,6 +50,7 @@ class SubmissionDto(
 		) : ParsingFailures()
 
 		@Serializable
+		@SerialName("MISSING_GROUP_MARKER")
 		class MissingGroupMarker(
 			val field: String,
 		) : ParsingFailures()

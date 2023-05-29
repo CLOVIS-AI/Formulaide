@@ -1,6 +1,7 @@
 package opensavvy.formulaide.remote.dto
 
 import kotlinx.datetime.Instant
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import opensavvy.formulaide.core.Department
 import opensavvy.formulaide.core.Form
@@ -58,6 +59,7 @@ class SchemaDto(
 	@Serializable
 	sealed class GetVersionFailures {
 		@Serializable
+		@SerialName("COULD_NOT_GET_FORM")
 		class CouldNotGetForm(val failure: EmbeddedFailure<GetFailures>) : GetVersionFailures()
 	}
 
@@ -70,6 +72,7 @@ class SchemaDto(
 	@Serializable
 	sealed class NewFailures {
 		@Serializable
+		@SerialName("INVALID_IMPORT")
 		class InvalidImport(val failures: List<FieldDto.CompatibilityFailure>) : NewFailures()
 	}
 

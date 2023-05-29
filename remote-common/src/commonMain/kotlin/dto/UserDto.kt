@@ -1,5 +1,6 @@
 package opensavvy.formulaide.remote.dto
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import opensavvy.formulaide.core.User
 import opensavvy.spine.Id
@@ -35,6 +36,7 @@ data class UserDto(
 	@Serializable
 	sealed class NewFailures {
 		@Serializable
+		@SerialName("EMAIL_ALREADY_TAKEN")
 		class UserAlreadyExists(val email: String) : NewFailures()
 	}
 
@@ -47,6 +49,7 @@ data class UserDto(
 	@Serializable
 	sealed class EditFailures {
 		@Serializable
+		@SerialName("CANNOT_EDIT_YOURSELF")
 		object CannotEditYourself : EditFailures()
 	}
 
@@ -83,9 +86,11 @@ data class UserDto(
 	@Serializable
 	sealed class PasswordSetFailures {
 		@Serializable
+		@SerialName("CAN_ONLY_SET_YOUR_OWN_PASSWORD")
 		object CanOnlySetYourOwnPassword : PasswordSetFailures()
 
 		@Serializable
+		@SerialName("INCORRECT_OLD_PASSWORD")
 		object IncorrectOldPassword : PasswordSetFailures()
 	}
 
