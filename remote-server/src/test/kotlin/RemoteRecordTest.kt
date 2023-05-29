@@ -24,7 +24,7 @@ class RemoteRecordTest : TestExecutor() {
 
 			val records = FakeRecords(clock, files)
 
-			val application = backgroundScope.createTestServer {
+			val application = backgroundScope.createTestServer(users) {
 				routing {
 					records(users, forms, records.submissions, records)
 				}
@@ -40,6 +40,7 @@ class RemoteRecordTest : TestExecutor() {
 
 		recordsTestSuite(
 			testDepartments,
+			testUsers,
 			testForms,
 			testRecords,
 			testFiles,

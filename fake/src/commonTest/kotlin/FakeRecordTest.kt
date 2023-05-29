@@ -1,6 +1,7 @@
 package opensavvy.formulaide.fake
 
 import opensavvy.formulaide.fake.spies.SpyDepartments.Companion.spied
+import opensavvy.formulaide.fake.spies.SpyUsers.Companion.spied
 import opensavvy.formulaide.fake.utils.commonIds
 import opensavvy.formulaide.test.identifierParsingSuite
 import opensavvy.formulaide.test.recordsTestSuite
@@ -10,6 +11,7 @@ class FakeRecordTest : TestExecutor() {
 
 	override fun Suite.register() {
 		val testDepartments by prepared { FakeDepartments().spied() }
+		val testUsers by prepared { FakeUsers().spied() }
 		val testForms by prepared { FakeForms(clock) }
 		val testFiles by prepared { FakeFiles(clock) }
 		val testRecords by prepared { FakeRecords(clock, prepare(testFiles)) }
@@ -17,6 +19,7 @@ class FakeRecordTest : TestExecutor() {
 
 		recordsTestSuite(
 			testDepartments,
+			testUsers,
 			testForms,
 			testRecords,
 			testFiles,

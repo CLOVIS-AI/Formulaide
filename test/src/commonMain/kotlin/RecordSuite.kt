@@ -14,6 +14,7 @@ import opensavvy.formulaide.core.Field.Companion.choice
 import opensavvy.formulaide.core.Field.Companion.group
 import opensavvy.formulaide.core.Field.Companion.input
 import opensavvy.formulaide.core.Field.Companion.label
+import opensavvy.formulaide.core.data.Email
 import opensavvy.formulaide.test.assertions.*
 import opensavvy.formulaide.test.structure.*
 import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
@@ -25,11 +26,28 @@ import kotlin.random.nextUInt
 
 fun <D : Department.Ref> Suite.recordsTestSuite(
 	testDepartments: Setup<Department.Service<D>>,
+	testUsers: Setup<User.Service<*>>,
 	testForms: Setup<Form.Service>,
 	testRecords: Setup<Record.Service>,
 	testFiles: Setup<File.Service>,
 ) {
 	val testDepartment by createDepartment(testDepartments)
+
+	val testReviewer by prepared(administratorAuth) {
+		val users = prepare(testUsers)
+		val department = prepare(testDepartment)
+
+		val id = Random.nextUInt()
+
+		val (user, _) = users.create(
+			email = Email("review.$id@opensavvy.dev"),
+			fullName = "Reviewer $id",
+		).bind()
+
+		user.join(department).bind()
+
+		user
+	}
 
 	suite("Create a record") {
 		val testPrivateForm by prepared(administratorAuth) {
@@ -229,7 +247,7 @@ fun <D : Department.Ref> Suite.recordsTestSuite(
 		form.now().bind().versionsSorted.first()
 	}
 
-	val testRecord by prepared(employeeAuth) {
+	val testRecord by prepared {
 		val records = prepare(testRecords)
 		val form = prepare(workflowForm)
 
@@ -254,15 +272,17 @@ fun <D : Department.Ref> Suite.recordsTestSuite(
 		}
 
 		suite("Accept a record") {
-			val accept by prepared(employeeAuth) {
-				val record = prepare(testRecord)
+			val accept by prepared {
+				executeAs(testReviewer) {
+					val record = prepare(testRecord)
 
-				record.accept(
-					null,
-					"" to "1",
-				).bind()
+					record.accept(
+						null,
+						"" to "1",
+					).bind()
 
-				record
+					record
+				}
 			}
 
 			test("Should succeed", employeeAuth) {
@@ -300,8 +320,9 @@ fun <D : Department.Ref> Suite.recordsTestSuite(
 
 			test("The acceptance's author should be correct", employeeAuth) {
 				val diff = prepare(acceptDiff)
+				val user = prepare(testReviewer)
 
-				diff.author shouldBe employeeAuth.user!!
+				diff.author shouldBe user
 			}
 
 			test("The acceptance's date should be correct", employeeAuth) {
