@@ -1,0 +1,5 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="HTTP Scenario" type="HttpClient.HttpRequestRunConfigurationType" factoryName="HTTP Request" path="$PROJECT_DIR$/remote-common/scenarii/api-test.http">
+    <method v="2" />
+  </configuration>
+</component>

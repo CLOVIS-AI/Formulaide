@@ -1,0 +1,126 @@
+### Test login
+
+GET {{url}}/ping
+
+### First, acquire a token for the default administrator
+
+POST {{url}}/v2/users/token
+Content-Type: application/json
+
+{
+	"email": "admin@formulaide", "password": "admin-development-password"
+}
+
+> {%
+	client.log(JSON.stringify(response.body))
+
+	let userId = response.body.id.split('/').slice(-1)[0]
+	let token = response.body.value
+	let bearer = userId + '_' + token
+	client.global.set('userId', userId)
+	client.global.set('token', token)
+	client.global.set('bearer', bearer)
+%}
+
+### Check that we are indeed an administrator
+
+# Check that we are indeed an administrator
+GET {{url}}/ping
+Authorization: Bearer {{bearer}}
+
+### Create a department
+
+POST {{url}}/v2/departments
+Authorization: Bearer {{bearer}}
+Content-Type: application/json
+
+{
+	"name": "HTTP tests department"
+}
+
+> {%
+	client.log(JSON.stringify(response.body))
+
+	client.global.set('departmentId', response.body.id);
+%}
+
+### Create a form
+
+POST {{url}}/v2/forms
+Authorization: Bearer {{bearer}}
+Content-Type: application/json
+
+{
+  "name": "Formulaire 1 (simple identité)",
+  "firstVersion": {
+    "creationDate": "2021-05-31T20:29:23Z",
+    "title": "Version 1",
+    "field": {
+      "type": "opensavvy.formulaide.remote.dto.FieldDto.Group",
+      "label": "Racine",
+      "fields": {
+        "-5": {
+          "type": "opensavvy.formulaide.remote.dto.FieldDto.Input",
+          "label": "Nom",
+          "input": {
+            "type": "Text",
+            "maxLength": 50
+          }
+        },
+        "7": {
+          "type": "opensavvy.formulaide.remote.dto.FieldDto.Input",
+          "label": "Prénom",
+          "input": {
+            "type": "Text",
+            "maxLength": 50
+          }
+        },
+        "12": {
+          "type": "opensavvy.formulaide.remote.dto.FieldDto.Input",
+          "label": "Date de naissance",
+          "input": {
+            "type": "Date"
+          }
+        }
+      }
+    },
+    "steps": [
+      {
+        "id": 3,
+        "name": "Validation initiale",
+        "reviewer": "{{departmentId}}",
+        "field": null
+      }
+    ]
+  }
+}
+
+> {%
+	client.log(JSON.stringify(response.body))
+
+	client.global.set('formId', response.body.id);
+%}
+
+### Make the form public
+
+PATCH {{url}}/{{formId}}
+Authorization: Bearer {{bearer}}
+Content-Type: application/json
+
+{
+	"public": true
+}
+
+### Get the details of the form
+
+GET {{url}}/{{formId}}
+
+> {%
+	client.log(JSON.stringify(response.body))
+
+	client.global.set('formVersionId', response.body.versions[0]);
+%}
+
+### Get the details of the version
+
+GET {{url}}/{{formVersionId}}
