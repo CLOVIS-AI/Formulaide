@@ -17,6 +17,7 @@ import opensavvy.formulaide.remote.server.utils.notFound
 import opensavvy.formulaide.remote.server.utils.unauthenticated
 import opensavvy.formulaide.remote.server.utils.unauthorized
 import opensavvy.spine.Identified
+import opensavvy.spine.SpineFailure
 import opensavvy.spine.ktor.server.route
 import opensavvy.state.arrow.toEither
 import opensavvy.state.outcome.map
@@ -52,7 +53,7 @@ fun Routing.forms(
 					decodeTemplate = { templates.versions.fromIdentifier(api.templates.id.version.identifierOf(it)) },
 				)
 			}.toTypedArray()
-		).mapFailure {
+		).mapFailure<Form.Failures.Create, Form.Ref, SpineFailure<SchemaDto.NewFailures>> {
 			when (it) {
 				is Form.Failures.InvalidImport -> invalidRequest(SchemaDto.NewFailures.InvalidImport(it.failures.map { it.toDto() }))
 				is Form.Failures.NotFound -> notFound(forms.fromIdentifier(api.forms.id.identifierOf(id)))

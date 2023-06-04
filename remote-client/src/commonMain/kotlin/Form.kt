@@ -1,5 +1,6 @@
 package opensavvy.formulaide.remote.client
 
+import arrow.core.toNonEmptyListOrNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
@@ -12,6 +13,7 @@ import opensavvy.cache.contextual.expireAfter
 import opensavvy.formulaide.core.*
 import opensavvy.formulaide.core.utils.Identifier
 import opensavvy.formulaide.remote.api
+import opensavvy.formulaide.remote.dto.FieldDto.Companion.toCore
 import opensavvy.formulaide.remote.dto.FieldDto.Companion.toDto
 import opensavvy.formulaide.remote.dto.SchemaDto
 import opensavvy.formulaide.remote.dto.SchemaDto.Companion.toDto
@@ -118,6 +120,10 @@ class RemoteForms(
 			when (it.type) {
 				SpineFailure.Type.Unauthenticated -> Form.Failures.Unauthenticated
 				SpineFailure.Type.Unauthorized -> Form.Failures.Unauthorized
+				SpineFailure.Type.InvalidRequest -> {
+					check(it is SpineFailure.Payload) { "Expected a JSON response from the server, but received ${it::class}: $it" }
+					Form.Failures.InvalidImport((it.payload as SchemaDto.NewFailures.InvalidImport).failures.map { it.toCore(templates) }.toNonEmptyListOrNull()!!)
+				}
 				else -> error("Received an unexpected status: $it")
 			}
 		}.bind()
@@ -165,6 +171,10 @@ class RemoteForms(
 					SpineFailure.Type.Unauthenticated -> Form.Failures.Unauthenticated
 					SpineFailure.Type.Unauthorized -> Form.Failures.Unauthorized
 					SpineFailure.Type.NotFound -> Form.Failures.NotFound(this@Ref)
+					SpineFailure.Type.InvalidRequest -> {
+						check(it is SpineFailure.Payload) { "Expected a JSON response from the server, but received ${it::class}: $it" }
+						Form.Failures.InvalidImport((it.payload as SchemaDto.NewFailures.InvalidImport).failures.map { it.toCore(templates) }.toNonEmptyListOrNull()!!)
+					}
 					else -> error("Received an unexpected status: $it")
 				}
 			}.bind()
