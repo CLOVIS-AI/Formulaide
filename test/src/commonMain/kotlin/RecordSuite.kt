@@ -244,6 +244,8 @@ fun <D : Department.Ref> Suite.recordsTestSuite(
 			field = null,
 		)).bind()
 
+		form.publicize().bind()
+
 		form.now().bind().versionsSorted.first()
 	}
 
