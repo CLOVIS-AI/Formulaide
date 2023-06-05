@@ -590,7 +590,7 @@ private suspend fun <O : Any, Context : Any> ResourceGroup.AbstractResource<O, C
 	validateCorrectId(id)
 	validateId(id, context)
 }.fold(
-	ifLeft = { error("Invalid identifier for $this: $id") },
+	ifLeft = { error("Invalid identifier $id (for resource $this): $it") },
 	ifRight = ::identity,
 )
 
