@@ -89,7 +89,7 @@ class Api2 : Service("v2") {
 			val edit = edit<DepartmentDto.Edit, DepartmentDto.EditFailures, Parameters.Empty>()
 
 			suspend fun identifierOf(id: Id) = run {
-				validateIdOrThrow(id, Unit)
+				validateIdOrThrow(id.takeFirst(2), Unit)
 				Identifier(id.resource.segments.last().segment)
 			}
 
@@ -253,7 +253,7 @@ class Api2 : Service("v2") {
 			}
 
 			suspend fun identifierOf(id: Id) = run {
-				validateIdOrThrow(id, Unit)
+				validateIdOrThrow(id.takeFirst(2), Unit)
 				Identifier(id.resource.segments[1].segment)
 			}
 
@@ -338,7 +338,7 @@ class Api2 : Service("v2") {
 			val edit = edit<SchemaDto.Edit, SchemaDto.EditFailures, Parameters.Empty>()
 
 			suspend fun identifierOf(id: Id) = run {
-				validateIdOrThrow(id, Unit)
+				validateIdOrThrow(id.takeFirst(2), Unit)
 				Identifier(id.resource.segments[1].segment)
 			}
 
@@ -356,7 +356,7 @@ class Api2 : Service("v2") {
 			inner class TemplateVersionEndpoint : DynamicResource<SchemaDto.Version, SchemaDto.GetVersionFailures, Unit>("version") {
 
 				suspend fun identifierOf(id: Id) = run {
-					validateIdOrThrow(id, Unit)
+					validateIdOrThrow(id.takeFirst(3), Unit)
 					Identifier(id.resource.segments.takeLast(2).joinToString("_"))
 				}
 			}
@@ -444,7 +444,7 @@ class Api2 : Service("v2") {
 			val edit = edit<SchemaDto.Edit, SchemaDto.EditFailures, Parameters.Empty>()
 
 			suspend fun identifierOf(id: Id) = run {
-				validateIdOrThrow(id, Unit)
+				validateIdOrThrow(id.takeFirst(2), Unit)
 				Identifier(id.resource.segments[1].segment)
 			}
 
@@ -464,7 +464,7 @@ class Api2 : Service("v2") {
 			inner class FormVersionEndpoint : DynamicResource<SchemaDto.Version, SchemaDto.GetVersionFailures, Unit>("version") {
 
 				suspend fun identifierOf(id: Id) = run {
-					validateIdOrThrow(id, Unit)
+					validateIdOrThrow(id.takeFirst(3), Unit)
 					Identifier(id.resource.segments.takeLast(2).joinToString("_"))
 				}
 			}
@@ -504,7 +504,7 @@ class Api2 : Service("v2") {
 		inner class SubmissionEndpoint : DynamicResource<SubmissionDto, SubmissionDto.GetFailures, Unit>("submission") {
 
 			suspend fun identifierOf(id: Id) = run {
-				validateIdOrThrow(id, Unit)
+				validateIdOrThrow(id.takeFirst(2), Unit)
 				Identifier(id.resource.segments.last().segment)
 			}
 		}
@@ -566,7 +566,7 @@ class Api2 : Service("v2") {
 		inner class RecordEndpoint : DynamicResource<RecordDto, RecordDto.GetFailures, Unit>("record") {
 
 			suspend fun identifierOf(id: Id) = run {
-				validateIdOrThrow(id, Unit)
+				validateIdOrThrow(id.takeFirst(2), Unit)
 				Identifier(id.resource.segments.last().segment)
 			}
 
@@ -592,6 +592,11 @@ private suspend fun <O : Any, Context : Any> ResourceGroup.AbstractResource<O, C
 }.fold(
 	ifLeft = { error("Invalid identifier for $this: $id") },
 	ifRight = ::identity,
+)
+
+private fun Id.takeFirst(resources: Int) = copy(
+	service = service,
+	resource = Route(resource.segments.take(resources)),
 )
 
 // endregion
