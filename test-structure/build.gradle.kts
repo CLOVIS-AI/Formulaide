@@ -5,7 +5,14 @@ plugins {
 }
 
 kotlin {
-    jvm()
+    jvm {
+        jvmToolchain(17)
+        testRuns.named("test") {
+            executionTask.configure {
+                useJUnitPlatform()
+            }
+        }
+    }
     js(IR) {
         browser {
             testTask {
@@ -24,8 +31,7 @@ kotlin {
 
         val commonMain by getting {
             dependencies {
-                api(Kotlin.test.common)
-                api(Kotlin.test.annotationsCommon)
+                api(kotlin("test"))
 
                 api("opensavvy.pedestal:state:_")
                 api("opensavvy.pedestal:state-arrow:_")
@@ -45,15 +51,5 @@ kotlin {
                 api(Kotlin.test.junit5)
             }
         }
-
-        val jsMain by getting {
-            dependencies {
-                api(Kotlin.test.js)
-            }
-        }
     }
-}
-
-tasks.named<Test>("jvmTest") {
-    useJUnitPlatform()
 }

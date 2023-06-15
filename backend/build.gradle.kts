@@ -30,6 +30,10 @@ application {
 		applicationDefaultJvmArgs = listOf("-Dio.ktor.development=true")
 }
 
-tasks.named<Test>("test") {
+kotlin {
+	jvmToolchain(17)
+}
+
+tasks.test {
 	useJUnitPlatform()
 }

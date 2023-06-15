@@ -7,7 +7,14 @@ plugins {
 }
 
 kotlin {
-	jvm()
+	jvm {
+		jvmToolchain(17)
+		testRuns.named("test") {
+			executionTask.configure {
+				useJUnitPlatform()
+			}
+		}
+	}
 	js(IR) {
 		browser {
 			testTask {
@@ -46,8 +53,4 @@ tasks.withType<org.jetbrains.dokka.gradle.DokkaTaskPartial>().configureEach {
 			remoteLineSuffix.set("#L")
 		}
 	}
-}
-
-tasks.named<Test>("jvmTest") {
-	useJUnitPlatform()
 }
