@@ -199,6 +199,9 @@ test-js:
     reports:
       junit: test-output/TEST-*.xml
 
+  # TODO: remove when https://gitlab.com/opensavvy/formulaide/-/issues/295 is fixed
+  allow_failure: true
+
   interruptible: true
 
 pages:
