@@ -1,74 +1,96 @@
 package opensavvy.formulaide.fake
 
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
-import opensavvy.backbone.Ref
-import opensavvy.backbone.RefCache
-import opensavvy.backbone.defaultRefCache
-import opensavvy.formulaide.core.Auth.Companion.currentRole
-import opensavvy.formulaide.core.Auth.Companion.ensureAdministrator
-import opensavvy.formulaide.core.Auth.Companion.ensureEmployee
-import opensavvy.formulaide.core.Department
-import opensavvy.formulaide.core.User
+import arrow.core.raise.ensure
+import arrow.core.raise.ensureNotNull
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import opensavvy.formulaide.core.*
+import opensavvy.formulaide.core.utils.Identifier
 import opensavvy.formulaide.fake.utils.newId
+import opensavvy.state.arrow.out
+import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.outcome.Outcome
-import opensavvy.state.outcome.ensureFound
-import opensavvy.state.outcome.ensureValid
-import opensavvy.state.outcome.out
+import opensavvy.state.progressive.withProgress
 
-class FakeDepartments : Department.Service {
+class FakeDepartments : Department.Service<FakeDepartments.Ref> {
 
-	private val lock = Semaphore(1)
-	private val data = HashMap<String, Department>()
+	private val lock = Mutex()
+	private val data = HashMap<Long, Department>()
 
-	override val cache: RefCache<Department> = defaultRefCache()
+	override suspend fun list(includeClosed: Boolean): Outcome<Department.Failures.List, List<Ref>> = out {
+		ensureEmployee { Department.Failures.Unauthenticated }
 
-	private fun toRef(id: String) = Department.Ref(id, this)
-
-	override suspend fun list(includeClosed: Boolean): Outcome<List<Department.Ref>> = out {
 		if (includeClosed)
-			ensureAdministrator()
-		else
-			ensureEmployee()
+			ensureAdministrator { Department.Failures.Unauthorized }
 
-		lock.withPermit {
+		lock.withLock("list") {
 			data.asSequence()
 				.filter { (_, it) -> it.open || includeClosed }
-				.map { (id, _) -> toRef(id) }
+				.map { (id, _) -> Ref(id) }
 				.toList()
 		}
 	}
 
-	override suspend fun create(name: String): Outcome<Department.Ref> = out {
-		ensureAdministrator()
+	override suspend fun create(name: String): Outcome<Department.Failures.Create, Ref> = out {
+		ensureEmployee { Department.Failures.Unauthenticated }
+		ensureAdministrator { Department.Failures.Unauthorized }
 
 		val id = newId()
-		lock.withPermit {
+		lock.withLock("create") {
 			data[id] = Department(name, open = true)
 		}
-		toRef(id)
+		Ref(id)
 	}
 
-	override suspend fun edit(department: Department.Ref, open: Boolean?): Outcome<Unit> = out {
-		ensureAdministrator()
+	override fun fromIdentifier(identifier: Identifier) = Ref(identifier.text.toLong())
 
-		val id = department.id
-		lock.withPermit {
-			if (open != null)
-				data[id] = data[id]!!.copy(open = open)
+	inner class Ref internal constructor(
+		val id: Long,
+	) : Department.Ref {
+
+		override suspend fun edit(open: Boolean?): Outcome<Department.Failures.Edit, Unit> = out {
+			ensureEmployee { Department.Failures.Unauthenticated }
+			ensureAdministrator { Department.Failures.Unauthorized }
+
+			lock.withLock("edit") {
+				var current = data[id]
+				ensureNotNull(current) { Department.Failures.NotFound(this@Ref) }
+
+				if (open != null)
+					current = current.copy(open = open)
+
+				data[id] = current
+			}
 		}
+
+		override fun request(): ProgressiveFlow<Department.Failures.Get, Department> = flow {
+			out {
+				ensure(currentRole() >= User.Role.Employee) { Department.Failures.Unauthenticated }
+
+				val result = lock.withLock("request") { data[id] }
+					?.takeIf { it.open || currentRole() >= User.Role.Administrator }
+				ensure(result != null) { Department.Failures.NotFound(this@Ref) }
+
+				result
+			}.also { emit(it.withProgress()) }
+		}
+
+		override fun toIdentifier() = Identifier(id.toString())
+
+		// region equals & hashCode
+
+		override fun equals(other: Any?): Boolean {
+			if (this === other) return true
+			if (other !is Ref) return false
+
+			return id == other.id
+		}
+
+		override fun hashCode(): Int {
+			return id.hashCode()
+		}
+
+		// endregion
 	}
-
-	override suspend fun directRequest(ref: Ref<Department>): Outcome<Department> = out {
-		ensureEmployee()
-
-		ensureValid(ref is Department.Ref) { "Invalid ref $ref" }
-
-		val result = lock.withPermit { data[ref.id] }
-			?.takeIf { it.open || currentRole() >= User.Role.Administrator }
-		ensureFound(result != null) { "No department with ID $ref" }
-
-		result
-	}
-
 }

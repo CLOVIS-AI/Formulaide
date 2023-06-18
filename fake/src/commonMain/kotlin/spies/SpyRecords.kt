@@ -1,65 +1,75 @@
 package opensavvy.formulaide.fake.spies
 
-import opensavvy.backbone.Ref
-import opensavvy.backbone.RefCache
 import opensavvy.formulaide.core.Field
 import opensavvy.formulaide.core.Record
 import opensavvy.formulaide.core.Submission
+import opensavvy.formulaide.core.utils.Identifier
 import opensavvy.logger.loggerFor
+import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.outcome.Outcome
+import opensavvy.state.outcome.map
 
 class SpyRecords(private val upstream: Record.Service) : Record.Service {
 
 	private val log = loggerFor(upstream)
 
-	override suspend fun search(criteria: List<Record.QueryCriterion>): Outcome<List<Record.Ref>> = spy(
+	override suspend fun search(criteria: List<Record.QueryCriterion>): Outcome<Record.Failures.Search, List<Ref>> = spy(
 		log, "search", criteria,
 	) { upstream.search(criteria) }
+		.map { it.map(::Ref) }
 
-	override suspend fun create(submission: Submission): Outcome<Record.Ref> = spy(
+	override suspend fun create(submission: Submission): Outcome<Record.Failures.Create, Ref> = spy(
 		log, "create", submission,
 	) { upstream.create(submission) }
+		.map(::Ref)
 
-	override suspend fun editInitial(
-		record: Record.Ref,
-		reason: String,
-		submission: Map<Field.Id, String>,
-	): Outcome<Unit> = spy(log, "editInitial", record, reason, submission) {
-		upstream.editInitial(record, reason, submission)
-	}
+	override fun fromIdentifier(identifier: Identifier) = upstream.fromIdentifier(identifier).let(::Ref)
 
-	override suspend fun editCurrent(
-		record: Record.Ref,
-		reason: String?,
-		submission: Map<Field.Id, String>,
-	): Outcome<Unit> = spy(log, "editCurrent", record, reason, submission) {
-		upstream.editCurrent(record, reason, submission)
-	}
+	inner class Ref internal constructor(
+		private val upstream: Record.Ref,
+	) : Record.Ref {
+		override suspend fun editInitial(reason: String, submission: Map<Field.Id, String>): Outcome<Record.Failures.Action, Unit> = spy(
+			log, "editInitial", reason, submission,
+		) { upstream.editInitial(reason, submission) }
 
-	override suspend fun accept(
-		record: Record.Ref,
-		reason: String?,
-		submission: Map<Field.Id, String>?,
-	): Outcome<Unit> = spy(log, "accept", record, reason, submission) {
-		upstream.accept(record, reason, submission)
-	}
+		override suspend fun editCurrent(reason: String?, submission: Map<Field.Id, String>): Outcome<Record.Failures.Action, Unit> = spy(
+			log, "editCurrent", reason, submission,
+		) { upstream.editCurrent(reason, submission) }
 
-	override suspend fun refuse(record: Record.Ref, reason: String): Outcome<Unit> =
-		spy(log, "refuse", record, reason) {
-			upstream.refuse(record, reason)
+		override suspend fun accept(reason: String?, submission: Map<Field.Id, String>?): Outcome<Record.Failures.Action, Unit> = spy(
+			log, "accept", reason, submission,
+		) { upstream.accept(reason, submission) }
+
+		override suspend fun refuse(reason: String): Outcome<Record.Failures.Action, Unit> = spy(
+			log, "refuse", reason,
+		) { upstream.refuse(reason) }
+
+		override suspend fun moveBack(toStep: Int, reason: String): Outcome<Record.Failures.Action, Unit> = spy(
+			log, "moveBack", toStep, reason,
+		) { upstream.moveBack(toStep, reason) }
+
+		override fun request(): ProgressiveFlow<Record.Failures.Get, Record> = spy(
+			log, "request",
+		) { upstream.request() }
+
+		// region Overrides
+
+		override fun equals(other: Any?): Boolean {
+			if (this === other) return true
+			if (other !is Ref) return false
+
+			return upstream == other.upstream
 		}
 
-	override suspend fun moveBack(record: Record.Ref, toStep: Int, reason: String): Outcome<Unit> =
-		spy(log, "moveBack", record, toStep, reason) {
-			upstream.moveBack(record, toStep, reason)
+		override fun hashCode(): Int {
+			return upstream.hashCode()
 		}
 
-	override val cache: RefCache<Record>
-		get() = upstream.cache
+		override fun toString() = upstream.toString()
+		override fun toIdentifier() = upstream.toIdentifier()
 
-	override suspend fun directRequest(ref: Ref<Record>): Outcome<Record> = spy(
-		log, "directRequest", ref,
-	) { upstream.directRequest(ref) }
+		// endregion
+	}
 
 	companion object {
 

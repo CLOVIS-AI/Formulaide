@@ -1,143 +1,224 @@
 package opensavvy.formulaide.fake
 
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
+import arrow.core.raise.ensure
+import arrow.core.raise.ensureNotNull
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import opensavvy.backbone.Ref
-import opensavvy.backbone.Ref.Companion.expire
-import opensavvy.backbone.RefCache
-import opensavvy.backbone.defaultRefCache
-import opensavvy.formulaide.core.Auth.Companion.currentRole
-import opensavvy.formulaide.core.Auth.Companion.ensureAdministrator
-import opensavvy.formulaide.core.Auth.Companion.ensureEmployee
-import opensavvy.formulaide.core.Form
-import opensavvy.formulaide.core.User
+import opensavvy.formulaide.core.*
+import opensavvy.formulaide.core.utils.Identifier
 import opensavvy.formulaide.fake.utils.newId
+import opensavvy.logger.Logger.Companion.warn
+import opensavvy.logger.loggerFor
+import opensavvy.state.arrow.out
+import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.outcome.Outcome
-import opensavvy.state.outcome.ensureFound
-import opensavvy.state.outcome.ensureValid
-import opensavvy.state.outcome.out
+import opensavvy.state.progressive.withProgress
 
 class FakeForms(
 	private val clock: Clock,
 ) : Form.Service {
 
-	private val lock = Semaphore(1)
-	private val forms = HashMap<String, Form>()
+	private val log = loggerFor(this)
+
+	private val lock = Mutex()
+	private val forms = HashMap<Long, Form>()
 	private val _versions = FakeVersions()
 
 	override val versions: Form.Version.Service
 		get() = _versions
 
-	private fun toRef(id: String) = Form.Ref(id, this)
-
-	override suspend fun list(includeClosed: Boolean): Outcome<List<Form.Ref>> = out {
+	override suspend fun list(includeClosed: Boolean): Outcome<Form.Failures.List, List<Form.Ref>> = out {
 		if (includeClosed)
-			ensureEmployee()
+			ensureEmployee { Form.Failures.Unauthenticated }
 
 		val role = currentRole()
 
-		lock.withPermit {
+		lock.withLock("list") {
 			forms
 				.asSequence()
 				.filter { (_, it) -> it.open || includeClosed }
 				.filter { (_, it) -> it.public || role >= User.Role.Employee }
-				.map { (it, _) -> toRef(it) }
+				.map { (it, _) -> Ref(it) }
 				.toList()
 		}
 	}
 
-	override suspend fun create(name: String, firstVersion: Form.Version): Outcome<Form.Ref> = out {
-		ensureAdministrator()
+	override suspend fun create(name: String, firstVersionTitle: String, field: Field, vararg step: Form.Step): Outcome<Form.Failures.Create, Form.Ref> = out {
+		ensureEmployee { Form.Failures.Unauthenticated }
+		ensureAdministrator { Form.Failures.Unauthorized }
 
-		firstVersion.fields.forEach { it.validate().bind() }
+		field.validate()
+			.mapLeft { Form.Failures.InvalidImport(it) }
+			.bind()
 
 		val now = clock.now()
-		val id = newId()
 
-		lock.withPermit {
-			_versions.versions[id to now] = firstVersion.copy(creationDate = now)
+		val version = Form.Version(
+			creationDate = now,
+			title = firstVersionTitle,
+			field = field,
+			steps = step.asList(),
+		)
 
-			forms[id] = Form(
+		val ref = Ref(newId())
+
+		lock.withLock("create") {
+			_versions.versions[ref.id to now] = version
+
+			forms[ref.id] = Form(
 				name,
-				listOf(_versions.toRef(id, now)),
+				listOf(_versions.Ref(ref, now)),
 				open = true,
 				public = false,
 			)
 		}
 
-		toRef(id)
-	}
-
-	override suspend fun createVersion(form: Form.Ref, version: Form.Version): Outcome<Form.Version.Ref> = out {
-		ensureAdministrator()
-
-		version.fields.forEach { it.validate().bind() }
-
-		val now = clock.now()
-		val ref = _versions.toRef(form.id, now)
-
-		lock.withPermit {
-			val value = forms[form.id]
-			ensureFound(value != null) { "Couldn't find form $form" }
-
-			_versions.versions[form.id to now] = version.copy(creationDate = now)
-			forms[form.id] = value.copy(versions = value.versions + ref)
-		}
-
-		form.expire()
-
 		ref
 	}
 
-	override suspend fun edit(form: Form.Ref, name: String?, open: Boolean?, public: Boolean?): Outcome<Unit> = out {
-		ensureAdministrator()
+	override fun fromIdentifier(identifier: Identifier) = Ref(identifier.text.toLong())
 
-		lock.withPermit {
-			val value = forms[form.id]
-			ensureFound(value != null) { "Couldn't find form $form" }
+	inner class Ref internal constructor(
+		val id: Long,
+	) : Form.Ref {
+		override suspend fun edit(name: String?, open: Boolean?, public: Boolean?): Outcome<Form.Failures.Edit, Unit> = out {
+			ensureEmployee { Form.Failures.Unauthenticated }
+			ensureAdministrator { Form.Failures.Unauthorized }
 
-			val new = value.copy(
-				name = name ?: value.name,
-				open = open ?: value.open,
-				public = public ?: value.public,
+			lock.withLock("edit") {
+				val value = forms[id]
+				ensureNotNull(value) { Form.Failures.NotFound(this@Ref) }
+
+				val new = value.copy(
+					name = name ?: value.name,
+					open = open ?: value.open,
+					public = public ?: value.public,
+				)
+
+				forms[id] = new
+			}
+		}
+
+		override suspend fun createVersion(
+			title: String,
+			field: Field,
+			vararg step: Form.Step,
+		): Outcome<Form.Failures.CreateVersion, Form.Version.Ref> = out {
+			ensureEmployee { Form.Failures.Unauthenticated }
+			ensureAdministrator { Form.Failures.Unauthorized }
+
+			field.validate()
+				.mapLeft { Form.Failures.InvalidImport(it) }
+				.bind()
+
+			val now = clock.now()
+			val ref = _versions.Ref(this@Ref, now)
+
+			val version = Form.Version(
+				creationDate = now,
+				title = title,
+				field = field,
+				steps = step.asList(),
 			)
 
-			forms[form.id] = new
+			lock.withLock("createVersion") {
+				val value = forms[id]
+				ensureNotNull(value) { Form.Failures.NotFound(this@Ref) }
+
+				_versions.versions[id to now] = version
+				forms[id] = value.copy(versions = value.versions + ref)
+			}
+
+			ref
 		}
 
-		form.expire()
-	}
+		override fun versionOf(creationDate: Instant): Form.Version.Ref = _versions.Ref(this, creationDate)
 
-	override val cache: RefCache<Form> = defaultRefCache()
-
-	override suspend fun directRequest(ref: Ref<Form>): Outcome<Form> = out {
-		ensureValid(ref is Form.Ref) { "Invalid ref $ref" }
-
-		lock.withPermit {
-			val result = forms[ref.id]
-			ensureFound(result != null) { "Could not find form $ref" }
-			ensureFound((result.public && result.open) || currentRole() >= User.Role.Employee) { "Could not find form $ref" }
-			result
+		override fun request(): ProgressiveFlow<Form.Failures.Get, Form> = flow {
+			out<Form.Failures.Get, Form> {
+				lock.withLock("request") {
+					val result = forms[id]
+					ensureNotNull(result) { Form.Failures.NotFound(this@Ref) }
+					ensure((result.public && result.open) || currentRole() >= User.Role.Employee) {
+						log.warn { "${currentUser()} (${currentRole()}) requested to access ${this@Ref}, but it is private" }
+						Form.Failures.NotFound(this@Ref)
+					}
+					result
+				}
+			}.also { emit(it.withProgress()) }
 		}
+
+		// region Overrides
+
+		override fun equals(other: Any?): Boolean {
+			if (this === other) return true
+			if (other !is Ref) return false
+
+			return id == other.id
+		}
+
+		override fun hashCode(): Int {
+			return id.hashCode()
+		}
+
+		override fun toString() = "FakeForms.Ref($id)"
+
+		override fun toIdentifier() = Identifier(id.toString())
+
+		// endregion
 	}
 
 	private inner class FakeVersions : Form.Version.Service {
-		override val cache: RefCache<Form.Version> = defaultRefCache()
+		val versions = HashMap<Pair<Long, Instant>, Form.Version>()
 
-		val versions = HashMap<Pair<String, Instant>, Form.Version>()
-
-		fun toRef(id: String, version: Instant) = Form.Version.Ref(toRef(id), version, this)
-
-		override suspend fun directRequest(ref: Ref<Form.Version>): Outcome<Form.Version> = out {
-			ensureValid(ref is Form.Version.Ref) { "Invalid ref $ref" }
-
-			lock.withPermit {
-				val result = versions[ref.form.id to ref.version]
-				ensureFound(result != null) { "Could not find form version $ref" }
-				result
+		inner class Ref internal constructor(
+			override val form: FakeForms.Ref,
+			override val creationDate: Instant,
+		) : Form.Version.Ref {
+			override fun request(): ProgressiveFlow<Form.Version.Failures.Get, Form.Version> = flow {
+				out<Form.Version.Failures.Get, Form.Version> {
+					lock.withLock("version:request") {
+						val result = versions[form.id to creationDate]
+						ensureNotNull(result) { Form.Version.Failures.NotFound(this@Ref) }
+						result
+					}
+				}.also { emit(it.withProgress()) }
 			}
+
+			// region Overrides
+
+			override fun equals(other: Any?): Boolean {
+				if (this === other) return true
+				if (other !is Ref) return false
+
+				if (form != other.form) return false
+				return creationDate == other.creationDate
+			}
+
+			override fun hashCode(): Int {
+				var result = form.hashCode()
+				result = 31 * result + creationDate.hashCode()
+				return result
+			}
+
+			override fun toString() = "FakeForms.Ref(${form.id}).Version($creationDate)"
+
+			override fun toIdentifier() = Identifier("${form.id}_$creationDate")
+
+			// endregion
+
+		}
+
+		override fun fromIdentifier(identifier: Identifier): Ref {
+			val (form, version) = identifier.text.split('_', limit = 2)
+
+			return Ref(
+				this@FakeForms.fromIdentifier(Identifier(form)),
+				Instant.parse(version),
+			)
 		}
 	}
 }

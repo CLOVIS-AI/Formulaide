@@ -114,6 +114,9 @@ helm:review:
     on_stop: helm:review-stop
     auto_stop_in: 2 weeks
 
+  # TODO: Remove when https://gitlab.com/opensavvy/formulaide/-/issues/297 is fixed
+  allow_failure: true
+
   rules:
     - if: $FORMULAIDE_DEPLOYMENT_URL == null
       when: never

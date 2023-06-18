@@ -5,12 +5,9 @@ import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.delay
-import opensavvy.backbone.Ref.Companion.now
+import opensavvy.backbone.now
 import opensavvy.formulaide.core.*
-import opensavvy.formulaide.test.assertions.shouldNotBeAuthenticated
-import opensavvy.formulaide.test.assertions.shouldNotBeFound
-import opensavvy.formulaide.test.assertions.shouldSucceed
-import opensavvy.formulaide.test.assertions.shouldSucceedAnd
+import opensavvy.formulaide.test.assertions.*
 import opensavvy.formulaide.test.structure.*
 import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
 import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
@@ -109,7 +106,7 @@ fun Suite.fileTestSuite(
 			test("The file cannot be read anymore after the timeout", administratorAuth) {
 				val file = prepare(oldFile)
 
-				shouldNotBeFound(file.read())
+				file.read().shouldFailWithType<File.Failures.Expired>()
 			}
 
 			test("The metadata is not impacted", employeeAuth) {
@@ -146,10 +143,10 @@ fun Suite.fileTestSuite(
 		val forms = prepare(testForms)
 		val department = prepare(testDepartment)
 
-		val file = Input.Upload(
+		val file = Input.upload(
 			allowedFormats = setOf(Input.Upload.Format.Tabular),
 			expiresAfter = 30.days,
-		)
+		).bind()
 
 		check(file.expiresAfter!! >= File.TTL_UNLINKED) { "The expiration delay used in tests should always be greater than TTL_UNLINKED" }
 
@@ -240,7 +237,7 @@ fun Suite.fileTestSuite(
 
 			delay(30.days + 10.seconds)
 
-			shouldNotBeFound(file.read())
+			file.read().shouldFailWithType<File.Failures.Expired>()
 		}
 	}
 }

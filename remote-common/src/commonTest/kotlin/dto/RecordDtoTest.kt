@@ -1,7 +1,6 @@
 package opensavvy.formulaide.remote.dto
 
-import arrow.core.flatMap
-import opensavvy.backbone.Ref.Companion.now
+import opensavvy.backbone.now
 import opensavvy.formulaide.core.Field
 import opensavvy.formulaide.core.Form
 import opensavvy.formulaide.core.Record
@@ -32,11 +31,10 @@ class RecordDtoTest : TestExecutor() {
 				Field.label("unused"), // we will not check the validity of the submission, so the contents of the form are irrelevant
 				Form.Step(0, "First step", dept, null),
 				Form.Step(1, "Second step", dept, null),
-			)
-				.tap { it.publicize().bind() }
-				.flatMap { it.now() }
-				.map { it.versionsSorted.first() }
-				.bind()
+			).bind()
+				.also { it.publicize().bind() }
+				.now().bind()
+				.versionsSorted.first()
 
 			val initialSubmission = records.create(
 				Submission(
@@ -110,7 +108,7 @@ class RecordDtoTest : TestExecutor() {
 			val dto = record.toDto()
 			println("DTO:    $dto")
 
-			assertEquals(record, dto.toCore(forms, TestUsers, initialSubmission.backbone).bind())
+			assertEquals(record, dto.toCore(forms, TestUsers, records.submissions))
 		}
 	}
 

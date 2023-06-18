@@ -1,11 +1,23 @@
 package opensavvy.formulaide.core
 
-import opensavvy.backbone.Ref.Companion.now
+import arrow.core.EitherNel
+import arrow.core.flatten
+import arrow.core.mapOrAccumulate
+import arrow.core.nonEmptyListOf
+import arrow.core.raise.either
+import arrow.core.raise.ensure
+import arrow.core.raise.ensureNotNull
+import opensavvy.backbone.now
 import opensavvy.formulaide.core.Field.*
+import opensavvy.formulaide.core.Field.Failures.Compatibility.IncompatibleField.Companion.invalidMaxArity
+import opensavvy.formulaide.core.Field.Failures.Compatibility.IncompatibleField.Companion.invalidMinArity
+import opensavvy.formulaide.core.Field.Failures.Compatibility.IncompatibleField.Companion.invalidType
+import opensavvy.formulaide.core.Field.Failures.Compatibility.IncompatibleField.Companion.tooFewFields
+import opensavvy.formulaide.core.Field.Failures.Compatibility.IncompatibleField.Companion.tooManyFields
 import opensavvy.formulaide.core.Field.Input
-import opensavvy.state.outcome.Outcome
-import opensavvy.state.outcome.ensureValid
-import opensavvy.state.outcome.out
+import opensavvy.formulaide.core.data.StandardNotFound
+import opensavvy.state.arrow.toEither
+import kotlin.reflect.KClass
 
 private const val INDENT = "    "
 
@@ -92,19 +104,27 @@ sealed class Field {
 		require(label.isNotBlank()) { "Le libellé d'un champ ne peut pas être vide : '$label'" }
 	}
 
-	protected abstract suspend fun validateCompatibleWith(source: Field): Outcome<Unit>
+	protected abstract suspend fun validateCompatibleWith(
+		source: Field,
+		id: Id,
+	): EitherNel<Failures.Compatibility, Unit>
 
 	/**
 	 * Checks the validity of this field.
 	 */
-	suspend fun validate(): Outcome<Unit> = out {
+	suspend fun validate() = validate(Id.root)
+
+	private suspend fun validate(id: Id): EitherNel<Failures.Compatibility, Unit> = either {
 		validateSync()
 
 		importedFrom?.let { templateVersionRef ->
-			val version = templateVersionRef.now().bind()
+			val version = templateVersionRef.now()
+				.toEither()
+				.mapLeft { nonEmptyListOf(Failures.Compatibility.TemplateNotFound(id, templateVersionRef)) }
+				.bind()
 			val source = version.field
 
-			validateCompatibleWith(source).bind()
+			validateCompatibleWith(source, id).bind()
 		}
 
 		fields.forEach { it.validate().bind() }
@@ -134,9 +154,9 @@ sealed class Field {
 			validateSync()
 		}
 
-		override suspend fun validateCompatibleWith(source: Field): Outcome<Unit> = out {
-			ensureValid(source is Label) { "Impossible d'importer un label à partir d'un ${source::class} (${this@Label} -> $source)" }
-		}
+		override suspend fun validateCompatibleWith(source: Field, id: Id) = either {
+			ensure(source is Label) { invalidType(id, this@Label::class, source::class) }
+		}.mapLeft { nonEmptyListOf(it) }
 
 		override fun StringBuilder.toString(indent: String) {
 			append(label)
@@ -162,11 +182,14 @@ sealed class Field {
 			validateSync()
 		}
 
-		override suspend fun validateCompatibleWith(source: Field): Outcome<Unit> = out {
-			ensureValid(source is Input) { "Impossible d'importer une saisie à partir d'un ${source::class} (${this@Input} -> $source)" }
+		override suspend fun validateCompatibleWith(source: Field, id: Id) = either {
+			ensure(source is Input) { invalidType(id, this@Input::class, source::class) }
 
-			input.validateCompatibleWith(source.input).bind()
-		}
+			input.validateCompatibleWith(source.input)
+				.toEither()
+				.mapLeft { Failures.Compatibility.IncompatibleInput(id, it) }
+				.bind()
+		}.mapLeft { nonEmptyListOf(it) }
 
 		override fun StringBuilder.toString(indent: String) {
 			append(label)
@@ -189,17 +212,18 @@ sealed class Field {
 			validateSync()
 		}
 
-		override suspend fun validateCompatibleWith(source: Field): Outcome<Unit> = out {
-			ensureValid(source is Choice) { "Impossible d'importer un choix à partir d'un ${source::class} (${this@Choice} -> $source)" }
+		override suspend fun validateCompatibleWith(source: Field, id: Id): EitherNel<Failures.Compatibility, Unit> = either {
+			ensure(source is Choice) { nonEmptyListOf(invalidType(id, this@Choice::class, source::class)) }
 
 			// Each option of the imported field MUST exist in the source field
 			// However, the imported field is allowed to remove options from the source
-			for ((id, child) in indexedFields) {
-				val sourceChild = source.indexedFields[id]
-				ensureValid(sourceChild != null) { "Le champ importé ${this@Choice} ne peut pas ajouter une option à sa source, il n'est donc pas possible d'ajouter ${child.label} ($id)" }
+			indexedFields.mapOrAccumulate { (childId, child) ->
+				val sourceChild = source.indexedFields[childId]
+				ensureNotNull(sourceChild) { nonEmptyListOf(tooManyFields(id, child, id + childId)) }
 
-				child.validateCompatibleWith(sourceChild).bind()
-			}
+				child.validateCompatibleWith(sourceChild, id + childId).bind()
+			}.mapLeft { it.flatten() }
+				.bind()
 		}
 
 		override fun StringBuilder.toString(indent: String) {
@@ -232,21 +256,24 @@ sealed class Field {
 			validateSync()
 		}
 
-		override suspend fun validateCompatibleWith(source: Field): Outcome<Unit> = out {
-			ensureValid(source is Group) { "Impossible d'importer un groupe à partir d'un ${source::class} (${this@Group} -> $source)" }
+		override suspend fun validateCompatibleWith(source: Field, id: Id): EitherNel<Failures.Compatibility, Unit> = either {
+			ensure(source is Group) { nonEmptyListOf(invalidType(id, this@Group::class, source::class)) }
 
 			// The subfields should exactly match with the source
-			for ((id, child) in indexedFields) {
-				val sourceChild = source.indexedFields[id]
-				ensureValid(sourceChild != null) { "Le champ importé ${this@Group} ne peut pas ajouter une réponse à sa source, il n'est donc pas possible d'ajouter ${child.label} ($id)" }
+			indexedFields.mapOrAccumulate { (childId, child) ->
+				val sourceChild = source.indexedFields[childId]
+				ensureNotNull(sourceChild) { nonEmptyListOf(tooManyFields(id, child, id + childId)) }
 
-				child.validateCompatibleWith(sourceChild).bind()
-			}
+				child.validateCompatibleWith(sourceChild, id + childId).bind()
+			}.mapLeft { it.flatten() }
+				.bind()
 
-			for ((id, sourceChild) in source.indexedFields) {
-				val child = indexedFields[id]
-				ensureValid(child != null) { "Le champ importé ${this@Group} ne peut pas supprimer une réponse de sa source, la réponse ${sourceChild.label} ($id) est manquante" }
-			}
+			// Checking that all children of the imported field are still present
+			source.indexedFields.mapOrAccumulate { (childId, sourceChild) ->
+				val child = indexedFields[childId]
+				ensureNotNull(child) { nonEmptyListOf(tooFewFields(id, sourceChild, id + childId)) }
+			}.mapLeft { it.flatten() }
+				.bind()
 		}
 
 		override fun StringBuilder.toString(indent: String) {
@@ -286,13 +313,13 @@ sealed class Field {
 		override val indexedFields: Map<Int, Field>
 			get() = List(allowed.last.toInt()) { it to child }.toMap()
 
-		override suspend fun validateCompatibleWith(source: Field): Outcome<Unit> = out {
-			ensureValid(source is Arity) { "Impossible d'importer un label à partir d'un ${source::class} (${this@Arity} -> $source)" }
+		override suspend fun validateCompatibleWith(source: Field, id: Id): EitherNel<Failures.Compatibility, Unit> = either {
+			ensure(source is Arity) { nonEmptyListOf(invalidType(id, this@Arity::class, source::class)) }
 
-			ensureValid(allowed.first >= source.allowed.first) { "Le champ importé ${this@Arity} ne peut pas autoriser moins de réponses (minimum ${allowed.first}) que sa source (minimum ${source.allowed.first}), champ ${source.label}" }
-			ensureValid(allowed.last <= source.allowed.last) { "Le champ importé ${this@Arity} ne peut pas autoriser plus de réponses (maximum ${allowed.last}) que sa source (maximum ${source.allowed.last}), champ ${source.label}" }
+			ensure(allowed.first >= source.allowed.first) { nonEmptyListOf(invalidMinArity(id, allowed.first, source)) }
+			ensure(allowed.last <= source.allowed.last) { nonEmptyListOf(invalidMaxArity(id, allowed.last, source)) }
 
-			child.validateCompatibleWith(source.child).bind()
+			child.validateCompatibleWith(source.child, id + 0).bind()
 		}
 
 		override fun StringBuilder.toString(indent: String) {
@@ -401,10 +428,71 @@ sealed class Field {
 		}
 	}
 
-	//endregion
+	// endregion
+	// region Failures
+
+	sealed interface Failures {
+		sealed interface FieldFailure : Failures {
+			val field: Id
+		}
+
+		sealed interface Compatibility : FieldFailure {
+			data class IncompatibleField(
+				override val field: Id,
+				val message: String,
+			) : Compatibility,
+				FieldFailure {
+
+				companion object {
+					internal fun invalidType(
+						field: Id,
+						target: KClass<out Field>,
+						from: KClass<out Field>,
+					) = IncompatibleField(field, "impossible d'importer $target à partir de $from")
+
+					internal fun tooManyFields(
+						field: Id,
+						additionalField: Field,
+						additionalFieldId: Id,
+					) = IncompatibleField(field, "il est interdit d'ajouter une option à sa source, il n'est donc pas possible d'ajouter “${additionalField.label}” ($additionalFieldId)")
+
+					internal fun tooFewFields(
+						field: Id,
+						missingField: Field,
+						missingFieldId: Id,
+					) = IncompatibleField(field, "il est interdit d'enlever un champ présent dans la source, il n'est donc pas possible d'omettre “${missingField.label}” ($missingFieldId)")
+
+					internal fun invalidMinArity(
+						field: Id,
+						minimum: UInt,
+						sourceField: Arity,
+					) = IncompatibleField(field, "il est interdit d'autoriser moins de réponses (minimum $minimum) que sa source (minimum ${sourceField.allowed.first}), champ “${sourceField.label}”")
+
+					internal fun invalidMaxArity(
+						field: Id,
+						maximum: UInt,
+						sourceField: Arity,
+					) = IncompatibleField(field, "il est interdit d'autoriser plus de réponses (maximum ${maximum}) que sa source (maximum ${sourceField.allowed.last}), champ “${sourceField.allowed.last}”")
+				}
+			}
+
+			data class IncompatibleInput(
+				override val field: Id,
+				val failure: opensavvy.formulaide.core.Input.Failures.Compatibility,
+			) : Compatibility
+
+			data class TemplateNotFound(
+				override val field: Id,
+				override val id: Template.Version.Ref,
+			) : StandardNotFound<Template.Version.Ref>,
+				Compatibility
+		}
+	}
+
+	// endregion
 
 	companion object {
-		//region Builders
+		// region Builders
 
 		fun label(
 			label: String,

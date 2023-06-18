@@ -1,7 +1,8 @@
 package opensavvy.formulaide.remote
 
-import kotlinx.datetime.Instant
-import opensavvy.formulaide.core.*
+import arrow.core.identity
+import arrow.core.raise.either
+import opensavvy.formulaide.core.utils.Identifier
 import opensavvy.formulaide.remote.Api2.*
 import opensavvy.formulaide.remote.Api2.DepartmentsEndpoint.DepartmentEndpoint
 import opensavvy.formulaide.remote.Api2.FormsEndpoint.FormEndpoint
@@ -13,13 +14,8 @@ import opensavvy.formulaide.remote.Api2.TemplatesEndpoint.TemplateEndpoint.Templ
 import opensavvy.formulaide.remote.Api2.UsersEndpoint.UserEndpoint
 import opensavvy.formulaide.remote.Api2.UsersEndpoint.UserEndpoint.*
 import opensavvy.formulaide.remote.dto.*
-import opensavvy.spine.Id
-import opensavvy.spine.Parameters
-import opensavvy.spine.Route
+import opensavvy.spine.*
 import opensavvy.spine.Route.Companion.div
-import opensavvy.spine.Service
-import opensavvy.state.outcome.Outcome
-import opensavvy.state.outcome.out
 
 val api = Api2()
 
@@ -46,12 +42,12 @@ class Api2 : Service("v2") {
 	 *
 	 * Lists the existing departments.
 	 *
-	 * - Query parameters: [DepartmentDto.GetParams]
+	 * - Query parameters: [DepartmentDto.ListParams]
 	 * - Response: list of identifiers of the various departments
 	 *
 	 * Authorization:
 	 * - Without parameters: employee
-	 * - With [DepartmentDto.GetParams.includeClosed] set to `true`: administrator
+	 * - With [DepartmentDto.ListParams.includeClosed] set to `true`: administrator
 	 *
 	 * ### Post
 	 *
@@ -65,9 +61,9 @@ class Api2 : Service("v2") {
 	 *
 	 * - Edit a specific department: [DepartmentEndpoint]
 	 */
-	inner class DepartmentsEndpoint : StaticResource<List<Id>, DepartmentDto.GetParams, Unit>("departments") {
+	inner class DepartmentsEndpoint : StaticResource<List<Id>, DepartmentDto.ListFailures, DepartmentDto.ListParams, Unit>("departments") {
 
-		val create = create<DepartmentDto.New, Unit, Parameters.Empty>()
+		val create = create<DepartmentDto.New, DepartmentDto.NewFailures, Unit, Parameters.Empty>()
 
 		/**
 		 * The department management endpoint: `v2/departments/{id}`.
@@ -88,13 +84,13 @@ class Api2 : Service("v2") {
 		 *
 		 * Authorization: administrator
 		 */
-		inner class DepartmentEndpoint : DynamicResource<DepartmentDto, Unit>("department") {
+		inner class DepartmentEndpoint : DynamicResource<DepartmentDto, DepartmentDto.GetFailures, Unit>("department") {
 
-			val edit = edit<DepartmentDto.Edit, Parameters.Empty>()
+			val edit = edit<DepartmentDto.Edit, DepartmentDto.EditFailures, Parameters.Empty>()
 
-			suspend fun refOf(id: Id, departments: Department.Service): Outcome<Department.Ref> = out {
-				validateId(id, Unit)
-				Department.Ref(id.resource.segments.last().segment, departments)
+			suspend fun identifierOf(id: Id) = run {
+				validateIdOrThrow(id.takeFirst(2), Unit)
+				Identifier(id.resource.segments.last().segment)
 			}
 
 		}
@@ -114,7 +110,7 @@ class Api2 : Service("v2") {
 	 *
 	 * Lists existing users.
 	 *
-	 * - Query parameters: [UserDto.GetParams]
+	 * - Query parameters: [UserDto.ListParams]
 	 * - Response: list of identifiers of the various users
 	 *
 	 * Authorization: administrator
@@ -141,11 +137,11 @@ class Api2 : Service("v2") {
 	 *
 	 * - Manage a specific user: [UserEndpoint]
 	 */
-	inner class UsersEndpoint : StaticResource<List<Id>, UserDto.GetParams, Unit>("users") {
+	inner class UsersEndpoint : StaticResource<List<Id>, UserDto.ListFailures, UserDto.ListParams, Unit>("users") {
 
-		val create = create<UserDto.New, String, Parameters.Empty>()
+		val create = create<UserDto.New, UserDto.NewFailures, String, Parameters.Empty>()
 
-		val logIn = create<UserDto.LogIn, String, Parameters.Empty>(Route / "token")
+		val logIn = create<UserDto.LogIn, UserDto.LogInFailures, String, Parameters.Empty>(Route / "token")
 
 		/**
 		 * The individual user management endpoint: `v2/users/{id}`.
@@ -172,9 +168,9 @@ class Api2 : Service("v2") {
 		 * - Password management: [PasswordEndpoint]
 		 * - Token management: [TokenEndpoint]
 		 */
-		inner class UserEndpoint : DynamicResource<UserDto, Unit>("user") {
+		inner class UserEndpoint : DynamicResource<UserDto, UserDto.GetFailures, Unit>("user") {
 
-			val edit = edit<UserDto.Edit, Parameters.Empty>()
+			val edit = edit<UserDto.Edit, UserDto.EditFailures, Parameters.Empty>()
 
 			/**
 			 * The user department management endpoint: `v2/users/{id}/departments`.
@@ -203,9 +199,9 @@ class Api2 : Service("v2") {
 			 *
 			 * Authorization: administrator
 			 */
-			inner class DepartmentEndpoint : StaticResource<Set<Id>, Parameters.Empty, Unit>("departments") {
-				val add = action<Id, Unit, Parameters.Empty>(Route.Root)
-				val remove = delete<Id>(Route.Root)
+			inner class DepartmentEndpoint : StaticResource<Set<Id>, UserDto.DepartmentListFailures, Parameters.Empty, Unit>("departments") {
+				val add = action<Id, UserDto.DepartmentAddFailures, Unit, Parameters.Empty>(Route.Root)
+				val remove = delete<Id, UserDto.DepartmentRemoveFailures>(Route.Root)
 			}
 
 			/**
@@ -227,9 +223,9 @@ class Api2 : Service("v2") {
 			 *
 			 * Authorization: employee
 			 */
-			inner class PasswordEndpoint : StaticResource<Unit, Parameters.Empty, Unit>("password") {
-				val reset = action<Unit, String, Parameters.Empty>(Route.Root)
-				val set = create<UserDto.SetPassword, Unit, Parameters.Empty>()
+			inner class PasswordEndpoint : StaticResource<Unit, Unit, Parameters.Empty, Unit>("password") {
+				val reset = action<Unit, UserDto.PasswordResetFailures, String, Parameters.Empty>(Route.Root)
+				val set = create<UserDto.SetPassword, UserDto.PasswordSetFailures, Unit, Parameters.Empty>()
 			}
 
 			/**
@@ -251,14 +247,14 @@ class Api2 : Service("v2") {
 			 *
 			 * Authorization: employee
 			 */
-			inner class TokenEndpoint : StaticResource<Unit, Parameters.Empty, Unit>("token") {
-				val verify = action<String, Unit, Parameters.Empty>(Route.Root)
-				val logOut = delete<String>()
+			inner class TokenEndpoint : StaticResource<Unit, Unit, Parameters.Empty, Unit>("token") {
+				val verify = action<String, UserDto.TokenVerifyFailures, Unit, Parameters.Empty>(Route.Root)
+				val logOut = delete<String, UserDto.LogOutFailures>()
 			}
 
-			suspend fun refOf(id: Id, users: User.Service): Outcome<User.Ref> = out {
-				validateId(id, Unit)
-				User.Ref(id.resource.segments[1].segment, users)
+			suspend fun identifierOf(id: Id) = run {
+				validateIdOrThrow(id.takeFirst(2), Unit)
+				Identifier(id.resource.segments[1].segment)
 			}
 
 			val departments = DepartmentEndpoint()
@@ -281,7 +277,7 @@ class Api2 : Service("v2") {
 	 *
 	 * List existing templates.
 	 *
-	 * - Parameters: [SchemaDto.GetParams]
+	 * - Parameters: [SchemaDto.ListParams]
 	 * - Response: list of identifiers
 	 *
 	 * Authorization: employee
@@ -299,9 +295,9 @@ class Api2 : Service("v2") {
 	 *
 	 * - Individual template: [TemplateEndpoint]
 	 */
-	inner class TemplatesEndpoint : StaticResource<List<Id>, SchemaDto.GetParams, Unit>("templates") {
+	inner class TemplatesEndpoint : StaticResource<List<Id>, SchemaDto.ListFailures, SchemaDto.ListParams, Unit>("templates") {
 
-		val create = create<SchemaDto.New, Unit, Parameters.Empty>()
+		val create = create<SchemaDto.New, SchemaDto.NewFailures, Unit, Parameters.Empty>()
 
 		/**
 		 * The template management endpoint: `v2/templates/{id}`.
@@ -335,15 +331,15 @@ class Api2 : Service("v2") {
 		 *
 		 * - Template versions: [TemplateVersionEndpoint]
 		 */
-		inner class TemplateEndpoint : DynamicResource<SchemaDto, Unit>("template") {
+		inner class TemplateEndpoint : DynamicResource<SchemaDto, SchemaDto.GetFailures, Unit>("template") {
 
-			val create = create<SchemaDto.Version, Unit, Parameters.Empty>()
+			val create = create<SchemaDto.NewVersion, SchemaDto.NewFailures, Unit, Parameters.Empty>()
 
-			val edit = edit<SchemaDto.Edit, Parameters.Empty>()
+			val edit = edit<SchemaDto.Edit, SchemaDto.EditFailures, Parameters.Empty>()
 
-			suspend fun refOf(id: Id, templates: Template.Service): Outcome<Template.Ref> = out {
-				validateId(id, Unit)
-				Template.Ref(id.resource.segments[1].segment, templates)
+			suspend fun identifierOf(id: Id) = run {
+				validateIdOrThrow(id.takeFirst(2), Unit)
+				Identifier(id.resource.segments[1].segment)
 			}
 
 			/**
@@ -357,19 +353,11 @@ class Api2 : Service("v2") {
 			 *
 			 * Authorization: employee
 			 */
-			inner class TemplateVersionEndpoint : DynamicResource<SchemaDto.Version, Unit>("version") {
+			inner class TemplateVersionEndpoint : DynamicResource<SchemaDto.Version, SchemaDto.GetVersionFailures, Unit>("version") {
 
-				suspend fun refOf(
-					id: Id,
-					templates: Template.Service,
-				): Outcome<Template.Version.Ref> = out {
-					validateId(id, Unit)
-					Template.Version.Ref(
-						this@TemplateEndpoint.refOf(Id(id.service, Route(id.resource.segments.dropLast(1))), templates)
-							.bind(),
-						Instant.parse(id.resource.segments.last().segment),
-						templates.versions,
-					)
+				suspend fun identifierOf(id: Id) = run {
+					validateIdOrThrow(id.takeFirst(3), Unit)
+					Identifier(id.resource.segments.takeLast(2).joinToString("_"))
 				}
 			}
 
@@ -391,7 +379,7 @@ class Api2 : Service("v2") {
 	 *
 	 * List existing forms.
 	 *
-	 * - Parameters: [SchemaDto.GetParams]
+	 * - Parameters: [SchemaDto.ListParams]
 	 * - Response: list of identifiers
 	 *
 	 * Authorization:
@@ -411,9 +399,9 @@ class Api2 : Service("v2") {
 	 *
 	 * - Individual form: [FormEndpoint]
 	 */
-	inner class FormsEndpoint : StaticResource<List<Id>, SchemaDto.GetParams, Unit>("forms") {
+	inner class FormsEndpoint : StaticResource<List<Id>, SchemaDto.ListFailures, SchemaDto.ListParams, Unit>("forms") {
 
-		val create = create<SchemaDto.New, Unit, Parameters.Empty>()
+		val create = create<SchemaDto.New, SchemaDto.NewFailures, Unit, Parameters.Empty>()
 
 		/**
 		 * The form management endpoint: `v2/forms/{id}`.
@@ -449,15 +437,15 @@ class Api2 : Service("v2") {
 		 *
 		 * - Form versions: [FormVersionEndpoint]
 		 */
-		inner class FormEndpoint : DynamicResource<SchemaDto, Unit>("form") {
+		inner class FormEndpoint : DynamicResource<SchemaDto, SchemaDto.GetFailures, Unit>("form") {
 
-			val create = create<SchemaDto.Version, Unit, Parameters.Empty>()
+			val create = create<SchemaDto.NewVersion, SchemaDto.NewFailures, Unit, Parameters.Empty>()
 
-			val edit = edit<SchemaDto.Edit, Parameters.Empty>()
+			val edit = edit<SchemaDto.Edit, SchemaDto.EditFailures, Parameters.Empty>()
 
-			suspend fun refOf(id: Id, forms: Form.Service): Outcome<Form.Ref> = out {
-				validateId(id, Unit)
-				Form.Ref(id.resource.segments[1].segment, forms)
+			suspend fun identifierOf(id: Id) = run {
+				validateIdOrThrow(id.takeFirst(2), Unit)
+				Identifier(id.resource.segments[1].segment)
 			}
 
 			/**
@@ -473,19 +461,11 @@ class Api2 : Service("v2") {
 			 * - If this form is public: guest
 			 * - If this form is private: employee
 			 */
-			inner class FormVersionEndpoint : DynamicResource<SchemaDto.Version, Unit>("version") {
+			inner class FormVersionEndpoint : DynamicResource<SchemaDto.Version, SchemaDto.GetVersionFailures, Unit>("version") {
 
-				suspend fun refOf(
-					id: Id,
-					forms: Form.Service,
-				): Outcome<Form.Version.Ref> = out {
-					validateId(id, Unit)
-					Form.Version.Ref(
-						this@FormEndpoint.refOf(Id(id.service, Route(id.resource.segments.dropLast(1))), forms)
-							.bind(),
-						Instant.parse(id.resource.segments.last().segment),
-						forms.versions,
-					)
+				suspend fun identifierOf(id: Id) = run {
+					validateIdOrThrow(id.takeFirst(3), Unit)
+					Identifier(id.resource.segments.takeLast(2).joinToString("_"))
 				}
 			}
 
@@ -509,7 +489,7 @@ class Api2 : Service("v2") {
 	 *
 	 * - Access a specific submission: [SubmissionEndpoint]
 	 */
-	inner class SubmissionsEndpoint : StaticResource<Nothing, Parameters.Empty, Unit>("submissions") {
+	inner class SubmissionsEndpoint : StaticResource<Nothing, Unit, Parameters.Empty, Unit>("submissions") {
 
 		/**
 		 * The submission endpoint: `v2/submissions/{id}`.
@@ -521,11 +501,11 @@ class Api2 : Service("v2") {
 		 *
 		 * Authorization: employee
 		 */
-		inner class SubmissionEndpoint : DynamicResource<SubmissionDto, Unit>("submission") {
+		inner class SubmissionEndpoint : DynamicResource<SubmissionDto, SubmissionDto.GetFailures, Unit>("submission") {
 
-			suspend fun refOf(id: Id, submissions: Submission.Service): Outcome<Submission.Ref> = out {
-				validateId(id, Unit)
-				Submission.Ref(id.resource.segments.last().segment, submissions)
+			suspend fun identifierOf(id: Id) = run {
+				validateIdOrThrow(id.takeFirst(2), Unit)
+				Identifier(id.resource.segments.last().segment)
 			}
 		}
 
@@ -560,11 +540,11 @@ class Api2 : Service("v2") {
 	 *
 	 * - Access individual records: [RecordEndpoint]
 	 */
-	inner class RecordsEndpoint : StaticResource<Nothing, Parameters.Empty, Unit>("records") {
+	inner class RecordsEndpoint : StaticResource<Nothing, Unit, Parameters.Empty, Unit>("records") {
 
-		val search = action<List<RecordDto.Criterion>, List<Id>, Parameters.Empty>(Route.Root)
+		val search = action<List<RecordDto.Criterion>, RecordDto.SearchFailures, List<Id>, Parameters.Empty>(Route.Root)
 
-		val create = create<SubmissionDto, SubmissionDto, Parameters.Empty>()
+		val create = create<SubmissionDto, RecordDto.NewFailures, SubmissionDto, Parameters.Empty>()
 
 		/**
 		 * The record management endpoint: `v2/records/{id}`.
@@ -583,14 +563,14 @@ class Api2 : Service("v2") {
 		 *
 		 * Authorization: employee
 		 */
-		inner class RecordEndpoint : DynamicResource<RecordDto, Unit>("record") {
+		inner class RecordEndpoint : DynamicResource<RecordDto, RecordDto.GetFailures, Unit>("record") {
 
-			suspend fun refOf(id: Id, records: Record.Service): Outcome<Record.Ref> = out {
-				validateId(id, Unit)
-				Record.Ref(id.resource.segments.last().segment, records)
+			suspend fun identifierOf(id: Id) = run {
+				validateIdOrThrow(id.takeFirst(2), Unit)
+				Identifier(id.resource.segments.last().segment)
 			}
 
-			val advance = action<RecordDto.Advance, Unit, Parameters.Empty>(Route / "advance")
+			val advance = action<RecordDto.Advance, RecordDto.AdvanceFailures, Unit, Parameters.Empty>(Route / "advance")
 
 		}
 
@@ -603,3 +583,20 @@ class Api2 : Service("v2") {
 	//endregion
 
 }
+
+// region Utils
+
+private suspend fun <O : Any, Context : Any> ResourceGroup.AbstractResource<O, Context>.validateIdOrThrow(id: Id, context: Context) = either {
+	validateCorrectId(id)
+	validateId(id, context)
+}.fold(
+	ifLeft = { error("Invalid identifier $id (for resource $this): $it") },
+	ifRight = ::identity,
+)
+
+private fun Id.takeFirst(resources: Int) = copy(
+	service = service,
+	resource = Route(resource.segments.take(resources)),
+)
+
+// endregion

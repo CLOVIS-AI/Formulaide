@@ -1,24 +1,25 @@
 package opensavvy.formulaide.core
 
+import arrow.core.left
+import arrow.core.nel
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.withContext
-import opensavvy.backbone.Ref.Companion.now
+import opensavvy.backbone.now
 import opensavvy.formulaide.core.Field.Companion.arity
 import opensavvy.formulaide.core.Field.Companion.choice
 import opensavvy.formulaide.core.Field.Companion.group
 import opensavvy.formulaide.core.Field.Companion.input
 import opensavvy.formulaide.core.Field.Companion.label
+import opensavvy.formulaide.core.Field.Id.Companion.root
 import opensavvy.formulaide.fake.FakeDepartments
 import opensavvy.formulaide.fake.FakeFiles
 import opensavvy.formulaide.fake.FakeForms
-import opensavvy.formulaide.test.assertions.shouldBeInvalid
-import opensavvy.formulaide.test.assertions.shouldSucceed
-import opensavvy.formulaide.test.assertions.shouldSucceedAnd
 import opensavvy.formulaide.test.structure.Suite
 import opensavvy.formulaide.test.structure.TestExecutor
 import opensavvy.formulaide.test.structure.TestScope
 import opensavvy.formulaide.test.structure.clock
 import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
-import kotlin.test.assertEquals
+import opensavvy.state.outcome.valueOrNull
 
 class SubmissionTest : TestExecutor() {
 
@@ -53,13 +54,13 @@ class SubmissionTest : TestExecutor() {
 				)
 
 				println(submission)
-				shouldSucceed(submission.parse(files))
+				submission.parse(files).bind()
 			}
 
 			test("Inputs are mandatory") {
 				val files = FakeFiles(clock)
 				val form = createTestForm(
-					input("Input", Input.Text()),
+					input("Input", Input.text().bind()),
 				)
 
 				val submission = Submission(
@@ -69,47 +70,45 @@ class SubmissionTest : TestExecutor() {
 				)
 
 				println(submission)
-				shouldBeInvalid(submission.parse(files))
+				submission.parse(files) shouldBe Submission.ParsingFailure.InvalidValue.Mandatory(root).nel().left()
 			}
 
 			test("Parse text") {
 				val files = FakeFiles(clock)
 				val form = createTestForm(
-					input("Input", Input.Text()),
+					input("Input", Input.text().bind()),
 				)
 
 				val submission = Submission(
 					form = form.versionsSorted.first(),
 					formStep = null,
 					mapOf(
-						Field.Id.root to "answer"
+						root to "answer"
 					),
 				)
 
 				println(submission)
-				submission.parse(files).shouldSucceedAnd {
-					assertEquals("answer", it[Field.Id.root])
-				}
+				val result = submission.parse(files).bind()
+				result[root] shouldBe "answer"
 			}
 
 			test("Parse int") {
 				val files = FakeFiles(clock)
 				val form = createTestForm(
-					input("Input", Input.Integer()),
+					input("Input", Input.integer().bind()),
 				)
 
 				val submission = Submission(
 					form = form.versionsSorted.first(),
 					formStep = null,
 					mapOf(
-						Field.Id.root to "6"
+						root to "6"
 					),
 				)
 
 				println(submission)
-				submission.parse(files).shouldSucceedAnd {
-					assertEquals(6L, it[Field.Id.root])
-				}
+				val result = submission.parse(files).bind()
+				result[root] shouldBe 6L
 			}
 
 			test("Parse group") {
@@ -117,8 +116,8 @@ class SubmissionTest : TestExecutor() {
 				val form = createTestForm(
 					group(
 						"Group",
-						0 to input("First name", Input.Text()),
-						1 to input("Last name", Input.Text()),
+						0 to input("First name", Input.text().bind()),
+						1 to input("Last name", Input.text().bind()),
 					),
 				)
 
@@ -133,10 +132,9 @@ class SubmissionTest : TestExecutor() {
 				)
 
 				println(submission)
-				submission.parse(files).shouldSucceedAnd {
-					assertEquals("Alfred", it[Field.Id(0)])
-					assertEquals("Pennyworth", it[Field.Id(1)])
-				}
+				val result = submission.parse(files).bind()
+				result[root + 0] shouldBe "Alfred"
+				result[root + 1] shouldBe "Pennyworth"
 			}
 
 			test("Parse incomplete group") {
@@ -144,8 +142,8 @@ class SubmissionTest : TestExecutor() {
 				val form = createTestForm(
 					group(
 						"Group",
-						0 to input("First name", Input.Text()),
-						1 to input("Last name", Input.Text()),
+						0 to input("First name", Input.text().bind()),
+						1 to input("Last name", Input.text().bind()),
 					),
 				)
 
@@ -158,7 +156,8 @@ class SubmissionTest : TestExecutor() {
 				)
 
 				println(submission)
-				shouldBeInvalid(submission.parse(files))
+				submission.parse(files) shouldBe Submission.ParsingFailure.InvalidValue.MissingGroupMarker(root)
+					.nel().left()
 			}
 
 			test("Parse choice") {
@@ -166,8 +165,8 @@ class SubmissionTest : TestExecutor() {
 				val form = createTestForm(
 					choice(
 						"Choice",
-						0 to input("First option", Input.Text()),
-						1 to input("Last option", Input.Text()),
+						0 to input("First option", Input.text().bind()),
+						1 to input("Last option", Input.text().bind()),
 					),
 				)
 
@@ -175,17 +174,16 @@ class SubmissionTest : TestExecutor() {
 					form = form.versionsSorted.first(),
 					formStep = null,
 					mapOf(
-						Field.Id.root to "0",
+						root to "0",
 						Field.Id(0) to "I prefer the first option",
 					),
 				)
 
 				println(submission)
-				submission.parse(files).shouldSucceedAnd {
-					assertEquals(0, it[Field.Id.root])
-					assertEquals("I prefer the first option", it[Field.Id(0)])
-					assertEquals(null, it[Field.Id(1)])
-				}
+				val result = submission.parse(files).bind()
+				result[root] shouldBe 0
+				result[root + 0] shouldBe "I prefer the first option"
+				result[root + 1] shouldBe null
 			}
 
 			test("Parse arity") {
@@ -194,7 +192,7 @@ class SubmissionTest : TestExecutor() {
 					arity(
 						"Names",
 						1u..2u,
-						input("Name", Input.Text())
+						input("Name", Input.text().bind())
 					),
 				)
 
@@ -208,10 +206,9 @@ class SubmissionTest : TestExecutor() {
 				)
 
 				println(submission)
-				submission.parse(files).shouldSucceedAnd {
-					assertEquals("First name", it[Field.Id(0)])
-					assertEquals("Second name", it[Field.Id(1)])
-				}
+				val result = submission.parse(files).bind()
+				result[root + 0] shouldBe "First name"
+				result[root + 1] shouldBe "Second name"
 			}
 		}
 
@@ -244,7 +241,7 @@ class SubmissionTest : TestExecutor() {
 				),
 				3 to group(
 					"Documents",
-					0 to input("Tax document", Input.Text()),
+					0 to input("Tax document", Input.text().valueOrNull!!),
 				)
 			)
 
@@ -272,9 +269,8 @@ class SubmissionTest : TestExecutor() {
 				)
 
 				println(submission)
-				submission.parse(files).shouldSucceedAnd {
-					assertEquals(1, it[Field.Id(0)])
-				}
+				val result = submission.parse(files).bind()
+				result[root + 0] shouldBe 1
 			}
 		}
 	}

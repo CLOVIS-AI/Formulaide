@@ -1,6 +1,7 @@
 package opensavvy.formulaide.remote.dto
 
 import kotlinx.datetime.Instant
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import opensavvy.formulaide.core.Department
 import opensavvy.formulaide.core.Form
@@ -8,6 +9,7 @@ import opensavvy.formulaide.core.Template
 import opensavvy.formulaide.remote.api
 import opensavvy.formulaide.remote.dto.FieldDto.Companion.toCore
 import opensavvy.formulaide.remote.dto.FieldDto.Companion.toDto
+import opensavvy.formulaide.remote.failures.EmbeddedFailure
 import opensavvy.spine.Id
 import opensavvy.spine.Parameters
 
@@ -44,14 +46,41 @@ class SchemaDto(
 		val field: FieldDto?,
 	)
 
-	class GetParams : Parameters() {
+	class ListParams : Parameters() {
 		var includeClosed by parameter("includeClosed", default = false)
+	}
+
+	@Serializable
+	object ListFailures
+
+	@Serializable
+	object GetFailures
+
+	@Serializable
+	sealed class GetVersionFailures {
+		@Serializable
+		@SerialName("COULD_NOT_GET_FORM")
+		class CouldNotGetForm(val failure: EmbeddedFailure<GetFailures>) : GetVersionFailures()
 	}
 
 	@Serializable
 	class New(
 		val name: String,
-		val firstVersion: Version,
+		val firstVersion: NewVersion,
+	)
+
+	@Serializable
+	sealed class NewFailures {
+		@Serializable
+		@SerialName("INVALID_IMPORT")
+		class InvalidImport(val failures: List<FieldDto.CompatibilityFailure>) : NewFailures()
+	}
+
+	@Serializable
+	class NewVersion(
+		val title: String,
+		val field: FieldDto,
+		val steps: List<Step>? = null,
 	)
 
 	@Serializable
@@ -60,6 +89,9 @@ class SchemaDto(
 		val open: Boolean? = null,
 		val public: Boolean? = null,
 	)
+
+	@Serializable
+	object EditFailures
 
 	companion object {
 
@@ -80,7 +112,7 @@ class SchemaDto(
 		)
 
 		private fun convertTemplateRef(ref: Template.Version.Ref): Id =
-			api.templates.id.version.idOf(ref.template.id, ref.version.toString())
+			api.templates.id.version.idOf(ref.template.toIdentifier().text, ref.creationDate.toString())
 
 		suspend fun SchemaDto.toTemplate(
 			decodeTemplate: suspend (Id) -> Template.Version.Ref?,
@@ -130,12 +162,12 @@ class SchemaDto(
 		)
 
 		private fun convertFormRef(ref: Form.Version.Ref): Id =
-			api.forms.id.version.idOf(ref.form.id, ref.version.toString())
+			api.forms.id.version.idOf(ref.form.toIdentifier().text, ref.creationDate.toString())
 
 		fun Form.Step.toDto() = Step(
 			id,
 			name,
-			api.departments.id.idOf(reviewer.id),
+			api.departments.id.idOf(reviewer.toIdentifier().text),
 			field?.toDto(),
 		)
 

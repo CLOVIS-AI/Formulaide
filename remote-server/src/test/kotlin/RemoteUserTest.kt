@@ -3,8 +3,7 @@ package opensavvy.formulaide.remote.server
 import opensavvy.formulaide.fake.FakeDepartments
 import opensavvy.formulaide.fake.FakeUsers
 import opensavvy.formulaide.fake.spies.SpyDepartments.Companion.spied
-import opensavvy.formulaide.fake.spies.SpyUsers.Companion.spied
-import opensavvy.formulaide.remote.client.Users
+import opensavvy.formulaide.remote.client.RemoteUsers
 import opensavvy.formulaide.remote.server.utils.TestClient
 import opensavvy.formulaide.remote.server.utils.createTestServer
 import opensavvy.formulaide.test.structure.Suite
@@ -19,7 +18,7 @@ class RemoteUserTest : TestExecutor() {
 		val createDepartments by prepared { FakeDepartments().spied() }
 
 		val createUsers by prepared {
-			val users = FakeUsers().spied()
+			val users = FakeUsers()
 			val departments = prepare(createDepartments)
 
 			val application = backgroundScope.createTestServer(users) {
@@ -28,9 +27,9 @@ class RemoteUserTest : TestExecutor() {
 				}
 			}
 
-			Users(
+			RemoteUsers(
 				TestClient(application.client),
-				backgroundScope.coroutineContext,
+				backgroundScope,
 				departments,
 			)
 		}

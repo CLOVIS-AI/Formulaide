@@ -7,7 +7,14 @@ plugins {
 }
 
 kotlin {
-	jvm()
+	jvm {
+		jvmToolchain(17)
+		testRuns.named("test") {
+			executionTask.configure {
+				useJUnitPlatform()
+			}
+		}
+	}
 	js(IR) {
 		browser {
 			testTask {
@@ -21,7 +28,8 @@ kotlin {
 	sourceSets {
 		val commonMain by getting {
 			dependencies {
-				api("opensavvy:backbone:_")
+				api("opensavvy.pedestal:backbone:_")
+				api("opensavvy.pedestal:state-arrow:_")
 				api(KotlinX.datetime)
 			}
 		}
@@ -45,8 +53,4 @@ tasks.withType<org.jetbrains.dokka.gradle.DokkaTaskPartial>().configureEach {
 			remoteLineSuffix.set("#L")
 		}
 	}
-}
-
-tasks.named<Test>("jvmTest") {
-	useJUnitPlatform()
 }

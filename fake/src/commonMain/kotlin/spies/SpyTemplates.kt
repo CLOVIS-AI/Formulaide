@@ -1,65 +1,126 @@
 package opensavvy.formulaide.fake.spies
 
-import opensavvy.backbone.Ref
-import opensavvy.backbone.RefCache
+import kotlinx.coroutines.flow.map
+import kotlinx.datetime.Instant
+import opensavvy.formulaide.core.Field
 import opensavvy.formulaide.core.Template
+import opensavvy.formulaide.core.utils.Identifier
 import opensavvy.logger.loggerFor
+import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.outcome.Outcome
+import opensavvy.state.outcome.map
+import opensavvy.state.progressive.map
 
 class SpyTemplates(private val upstream: Template.Service) : Template.Service {
 
 	private val log = loggerFor(upstream)
 
-	override val versions: Template.Version.Service = SpyVersion(upstream.versions)
+	private val _versions = SpyVersion(upstream.versions)
+	override val versions: Template.Version.Service = _versions
 
-	override suspend fun list(includeClosed: Boolean): Outcome<List<Template.Ref>> = spy(
+	override suspend fun list(includeClosed: Boolean): Outcome<Template.Failures.List, List<Ref>> = spy(
 		log, "list", includeClosed,
 	) { upstream.list(includeClosed) }
+		.map { it.map(::Ref) }
 
-	override suspend fun create(name: String, firstVersion: Template.Version): Outcome<Template.Ref> = spy(
-		log, "create", name, firstVersion,
-	) { upstream.create(name, firstVersion) }
+	override suspend fun create(name: String, initialVersionTitle: String, field: Field): Outcome<Template.Failures.Create, Ref> = spy(
+		log, "create", name, initialVersionTitle, field,
+	) { upstream.create(name, initialVersionTitle, field) }
+		.map(::Ref)
 
-	override suspend fun createVersion(
-		template: Template.Ref,
-		version: Template.Version,
-	): Outcome<Template.Version.Ref> =
-		spy(
-			log, "createVersion", template, version,
-		) { upstream.createVersion(template, version) }
-			.map { ref ->
-				ref.copy(backbone = ref.backbone.spied())
-			}
+	override fun fromIdentifier(identifier: Identifier) = upstream.fromIdentifier(identifier).let(::Ref)
 
-	override suspend fun edit(template: Template.Ref, name: String?, open: Boolean?): Outcome<Unit> = spy(
-		log, "edit", template, name, open,
-	) { upstream.edit(template, name, open) }
+	inner class Ref internal constructor(
+		private val upstream: Template.Ref,
+	) : Template.Ref {
+		override suspend fun edit(name: String?, open: Boolean?): Outcome<Template.Failures.Edit, Unit> = spy(
+			log, "edit", name, open,
+		) { upstream.edit(name, open) }
 
-	override val cache: RefCache<Template>
-		get() = upstream.cache
+		override suspend fun rename(name: String): Outcome<Template.Failures.Edit, Unit> = spy(
+			log, "rename", name,
+		) { upstream.rename(name) }
 
-	override suspend fun directRequest(ref: Ref<Template>): Outcome<Template> = spy(
-		log, "directRequest", ref,
-	) { upstream.directRequest(ref) }
-		.map { template ->
-			template.copy(versions = template.versions.map { it.copy(backbone = it.backbone.spied()) })
+		override suspend fun open(): Outcome<Template.Failures.Edit, Unit> = spy(
+			log, "open",
+		) { upstream.open() }
+
+		override suspend fun close(): Outcome<Template.Failures.Edit, Unit> = spy(
+			log, "close",
+		) { upstream.close() }
+
+		override suspend fun createVersion(title: String, field: Field): Outcome<Template.Failures.CreateVersion, SpyVersion.Ref> = spy(
+			log, "createVersion", title, field,
+		) { upstream.createVersion(title, field) }
+			.map(_versions::Ref)
+
+		override fun versionOf(creationDate: Instant): Template.Version.Ref = _versions.Ref(upstream.versionOf(creationDate))
+
+		override fun request(): ProgressiveFlow<Template.Failures.Get, Template> = spy(
+			log, "request",
+		) { upstream.request() }
+			.map { out -> out.map { template -> template.copy(versions = template.versions.map(_versions::Ref)) } }
+
+		// region Overrides
+
+		override fun equals(other: Any?): Boolean {
+			if (this === other) return true
+			if (other !is Ref) return false
+
+			return upstream == other.upstream
 		}
 
-	class SpyVersion(private val upstream: Template.Version.Service) : Template.Version.Service {
+		override fun hashCode(): Int {
+			return upstream.hashCode()
+		}
+
+		override fun toString() = upstream.toString()
+		override fun toIdentifier() = upstream.toIdentifier()
+
+		// endregion
+	}
+
+	inner class SpyVersion(private val upstream: Template.Version.Service) : Template.Version.Service {
 		private val log = loggerFor(upstream)
-		override val cache: RefCache<Template.Version>
-			get() = upstream.cache
 
-		override suspend fun directRequest(ref: Ref<Template.Version>): Outcome<Template.Version> = spy(
-			log, "directRequest", ref,
-		) { upstream.directRequest(ref) }
+		inner class Ref internal constructor(
+			private val upstream: Template.Version.Ref,
+		) : Template.Version.Ref {
+			override val template: Template.Ref
+				get() = Ref(upstream.template)
 
+			override val creationDate: Instant
+				get() = upstream.creationDate
+
+			override fun request(): ProgressiveFlow<Template.Version.Failures.Get, Template.Version> = spy(
+				log, "request",
+			) { upstream.request() }
+
+			// region Overrides
+
+			override fun equals(other: Any?): Boolean {
+				if (this === other) return true
+				if (other !is Ref) return false
+
+				return upstream == other.upstream
+			}
+
+			override fun hashCode(): Int {
+				return upstream.hashCode()
+			}
+
+			override fun toString() = upstream.toString()
+			override fun toIdentifier() = upstream.toIdentifier()
+
+			// endregion
+		}
+
+		override fun fromIdentifier(identifier: Identifier) = upstream.fromIdentifier(identifier).let(::Ref)
 	}
 
 	companion object {
 
 		fun Template.Service.spied() = SpyTemplates(this)
-		fun Template.Version.Service.spied() = SpyVersion(this)
 
 	}
 }

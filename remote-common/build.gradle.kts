@@ -8,7 +8,14 @@ plugins {
 }
 
 kotlin {
-	jvm()
+	jvm {
+		jvmToolchain(17)
+		testRuns.named("test") {
+			executionTask.configure {
+				useJUnitPlatform()
+			}
+		}
+	}
 	js(IR) {
 		browser {
 			testTask {
@@ -24,7 +31,7 @@ kotlin {
 			dependencies {
 				api(projects.core)
 
-				api("opensavvy:spine:_")
+				api("opensavvy.pedestal:spine:_")
 				api(KotlinX.serialization.core)
 				api(KotlinX.serialization.json)
 			}
@@ -49,8 +56,4 @@ tasks.withType<org.jetbrains.dokka.gradle.DokkaTaskPartial>().configureEach {
 			remoteLineSuffix.set("#L")
 		}
 	}
-}
-
-tasks.named<Test>("jvmTest") {
-	useJUnitPlatform()
 }

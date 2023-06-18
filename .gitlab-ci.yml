@@ -133,7 +133,7 @@ test-jvm:
     MONGO_INITDB_ROOT_PASSWORD: "development-password"
 
   script:
-    - "./gradlew jvmTest backend:test mongo:test remote-server:test koverMergedVerify koverMergedReport"
+    - "./gradlew jvmTest backend:test mongo:test remote-server:test koverMergedVerify koverMergedReport --continue"
     - mkdir -p kover
     - mv build/reports/kover/merged/html/* kover
 
@@ -184,7 +184,7 @@ test-js:
   needs: [ chromium:build ]
 
   script:
-    - "./gradlew jsBrowserTest"
+    - "./gradlew jsBrowserTest --continue"
 
   after_script:
     - mkdir -p test-output
@@ -198,6 +198,9 @@ test-js:
   artifacts:
     reports:
       junit: test-output/TEST-*.xml
+
+  # TODO: remove when https://gitlab.com/opensavvy/formulaide/-/issues/295 is fixed
+  allow_failure: true
 
   interruptible: true
 

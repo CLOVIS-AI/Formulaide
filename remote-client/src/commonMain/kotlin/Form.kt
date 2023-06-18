@@ -1,136 +1,251 @@
 package opensavvy.formulaide.remote.client
 
-import opensavvy.backbone.Ref
-import opensavvy.backbone.Ref.Companion.expire
-import opensavvy.backbone.RefCache
-import opensavvy.backbone.defaultRefCache
-import opensavvy.cache.ExpirationCache.Companion.expireAfter
-import opensavvy.cache.MemoryCache.Companion.cachedInMemory
-import opensavvy.formulaide.core.Department
-import opensavvy.formulaide.core.Form
-import opensavvy.formulaide.core.Template
+import arrow.core.toNonEmptyListOrNull
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.job
+import kotlinx.datetime.Instant
+import kotlinx.datetime.toInstant
+import opensavvy.cache.contextual.cache
+import opensavvy.cache.contextual.cachedInMemory
+import opensavvy.cache.contextual.expireAfter
+import opensavvy.formulaide.core.*
+import opensavvy.formulaide.core.utils.Identifier
 import opensavvy.formulaide.remote.api
+import opensavvy.formulaide.remote.dto.FieldDto.Companion.toCore
+import opensavvy.formulaide.remote.dto.FieldDto.Companion.toDto
 import opensavvy.formulaide.remote.dto.SchemaDto
 import opensavvy.formulaide.remote.dto.SchemaDto.Companion.toDto
 import opensavvy.formulaide.remote.dto.SchemaDto.Companion.toForm
 import opensavvy.spine.Parameters
+import opensavvy.spine.SpineFailure
 import opensavvy.spine.ktor.client.request
+import opensavvy.state.arrow.out
+import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.outcome.Outcome
-import opensavvy.state.outcome.ensureValid
-import opensavvy.state.outcome.out
-import kotlin.coroutines.CoroutineContext
+import opensavvy.state.outcome.mapFailure
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 
-class Forms(
+class RemoteForms(
 	private val client: Client,
-	private val departments: Department.Service,
+	private val departments: Department.Service<*>,
 	private val templates: Template.Service,
-	cacheContext: CoroutineContext,
+	scope: CoroutineScope,
 ) : Form.Service {
 
-	override val versions: Form.Version.Service = Versions(cacheContext)
+	private val _versions = Versions()
+	override val versions: Form.Version.Service = _versions
 
-	override val cache: RefCache<Form> = defaultRefCache<Form>()
-		.cachedInMemory(cacheContext)
-		.expireAfter(10.minutes, cacheContext)
+	private val cache = cache<Ref, User.Role, Form.Failures.Get, Form> { ref, role ->
+		out {
+			client.http.request(
+				api.forms.id.get,
+				api.forms.id.idOf(ref.id),
+				Unit,
+				Parameters.Empty,
+				Unit,
+			).mapFailure {
+				when (it.type) {
+					SpineFailure.Type.Unauthenticated -> Form.Failures.Unauthenticated
+					SpineFailure.Type.NotFound -> Form.Failures.NotFound(ref)
+					else -> error("Received an unexpected status: $it")
+				}
+			}.bind()
+				.toForm { _versions.fromIdentifier(api.forms.id.version.identifierOf(it)) }
+		}
+	}.cachedInMemory(scope.coroutineContext.job)
+		.expireAfter(10.minutes, scope)
 
-	override suspend fun list(includeClosed: Boolean): Outcome<List<Form.Ref>> = out {
+	private val versionCache = cache<Versions.Ref, User.Role, Form.Version.Failures.Get, Form.Version> { ref, role ->
+		out {
+			client.http.request(
+				api.forms.id.version.get,
+				api.forms.id.version.idOf(ref.form.id, ref.creationDate.toString()),
+				Unit,
+				Parameters.Empty,
+				Unit,
+			).mapFailure {
+				when (it.type) {
+					SpineFailure.Type.Unauthenticated -> Form.Version.Failures.Unauthenticated
+					SpineFailure.Type.NotFound -> Form.Version.Failures.NotFound(ref)
+					else -> error("Received an unexpected status: $it")
+				}
+			}.bind()
+				.toForm(
+					decodeTemplate = { id ->
+						templates.versions.fromIdentifier(api.templates.id.version.identifierOf(id))
+					},
+					decodeDepartment = { id ->
+						departments.fromIdentifier(api.departments.id.identifierOf(id))
+					}
+				)
+		}
+	}.cachedInMemory(scope.coroutineContext.job)
+		.expireAfter(1.hours, scope)
+
+	override suspend fun list(includeClosed: Boolean): Outcome<Form.Failures.List, List<Form.Ref>> = out {
 		client.http.request(
 			api.forms.get,
 			api.forms.idOf(),
 			Unit,
-			SchemaDto.GetParams().apply { this.includeClosed = includeClosed },
+			SchemaDto.ListParams().apply { this.includeClosed = includeClosed },
 			Unit,
-		).bind()
-			.map { api.forms.id.refOf(it, this@Forms).bind() }
+		).mapFailure {
+			when (it.type) {
+				SpineFailure.Type.Unauthenticated -> Form.Failures.Unauthenticated
+				SpineFailure.Type.Unauthorized -> Form.Failures.Unauthorized
+				else -> error("Received an unexpected status: $it")
+			}
+		}.bind()
+			.map { fromIdentifier(api.forms.id.identifierOf(it)) }
 	}
 
-	override suspend fun create(name: String, firstVersion: Form.Version): Outcome<Form.Ref> = out {
+	override suspend fun create(name: String, firstVersionTitle: String, field: Field, vararg step: Form.Step): Outcome<Form.Failures.Create, Form.Ref> = out {
 		client.http.request(
 			api.forms.create,
 			api.forms.idOf(),
-			SchemaDto.New(name = name, firstVersion = firstVersion.toDto()),
+			SchemaDto.New(
+				name = name,
+				firstVersion = SchemaDto.NewVersion(
+					title = firstVersionTitle,
+					field = field.toDto(),
+					steps = step.map { it.toDto() },
+				)
+			),
 			Parameters.Empty,
 			Unit,
-		).bind()
+		).mapFailure {
+			when (it.type) {
+				SpineFailure.Type.Unauthenticated -> Form.Failures.Unauthenticated
+				SpineFailure.Type.Unauthorized -> Form.Failures.Unauthorized
+				SpineFailure.Type.InvalidRequest -> {
+					check(it is SpineFailure.Payload) { "Expected a JSON response from the server, but received ${it::class}: $it" }
+					Form.Failures.InvalidImport((it.payload as SchemaDto.NewFailures.InvalidImport).failures.map { it.toCore(templates) }.toNonEmptyListOrNull()!!)
+				}
+				else -> error("Received an unexpected status: $it")
+			}
+		}.bind()
 			.id
-			.let { api.forms.id.refOf(it, this@Forms) }
-			.bind()
+			.let { fromIdentifier(api.forms.id.identifierOf(it)) }
 	}
 
-	override suspend fun createVersion(
-		form: Form.Ref,
-		version: Form.Version,
-	): Outcome<Form.Version.Ref> = out {
-		client.http.request(
-			api.forms.id.create,
-			api.forms.id.idOf(form.id),
-			version.toDto(),
-			Parameters.Empty,
-			Unit,
-		).bind()
-			.id
-			.let { api.forms.id.version.refOf(it, this@Forms) }
-			.bind()
-			.also { form.expire() }
-	}
+	override fun fromIdentifier(identifier: Identifier) = Ref(identifier.text)
 
-	override suspend fun edit(form: Form.Ref, name: String?, open: Boolean?, public: Boolean?): Outcome<Unit> = out {
-		client.http.request(
-			api.forms.id.edit,
-			api.forms.id.idOf(form.id),
-			SchemaDto.Edit(name = name, open = open, public = public),
-			Parameters.Empty,
-			Unit,
-		).bind()
-
-		form.expire()
-	}
-
-	override suspend fun directRequest(ref: Ref<Form>): Outcome<Form> = out {
-		ensureValid(ref is Form.Ref) { "Expected Form.Ref, found $ref" }
-
-		client.http.request(
-			api.forms.id.get,
-			api.forms.id.idOf(ref.id),
-			Unit,
-			Parameters.Empty,
-			Unit,
-		).bind()
-			.toForm(
-				decodeForm = { id ->
-					api.forms.id.version.refOf(id, this@Forms).bind()
-				},
-			)
-	}
-
-	private inner class Versions(
-		cacheContext: CoroutineContext,
-	) : Form.Version.Service {
-		override val cache: RefCache<Form.Version> = defaultRefCache<Form.Version>()
-			.cachedInMemory(cacheContext)
-			.expireAfter(1.hours, cacheContext)
-
-		override suspend fun directRequest(ref: Ref<Form.Version>): Outcome<Form.Version> = out {
-			ensureValid(ref is Form.Version.Ref) { "Expected Form.Version.Ref, found $ref" }
-
+	inner class Ref internal constructor(
+		internal val id: String,
+	) : Form.Ref {
+		override suspend fun edit(name: String?, open: Boolean?, public: Boolean?): Outcome<Form.Failures.Edit, Unit> = out {
 			client.http.request(
-				api.forms.id.version.get,
-				api.forms.id.version.idOf(ref.form.id, ref.version.toString()),
-				Unit,
+				api.forms.id.edit,
+				api.forms.id.idOf(id),
+				SchemaDto.Edit(name = name, open = open, public = public),
 				Parameters.Empty,
 				Unit,
-			).bind()
-				.toForm(
-					decodeTemplate = { id ->
-						api.templates.id.version.refOf(id, templates).bind()
-					},
-					decodeDepartment = { id ->
-						api.departments.id.refOf(id, departments).bind()
-					}
-				)
+			).mapFailure {
+				when (it.type) {
+					SpineFailure.Type.Unauthenticated -> Form.Failures.Unauthenticated
+					SpineFailure.Type.Unauthorized -> Form.Failures.Unauthorized
+					SpineFailure.Type.NotFound -> Form.Failures.NotFound(this@Ref)
+					else -> error("Received an unexpected status: $it")
+				}
+			}.bind()
+
+			cache.expire(this@Ref)
 		}
 
+		override suspend fun createVersion(title: String, field: Field, vararg step: Form.Step): Outcome<Form.Failures.CreateVersion, Form.Version.Ref> = out {
+			client.http.request(
+				api.forms.id.create,
+				api.forms.id.idOf(id),
+				SchemaDto.NewVersion(
+					title = title,
+					field = field.toDto(),
+					steps = step.map { it.toDto() },
+				),
+				Parameters.Empty,
+				Unit,
+			).mapFailure {
+				when (it.type) {
+					SpineFailure.Type.Unauthenticated -> Form.Failures.Unauthenticated
+					SpineFailure.Type.Unauthorized -> Form.Failures.Unauthorized
+					SpineFailure.Type.NotFound -> Form.Failures.NotFound(this@Ref)
+					SpineFailure.Type.InvalidRequest -> {
+						check(it is SpineFailure.Payload) { "Expected a JSON response from the server, but received ${it::class}: $it" }
+						Form.Failures.InvalidImport((it.payload as SchemaDto.NewFailures.InvalidImport).failures.map { it.toCore(templates) }.toNonEmptyListOrNull()!!)
+					}
+					else -> error("Received an unexpected status: $it")
+				}
+			}.bind()
+				.id
+				.let { _versions.fromIdentifier(api.forms.id.version.identifierOf(it)) }
+				.also { cache.expire(this@Ref) }
+		}
+
+		override fun versionOf(creationDate: Instant) = _versions.Ref(this, creationDate)
+
+		override fun request(): ProgressiveFlow<Form.Failures.Get, Form> = flow {
+			emitAll(cache[this@Ref, currentRole()])
+		}
+
+		// region Overrides
+
+		override fun equals(other: Any?): Boolean {
+			if (this === other) return true
+			if (other !is Ref) return false
+
+			return id == other.id
+		}
+
+		override fun hashCode(): Int {
+			return id.hashCode()
+		}
+
+		override fun toString() = "RemoteForms.Ref($id)"
+
+		override fun toIdentifier() = Identifier(id)
+
+		// endregion
+	}
+
+	inner class Versions : Form.Version.Service {
+
+		override fun fromIdentifier(identifier: Identifier): Form.Version.Ref {
+			val (form, creationDate) = identifier.text.split("_", limit = 2)
+			return Ref(
+				this@RemoteForms.fromIdentifier(Identifier(form)),
+				creationDate.toInstant(),
+			)
+		}
+
+		inner class Ref internal constructor(
+			override val form: RemoteForms.Ref,
+			override val creationDate: Instant,
+		) : Form.Version.Ref {
+			override fun request(): ProgressiveFlow<Form.Version.Failures.Get, Form.Version> = flow {
+				emitAll(versionCache[this@Ref, currentRole()])
+			}
+
+			// region Overrides
+
+			override fun equals(other: Any?): Boolean {
+				if (this === other) return true
+				if (other !is Ref) return false
+
+				if (form != other.form) return false
+				return creationDate == other.creationDate
+			}
+
+			override fun hashCode(): Int {
+				var result = form.hashCode()
+				result = 31 * result + creationDate.hashCode()
+				return result
+			}
+
+			override fun toString() = "RemoteForms.Ref(${form.id}).Version($creationDate)"
+
+			override fun toIdentifier() = Identifier("${form.id}_$creationDate")
+		}
 	}
 }

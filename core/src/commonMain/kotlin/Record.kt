@@ -1,8 +1,14 @@
 package opensavvy.formulaide.core
 
+import arrow.core.Nel
 import kotlinx.datetime.Instant
 import opensavvy.backbone.Backbone
 import opensavvy.formulaide.core.Submission.Companion.toSubmissionData
+import opensavvy.formulaide.core.data.StandardNotFound
+import opensavvy.formulaide.core.data.StandardUnauthenticated
+import opensavvy.formulaide.core.data.StandardUnauthorized
+import opensavvy.formulaide.core.utils.IdentifierParser
+import opensavvy.formulaide.core.utils.IdentifierWriter
 import opensavvy.state.outcome.Outcome
 
 /**
@@ -218,18 +224,79 @@ data class Record(
 
 	sealed class QueryCriterion
 
-	data class Ref(
-		val id: String,
-		override val backbone: Service,
-	) : opensavvy.backbone.Ref<Record>
+	interface Ref : opensavvy.backbone.Ref<Failures.Get, Record>, IdentifierWriter {
 
-	interface Service : Backbone<Record> {
+		/**
+		 * Creates a [Diff.EditInitial] for this record.
+		 */
+		suspend fun editInitial(
+			reason: String,
+			submission: Map<Field.Id, String>,
+		): Outcome<Failures.Action, Unit>
 
-		suspend fun search(criteria: List<QueryCriterion>): Outcome<List<Ref>>
+		/**
+		 * Creates a [Diff.EditInitial] for this record.
+		 */
+		suspend fun editInitial(
+			reason: String,
+			vararg submission: Pair<String, String>,
+		) = editInitial(reason, submission.toSubmissionData())
+
+		/**
+		 * Creates a [Diff.EditCurrent] for this record.
+		 */
+		suspend fun editCurrent(
+			reason: String?,
+			submission: Map<Field.Id, String>,
+		): Outcome<Failures.Action, Unit>
+
+		/**
+		 * Creates a [Diff.EditCurrent] for this record.
+		 */
+		suspend fun editCurrent(
+			reason: String?,
+			vararg submission: Pair<String, String>,
+		) = editCurrent(reason, submission.toSubmissionData())
+
+		/**
+		 * Creates a [Diff.Accept] for this record.
+		 */
+		suspend fun accept(
+			reason: String?,
+			submission: Map<Field.Id, String>?,
+		): Outcome<Failures.Action, Unit>
+
+		/**
+		 * Creates a [Diff.Accept] for this record.
+		 */
+		suspend fun accept(
+			reason: String?,
+			vararg submission: Pair<String, String>,
+		) = accept(reason, submission.toSubmissionData())
+
+		/**
+		 * Creates a [Diff.Refuse] for this record.
+		 */
+		suspend fun refuse(
+			reason: String,
+		): Outcome<Failures.Action, Unit>
+
+		/**
+		 * Creates a [Diff.MoveBack] for this record.
+		 */
+		suspend fun moveBack(
+			toStep: Int,
+			reason: String,
+		): Outcome<Failures.Action, Unit>
+	}
+
+	interface Service : Backbone<Ref, Failures.Get, Record>, IdentifierParser<Ref> {
+
+		suspend fun search(criteria: List<QueryCriterion>): Outcome<Failures.Search, List<Ref>>
 
 		suspend fun search(vararg criteria: QueryCriterion) = search(criteria.asList())
 
-		suspend fun create(submission: Submission): Outcome<Ref>
+		suspend fun create(submission: Submission): Outcome<Failures.Create, Ref>
 
 		suspend fun create(form: Form.Version.Ref, vararg data: Pair<String, String>) = create(
 			Submission(
@@ -238,53 +305,64 @@ data class Record(
 				data = data.toSubmissionData(),
 			)
 		)
+	}
 
-		suspend fun editInitial(
-			record: Ref,
-			reason: String,
-			submission: Map<Field.Id, String>,
-		): Outcome<Unit>
+	sealed interface Failures {
+		sealed interface Get : Failures, Action
+		sealed interface Search : Failures
+		sealed interface Action : Failures
+		sealed interface Create : Failures
 
-		suspend fun editInitial(
-			record: Ref,
-			reason: String,
-			vararg submission: Pair<String, String>,
-		) = editInitial(record, reason, submission.toSubmissionData())
+		data class NotFound(override val id: Ref) : StandardNotFound<Ref>,
+			Get,
+			Action
 
-		suspend fun accept(
-			record: Ref,
-			reason: String?,
-			submission: Map<Field.Id, String>?,
-		): Outcome<Unit>
+		object Unauthenticated : StandardUnauthenticated,
+			Get,
+			Search,
+			Action,
+			Create
 
-		suspend fun accept(
-			record: Ref,
-			reason: String?,
-			vararg submission: Pair<String, String>,
-		) = accept(record, reason, submission.toSubmissionData())
+		object Unauthorized : StandardUnauthorized,
+			Get,
+			Search,
+			Action
 
-		suspend fun editCurrent(
-			record: Ref,
-			reason: String?,
-			submission: Map<Field.Id, String>,
-		): Outcome<Unit>
+		object CannotCreateRecordForNonInitialStep : Create
 
-		suspend fun editCurrent(
-			record: Ref,
-			reason: String?,
-			vararg submission: Pair<String, String>,
-		) = editCurrent(record, reason, submission.toSubmissionData())
+		data class FormNotFound(
+			override val id: Form.Ref,
+			val form: Form.Failures.Get?,
+		) : StandardNotFound<Form.Ref>,
+			Create
 
-		suspend fun refuse(
-			record: Ref,
-			reason: String,
-		): Outcome<Unit>
+		class FormVersionNotFound(
+			override val id: Form.Version.Ref,
+			val form: Form.Version.Failures.Get,
+		) : StandardNotFound<Form.Version.Ref>,
+			Create,
+			Action
 
-		suspend fun moveBack(
-			record: Ref,
-			toStep: Int,
-			reason: String,
-		): Outcome<Unit>
+		data class InvalidSubmission(
+			val failure: Nel<Submission.ParsingFailure>,
+		) : Action,
+			Create
 
+		data class DiffShouldStartAtCurrentState(
+			val current: Status.NonInitial,
+			val diffSource: Status,
+		) : Action {
+			override fun toString() = "A transition must start on the current state of the record ($current), but found $diffSource"
+		}
+
+		object CannotAcceptRefusedRecord : Action
+
+		object CannotRefuseRefusedRecord : Action
+
+		object CannotAcceptFinishedRecord : Action
+
+		object MandatoryReason : Action
+
+		object CannotMoveBackToFutureStep : Action
 	}
 }

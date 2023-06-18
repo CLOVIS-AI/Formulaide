@@ -1,5 +1,6 @@
 package opensavvy.formulaide.remote.dto
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import opensavvy.formulaide.core.User
 import opensavvy.spine.Id
@@ -18,9 +19,12 @@ data class UserDto(
 	val singleUsePassword: Boolean,
 ) {
 
-	class GetParams : Parameters() {
+	class ListParams : Parameters() {
 		var includeClosed by parameter("includeClosed", default = false)
 	}
+
+	@Serializable
+	object ListFailures
 
 	@Serializable
 	class New(
@@ -30,10 +34,24 @@ data class UserDto(
 	)
 
 	@Serializable
+	sealed class NewFailures {
+		@Serializable
+		@SerialName("EMAIL_ALREADY_TAKEN")
+		class UserAlreadyExists(val email: String) : NewFailures()
+	}
+
+	@Serializable
 	class Edit(
 		val active: Boolean? = null,
 		val administrator: Boolean? = null,
 	)
+
+	@Serializable
+	sealed class EditFailures {
+		@Serializable
+		@SerialName("CANNOT_EDIT_YOURSELF")
+		object CannotEditYourself : EditFailures()
+	}
 
 	@Serializable
 	class SetPassword(
@@ -47,4 +65,38 @@ data class UserDto(
 		val password: String,
 	)
 
+	@Serializable
+	object LogInFailures
+
+	@Serializable
+	object GetFailures
+
+	@Serializable
+	object DepartmentListFailures
+
+	@Serializable
+	object DepartmentAddFailures
+
+	@Serializable
+	object DepartmentRemoveFailures
+
+	@Serializable
+	object PasswordResetFailures
+
+	@Serializable
+	sealed class PasswordSetFailures {
+		@Serializable
+		@SerialName("CAN_ONLY_SET_YOUR_OWN_PASSWORD")
+		object CanOnlySetYourOwnPassword : PasswordSetFailures()
+
+		@Serializable
+		@SerialName("INCORRECT_OLD_PASSWORD")
+		object IncorrectOldPassword : PasswordSetFailures()
+	}
+
+	@Serializable
+	object TokenVerifyFailures
+
+	@Serializable
+	object LogOutFailures
 }

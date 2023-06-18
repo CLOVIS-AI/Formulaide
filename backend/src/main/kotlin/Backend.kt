@@ -9,8 +9,8 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.*
 import kotlinx.datetime.Clock
-import opensavvy.formulaide.core.Auth.Companion.currentRole
-import opensavvy.formulaide.core.Auth.Companion.currentUser
+import opensavvy.formulaide.core.currentRole
+import opensavvy.formulaide.core.currentUser
 import opensavvy.formulaide.fake.FakeFiles
 import opensavvy.formulaide.fake.FakeRecords
 import opensavvy.formulaide.mongo.*
@@ -38,10 +38,10 @@ fun Application.formulaide() {
 
 	val cacheScope = CoroutineScope(Job())
 
-	val departments = DepartmentDb(database, cacheScope.coroutineContext)
-	val users = UserDb(database, cacheScope.coroutineContext, departments)
-	val templates = TemplateDb(database, cacheScope.coroutineContext, clock)
-	val forms = FormDb(database, cacheScope.coroutineContext, departments, templates, clock)
+	val departments = MongoDepartments(database, cacheScope)
+	val users = MongoUsers(database, cacheScope, departments)
+	val templates = MongoTemplate(database, cacheScope, clock)
+	val forms = MongoForms(database, cacheScope, departments, templates, clock)
 	val files = FakeFiles(clock)
 	val records = FakeRecords(clock, files)
 

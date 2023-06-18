@@ -1,6 +1,11 @@
 package opensavvy.formulaide.core
 
 import opensavvy.backbone.Backbone
+import opensavvy.formulaide.core.data.StandardNotFound
+import opensavvy.formulaide.core.data.StandardUnauthenticated
+import opensavvy.formulaide.core.data.StandardUnauthorized
+import opensavvy.formulaide.core.utils.IdentifierParser
+import opensavvy.formulaide.core.utils.IdentifierWriter
 import opensavvy.state.outcome.Outcome
 
 /**
@@ -21,31 +26,33 @@ data class Department(
 	val open: Boolean,
 ) {
 
-	data class Ref(
-		val id: String,
-		override val backbone: Service,
-	) : opensavvy.backbone.Ref<Department> {
+	interface Ref : opensavvy.backbone.Ref<Failures.Get, Department>, IdentifierWriter {
+
+		/**
+		 * Edits this department.
+		 */
+		suspend fun edit(open: Boolean? = null): Outcome<Failures.Edit, Unit>
 
 		/**
 		 * Makes this department visible.
 		 *
+		 * Requires administrator authentication.
+		 *
 		 * @see Department.open
-		 * @see Service.edit
 		 */
-		suspend fun open() = backbone.edit(this, open = true)
+		suspend fun open(): Outcome<Failures.Edit, Unit> = edit(open = true)
 
 		/**
 		 * Makes this department invisible.
 		 *
+		 * Requires administrator authentication.
+		 *
 		 * @see Department.open
-		 * @see Service.edit
 		 */
-		suspend fun close() = backbone.edit(this, open = false)
-
-		override fun toString() = "Département $id"
+		suspend fun close(): Outcome<Failures.Edit, Unit> = edit(open = false)
 	}
 
-	interface Service : Backbone<Department> {
+	interface Service<R : Ref> : Backbone<R, Failures.Get, Department>, IdentifierParser<R> {
 
 		/**
 		 * Lists all departments.
@@ -53,25 +60,35 @@ data class Department(
 		 * If [includeClosed] is `true`, requires administrator authentication.
 		 * Otherwise, closed departments are not returned.
 		 */
-		suspend fun list(includeClosed: Boolean = false): Outcome<List<Ref>>
+		suspend fun list(includeClosed: Boolean = false): Outcome<Failures.List, List<R>>
 
 		/**
 		 * Creates a new department named [name].
 		 *
 		 * Requires administrator authentication.
 		 */
-		suspend fun create(name: String): Outcome<Ref>
+		suspend fun create(name: String): Outcome<Failures.Create, R>
+	}
 
-		/**
-		 * Edits the [department].
-		 *
-		 * Requires administrator authentication.
-		 *
-		 * @param open Allows the edit the visibility of the department (see [Department.open]).
-		 */
-		suspend fun edit(
-			department: Ref,
-			open: Boolean? = null,
-		): Outcome<Unit>
+	sealed interface Failures {
+		sealed interface Get : Failures
+		sealed interface List : Failures
+		sealed interface Create : Failures
+		sealed interface Edit : Failures
+
+		data class NotFound(override val id: Ref) : StandardNotFound<Ref>,
+			Get,
+			Edit
+
+		object Unauthenticated : StandardUnauthenticated,
+			Get,
+			Create,
+			Edit,
+			List
+
+		object Unauthorized : StandardUnauthorized,
+			Create,
+			Edit,
+			List
 	}
 }

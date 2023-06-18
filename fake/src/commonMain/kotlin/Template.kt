@@ -1,135 +1,185 @@
 package opensavvy.formulaide.fake
 
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
+import arrow.core.raise.ensure
+import arrow.core.raise.ensureNotNull
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import opensavvy.backbone.Ref
-import opensavvy.backbone.RefCache
-import opensavvy.backbone.defaultRefCache
-import opensavvy.formulaide.core.Auth.Companion.ensureAdministrator
-import opensavvy.formulaide.core.Auth.Companion.ensureEmployee
-import opensavvy.formulaide.core.Template
+import opensavvy.formulaide.core.*
+import opensavvy.formulaide.core.utils.Identifier
 import opensavvy.formulaide.fake.utils.newId
+import opensavvy.state.arrow.out
+import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.outcome.Outcome
-import opensavvy.state.outcome.ensureFound
-import opensavvy.state.outcome.ensureValid
-import opensavvy.state.outcome.out
+import opensavvy.state.progressive.withProgress
 
 class FakeTemplates(
 	private val clock: Clock,
 ) : Template.Service {
 
-	private val lock = Semaphore(1)
-	private val templates = HashMap<String, Template>()
+	private val lock = Mutex()
+	private val templates = HashMap<Long, Template>()
 	private val _versions = FakeVersions()
 
 	override val versions: Template.Version.Service
 		get() = _versions
 
-	override val cache: RefCache<Template> = defaultRefCache()
+	override suspend fun list(includeClosed: Boolean): Outcome<Template.Failures.List, List<Template.Ref>> = out {
+		ensureEmployee { Template.Failures.Unauthenticated }
 
-	private fun toRef(id: String) = Template.Ref(id, this)
-
-	override suspend fun list(includeClosed: Boolean): Outcome<List<Template.Ref>> = out {
-		ensureEmployee()
-
-		lock.withPermit {
+		lock.withLock("list") {
 			templates
 				.asSequence()
 				.filter { (_, it) -> it.open || includeClosed }
-				.map { (it, _) -> toRef(it) }
+				.map { (it, _) -> Ref(it) }
 				.toList()
 		}
 	}
 
-	override suspend fun create(name: String, firstVersion: Template.Version): Outcome<Template.Ref> = out {
-		ensureAdministrator()
+	override suspend fun create(name: String, initialVersionTitle: String, field: Field): Outcome<Template.Failures.Create, Template.Ref> = out {
+		ensureEmployee { Template.Failures.Unauthenticated }
+		ensureAdministrator { Template.Failures.Unauthorized }
 
-		firstVersion.field.validate().bind()
+		field.validate()
+			.mapLeft { Template.Failures.InvalidImport(it) }
+			.bind()
 
 		val now = clock.now()
-		val id = newId()
 
-		lock.withPermit {
-			_versions.versions[id to now] = firstVersion.copy(creationDate = now)
+		val firstVersion = Template.Version(
+			creationDate = now,
+			title = initialVersionTitle,
+			field = field,
+		)
 
-			templates[id] = Template(
+		val ref = Ref(newId())
+		lock.withLock("create") {
+			_versions.versions[ref.id to now] = firstVersion
+
+			templates[ref.id] = Template(
 				name,
-				listOf(_versions.toRef(id, now)),
+				listOf(_versions.Ref(ref, now)),
 				open = true,
 			)
-		}
-
-		toRef(id)
-	}
-
-	override suspend fun createVersion(
-		template: Template.Ref,
-		version: Template.Version,
-	): Outcome<Template.Version.Ref> = out {
-		ensureAdministrator()
-
-		version.field.validate().bind()
-
-		val now = clock.now()
-		val ref = _versions.toRef(template.id, now)
-
-		lock.withPermit {
-			val value = templates[template.id]
-			ensureFound(value != null) { "Couldn't find template $template" }
-
-			_versions.versions[template.id to now] = version.copy(creationDate = now)
-			templates[template.id] = value.copy(versions = value.versions + ref)
 		}
 
 		ref
 	}
 
-	override suspend fun edit(template: Template.Ref, name: String?, open: Boolean?): Outcome<Unit> = out {
-		ensureAdministrator()
+	override fun fromIdentifier(identifier: Identifier) = Ref(identifier.text.toLong())
 
-		lock.withPermit {
-			val value = templates[template.id]
-			ensureFound(value != null) { "Couldn't find template $template" }
+	inner class Ref internal constructor(
+		val id: Long,
+	) : Template.Ref {
+		override suspend fun edit(name: String?, open: Boolean?): Outcome<Template.Failures.Edit, Unit> = out {
+			ensureEmployee { Template.Failures.Unauthenticated }
+			ensureAdministrator { Template.Failures.Unauthorized }
 
-			val new = value.copy(
-				name = name ?: value.name,
-				open = open ?: value.open,
-			)
+			lock.withLock("edit") {
+				val template = templates[id]
+				ensureNotNull(template) { Template.Failures.NotFound(this@Ref) }
 
-			templates[template.id] = new
-		}
-	}
+				val new = template.copy(
+					name = name ?: template.name,
+					open = open ?: template.open,
+				)
 
-	override suspend fun directRequest(ref: Ref<Template>): Outcome<Template> = out {
-		ensureEmployee()
-		ensureValid(ref is Template.Ref) { "Invalid ref $ref" }
-
-		lock.withPermit {
-			val result = templates[ref.id]
-			ensureFound(result != null) { "Could not find template $ref" }
-			result
-		}
-	}
-
-	private inner class FakeVersions : Template.Version.Service {
-		override val cache: RefCache<Template.Version> = defaultRefCache()
-
-		val versions = HashMap<Pair<String, Instant>, Template.Version>()
-
-		fun toRef(id: String, version: Instant) = Template.Version.Ref(toRef(id), version, this)
-
-		override suspend fun directRequest(ref: Ref<Template.Version>): Outcome<Template.Version> = out {
-			ensureEmployee()
-			ensureValid(ref is Template.Version.Ref) { "Invalid ref $ref" }
-
-			lock.withPermit {
-				val result = versions[ref.template.id to ref.version]
-				ensureFound(result != null) { "Could not find template version $ref" }
-				result
+				templates[id] = new
 			}
 		}
 
+		override suspend fun createVersion(title: String, field: Field): Outcome<Template.Failures.CreateVersion, Template.Version.Ref> = out {
+			ensureEmployee { Template.Failures.Unauthenticated }
+			ensureAdministrator { Template.Failures.Unauthorized }
+
+			field.validate()
+				.mapLeft { Template.Failures.InvalidImport(it) }
+				.bind()
+
+			val now = clock.now()
+
+			val version = Template.Version(
+				creationDate = now,
+				title = title,
+				field = field,
+			)
+
+			val ref = _versions.Ref(this@Ref, now)
+			lock.withLock("createVersion") {
+				val template = templates[id]
+				ensureNotNull(template) { Template.Failures.NotFound(this@Ref) }
+
+				_versions.versions[id to now] = version
+				templates[id] = template.copy(versions = template.versions + ref)
+			}
+
+			ref
+		}
+
+		override fun versionOf(creationDate: Instant): Template.Version.Ref = _versions.Ref(this, creationDate)
+
+		override fun request(): ProgressiveFlow<Template.Failures.Get, Template> = flow {
+			out {
+				ensure(currentRole() >= User.Role.Employee) { Template.Failures.Unauthenticated }
+
+				lock.withLock("request") {
+					val result = templates[id]
+					ensureNotNull(result) { Template.Failures.NotFound(this@Ref) }
+					result
+				}
+			}.also { emit(it.withProgress()) }
+		}
+
+		// region Overrides
+
+		override fun equals(other: Any?): Boolean {
+			if (this === other) return true
+			if (other !is Ref) return false
+
+			return id == other.id
+		}
+
+		override fun hashCode(): Int {
+			return id.hashCode()
+		}
+
+		override fun toString() = "FakeTemplates.Ref($id)"
+		override fun toIdentifier() = Identifier(id.toString())
+
+		// endregion
+	}
+
+	private inner class FakeVersions : Template.Version.Service {
+		val versions = HashMap<Pair<Long, Instant>, Template.Version>()
+
+		inner class Ref internal constructor(
+			override val template: FakeTemplates.Ref,
+			override val creationDate: Instant,
+		) : Template.Version.Ref {
+			override fun request(): ProgressiveFlow<Template.Version.Failures.Get, Template.Version> = flow {
+				out {
+					ensure(currentRole() >= User.Role.Employee) { Template.Version.Failures.Unauthenticated }
+
+					lock.withLock("version:request") {
+						val result = versions[template.id to creationDate]
+						ensureNotNull(result) { Template.Version.Failures.NotFound(this@Ref) }
+						result
+					}
+				}.also { emit(it.withProgress()) }
+			}
+
+			override fun toIdentifier() = Identifier("${template.id}_$creationDate")
+		}
+
+		override fun fromIdentifier(identifier: Identifier): FakeTemplates.FakeVersions.Ref {
+			val (form, version) = identifier.text.split('_', limit = 2)
+
+			return Ref(
+				this@FakeTemplates.fromIdentifier(Identifier(form)),
+				Instant.parse(version),
+			)
+		}
 	}
 }

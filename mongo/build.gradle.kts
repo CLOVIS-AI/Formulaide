@@ -13,7 +13,7 @@ dependencies {
 
 	implementation("at.favre.lib:bcrypt:_")
 
-	implementation("opensavvy:logger:_")
+	implementation("opensavvy.pedestal:logger:_")
 
 	testImplementation(projects.test)
 	testImplementation(projects.fake)
@@ -31,6 +31,10 @@ tasks.withType<org.jetbrains.dokka.gradle.DokkaTaskPartial>().configureEach {
 	}
 }
 
-tasks.named<Test>("test") {
+kotlin {
+	jvmToolchain(17)
+}
+
+tasks.test {
 	useJUnitPlatform()
 }

@@ -1,9 +1,15 @@
 package opensavvy.formulaide.core
 
+import arrow.core.Nel
 import kotlinx.datetime.Instant
 import opensavvy.backbone.Backbone
 import opensavvy.formulaide.core.Template.Ref
 import opensavvy.formulaide.core.Template.Version
+import opensavvy.formulaide.core.data.StandardNotFound
+import opensavvy.formulaide.core.data.StandardUnauthenticated
+import opensavvy.formulaide.core.data.StandardUnauthorized
+import opensavvy.formulaide.core.utils.IdentifierParser
+import opensavvy.formulaide.core.utils.IdentifierWriter
 import opensavvy.state.outcome.Outcome
 
 /**
@@ -39,52 +45,47 @@ data class Template(
 	val open: Boolean,
 ) {
 
-	data class Ref(
-		val id: String,
-		override val backbone: Service,
-	) : opensavvy.backbone.Ref<Template> {
+	interface Ref : opensavvy.backbone.Ref<Failures.Get, Template>, IdentifierWriter {
+
+		/**
+		 * Edits this template.
+		 */
+		suspend fun edit(name: String? = null, open: Boolean? = null): Outcome<Failures.Edit, Unit>
 
 		/**
 		 * Renames this template.
 		 *
 		 * @see Template.name
-		 * @see Service.edit
 		 */
-		suspend fun rename(name: String) = backbone.edit(this, name = name)
+		suspend fun rename(name: String): Outcome<Failures.Edit, Unit> = edit(name = name)
 
 		/**
 		 * Opens this template.
 		 *
 		 * @see Template.open
-		 * @see Service.edit
 		 */
-		suspend fun open() = backbone.edit(this, open = true)
+		suspend fun open(): Outcome<Failures.Edit, Unit> = edit(open = true)
 
 		/**
 		 * Closes this template.
 		 *
 		 * @see Template.open
-		 * @see Service.edit
 		 */
-		suspend fun close() = backbone.edit(this, open = false)
-
-		/**
-		 * Creates a new [version] of this template.
-		 *
-		 * @see Template.versions
-		 * @see Service.createVersion
-		 */
-		suspend fun createVersion(version: Version) = backbone.createVersion(this, version)
+		suspend fun close(): Outcome<Failures.Edit, Unit> = edit(open = false)
 
 		/**
 		 * Creates a new version of this template, named [title] with [field].
 		 *
 		 * @see Template.versions
-		 * @see Service.createVersion
 		 */
-		suspend fun createVersion(title: String, field: Field) = backbone.createVersion(this, title, field)
+		suspend fun createVersion(title: String, field: Field): Outcome<Failures.CreateVersion, Version.Ref>
 
-		override fun toString() = "Modèle $id"
+		/**
+		 * Creates a reference to the version created at [creationDate].
+		 *
+		 * No verification is done that the version actually exists.
+		 */
+		fun versionOf(creationDate: Instant): Version.Ref
 	}
 
 	data class Version(
@@ -93,19 +94,25 @@ data class Template(
 		val field: Field,
 	) {
 
-		data class Ref(
-			val template: Template.Ref,
-			val version: Instant,
-			override val backbone: Service,
-		) : opensavvy.backbone.Ref<Version> {
-
-			override fun toString() = "$template $version"
+		interface Ref : opensavvy.backbone.Ref<Failures.Get, Version>, IdentifierWriter {
+			val creationDate: Instant
+			val template: Template.Ref
 		}
 
-		interface Service : Backbone<Version>
+		interface Service : Backbone<Ref, Failures.Get, Version>, IdentifierParser<Ref>
+
+		sealed interface Failures {
+			sealed interface Get : Failures
+
+			data class NotFound(override val id: Ref) : StandardNotFound<Ref>,
+				Get
+
+			object Unauthenticated : StandardUnauthenticated,
+				Get
+		}
 	}
 
-	interface Service : Backbone<Template> {
+	interface Service : Backbone<Ref, Failures.Get, Template>, IdentifierParser<Ref> {
 
 		val versions: Version.Service
 
@@ -114,14 +121,7 @@ data class Template(
 		 *
 		 * Only employees can access templates (open or closed).
 		 */
-		suspend fun list(includeClosed: Boolean = false): Outcome<List<Ref>>
-
-		/**
-		 * Creates a new template.
-		 *
-		 * Only administrators can create templates.
-		 */
-		suspend fun create(name: String, firstVersion: Version): Outcome<Ref>
+		suspend fun list(includeClosed: Boolean = false): Outcome<Failures.List, List<Ref>>
 
 		/**
 		 * Creates a new template.
@@ -132,28 +132,37 @@ data class Template(
 			name: String,
 			initialVersionTitle: String,
 			field: Field,
-		) = create(name, Version(Instant.DISTANT_PAST, initialVersionTitle, field))
+		): Outcome<Failures.Create, Ref>
+	}
 
-		/**
-		 * Creates a new version of a given template.
-		 *
-		 * Only administrators can create new versions.
-		 */
-		suspend fun createVersion(template: Ref, version: Version): Outcome<Version.Ref>
+	sealed interface Failures {
+		sealed interface Get : Failures
+		sealed interface List : Failures
+		sealed interface Create : Failures
+		sealed interface CreateVersion : Failures, Create
+		sealed interface Edit : Failures
 
-		/**
-		 * Creates a new version of a given template.
-		 *
-		 * Only administrators can create new versions.
-		 */
-		suspend fun createVersion(template: Ref, title: String, field: Field) =
-			createVersion(template, Version(Instant.DISTANT_PAST, title, field))
+		data class NotFound(override val id: Ref) : StandardNotFound<Ref>,
+			Get,
+			Edit,
+			CreateVersion
 
-		/**
-		 * Edits a template.
-		 *
-		 * Only administrators can edit template.
-		 */
-		suspend fun edit(template: Ref, name: String? = null, open: Boolean? = null): Outcome<Unit>
+		object Unauthenticated : StandardUnauthenticated,
+			Get,
+			List,
+			Create,
+			CreateVersion,
+			Edit
+
+		object Unauthorized : StandardUnauthorized,
+			List,
+			Create,
+			CreateVersion,
+			Edit
+
+		data class InvalidImport(
+			val failures: Nel<Field.Failures.Compatibility>,
+		) : Create,
+			CreateVersion
 	}
 }

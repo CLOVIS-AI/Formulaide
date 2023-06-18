@@ -1,38 +1,81 @@
 package opensavvy.formulaide.backend
 
-import arrow.core.getOrHandle
 import kotlinx.coroutines.withContext
-import opensavvy.backbone.Ref.Companion.now
+import opensavvy.backbone.now
 import opensavvy.formulaide.backend.DefaultUsers.log
 import opensavvy.formulaide.core.Auth
+import opensavvy.formulaide.core.Department
 import opensavvy.formulaide.core.User
 import opensavvy.formulaide.core.data.Email
 import opensavvy.formulaide.core.data.Password
+import opensavvy.formulaide.core.data.Token
+import opensavvy.formulaide.core.utils.Identifier
 import opensavvy.logger.Logger.Companion.info
 import opensavvy.logger.Logger.Companion.warn
 import opensavvy.logger.loggerFor
-import opensavvy.state.outcome.out
+import opensavvy.state.arrow.out
+import opensavvy.state.coroutines.ProgressiveFlow
+import opensavvy.state.outcome.Outcome
+import opensavvy.state.outcome.mapFailure
 
 private object DefaultUsers {
 	val log = loggerFor(this)
 }
 
-private fun fakeAdmin(users: User.Service) = Auth(
+// Fake implementation used to create the initial users.
+// It should NEVER be used for anything else than the initial setup of the database.
+private object DefaultAdmin : User.Ref {
+	override suspend fun join(department: Department.Ref): Outcome<User.Failures.Edit, Unit> {
+		error("The default admin cannot join departments")
+	}
+
+	override suspend fun leave(department: Department.Ref): Outcome<User.Failures.Edit, Unit> {
+		error("The default admin cannot leave departments")
+	}
+
+	override suspend fun edit(active: Boolean?, administrator: Boolean?): Outcome<User.Failures.SecurityEdit, Unit> {
+		error("The default admin cannot be edited")
+	}
+
+	override suspend fun resetPassword(): Outcome<User.Failures.Edit, Password> {
+		error("The default admin's password cannot be reset")
+	}
+
+	override suspend fun setPassword(oldPassword: String, newPassword: Password): Outcome<User.Failures.SetPassword, Unit> {
+		error("The default admin's password cannot be set")
+	}
+
+	override suspend fun verifyToken(token: Token): Outcome<User.Failures.TokenVerification, Unit> {
+		error("The default admin doesn't have tokens to verify")
+	}
+
+	override suspend fun logOut(token: Token): Outcome<User.Failures.Get, Unit> {
+		error("The default admin cannot log in, and thus cannot log out either")
+	}
+
+	override fun request(): ProgressiveFlow<User.Failures.Get, User> {
+		error("The default admin doesn't have information to get")
+	}
+
+	override fun toIdentifier(): Identifier {
+		error("The default admin doesn't have an identifier")
+	}
+
+}
+
+private fun fakeAdmin() = Auth(
 	User.Role.Administrator,
-	User.Ref(
-		"this is the fake admin required to create the initial accounts, it should never appear anywhere else",
-		users
-	)
+	DefaultAdmin,
 )
 
 /**
  * This method impersonates an administrator to get a user. It should almost never be used!
  */
-internal suspend fun getUserUnsafe(users: User.Service, user: User.Ref) = withContext(fakeAdmin(users)) {
+internal suspend fun getUserUnsafe(users: User.Service<*>, user: User.Ref) = withContext(fakeAdmin()) {
 	user.now()
 }
 
-private suspend fun createUser(users: User.Service, name: String, isAdmin: Boolean, email: Email, password: Password) =
+private suspend fun createUser(users: User.Service<*>, name: String, isAdmin: Boolean, email: Email, password: Password) =
 	out {
 		val user = users.list(includeClosed = true).bind()
 			.map { it.now().bind() }
@@ -58,11 +101,12 @@ private suspend fun createUser(users: User.Service, name: String, isAdmin: Boole
 				log.warn { "The default user $email is active! This is unsafe, please deactivate it after creating your own account." }
 			}
 		}
-	}.getOrHandle {
+	}.mapFailure {
 		log.warn(it) { "Could not create user $email" }
+		it
 	}
 
-suspend fun createDefaultUsers(users: User.Service) = withContext(fakeAdmin(users)) {
+suspend fun createDefaultUsers(users: User.Service<*>) = withContext(fakeAdmin()) {
 	createUser(
 		users,
 		"Administrateur par défaut [DÉSACTIVER EN PRODUCTION]",

@@ -87,6 +87,9 @@
     <VueCodeStyleSettings>
       <option name="SPACES_WITHIN_INTERPOLATION_EXPRESSIONS" value="false" />
     </VueCodeStyleSettings>
+    <editorconfig>
+      <option name="ENABLED" value="false" />
+    </editorconfig>
     <codeStyleSettings language="Bibtex">
       <indentOptions>
         <option name="CONTINUATION_INDENT_SIZE" value="4" />

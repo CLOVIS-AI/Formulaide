@@ -6,7 +6,7 @@ import opensavvy.formulaide.fake.FakeTemplates
 import opensavvy.formulaide.fake.spies.SpyDepartments.Companion.spied
 import opensavvy.formulaide.fake.spies.SpyForms.Companion.spied
 import opensavvy.formulaide.fake.spies.SpyTemplates.Companion.spied
-import opensavvy.formulaide.remote.client.Forms
+import opensavvy.formulaide.remote.client.RemoteForms
 import opensavvy.formulaide.remote.server.utils.TestClient
 import opensavvy.formulaide.remote.server.utils.createTestServer
 import opensavvy.formulaide.test.formTestSuite
@@ -29,11 +29,11 @@ class RemoteFormTest : TestExecutor() {
 				}
 			}
 
-			Forms(
+			RemoteForms(
 				TestClient(application.client),
 				departments,
 				templates,
-				backgroundScope.coroutineContext,
+				backgroundScope,
 			)
 		}
 

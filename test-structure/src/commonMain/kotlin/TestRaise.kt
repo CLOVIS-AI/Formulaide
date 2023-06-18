@@ -1,14 +1,13 @@
 package opensavvy.formulaide.test.structure
 
-import arrow.core.continuations.EffectScope
+import arrow.core.raise.Raise
 
 /**
- * Fake implementation of [EffectScope] that throws an [AssertionError].
+ * Fake implementation of [Raise] that throws an [AssertionError].
  */
-internal object TestRaise : EffectScope<Any> {
+internal object TestRaise : Raise<Any> {
 
-    @Suppress("unused") // <B> is necessary to match the parent's signature, even if we don't use it
-    override suspend fun <B> shift(r: Any): Nothing {
+    override fun raise(r: Any): Nothing {
         throw AssertionError("Unexpected result: $r")
     }
 }

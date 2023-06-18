@@ -8,13 +8,13 @@ plugins {
 
 dependencies {
 	implementation(projects.remoteCommon)
-	implementation("opensavvy:spine-ktor-server:_")
+	implementation("opensavvy.pedestal:spine-ktor-server:_")
 
 	implementation(Ktor.server.callLogging)
 	implementation(Ktor.server.contentNegotiation)
 	implementation(Ktor.plugins.serialization.kotlinx.json)
 
-	implementation("opensavvy:logger:_")
+	implementation("opensavvy.pedestal:logger:_")
 
 	testImplementation(projects.test)
 	testImplementation(projects.remoteClient)
@@ -35,6 +35,10 @@ tasks.withType<org.jetbrains.dokka.gradle.DokkaTaskPartial>().configureEach {
 			remoteLineSuffix.set("#L")
 		}
 	}
+}
+
+kotlin {
+	jvmToolchain(17)
 }
 
 tasks.named<Test>("test") {

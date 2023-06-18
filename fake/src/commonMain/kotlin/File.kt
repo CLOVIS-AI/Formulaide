@@ -1,35 +1,37 @@
 package opensavvy.formulaide.fake
 
+import arrow.core.raise.ensure
+import arrow.core.raise.ensureNotNull
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
-import opensavvy.backbone.Ref
-import opensavvy.backbone.Ref.Companion.now
-import opensavvy.backbone.RefCache
-import opensavvy.backbone.defaultRefCache
+import opensavvy.backbone.now
 import opensavvy.formulaide.core.*
-import opensavvy.formulaide.core.Auth.Companion.currentRole
-import opensavvy.formulaide.core.Auth.Companion.ensureEmployee
+import opensavvy.formulaide.core.User.Role.Companion.role
+import opensavvy.formulaide.core.utils.Identifier
 import opensavvy.formulaide.fake.utils.newId
+import opensavvy.state.arrow.out
+import opensavvy.state.arrow.toEither
+import opensavvy.state.coroutines.ProgressiveFlow
 import opensavvy.state.outcome.Outcome
-import opensavvy.state.outcome.ensureFound
-import opensavvy.state.outcome.ensureValid
-import opensavvy.state.outcome.out
+import opensavvy.state.outcome.onFailure
+import opensavvy.state.outcome.onSuccess
+import opensavvy.state.progressive.failed
+import opensavvy.state.progressive.withProgress
 
 class FakeFiles(
 	private val clock: Clock,
 ) : File.Service {
 
-	override val cache: RefCache<File> = defaultRefCache()
-
 	private val lock = Mutex()
-	private val data = HashMap<String, File>()
-	private val contents = HashMap<String, ByteArray>()
+	private val data = HashMap<Long, File>()
+	private val contents = HashMap<Long, ByteArray>()
 
-	override suspend fun create(mime: String, content: ByteIterator): Outcome<File.Ref> = out {
+	override suspend fun create(mime: String, content: ByteIterator): Outcome<File.Failures.Create, File.Ref> = out {
 		val id = newId()
 
-		lock.withLock {
+		lock.withLock("create") {
 			data[id] = File(
 				origin = null,
 				mime = mime,
@@ -39,78 +41,117 @@ class FakeFiles(
 			contents[id] = content.asSequence().toList().toByteArray()
 		}
 
-		File.Ref(id, this@FakeFiles)
+		Ref(id)
 	}
 
-	override suspend fun link(
-		upload: File.Ref,
-		record: Record.Ref,
-		submission: Submission.Ref,
-		field: Field.Id,
-	): Outcome<Unit> = out {
-		lock.withLock {
-			val file = data[upload.id]
-			ensureFound(file != null) { "Coud not find $file" }
-			ensureValid(file.origin == null) { "This file has already been linked to ${file.origin}" }
+	override fun fromIdentifier(identifier: Identifier) = Ref(identifier.text.toLong())
 
-			val updated = file.copy(
-				origin = File.Origin(
-					record.now().bind().form.form,
-					record,
-					submission,
-					field,
+	inner class Ref internal constructor(
+		val realId: Long,
+	) : File.Ref {
+		override val id: String
+			get() = realId.toString()
+
+		override suspend fun linkTo(record: Record.Ref, submission: Submission.Ref, field: Field.Id): Outcome<File.Failures.Link, Unit> = out {
+			lock.withLock("linkTo") {
+				val file = data[realId]
+				ensureNotNull(file) { File.Failures.NotFound(this@Ref) }
+				ensure(file.origin == null) { File.Failures.AlreadyLinked(this@Ref) }
+
+				val updated = file.copy(
+					origin = File.Origin(
+						form = record.now().toEither().mapLeft { File.Failures.RecordNotFound(record, it) }.bind().form.form,
+						record = record,
+						submission = submission,
+						field = field,
+					)
 				)
-			)
 
-			data[upload.id] = updated
+				data[realId] = updated
+			}
 		}
-	}
 
-	override suspend fun read(upload: File.Ref): Outcome<ByteIterator> = out {
-		val id = upload.id
-
-		val file = lock.withLock { data[id] }
-		ensureFound(file != null) { "Could not find $upload" }
-		ensureFound(
-			file.origin == null && currentRole() > User.Role.Employee ||
+		override suspend fun read(): Outcome<File.Failures.Read, ByteIterator> = out {
+			val file = lock.withLock("read:initial") { data[realId] }
+			ensureNotNull(file) { File.Failures.NotFound(this@Ref) }
+			ensure(
+				file.origin == null && currentRole() > User.Role.Employee ||
 					file.origin != null && currentRole() >= User.Role.Employee
-		) { "Could not find $upload" }
+			) { File.Failures.NotFound(this@Ref) }
 
-		val origin = file.origin
-		val timeToLive = if (origin == null) {
-			File.TTL_UNLINKED
-		} else {
-			val submission = origin.submission.now().bind()
+			val origin = file.origin
+			val timeToLive = if (origin == null) {
+				File.TTL_UNLINKED
+			} else {
+				val submission = origin.submission.now().toEither()
+					.mapLeft { File.Failures.SubmissionNotFound(origin.submission, it) }
+					.bind()
 
-			val form = submission.form.now().bind()
-			val field = form.findFieldForStep(submission.formStep)
-			ensureValid(field is Field.Input) { "The uploaded file $upload is invalid: it refers to a field which is not an input: $field" }
+				val form = submission.form.now().toEither()
+					.mapLeft { File.Failures.FormVersionNotFound(submission.form, it) }
+					.bind()
 
-			val input = field.input
-			ensureValid(input is Input.Upload) { "The uploaded file $upload is invalid: it refers to a field which is not an upload input: $input" }
+				val field = form.findFieldForStep(submission.formStep)
+				ensure(field is Field.Input) { File.Failures.InvalidField("The uploaded file ${this@Ref} is invalid: it refers to a field which is not an input: $field") }
 
-			input.effectiveExpiresAfter
+				val input = field.input
+				ensure(input is Input.Upload) { File.Failures.InvalidField("The uploaded file ${this@Ref} is invalid: it refers to a field which is not an upload input: $input") }
+
+				input.effectiveExpiresAfter
+			}
+
+			ensure(clock.now() < file.uploadedAt + timeToLive) {
+				lock.withLock("read:remove") { data.remove(realId) }
+				File.Failures.Expired(this@Ref)
+			}
+
+			val content = lock.withLock("read:read") { contents[realId] }
+			ensureNotNull(content) { File.Failures.NotFound(this@Ref) }
+
+			content.iterator()
 		}
 
-		ensureFound(clock.now() < file.uploadedAt + timeToLive) {
-			lock.withLock { data.remove(id) }
-			"Could not find $upload"
+		override fun request(): ProgressiveFlow<File.Failures.Get, File> = flow {
+			val userRef = currentUser() ?: run {
+				emit(File.Failures.Unauthenticated.failed())
+				return@flow
+			}
+
+			val user = userRef.now()
+
+			user.onFailure {
+				emit(File.Failures.Unauthenticated.failed())
+				return@flow
+			}
+
+			user.onSuccess {
+				out<File.Failures.Get, File> {
+					ensure(it.role >= User.Role.Employee) { File.Failures.Unauthenticated }
+
+					val file = lock.withLock("request") { data[realId] }
+					ensureNotNull(file) { File.Failures.NotFound(this@Ref) }
+
+					file
+				}.also { emit(it.withProgress()) }
+			}
 		}
 
-		val content = lock.withLock { contents[id] }
-		ensureFound(content != null) { "Could not find $upload" }
+		// region Overrides
 
-		content.iterator()
+		override fun equals(other: Any?): Boolean {
+			if (this === other) return true
+			if (other !is Ref) return false
+
+			return realId == other.realId
+		}
+
+		override fun hashCode(): Int {
+			return realId.hashCode()
+		}
+
+		override fun toString() = "FakeFiles.Ref($realId)"
+		override fun toIdentifier() = Identifier(realId.toString())
+
+		// endregion
 	}
-
-	override suspend fun directRequest(ref: Ref<File>): Outcome<File> = out {
-		ensureValid(ref is File.Ref) { "Invalid reference $ref" }
-		ensureEmployee()
-
-		val file = lock.withLock { data[ref.id] }
-		ensureFound(file != null) { "Could not find $ref" }
-
-		file
-	}
-
 }

@@ -1,6 +1,5 @@
 package opensavvy.formulaide.test
 
-import arrow.core.flatMap
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
@@ -9,39 +8,62 @@ import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.withContext
-import opensavvy.backbone.Ref.Companion.now
+import opensavvy.backbone.now
 import opensavvy.formulaide.core.*
 import opensavvy.formulaide.core.Field.Companion.choice
 import opensavvy.formulaide.core.Field.Companion.group
 import opensavvy.formulaide.core.Field.Companion.input
 import opensavvy.formulaide.core.Field.Companion.label
+import opensavvy.formulaide.core.data.Email
 import opensavvy.formulaide.test.assertions.*
 import opensavvy.formulaide.test.structure.*
 import opensavvy.formulaide.test.utils.TestUsers.administratorAuth
 import opensavvy.formulaide.test.utils.TestUsers.employeeAuth
+import opensavvy.formulaide.test.utils.executeAs
+import opensavvy.formulaide.test.utils.executeAsGuest
+import kotlin.random.Random
+import kotlin.random.nextUInt
 
-fun Suite.recordsTestSuite(
-	testDepartments: Setup<Department.Service>,
+fun <D : Department.Ref> Suite.recordsTestSuite(
+	testDepartments: Setup<Department.Service<D>>,
+	testUsers: Setup<User.Service<*>>,
 	testForms: Setup<Form.Service>,
 	testRecords: Setup<Record.Service>,
 	testFiles: Setup<File.Service>,
 ) {
 	val testDepartment by createDepartment(testDepartments)
 
+	val testReviewer by prepared(administratorAuth) {
+		val users = prepare(testUsers)
+		val department = prepare(testDepartment)
+
+		val id = Random.nextUInt()
+
+		val (user, _) = users.create(
+			email = Email("review.$id@opensavvy.dev"),
+			fullName = "Reviewer $id",
+		).bind()
+
+		user.join(department).bind()
+
+		user
+	}
+
 	suite("Create a record") {
 		val testPrivateForm by prepared(administratorAuth) {
 			val forms = prepare(testForms)
 			val department = prepare(testDepartment)
 
-			forms.create(
-                name = "Private form",
-                firstVersionTitle = "Initial version",
-                field = input("The illusion of choice", Input.Toggle),
-                Form.Step(0, "Review", department, null),
-            ).tap { it.privatize().bind() }
-                .flatMap { it.now() }
-                .map { it.versionsSorted.first() }
-                .bind()
+			val form = forms.create(
+				name = "Private form",
+				firstVersionTitle = "Initial version",
+				field = input("The illusion of choice", Input.Toggle),
+				Form.Step(0, "Review", department, null),
+			).bind()
+
+			form.privatize().bind()
+
+			form.now().bind().versionsSorted.first()
 		}
 
 		test("Guests cannot create records to a private form") {
@@ -72,15 +94,16 @@ fun Suite.recordsTestSuite(
 			val forms = prepare(testForms)
 			val department = prepare(testDepartment)
 
-            forms.create(
-                name = "Private form",
-                firstVersionTitle = "Initial version",
-                field = input("The illusion of choice", Input.Toggle),
-                Form.Step(0, "Review", department, null),
-            ).tap { it.publicize().bind() }
-                .flatMap { it.now() }
-                .map { it.versionsSorted.first() }
-                .bind()
+			val form = forms.create(
+				name = "Private form",
+				firstVersionTitle = "Initial version",
+				field = input("The illusion of choice", Input.Toggle),
+				Form.Step(0, "Review", department, null),
+			).bind()
+
+			form.publicize().bind()
+
+			form.now().bind().versionsSorted.first()
 		}
 
 		test("Guests can create records to a public form") {
@@ -150,7 +173,7 @@ fun Suite.recordsTestSuite(
 
 				withContext(employeeAuth) {
 					record.submission!!.now() shouldSucceedAnd {
-						val parsed = it.parse(files).shouldSucceed()
+						val parsed = it.parse(files).bind()
 
 						parsed[Field.Id.root] shouldBe true
 					}
@@ -171,92 +194,75 @@ fun Suite.recordsTestSuite(
 			val form = prepare(testPublicForm)
 			val records = prepare(testRecords)
 
-			shouldBeInvalid(
-				records.create(
-					Submission(
-						form,
-						1, // not the correct step
-						mapOf(
-							Field.Id.root to "true",
-						)
-					)
-				)
-			)
+			records.create(Submission(form, 1, // not the correct step
+				mapOf(
+					Field.Id.root to "true",
+				))) shouldFailWith Record.Failures.CannotCreateRecordForNonInitialStep
 		}
 
 		test("Cannot create a record with an invalid submission") {
 			val form = prepare(testPublicForm)
 			val records = prepare(testRecords)
 
-			shouldBeInvalid(
-				records.create(
-					form,
-					"" to "this is not a boolean",
-				)
-			)
+			records.create(
+				form,
+				"" to "this is not a boolean",
+			) shouldFailWithType Record.Failures.InvalidSubmission::class
 		}
 	}
 
 	val workflowForm by prepared(administratorAuth) {
-        val forms = prepare(testForms)
-        val departments = prepare(testDepartments)
+		val forms = prepare(testForms)
+		val departments = prepare(testDepartments)
 
-        val first = departments.create("First department").bind()
-        val second = departments.create("Second department").bind()
-        val third = departments.create("Third department").bind()
+		val first = departments.create("First department").bind()
+		val second = departments.create("Second department").bind()
+		val third = departments.create("Third department").bind()
 
-        forms.create(
-            "The workflow tester",
-            "First version",
-            group(
-                "Initial field",
-                0 to group(
-                    "Identity",
-                    0 to input("First name", Input.Text()),
-                    1 to input("Last name", Input.Text()),
-				),
-				1 to input("Idea", Input.Text()),
+		val form = forms.create("The workflow tester", "First version", group(
+			"Initial field",
+			0 to group(
+				"Identity",
+				0 to input("First name", Input.text().bind()),
+				1 to input("Last name", Input.text().bind()),
 			),
-			Form.Step(
-				id = 0,
-				name = "Pre-filtering",
-				reviewer = first,
-				field = choice(
-					"Kind of request",
-					0 to label("Ecological"),
-					1 to label("Industrial"),
-					2 to label("Administrative"),
-				)
-			),
-			Form.Step(
-				id = 1,
-				name = "Decide whether the request is worth it",
-                reviewer = second,
-                field = input("Request ID", Input.Text()),
-            ),
-            Form.Step(
-                id = 2,
-                name = "Completed requests",
-                reviewer = third,
-                field = null,
-            )
-        ).flatMap { it.now() }
-            .bind()
-			.versionsSorted.first()
+			1 to input("Idea", Input.text().bind()),
+		), Form.Step(id = 0, name = "Pre-filtering", reviewer = first, field = choice(
+			"Kind of request",
+			0 to label("Ecological"),
+			1 to label("Industrial"),
+			2 to label("Administrative"),
+		)), Form.Step(
+			id = 1,
+			name = "Decide whether the request is worth it",
+			reviewer = second,
+			field = input("Request ID", Input.text().bind()),
+		), Form.Step(
+			id = 2,
+			name = "Completed requests",
+			reviewer = third,
+			field = null,
+		)).bind()
+
+		form.publicize().bind()
+
+		form.now().bind().versionsSorted.first()
 	}
 
-	val testRecord by prepared(employeeAuth) {
+	val testRecord by prepared {
 		val records = prepare(testRecords)
 		val form = prepare(workflowForm)
 
-        records.create(
-            form,
-            "" to "",
-            "0" to "",
-            "0:0" to "My first name",
-            "0:1" to "My last name",
-            "1" to "Plant more trees!",
-        ).bind()
+		executeAsGuest {
+			records.create(
+				form,
+				"" to "",
+				"0" to "",
+				"0:0" to "My first name",
+				"0:1" to "My last name",
+				"1" to "Plant more trees!",
+			).bind()
+		}
 	}
 
 	suite("Workflow") {
@@ -268,17 +274,17 @@ fun Suite.recordsTestSuite(
 		}
 
 		suite("Accept a record") {
-			val accept by prepared(employeeAuth) {
-				val record = prepare(testRecord)
-				val records = prepare(testRecords)
+			val accept by prepared {
+				executeAs(testReviewer) {
+					val record = prepare(testRecord)
 
-                records.accept(
-                    record,
-                    null,
-                    "" to "1",
-                ).bind()
+					record.accept(
+						null,
+						"" to "1",
+					).bind()
 
-				record
+					record
+				}
 			}
 
 			test("Should succeed", employeeAuth) {
@@ -316,8 +322,9 @@ fun Suite.recordsTestSuite(
 
 			test("The acceptance's author should be correct", employeeAuth) {
 				val diff = prepare(acceptDiff)
+				val user = prepare(testReviewer)
 
-				diff.author?.id shouldBe employeeAuth.user!!.id
+				diff.author shouldBe user
 			}
 
 			test("The acceptance's date should be correct", employeeAuth) {
@@ -360,12 +367,12 @@ fun Suite.recordsTestSuite(
 		suite("Refuse a record") {
 			val refuse by prepared(employeeAuth) {
 				val record = prepare(testRecord)
-				val records = prepare(testRecords)
 
-                records.refuse(
-                    record,
-                    "I don't like it",
-                ).bind()
+				executeAs(testReviewer) {
+					record.refuse(
+						"I don't like it",
+					).bind()
+				}
 
 				record
 			}
@@ -406,7 +413,7 @@ fun Suite.recordsTestSuite(
 			test("The refusal's author should be correct", employeeAuth) {
 				val diff = prepare(refuseDiff)
 
-				diff.author?.id shouldBe employeeAuth.user!!.id
+				diff.author shouldBe prepare(testReviewer)
 			}
 
 			test("The refusal's date should be correct", employeeAuth) {
@@ -449,13 +456,13 @@ fun Suite.recordsTestSuite(
 		suite("Save additional data") {
 			val editCurrent by prepared(employeeAuth) {
 				val record = prepare(testRecord)
-				val records = prepare(testRecords)
 
-                records.editCurrent(
-                    record,
-                    null,
-                    "" to "0",
-                ).bind()
+				executeAs(testReviewer) {
+					record.editCurrent(
+						null,
+						"" to "0",
+					).bind()
+				}
 
 				record
 			}
@@ -496,7 +503,7 @@ fun Suite.recordsTestSuite(
 			test("The edition's author should be correct", employeeAuth) {
 				val diff = prepare(editCurrentDiff)
 
-				diff.author?.id shouldBe employeeAuth.user!!.id
+				diff.author shouldBe prepare(testReviewer)
 			}
 
 			test("The edition's date should be correct", employeeAuth) {
@@ -539,13 +546,13 @@ fun Suite.recordsTestSuite(
 		suite("Edit the initial submission") {
 			val editInitial by prepared(employeeAuth) {
 				val record = prepare(testRecord)
-				val records = prepare(testRecords)
 
-                records.editInitial(
-                    record,
-                    "I didn't like it",
-                    "" to "0",
-                ).bind()
+				executeAs(testReviewer) {
+					record.editInitial(
+						"I didn't like it",
+						"" to "0",
+					).bind()
+				}
 
 				record
 			}
@@ -586,7 +593,7 @@ fun Suite.recordsTestSuite(
 			test("The edition's author should be correct", employeeAuth) {
 				val diff = prepare(editInitialDiff)
 
-				diff.author?.id shouldBe employeeAuth.user!!.id
+				diff.author shouldBe prepare(testReviewer)
 			}
 
 			test("The edition's date should be correct", employeeAuth) {
@@ -629,19 +636,18 @@ fun Suite.recordsTestSuite(
 		suite("Move back") {
 			val moveBack by prepared(employeeAuth) {
 				val record = prepare(testRecord)
-				val records = prepare(testRecords)
 
-                records.accept(
-                    record,
-                    null,
-                    "" to "0",
-                ).bind()
+				executeAs(testReviewer) {
+					record.accept(
+						null,
+						"" to "0",
+					).bind()
 
-                records.moveBack(
-                    record,
-                    0,
-                    "I didn't like it",
-                ).bind()
+					record.moveBack(
+						0,
+						"I didn't like it",
+					).bind()
+				}
 
 				record
 			}
@@ -682,7 +688,7 @@ fun Suite.recordsTestSuite(
 			test("The move's author should be correct", employeeAuth) {
 				val diff = prepare(moveBackDiff)
 
-				diff.author?.id shouldBe employeeAuth.user!!.id
+				diff.author shouldBe prepare(testReviewer)
 			}
 
 			test("The move's date should be correct", employeeAuth) {

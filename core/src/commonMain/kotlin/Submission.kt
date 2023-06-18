@@ -1,16 +1,22 @@
 package opensavvy.formulaide.core
 
-import arrow.core.continuations.EffectScope
+import arrow.core.*
+import arrow.core.raise.Raise
+import arrow.core.raise.either
+import arrow.core.raise.ensure
+import arrow.core.raise.ensureNotNull
 import opensavvy.backbone.Backbone
-import opensavvy.backbone.Ref.Companion.request
 import opensavvy.formulaide.core.Submission.Parsed
-import opensavvy.formulaide.core.utils.mapSuccess
-import opensavvy.state.Failure
-import opensavvy.state.outcome.ensureValid
-import opensavvy.state.outcome.out
-import opensavvy.state.progressive.firstValue
+import opensavvy.formulaide.core.Submission.ParsingFailure.InvalidValue
+import opensavvy.formulaide.core.data.StandardNotFound
+import opensavvy.formulaide.core.data.StandardUnauthenticated
+import opensavvy.formulaide.core.data.StandardUnauthorized
+import opensavvy.formulaide.core.utils.IdentifierParser
+import opensavvy.formulaide.core.utils.IdentifierWriter
+import opensavvy.state.arrow.toEither
+import opensavvy.state.coroutines.now
 
-private typealias CanFail = EffectScope<Failure>
+private typealias CanFail = Raise<NonEmptyList<Submission.ParsingFailure>>
 private typealias MutableParsedData = MutableMap<Field.Id, Any>
 
 /**
@@ -162,11 +168,16 @@ data class Submission(
 	val data: Map<Field.Id, String>,
 ) {
 
-	private suspend fun submittedForField() = form.request()
-		.mapSuccess { it.findFieldForStep(formStep) }
-		.firstValue()
+	private suspend fun submittedForField() = either {
+		form.request()
+			.now()
+			.toEither()
+			.mapLeft { ParsingFailure.UnavailableForm }
+			.bind()
+			.findFieldForStep(formStep)
+	}
 
-	//region Verify and parse
+	// region Verify and parse
 
 	private lateinit var parsed: Parsed
 
@@ -177,16 +188,19 @@ data class Submission(
 	 *
 	 * The results of this function are cached, such that subsequent calls are free.
 	 */
-	suspend fun parse(files: File.Service) = out {
+	suspend fun parse(files: File.Service): EitherNel<ParsingFailure, Parsed> = either {
 		if (::parsed.isInitialized)
-			return@out parsed
+			return@either parsed
 
-		val field = submittedForField().bind()
+		val field = submittedForField()
+			.mapLeft { it.nel() }
+			.bind()
 		val parsedData = HashMap<Field.Id, Any>()
 			.also { parseAny(Field.Id.root, field, mandatory = true, it, files) }
 
 		Parsed(this@Submission, parsedData)
-	}.tap { parsed = it }
+			.also { parsed = it }
+	}
 
 	private suspend fun CanFail.parseAny(
 		id: Field.Id,
@@ -215,8 +229,11 @@ data class Submission(
 
 		if (!mandatory && answer == null) return
 
-		ensureValid(answer != null) { "Le champ '${field.label}' ($id) est obligatoire" }
-		parsedData[id] = field.input.parse(answer, files).bind()
+		ensure(answer != null) { InvalidValue.Mandatory(id).nel() }
+		parsedData[id] = field.input.parse(answer, files)
+			.toEither()
+			.mapLeft { InvalidValue.InputParsingFailure(id, it).nel() }
+			.bind()
 	}
 
 	@Suppress("FoldInitializerAndIfToElvis") // makes it harder to read in this case
@@ -230,20 +247,15 @@ data class Submission(
 		val selectedAsString = data[id]
 
 		if (selectedAsString == null) {
-			if (mandatory) shift<Nothing>(
-				Failure(
-					Failure.Kind.Invalid,
-					"Le choix '${field.label}' ($id) est obligatoire"
-				)
-			)
+			if (mandatory) raise(InvalidValue.Mandatory(id).nel())
 			else return
 		}
 
 		val selected = selectedAsString.toIntOrNull()
-		ensureValid(selected != null) { "'$selectedAsString' n'est pas un identifiant de champ" }
+		ensureNotNull(selected) { InvalidValue.SelectedChoiceMatchesNoOptions(id, selectedAsString, field.indexedFields.keys).nel() }
 
 		val selectedField = field.indexedFields[selected]
-		ensureValid(selectedField != null) { "Le choix '${field.label}' ($id) ne possède aucune option numérotée $selected" }
+		ensureNotNull(selectedField) { InvalidValue.SelectedChoiceMatchesNoOptions(id, selectedAsString, field.indexedFields.keys).nel() }
 
 		parsedData[id] = selected
 		parseAny(id + selected, selectedField, mandatory = true, parsedData, files)
@@ -261,11 +273,12 @@ data class Submission(
 		if (!mandatory && !present)
 			return
 
-		ensureValid(present) { "Le groupe '${field.label}' ($id) est obligatoire, mais le témoin de présence n'a pas été rempli" }
+		ensure(present) { InvalidValue.MissingGroupMarker(id).nel() }
 
-		for ((childId, child) in field.indexedFields) {
+		field.indexedFields.mapOrAccumulate { (childId, child) ->
 			parseAny(id + childId, child, mandatory = true, parsedData, files)
-		}
+		}.mapLeft { it.flatMap(::identity) }
+			.bind()
 	}
 
 	private suspend fun CanFail.parseArity(
@@ -275,15 +288,16 @@ data class Submission(
 		parsedData: MutableParsedData,
 		files: File.Service,
 	) {
-		// 1. check that all mandatory submissions are present
-		for (i in 0 until field.allowed.first.toInt()) {
-			parseAny(id + i, field.child, mandatory, parsedData, files)
-		}
+		(0 until field.allowed.last.toInt()).mapOrAccumulate {
+			// The first allowed.first elements are as mandatory as the parent field
+			// The next (allowed.last - allowed.first) elements are always optional
+			val childMandatory =
+				if (it in 0 until field.allowed.first.toInt()) mandatory
+				else false
 
-		// 2. check whether bonus submissions are present
-		for (i in field.allowed.first.toInt() until field.allowed.last.toInt()) {
-			parseAny(id + i, field.child, mandatory = false, parsedData, files)
-		}
+			parseAny(id + it, field.child, childMandatory, parsedData, files)
+		}.mapLeft { it.flatMap(::identity) }
+			.bind()
 	}
 
 	class Parsed(
@@ -294,7 +308,34 @@ data class Submission(
 		operator fun get(id: Field.Id) = data[id]
 	}
 
-	//endregion
+	sealed interface ParsingFailure {
+		object UnavailableForm : ParsingFailure
+
+		sealed class InvalidValue : ParsingFailure {
+			abstract val field: Field.Id
+
+			data class Mandatory(
+				override val field: Field.Id,
+			) : InvalidValue()
+
+			data class InputParsingFailure(
+				override val field: Field.Id,
+				val failure: Input.Failures.Parsing,
+			) : InvalidValue()
+
+			data class SelectedChoiceMatchesNoOptions(
+				override val field: Field.Id,
+				val selected: String,
+				val valid: Collection<Int>,
+			) : InvalidValue()
+
+			data class MissingGroupMarker(
+				override val field: Field.Id,
+			) : InvalidValue()
+		}
+	}
+
+	// endregion
 
 	override fun toString() = buildString {
 		append("Saisie pour $form")
@@ -316,12 +357,22 @@ data class Submission(
 		}
 	}
 
-	data class Ref(
-		val id: String,
-		override val backbone: Service,
-	) : opensavvy.backbone.Ref<Submission>
+	interface Ref : opensavvy.backbone.Ref<Failures.Get, Submission>, IdentifierWriter
 
-	interface Service : Backbone<Submission>
+	interface Service : Backbone<Ref, Failures.Get, Submission>, IdentifierParser<Ref>
+
+	interface Failures {
+		sealed interface Get : Failures
+
+		data class NotFound(override val id: Ref) : StandardNotFound<Ref>,
+			Get
+
+		object Unauthenticated : StandardUnauthenticated,
+			Get
+
+		object Unauthorized : StandardUnauthorized,
+			Get
+	}
 
 	companion object {
 

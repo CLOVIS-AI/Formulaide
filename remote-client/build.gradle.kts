@@ -7,7 +7,14 @@ plugins {
 }
 
 kotlin {
-	jvm()
+	jvm {
+		jvmToolchain(17)
+		testRuns.named("test") {
+			executionTask.configure {
+				useJUnitPlatform()
+			}
+		}
+	}
 	js(IR) {
 		browser {
 			testTask {
@@ -22,11 +29,11 @@ kotlin {
 		val commonMain by getting {
 			dependencies {
 				implementation(projects.remoteCommon)
-				implementation("opensavvy:spine-ktor-client:_")
+				implementation("opensavvy.pedestal:spine-ktor-client:_")
 				implementation(Ktor.client.contentNegotiation)
 				implementation(Ktor.plugins.serialization.kotlinx.json)
 
-				implementation("opensavvy:logger:_")
+				implementation("opensavvy.pedestal:logger:_")
 			}
 		}
 
@@ -48,8 +55,4 @@ tasks.withType<org.jetbrains.dokka.gradle.DokkaTaskPartial>().configureEach {
 			remoteLineSuffix.set("#L")
 		}
 	}
-}
-
-tasks.named<Test>("jvmTest") {
-	useJUnitPlatform()
 }

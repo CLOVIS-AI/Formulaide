@@ -7,7 +7,7 @@ import opensavvy.formulaide.core.User
 import opensavvy.formulaide.remote.server.configureServer
 
 fun CoroutineScope.createTestServer(
-	users: User.Service? = null,
+	users: User.Service<*>? = null,
 	configure: TestApplicationBuilder.() -> Unit,
 ): TestApplication {
 	val application = TestApplication {

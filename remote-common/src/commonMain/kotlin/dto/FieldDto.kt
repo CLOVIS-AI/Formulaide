@@ -1,7 +1,9 @@
 package opensavvy.formulaide.remote.dto
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import opensavvy.formulaide.core.Field
+import opensavvy.formulaide.core.Input
 import opensavvy.formulaide.core.Template
 import opensavvy.formulaide.remote.api
 import opensavvy.formulaide.remote.dto.InputDto.Companion.toCore
@@ -21,6 +23,7 @@ sealed class FieldDto {
 	 * DTO for [Field.Label].
 	 */
 	@Serializable
+	@SerialName("LABEL")
 	class Label(
 		override val label: String,
 		override val importedFrom: Id? = null,
@@ -30,6 +33,7 @@ sealed class FieldDto {
 	 * DTO for [Field.Input].
 	 */
 	@Serializable
+	@SerialName("INPUT")
 	class Input(
 		override val label: String,
 		val input: InputDto,
@@ -40,6 +44,7 @@ sealed class FieldDto {
 	 * DTO for [Field.Choice].
 	 */
 	@Serializable
+	@SerialName("CHOICE")
 	class Choice(
 		override val label: String,
 		val options: Map<Int, FieldDto>,
@@ -50,6 +55,7 @@ sealed class FieldDto {
 	 * DTO for [Field.Group].
 	 */
 	@Serializable
+	@SerialName("GROUP")
 	class Group(
 		override val label: String,
 		val fields: Map<Int, FieldDto>,
@@ -60,6 +66,7 @@ sealed class FieldDto {
 	 * DTO for [Field.Arity].
 	 */
 	@Serializable
+	@SerialName("ARITY")
 	class Arity(
 		override val label: String,
 		val child: FieldDto,
@@ -67,6 +74,30 @@ sealed class FieldDto {
 		val max: UInt,
 		override val importedFrom: Id? = null,
 	) : FieldDto()
+
+	@Serializable
+	sealed class CompatibilityFailure {
+		@Serializable
+		@SerialName("INCOMPATIBLE_FIELD")
+		class IncompatibleField(
+			val field: String,
+			val message: String,
+		) : CompatibilityFailure()
+
+		@Serializable
+		@SerialName("INCOMPATIBLE_INPUT")
+		class IncompatibleInput(
+			val field: String,
+			val message: String,
+		) : CompatibilityFailure()
+
+		@Serializable
+		@SerialName("TEMPLATE_NOT_FOUND")
+		class TemplateNotFound(
+			val field: String,
+			val template: Id,
+		) : CompatibilityFailure()
+	}
 
 	companion object {
 
@@ -105,7 +136,7 @@ sealed class FieldDto {
 		}
 
 		private fun convertTemplateRef(ref: Template.Version.Ref): Id =
-			api.templates.id.version.idOf(ref.template.id, ref.version.toString())
+			api.templates.id.version.idOf(ref.template.toIdentifier().text, ref.creationDate.toString())
 
 		fun Field.toDto(): FieldDto = when (this) {
 			is Field.Arity -> Arity(
@@ -140,5 +171,38 @@ sealed class FieldDto {
 			)
 		}
 
+		suspend fun CompatibilityFailure.toCore(templates: Template.Service) = when (this) {
+			is CompatibilityFailure.IncompatibleField -> Field.Failures.Compatibility.IncompatibleField(
+				field = Field.Id.fromString(field),
+				message = message,
+			)
+
+			is CompatibilityFailure.IncompatibleInput -> Field.Failures.Compatibility.IncompatibleInput(
+				field = Field.Id.fromString(field),
+				failure = opensavvy.formulaide.core.Input.Failures.Compatibility(message),
+			)
+
+			is CompatibilityFailure.TemplateNotFound -> Field.Failures.Compatibility.TemplateNotFound(
+				field = Field.Id.fromString(field),
+				id = templates.versions.fromIdentifier(api.templates.id.version.identifierOf(template)),
+			)
+		}
+
+		fun Field.Failures.Compatibility.toDto() = when (this) {
+			is Field.Failures.Compatibility.IncompatibleField -> CompatibilityFailure.IncompatibleField(
+				field = field.toString(),
+				message = message,
+			)
+
+			is Field.Failures.Compatibility.IncompatibleInput -> CompatibilityFailure.IncompatibleInput(
+				field = field.toString(),
+				message = failure.message,
+			)
+
+			is Field.Failures.Compatibility.TemplateNotFound -> CompatibilityFailure.TemplateNotFound(
+				field = field.toString(),
+				template = api.templates.id.version.idOf(id.template.toIdentifier().text, id.creationDate.toString()),
+			)
+		}
 	}
 }

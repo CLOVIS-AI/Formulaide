@@ -9,7 +9,7 @@ dependencies {
 	implementation(projects.mongo)
 	implementation(projects.remoteServer)
 
-	implementation("opensavvy:logger:_")
+	implementation("opensavvy.pedestal:logger:_")
 
 	implementation(Ktor.server)
 	implementation(Ktor.server.netty)
@@ -30,6 +30,10 @@ application {
 		applicationDefaultJvmArgs = listOf("-Dio.ktor.development=true")
 }
 
-tasks.named<Test>("test") {
+kotlin {
+	jvmToolchain(17)
+}
+
+tasks.test {
 	useJUnitPlatform()
 }
