@@ -300,10 +300,54 @@ data class Submission(
 			.bind()
 	}
 
-	class Parsed(
-		val submission: Submission,
+	class Parsed internal constructor(
+		initialSubmission: Submission,
 		private val data: Map<Field.Id, Any>,
 	) {
+
+		val submission: Submission
+
+		init {
+			val stringData = HashMap<Field.Id, String>()
+
+			for ((id, datum) in data) {
+				val string = when (datum) {
+					is File.Ref -> datum.toIdentifier().text
+					else -> datum.toString()
+				}
+
+				stringData[id] = string
+			}
+
+			submission = initialSubmission.copy(
+				data = stringData
+			)
+
+			// Checking the validity of what we built:
+			// - All keys of 'data' should be present
+			// - All keys in the newly created submission should have exactly the same value as their value in the initial submission
+			// → We're only allowed to remove elements
+
+			data.keys.forEach {
+				check(submission.data.containsKey(it)) {
+					"Server error: the key '$it' is missing from the newly generated submission.\n" +
+						"Initial submission: $initialSubmission\n" +
+						"Parsed:             $this\n" +
+						"New submission:     $submission\n" +
+						"Please report this to the Formulaide developers."
+				}
+			}
+
+			for ((id, datum) in submission.data) {
+				check(datum == initialSubmission.data[id]) {
+					"Server error: the value for key '$id' is different in the newly generated submission ($datum) and the initial submission (${submission.data[id]}).\n" +
+						"Initial submission: $initialSubmission\n" +
+						"Parsed:             $this\n" +
+						"New submission:     $submission\n" +
+						"Please report this to the Formulaide developers."
+				}
+			}
+		}
 
 		operator fun get(id: Field.Id) = data[id]
 	}
