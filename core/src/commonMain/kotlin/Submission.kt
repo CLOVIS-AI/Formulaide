@@ -350,6 +350,27 @@ data class Submission(
 		}
 
 		operator fun get(id: Field.Id) = data[id]
+
+		@Suppress("DuplicatedCode")
+		override fun toString() = buildString {
+			append("Saisie analysée pour ${submission.form}")
+
+			if (submission.formStep == null) append(" (saisie initiale)")
+			else append(" (étape ${submission.formStep})")
+
+			if (data.isEmpty()) append(" Vide")
+			else {
+				appendLine()
+
+				val lines = data.map { (id, value) -> id.toString() to value }
+				val longest = lines.maxOf { (id, _) -> id.length }
+
+				for ((id, answer) in lines) {
+					val displayedId = id.takeIf { it.isNotBlank() } ?: "root"
+					appendLine("    ${displayedId.padEnd(longest)}    $answer")
+				}
+			}
+		}
 	}
 
 	sealed interface ParsingFailure {
