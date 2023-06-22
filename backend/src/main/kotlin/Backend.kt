@@ -1,10 +1,13 @@
 package opensavvy.formulaide.backend
 
+import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import io.ktor.server.plugins.*
 import io.ktor.server.plugins.callloging.*
 import io.ktor.server.plugins.hsts.*
+import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.*
@@ -53,6 +56,20 @@ fun Application.formulaide() {
 
 	install(TokenAuthentication) {
 		this.users = users
+	}
+
+	install(StatusPages) {
+		exception<BadRequestException> { call: ApplicationCall, cause: BadRequestException ->
+			if (cause.cause?.cause is IllegalArgumentException) {
+				call.respond(HttpStatusCode.UnprocessableEntity, cause.cause?.cause?.message ?: "Pas de message")
+			} else if (cause.cause is IllegalArgumentException) {
+				call.respond(HttpStatusCode.BadRequest, cause.cause?.message ?: "Pas de message")
+			} else {
+				call.respond(HttpStatusCode.BadRequest, cause.message ?: "Pas de message")
+			}
+
+			logError(call, cause)
+		}
 	}
 
 	if (!developmentMode) {
