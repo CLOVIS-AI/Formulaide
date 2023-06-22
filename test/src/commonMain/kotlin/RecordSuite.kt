@@ -90,6 +90,30 @@ fun <D : Department.Ref> Suite.recordsTestSuite(
 			)
 		}
 
+		test("Fields that are not requested should not be present nor returned in the stored submission", employeeAuth) {
+			val form = prepare(testPrivateForm)
+			val records = prepare(testRecords)
+
+			executeAs(testReviewer) {
+				val result = shouldSucceed(
+					records.create(
+						form,
+						"" to "true",
+						"1" to "should-disappear",
+						"2:3" to "should-disappear",
+					)
+				).now().bind()
+					.initialSubmission
+					.submission
+					.now().bind()
+
+				result.data shouldBe mapOf(
+					Field.Id.root to "true",
+					// the two other fields should be ignored, because they do not appear in the form
+				)
+			}
+		}
+
 		val testPublicForm by prepared(administratorAuth) {
 			val forms = prepare(testForms)
 			val department = prepare(testDepartment)

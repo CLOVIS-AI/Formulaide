@@ -44,7 +44,7 @@ class FakeRecords(
 		}
 
 		ensure(submission.formStep == null) { Record.Failures.CannotCreateRecordForNonInitialStep }
-		submission.parse(files)
+		val parsed = submission.parse(files)
 			.mapLeft { Record.Failures.InvalidSubmission(it) }
 			.bind()
 
@@ -52,19 +52,19 @@ class FakeRecords(
 
 		val submissionRef = _submissions.lock.withLock("create:submission") {
 			val subId = newId()
-			_submissions.data[subId] = submission
+			_submissions.data[subId] = parsed.submission
 			_submissions.Ref(subId)
 		}
 
 		val now = clock.now()
 
-		val formVersion = submission.form.now()
+		val formVersion = parsed.submission.form.now()
 			.toEither()
-			.mapLeft { Record.Failures.FormVersionNotFound(submission.form, it) }
+			.mapLeft { Record.Failures.FormVersionNotFound(parsed.submission.form, it) }
 			.bind()
 
 		val record = Record(
-			form = submission.form,
+			form = parsed.submission.form,
 			createdAt = now,
 			modifiedAt = now,
 			history = listOf(
