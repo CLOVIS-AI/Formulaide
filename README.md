@@ -24,4 +24,7 @@ Liens utiles :
 - [Documentation du code et de l'API](http://opensavvy.gitlab.io/formulaide/documentation)
 - [Guide de déploiement](docs/deploiement.md)
 - [Étape de sécurisation lors du premier lancement](docs/debut.md)
-- [Open source](LICENSE.txt)
+
+## Open source
+
+Formulaide est disponible sous la GNU Affero General Public License, version 3. Le texte complet est disponible dans le fichier [LICENSE.txt](LICENSE.txt).
