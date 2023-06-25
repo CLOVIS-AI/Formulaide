@@ -41,7 +41,3 @@ The companion service is an interface that describes the contract all Formulaide
 Because each object is immutable, the companion reference is used to access their values over time. This avoids data nesting in other data structures, and makes it easier for a client to only request information they do not already possess.
 
 For more information about this design pattern, see the [Pedestal](https://gitlab.com/opensavvy/pedestal) project.
-
-# Package opensavvy.formulaide.core.data
-
-Additional data structures created for convenience and type safety.

@@ -17,6 +17,8 @@ include(
 	"backend",
 	"core",
 
+	"core:core-data",
+
 	"remote-common",
 	"remote-client",
 	"remote-server",

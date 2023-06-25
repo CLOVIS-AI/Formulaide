@@ -1,5 +1,3 @@
-@file:Suppress("UNUSED_VARIABLE")
-
 import java.net.URL
 
 plugins {
@@ -28,18 +26,13 @@ kotlin {
 	sourceSets {
 		val commonMain by getting {
 			dependencies {
-				api("opensavvy.pedestal:backbone:_")
-				api("opensavvy.pedestal:state-arrow:_")
-				api(KotlinX.datetime)
-
-				api(projects.core.coreData)
+				// Nothing here
 			}
 		}
 
 		val commonTest by getting {
 			dependencies {
-				implementation(projects.test)
-				implementation(projects.fake)
+				implementation(projects.testStructure)
 			}
 		}
 	}
@@ -51,7 +44,7 @@ tasks.withType<org.jetbrains.dokka.gradle.DokkaTaskPartial>().configureEach {
 
 		sourceLink {
 			localDirectory.set(file("src"))
-			remoteUrl.set(URL("https://gitlab.com/opensavvy/formulaide/-/blob/main/core/src"))
+			remoteUrl.set(URL("https://gitlab.com/opensavvy/formulaide/-/blob/main/core/core-data/src"))
 			remoteLineSuffix.set("#L")
 		}
 	}
