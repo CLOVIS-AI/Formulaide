@@ -62,3 +62,10 @@ fun calculateVersion(): String {
 	else
 		"${details.lastTag}-post.${details.commitDistance}+${details.gitHash}"
 }
+
+// Workaround for https://github.com/Kotlin/dokka/issues/2954
+tasks.named("dokkaHtmlMultiModule") {
+	dependsOn(
+		":core:dokkaHtmlMultiModule",
+	)
+}
