@@ -61,39 +61,39 @@ class InputTest : TestExecutor() {
 			val files = FakeFiles(clock)
 			val bool = Input.Toggle
 
-			bool.parse("true", files).shouldSucceedAnd {
+			Input.Toggle.parse("true", files).shouldSucceedAnd {
 				assertEquals(true, it)
 			}
 
-			bool.parse("false", files).shouldSucceedAnd {
+			Input.Toggle.parse("false", files).shouldSucceedAnd {
 				assertEquals(false, it)
 			}
 
-			bool.parse("other", files) shouldFailWithType Input.Failures.Parsing::class
-			bool.parse("something", files) shouldFailWithType Input.Failures.Parsing::class
+			Input.Toggle.parse("other", files) shouldFailWithType Input.Failures.Parsing::class
+			Input.Toggle.parse("something", files) shouldFailWithType Input.Failures.Parsing::class
 		}
 
 		test("Email") {
 			val files = FakeFiles(clock)
 			val email = Input.Email
 
-			email.parse("my-email@gmail.com", files).shouldSucceedAnd {
+			Input.Email.parse("my-email@gmail.com", files).shouldSucceedAnd {
 				assertEquals(Email("my-email@gmail.com"), it)
 			}
 
-			email.parse("something", files) shouldFailWithType Input.Failures.Parsing::class
+			Input.Email.parse("something", files) shouldFailWithType Input.Failures.Parsing::class
 		}
 
 		test("Parse phone number") {
 			val files = FakeFiles(clock)
 			val phone = Input.Phone
 
-			phone.parse("+332345678", files).shouldSucceedAnd {
+			Input.Phone.parse("+332345678", files).shouldSucceedAnd {
 				assertEquals("+332345678", it)
 			}
 
-			phone.parse("thing", files) shouldFailWithType Input.Failures.Parsing::class
-			phone.parse("123456789123456789123456789", files) shouldFailWithType Input.Failures.Parsing::class
+			Input.Phone.parse("thing", files) shouldFailWithType Input.Failures.Parsing::class
+			Input.Phone.parse("123456789123456789123456789", files) shouldFailWithType Input.Failures.Parsing::class
 		}
 
 		test("Int range constructor") {

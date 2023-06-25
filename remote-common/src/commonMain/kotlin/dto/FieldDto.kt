@@ -3,7 +3,6 @@ package opensavvy.formulaide.remote.dto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import opensavvy.formulaide.core.Field
-import opensavvy.formulaide.core.Input
 import opensavvy.formulaide.core.Template
 import opensavvy.formulaide.remote.api
 import opensavvy.formulaide.remote.dto.InputDto.Companion.toCore

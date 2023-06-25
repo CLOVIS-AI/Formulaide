@@ -19,6 +19,7 @@ include(
 
 	"core:core-data",
 	"core:core-users",
+	"core:core-domain",
 
 	"remote-common",
 	"remote-client",

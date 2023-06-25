@@ -1,5 +1,3 @@
-@file:Suppress("UNUSED_VARIABLE")
-
 import java.net.URL
 
 plugins {
@@ -34,7 +32,6 @@ kotlin {
 
 				api(projects.core.coreData)
 				api(projects.core.coreUsers)
-				api(projects.core.coreDomain)
 			}
 		}
 
@@ -49,9 +46,11 @@ kotlin {
 
 tasks.withType<org.jetbrains.dokka.gradle.DokkaTaskPartial>().configureEach {
 	dokkaSourceSets.configureEach {
+		includes.from("${project.projectDir}/README.md")
+
 		sourceLink {
 			localDirectory.set(file("src"))
-			remoteUrl.set(URL("https://gitlab.com/opensavvy/formulaide/-/blob/main/core/src"))
+			remoteUrl.set(URL("https://gitlab.com/opensavvy/formulaide/-/blob/main/core/core-domain/src"))
 			remoteLineSuffix.set("#L")
 		}
 	}

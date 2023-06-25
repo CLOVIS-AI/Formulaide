@@ -1,8 +1,6 @@
-# Module core
+# Module core-domain
 
-Core APIs for the Formulaide project.
-
-Formulaide administrators can create web forms entirely online, and declare how the data submitted by users is shared between departments of the company to ensure each request is checked by the correct people.
+Core functionality of the Formulaide project.
 
 ## Form structure
 
