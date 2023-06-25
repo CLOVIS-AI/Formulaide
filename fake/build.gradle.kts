@@ -26,7 +26,9 @@ kotlin {
 	sourceSets {
 		val commonMain by getting {
 			dependencies {
-				api(projects.core)
+				api(projects.core.coreData)
+				api(projects.core.coreUsers)
+				api(projects.core.coreDomain)
 
 				implementation("opensavvy.pedestal:logger:_")
 			}

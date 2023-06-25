@@ -4,7 +4,9 @@ plugins {
 }
 
 dependencies {
-	implementation(projects.core)
+	implementation(projects.core.coreData)
+	implementation(projects.core.coreUsers)
+	implementation(projects.core.coreDomain)
 	implementation(projects.fake)
 	implementation(projects.mongo)
 	implementation(projects.remoteServer)

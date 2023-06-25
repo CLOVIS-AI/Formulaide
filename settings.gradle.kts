@@ -15,7 +15,6 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 include(
 	"backend",
-	"core",
 
 	"core:core-data",
 	"core:core-users",
