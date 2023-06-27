@@ -1,4 +1,4 @@
-@file:Suppress("UNUSED_VARIABLE")
+import java.net.URL
 
 plugins {
 	kotlin("multiplatform")
@@ -26,17 +26,17 @@ kotlin {
 	sourceSets {
 		val commonMain by getting {
 			dependencies {
-				api(projects.core.coreData)
-				api(projects.core.coreUsers)
-				api(projects.core.coreDomain)
+				api("opensavvy.pedestal:backbone:_")
+				api("opensavvy.pedestal:state-arrow:_")
 
-				implementation("opensavvy.pedestal:logger:_")
+				api(projects.core.coreData)
 			}
 		}
 
 		val commonTest by getting {
 			dependencies {
 				implementation(projects.test)
+				implementation(projects.fake)
 			}
 		}
 	}
@@ -45,5 +45,11 @@ kotlin {
 tasks.withType<org.jetbrains.dokka.gradle.DokkaTaskPartial>().configureEach {
 	dokkaSourceSets.configureEach {
 		includes.from("${project.projectDir}/README.md")
+
+		sourceLink {
+			localDirectory.set(file("src"))
+			remoteUrl.set(URL("https://gitlab.com/opensavvy/formulaide/-/blob/main/core/core-users/src"))
+			remoteLineSuffix.set("#L")
+		}
 	}
 }

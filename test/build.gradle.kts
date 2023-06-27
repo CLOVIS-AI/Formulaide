@@ -31,7 +31,9 @@ kotlin {
 
 		val commonMain by getting {
 			dependencies {
-				api(projects.core)
+				api(projects.core.coreData)
+				api(projects.core.coreUsers)
+				api(projects.core.coreDomain)
 				api(projects.testStructure)
 			}
 		}

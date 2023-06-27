@@ -1,20 +1,6 @@
-# Module core
+# Module core-domain
 
-Core APIs for the Formulaide project.
-
-Formulaide administrators can create web forms entirely online, and declare how the data submitted by users is shared between departments of the company to ensure each request is checked by the correct people.
-
-## Users and departments
-
-There are two types of [users][opensavvy.formulaide.core.User] of Formulaide: the end users, called [guests][opensavvy.formulaide.core.User.Role.Guest], and [employees][opensavvy.formulaide.core.User.Role.Employee].
-
-Guests can submit data to the available forms. They are always anonymous and unauthenticated, and therefore cannot access any data (even their own).
-
-Employees can also submit data to forms, as well as accessing internal forms.
-Employees are part of [departments][opensavvy.formulaide.core.Department], which represent the different sections of the company or association using Formulaide.
-End user submissions are protected to only be visible by employees belonging to specific departments.
-
-The [administrator][opensavvy.formulaide.core.User.Role.Administrator] is a specific role given to employees who are allowed to manage Formulaide itself. They can create and edit forms, browse through all user data, and delete data permanently to comply with GDPR requests.
+Core functionality of the Formulaide project.
 
 ## Form structure
 
@@ -41,7 +27,3 @@ The companion service is an interface that describes the contract all Formulaide
 Because each object is immutable, the companion reference is used to access their values over time. This avoids data nesting in other data structures, and makes it easier for a client to only request information they do not already possess.
 
 For more information about this design pattern, see the [Pedestal](https://gitlab.com/opensavvy/pedestal) project.
-
-# Package opensavvy.formulaide.core.data
-
-Additional data structures created for convenience and type safety.
